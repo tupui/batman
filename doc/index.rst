@@ -8,8 +8,8 @@ Contents:
 
    README
    CHANGES
-   tutorial
    introduction
+   tutorial
    settings
    tasks
    space

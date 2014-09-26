@@ -11,4 +11,4 @@ __all__ = ['Driver', 'import_file', 'mpi']
 
 __version__ = '1.3'
 __branch__ = 'heads/dev'
-__commit__ = '1d82622'
+__commit__ = 'c3ee344'

@@ -4,7 +4,6 @@ README
 :Authors: 
     Pamphile Roy,
     Romain Dupuis,
-    Hoang Quan Chu,
     Jean-Christophe Jouhaud,
     Marc Montagnac,
     Florent Duchaine,
