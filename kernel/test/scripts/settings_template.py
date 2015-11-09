@@ -15,16 +15,16 @@ space = {
         'method' : 'sobol',
     # Number of samples to be generated
     # format : integer
-        'size'   : 10,
+        'size'   : 4,
     }
 }
 
-import functions
+# import functions
 
 snapshot = {
 # Snapshot provider
-# Could be a python function, a python list of directories or a python dictionary with settings for using an external program like submiting elsA jobs (see snapshot_provider for examples).
-    'provider' : functions.partial(functions.f1, 5),
+# Could be a python function, a python list of directories or a python dictionary with settings for using an external program like submitting elsA jobs (see snapshot_provider for examples).
+#    'provider' : functions.partial(functions.f1, 5),
 # Maximum number of simultaneous running snapshot provider
 # format : integer > 0
     'max_workers' : 1,
@@ -39,7 +39,7 @@ snapshot = {
     # File names for each mpi cpu
     # When ran on only 1 cpu, all filenames are gathered
     # format : list of strings
-        'filenames' : {0: ['pressure_ex.tp']},
+        'filenames' : {0: ['pressure_ex.dat']},
     # Name of the file that contains the coordinates
     # of a point in the space of parameters
         'point_filename' : 'header.py',
@@ -48,7 +48,7 @@ snapshot = {
     # Names of the variables contained in a snapshot
     # format : list of strings
         'variables' : ['x','p'],
-    # Shapes of one variable for each files and each mpi cpu
+    # Shapes of one variable for each file and each mpi cpu
     # When ran on only 1 cpu, all shapes are gathered
         'shapes' : {0: [(65,)]},
     },
@@ -87,7 +87,7 @@ prediction = {
     'method' : 'rbf',
 # Set of points at which the predictions are made
 # format : list of tuples of floats
-    'points' : [(2.185, 1.570), (2,1)],
+    'points' : [(1.5, 0.6), (2.,0.75)],
 }
 
 
@@ -99,4 +99,4 @@ xy = []
 for i in x:
     for j in y:
         xy += [(float(i),float(j))]
-prediction['points'] = xy
+#prediction['points'] = xy

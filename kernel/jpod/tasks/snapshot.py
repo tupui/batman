@@ -85,7 +85,7 @@ class SnapshotTask(Task):
                    private_directory):
         """Initialize the settings common to all objects."""
         if not os.path.isdir(context):
-            raise ValueError('cannot find the context directory.')
+            raise ValueError('cannot find the context directory \'%s\'.'%(context))
         else:
             cls.context = clean_path(context)
 

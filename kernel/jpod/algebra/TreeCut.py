@@ -4,20 +4,7 @@
 #  File   : TreeCut.py
 #  Vers   : V1.0
 #
-#
-#
-#
-#
-#
-#  Chrono : No  Date       Author   V   Comments
-#           1.0 14/11/2005 Boin     0.2 Creation class python
-#           1.0 01/06/2005 Blanc    0.1 Creation library C
-
-# try:
-    # from numarray import *
-# except:
-#from numpy.oldnumeric import *
-from numpy import *
+import numpy as np
 
 class cell:
 

@@ -6,15 +6,9 @@
 # Nombre de processus MPI par noeud : ntaskpernode
 #SBATCH --ntasks-per-node=2
 # Mettre adresse email
-#SBATCH --mail-user=jouhaud@cerfacs.fr
 #SBATCH --share
 
 cd $SLURM_SUBMIT_DIR
-
-cp /data/home/elsa/jjouhaud/JPOD_AD/test-cases/RAE2822/mail_1 .
-cp /data/home/elsa/jjouhaud/JPOD_AD/test-cases/RAE2822/mail_2 .
-cp /data/home/elsa/jjouhaud/JPOD_AD/test-cases/RAE2822/rae_mg.py .
-touch jpod_data/__init__.py
 
 source ~elsA/ELSA/setupelsa_v3502.sh
 

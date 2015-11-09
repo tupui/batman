@@ -1,7 +1,8 @@
 import logging
-import numpy as N
 from snapshot import Snapshot
 from algebra import RBFnet, Kriging
+
+import numpy as np
 
 class Predictor(object):
     """Manages snapshot prediction."""
@@ -15,7 +16,7 @@ class Predictor(object):
         points : numpy array of points, one per row
         data   : numpy array of data at each point, one per row
         """
-        points = N.array(points)
+        points = np.array(points)
 
         # predictor object
         if kind == 'rbf':
@@ -87,7 +88,7 @@ class PodPredictor(Predictor):
         results = []
         for p in points:
             v = super(PodPredictor, self).__call__(p)
-            result = self.pod.mean_snapshot + N.dot(self.pod.U, v)
+            result = self.pod.mean_snapshot + np.dot(self.pod.U, v)
             results += [Snapshot(p, result)]
 
         return results

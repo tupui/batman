@@ -14,10 +14,10 @@ job = {
     'context' : 'data/generator',
 # JPOD private directory
 # Name of a directory where jpod will put some files while the snapshot production is going on. This directory will be located in the snapshot producer working directory.
-    'private-directory' : 'jpod_data',
+    'private-directory' : 'jpod-data',
 # Location of snapshot files
 # Relative path of a directory where jpod will read the snapshot files.
-    'data-directory' : 'output',
+    'data-directory' : 'cfd-output-data',
 # Task completion timeout
 # Maximum duration of a snapshot task in seconds
     'timeout' : 10,

@@ -5,29 +5,16 @@
 #  Vers   : V1.0
 #
 #     RBFnet librairie pour l'utilisation de reseaux
-#               de neurnones a RBF
+#               de neurones a RBF
 #     Notation et fondement theoriques issus de
 #     "Introduction to Radial Basis Function Networks"
 #                  par Mark J.L. Orr
 #        www.anc.ed.ac.uk/~mjo/papers/intro.ps
 #
-#  Chrono : No  Date       Author   V   Comments
-#           1.0 22/11/2005 Boin     0.5 use numarray (to be check with other modules)
-#           1.0 15/11/2005 Boin     0.4 copie des arguments dans setNetwork et evalOut
-#           1.0 14/11/2005 Boin     0.3 Arbre de Regression
-#           1.0 18/06/2005 Boin     0.2 Creation class python
-#           1.0 01/06/2005 Blanc    0.1 Creation library C
+from TreeCut import Tree
 
-# try:
-    # from numarray import *
-# except:
-#from numpy.oldnumeric import *
-    # print "RBFnet : Numarray not available, some methods may not run"
-
-#from numpy.oldnumeric.linear_algebra import *
-import numpy as N
-from TreeCut import *
-
+from math import sqrt, exp
+import numpy as np
 
 class RBFnet:
 
@@ -52,7 +39,7 @@ class RBFnet:
 
     def evalOut(self, point):
 
-        outacc = zeros(self.Noutput, Float64)
+        outacc = np.zeros(self.Noutput, dtype=np.float64)
         # adim
         pts = []
         for i in range(self.Ninput):
@@ -82,8 +69,8 @@ class RBFnet:
         # entrainement du reseau de neurone principal : calcul des poids
         # trainIn tableau de points d'entrainements
         # de taille Setsize*(Ninputs) pour les inputs et Setsize pour les outputs ds trainOut
-        H = zeros((self.Setsize, self.Ncenter), Float64)
-        Hymoy = zeros((self.Setsize, self.Noutput), Float64)
+        H = np.zeros((self.Setsize, self.Ncenter), dtype=np.float64)
+        Hymoy = np.zeros((self.Setsize, self.Noutput), dtype=np.float64)
 
         # calcul des valeurs
         for i in range(self.Setsize):
@@ -91,27 +78,31 @@ class RBFnet:
                 H[i, j] = self.RBFout(self.trainIn[i], j)
             Hymoy[i] = self.Calc_moyenne(self.trainIn[i])
 
-        HT = transpose(H)
-        HTH = N.dot(HT, H)
+        HT = np.transpose(H)
+        HTH = np.dot(HT, H)
         putOnDiag(HTH, self.regParam)
         # les valeurs moyennes sont retranchees
-        Hy = N.dot(HT, self.trainOut - Hymoy)
+        Hy = np.dot(HT, self.trainOut - Hymoy)
 
-        self.weights = solve_linear_equations(HTH, Hy)
+        # self.weights = solve_linear_equations(HTH, Hy)
+        # numpy.linalg.solve(a, b) ??
+        self.weights = np.linalg.solve(HTH, Hy)
 
     def Calc_Coefs_Moyenne(self):
         # fonction permettant de calculer le plan moyen a partir de laquelle
         # partent les gaussiennes par regression lineaire multiple
 
-        X = ones((self.Ninput + 1, self.Setsize), Float64)
+        X = np.ones((self.Ninput + 1, self.Setsize), dtype=np.float64)
         for i in range(1, self.Ninput + 1):
             for j in range(self.Setsize):
                 X[i, j] = self.trainIn[j, i - 1]
 
-        XT = transpose(X)
-        XXT = N.dot(X, XT)
-        XY = N.dot(X, self.trainOut)
-        self.cf_moyenne = solve_linear_equations(XXT, XY)
+        XT = np.transpose(X)
+        XXT = np.dot(X, XT)
+        XY = np.dot(X, self.trainOut)
+        # self.cf_moyenne = solve_linear_equations(XXT, XY)
+        # numpy.linalg.solve(a, b) ??
+        self.cf_moyenne = np.linalg.solve(XXT, XY)
 
     def setNetwork(self, trainIn, trainOut, regparam=0., radius=1.5, regtree=0,
                    function='default', Pmin=2, Radscale=1.):
@@ -133,8 +124,8 @@ class RBFnet:
         self.Noutput = self.trainOut.shape[1]
 
         # adimensionnalisation des parametres
-        self.minp = zeros((self.Ninput, ), Float64)
-        self.dd = ones((self.Ninput, ), Float64)
+        self.minp = np.zeros((self.Ninput, ), dtype=np.float64)
+        self.dd = np.ones((self.Ninput, ), dtype=np.float64)
         for i in range(self.Ninput):
             self.minp[i] = min(self.trainIn[::, i])
             maxp = max(self.trainIn[::, i])
@@ -153,7 +144,7 @@ class RBFnet:
         if regtree == 0:
             self.Ncenter = self.Setsize
             self.center = self.trainIn
-            self.radii = zeros((self.Ncenter, self.Ninput), Float64)
+            self.radii = np.zeros((self.Ncenter, self.Ninput), dtype=np.float64)
             for i in range(self.Ncenter):
                 r = self.compute_radius(i) * radius
                 for j in range(self.Ninput):
@@ -172,8 +163,8 @@ class RBFnet:
             self.Ncenter = self.center.shape[0]
             del tree1
 
-        self.regParam = array([regparam] * self.Ncenter, Float64)
-        self.funcType = array([0.] * self.Ncenter, Int32)
+        self.regParam = np.array([regparam] * self.Ncenter, dtype=np.float64)
+        self.funcType = np.array([0.] * self.Ncenter, dtype=np.int32)
 
         self.Calc_Coefs_Moyenne()
         self.trainNet()
@@ -236,14 +227,14 @@ if __name__ == '__main__':
 
     # sample = array (nsample,ninput)
     # out = array (nsample,noutput)
-    sample = array([[0., 0., 0.], [0., 1., 1.], [0., 2., 2.], [0., 3., 4.],
+    sample = np.array([[0., 0., 0.], [0., 1., 1.], [0., 2., 2.], [0., 3., 4.],
                    [1., 0., 0.], [1., 1., 5.], [1., 2., 6.], [1., 3., 7.]])
-    out = array([[0., 0], [0., 100], [0., 200], [0, 300], [10., 0], [10., 100],
+    out = np.array([[0., 0], [0., 100], [0., 200], [0, 300], [10., 0], [10., 100],
                 [10., 200], [10., 300]])
-#    sample=array([  [0.,0.] , [0.,1.] , [0.,2.] , [1.,0.] , [1.,1.] , [1.,2.]  ])
-#    out   =array([  [0.,0] , [0.,100], [0.,200], [10.,0], [10.,100], [10.,200] ])
+#    sample=np.array([  [0.,0.] , [0.,1.] , [0.,2.] , [1.,0.] , [1.,1.] , [1.,2.]  ])
+#    out   =np.array([  [0.,0] , [0.,100], [0.,200], [10.,0], [10.,100], [10.,200] ])
 #    point=[0.58,1.2]
-    point = zeros([2, 3], Float)
+    point = np.zeros([2, 3], Float)
     point[0, 0] = .7
     point[0, 1] = .2
     point[0, 2] = .5
