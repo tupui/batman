@@ -1,7 +1,5 @@
-import logging
-
 try:
-    from scikits.learn.gaussian_process import GaussianProcess
+    from sklearn.gaussian_process import GaussianProcess
 
     class Kriging(object):
         """Wrapper to class-less dacekriging module."""
@@ -22,12 +20,15 @@ try:
 
             point : point coordinates
             """
-            v = N.ndarray((len(self.data)))
+            import numpy as np
+
+            point_array = np.asarray(point).reshape(1,len(point))
+            v = np.ndarray((len(self.data)))
             for i,d in enumerate(self.data):
-                v[i] = d.predict(point, eval_MSE=False, batch_size=None)
+                v[i] = d.predict(point_array, eval_MSE=False, batch_size=None)
             return v
 
 except ImportError:
     class Kriging(object):
         def __init__(self, parameters, VS):
-            raise NotImplemented('no Kriging available, without scikits.learn module.')
+            raise NotImplementedError('no Kriging available, without scikits.learn module.')
