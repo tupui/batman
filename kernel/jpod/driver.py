@@ -126,7 +126,8 @@ class Driver(object):
                 self.provider['script'],
                 self.provider['timeout'],
                 data_files,
-                self.provider['private-directory'])
+                self.provider['private-directory'],
+                self.provider['clean'])
 
             # snapshots generation manager
             self.snapshooter = futures.ThreadPoolExecutor(

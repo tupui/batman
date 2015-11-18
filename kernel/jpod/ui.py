@@ -30,6 +30,9 @@ def run(settings, options):
     # setup logging, after directory creation
     logging_conf.setup(options.output, 'driver')
 
+    # tell that the output directory has previously been clean
+    logger.info('cleaning : %s', options.output)
+
     driver = Driver(settings.snapshot, settings.space, options.output,
                     options.plot)
 

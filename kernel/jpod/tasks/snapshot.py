@@ -67,6 +67,8 @@ class SnapshotTask(Task):
     data_files = None
     '''List of path to data files that defines a snapshot, paths must be relative to the context directory.'''
 
+    clean_working_directory = False
+    '''Clean the working directory after a task is terminated.'''
 
     @classmethod
     def _reset(cls):
@@ -78,11 +80,12 @@ class SnapshotTask(Task):
         cls.timeout    = None
         cls.data_files = None
         cls.initialized = False
+        cls.clean_working_directory = False
 
 
     @classmethod
     def initialize(cls, context, command, script, timeout, data_files,
-                   private_directory):
+                   private_directory, clean_working_directory):
         """Initialize the settings common to all objects."""
         if not os.path.isdir(context):
             raise ValueError('cannot find the context directory \'%s\'.'%(context))
@@ -125,6 +128,8 @@ class SnapshotTask(Task):
             raise ValueError('data files must be a list of strings.')
         else:
             cls.data_files = data_files
+
+        cls.clean_working_directory = clean_working_directory
 
         cls.initialized = True
 
@@ -258,13 +263,14 @@ class SnapshotTask(Task):
                 os.rename(f_original, f_moved)
 
         # clean up working directory but the private directory
-        for f in os.listdir(self.working_directory):
-            f = opj(self.working_directory, f)
-            if f != self.private_directory:
-                if os.path.isdir(f):
-                    shutil.rmtree(f)
-                else:
-                    os.remove(f)
+        if self.clean_working_directory:
+            for f in os.listdir(self.working_directory):
+                f = opj(self.working_directory, f)
+                if f != self.private_directory:
+                    if os.path.isdir(f):
+                        shutil.rmtree(f)
+                    else:
+                        os.remove(f)
 
         return self.private_directory
 
