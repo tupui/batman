@@ -480,6 +480,6 @@ if __name__ == '__main__':
         bounds[1, i] = input('max ')
     tag = 'HALT'
     S = sampling(dim, np, bounds, tag, file)
-    (ns, ms) = shape(S)
+    (ns, ms) = N.shape(S)
     for i in range(ns):
         print S[i, :]
