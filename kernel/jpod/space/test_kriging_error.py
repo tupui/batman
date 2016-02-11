@@ -37,3 +37,9 @@ xx = N.vstack([x1.reshape(x1.size), x2.reshape(x2.size)]).T
 print xx
 print type(xx)
 '''
+
+bla = N.append(u,u)
+
+#Print u
+print bla
+
