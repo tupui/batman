@@ -1,3 +1,4 @@
+
 #import matplotlib.pyplot as plt
 import numpy as N
 #import point
@@ -7,13 +8,16 @@ import numpy as N
 #import space
 from algebra import Kriging
 
+from sklearn.gaussian_process import GaussianProcess
+
+
 def g(x):
     """The function to predict (classification will then consist in predicting
     whether g(x) <= 0 or not)"""
     return 5. - x[:, 1] - .5 * x[:, 0] ** 2.
 
 # Design of experiments
-X = np.array([[-4.61611719, -6.00099547],
+X = N.array([[-4.61611719, -6.00099547],
               [4.10469096, 5.32782448],
               [0.00000000, -0.50000000],
               [-6.17289014, -4.6984743],
@@ -24,7 +28,16 @@ X = np.array([[-4.61611719, -6.00099547],
 
 # Observations
 y = g(X)
+yt = y.reshape(8,1)
 
-test = Kriging(X,Y)
+gp = GaussianProcess(theta0=5e-1)
+
+# Don't perform MLE or you'll get a perfect prediction for this simple example!
+
+
+gp.fit(X, yt)
+
+
+test = Kriging(X,yt)
 # Instanciate and fit Gaussian Process Model
 

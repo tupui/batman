@@ -37,7 +37,10 @@ try:
             space : Sampling space ::class Space
             discretization : discretization of the space to search the maximum error
             """
-            bounds = N.asarray(sampled_space.corners)
+            import numpy as np
+            import space
+            
+            bounds = np.asarray(sampled_space.corners)
             limit_number = bounds.shape[1] ** discretization
             uniform_space = space.Space(sampled_space.corners,limit_number,plot=False)
             x = uniform_space.sampling('uniform', discretization)
