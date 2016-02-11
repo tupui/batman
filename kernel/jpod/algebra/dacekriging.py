@@ -38,7 +38,12 @@ try:
             discretization : discretization of the space to search the maximum error
             """
             import numpy as np
+<<<<<<< HEAD
             
+=======
+            import space
+            #Some comment
+>>>>>>> c56c56a1b07e8466d77c6cde6333fd4995c16776
             
             bounds = np.asarray(sampled_space.corners)
             limit_number = bounds.shape[1] ** discretization
