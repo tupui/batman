@@ -32,19 +32,23 @@ try:
                 v[i] = d.predict(point_array, eval_MSE=False, batch_size=None)
             return v
 
-        def error_estimation(self, space, discretization):
+        def error_estimation(self, sampled_space, discretization):
             """Compute the Gaussian confidence interval of the Kriging
             space : Sampling space ::class Space
             discretization : discretization of the space to search the maximum error
             """
-            bounds = N.array(space.corners)
-            limit_number = bounds.shape * discretization
-            uniform_space = space.Space(
-                space.corners,
-                limit_number,
-                plot=False)
-            uniform_space.sampling('uniform', discretization)
-            return
+            bounds = N.asarray(sampled_space.corners)
+            limit_number = bounds.shape[1] ** discretization
+            uniform_space = space.Space(sampled_space.corners,limit_number,plot=False)
+            x = uniform_space.sampling('uniform', discretization)
+            mesh = np.asarray(x)
+            y_pred = np.ndarray((len(x)))
+            MSE = np.ndarra((len(x)))
+            sigma_pred = np.ndarra((len(x)))
+            for i, d in enumerate(self.data):
+                y_pred[i], MSE[i] = d.predict(mesh, eval_MSE = True)
+		sigma_pred[i] = np.sqrt(MSE[i])
+            return sigma_pred
 
 except ImportError:
     class Kriging(object):
