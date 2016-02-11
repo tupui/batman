@@ -128,3 +128,45 @@ class Core(object):
             self.refined_points += [index]
 
         return (float(quality), points[index])
+
+def estimate_kriging(self, points):
+        """Return the quality estimation and the corresponding point.
+
+        :param points: list of points in the parameter space.
+
+        The quality estimation is done with the leave-one-out method.
+        """
+        points_nb = len(points)
+        error = N.empty(points_nb)
+
+        for i in range(error.shape[0]):
+            V_1 = N.delete(self.V, i, 0)
+
+            (Urot, S_1, V_1) = svd.downgrade(self.S, V_1)
+            (Urot, S_1, V_1) = svd.filtering(Urot, S_1, V_1, self.tolerance,
+                                             self.dim_max)
+
+            points_1 = points[:]
+            points_1.pop(i)
+
+            predictor = Predictor(self.leave_one_out_predictor, points_1, V_1*S_1)
+            alphakpred = N.dot(Urot, predictor(points[i])) - \
+                         float(points_nb) / float(points_nb-1) * self.V[i]*self.S
+
+            error[i] = N.linalg.norm(alphakpred)
+
+        quality = N.linalg.norm(error)**2 / error.shape[0]
+
+        error = error.reshape(-1)
+        index = error.argmax()
+
+        if True: # orignal jpod 1 strategy
+            error_max = 0.
+            for i in range(len(error)): # TODO: enumerate
+                if i not in self.refined_points:
+                    if error[i] > error_max:
+                        index = i
+                        error_max = error[i]
+            self.refined_points += [index]
+
+        return (float(quality), points[index])
