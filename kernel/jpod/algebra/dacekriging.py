@@ -39,7 +39,6 @@ try:
             """
             import numpy as np
             import space
-            #Some comment
             
             bounds = np.asarray(sampled_space.corners)
             limit_number = bounds.shape[1] ** discretization
