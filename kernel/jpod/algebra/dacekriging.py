@@ -39,6 +39,7 @@ try:
             """
             import numpy as np
             
+            
             bounds = np.asarray(sampled_space.corners)
             limit_number = bounds.shape[1] ** discretization
             uniform_space = space.Space(sampled_space.corners,limit_number,plot=False)
