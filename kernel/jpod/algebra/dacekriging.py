@@ -49,8 +49,8 @@ try:
             MSE = np.ndarray((len(x)))
             sigma_pred = np.ndarray((len(x)))
             for i, d in enumerate(self.data):
-                y_pred[i], MSE[i] = d.predict(mesh, eval_MSE = True)
-		sigma_pred[i] = np.sqrt(MSE[i])
+                y_pred, MSE = d.predict(mesh, eval_MSE = True)
+	        sigma_pred = np.sqrt(MSE)
             return sigma_pred
 
 except ImportError:

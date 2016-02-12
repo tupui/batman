@@ -35,19 +35,26 @@ gp = GaussianProcess(theta0=5e-1)
 # Don't perform MLE or you'll get a perfect prediction for this simple example!
 
 
-gp.fit(X, yt)
-
-
 test = Kriging(X,yt)
 
 A = Point((-2,-2))
 
-b = test.evaluate(A)
+
 
 espace = space.Space(((0,0),(1,1)), 100, plot=False)
 espace.sampling('halton',10)
 
-test.error_estimation(espace,10)
+
+
+
+f = test.error_estimation(espace,10)
+
+print f
+
+g= np.append(f,f)
+
+print g.shape
+print g
 
 # Instanciate and fit Gaussian Process Model
 
