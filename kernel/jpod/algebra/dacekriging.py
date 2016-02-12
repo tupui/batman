@@ -39,19 +39,24 @@ try:
             """
             import numpy as np
             import space
-            
+
             bounds = np.asarray(sampled_space.corners)
-            limit_number = bounds.shape[1] ** discretization
-            uniform_space = space.Space(sampled_space.corners,limit_number,plot=False)
+            #limit_number = bounds.shape[1] ** discretization
+            limit_number = discretization ** bounds.shape[1]
+            uniform_space = space.Space(
+                sampled_space.corners,
+                limit_number,
+                plot=False)
             x = uniform_space.sampling('uniform', discretization)
             mesh = np.asarray(x)
-            y_pred = np.ndarray((len(x)))
-            MSE = np.ndarray((len(x)))
-            sigma_pred = np.ndarray((len(x)))
+
+            MSE = np.asarray([])
+            #MSE = np.ndarray((len(x)))
             for i, d in enumerate(self.data):
-                y_pred, MSE = d.predict(mesh, eval_MSE = True)
-	        sigma_pred = np.sqrt(MSE)
-            return sigma_pred
+                MSE = np.append(d.predict(mesh, eval_MSE=True)[1], MSE)
+                #sigma_pred = np.sqrt(MSE)
+            sigma_pred = np.sqrt(MSE).reshape((-1, len(self.data)))
+            return sigma_pred, mesh
 
 except ImportError:
     class Kriging(object):
