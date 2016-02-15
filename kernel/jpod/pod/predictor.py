@@ -1,14 +1,14 @@
 import logging
-from snapshot import Snapshot
-from algebra import RBFnet, Kriging
 
+from algebra import RBFnet, Kriging
 import numpy as np
+from snapshot import Snapshot
+
 
 class Predictor(object):
     """Manages snapshot prediction."""
 
     logger = logging.getLogger(__name__)
-
 
     def __init__(self, kind, points, data):
         """
@@ -28,27 +28,27 @@ class Predictor(object):
 
         self.logger.info('Created predictor of kind %s', kind)
 
-
-    def __call__(self, point):
+    def __call__(self, point, error=None):
         """Compute a prediction.
 
         point: point at which prediction will be done
 
         Returns a numpy array with result.
         """
-        result = self.predictor.evaluate(point)
-        self.logger.debug('Computed prediction at point %s', point)
-        return result
-
-
+        if error == True:
+            MSE = self.predictor.MSE(point)
+            #self.logger.debug('Computed prediction at point %s', point)
+            return MSE
+        else:
+            result = self.predictor.evaluate(point)
+            self.logger.debug('Computed prediction at point %s', point)
+            return result
 
 
 class PodPredictor(Predictor):
     """Manages snapshot prediction."""
 
-
     logger = logging.getLogger(__name__)
-
 
     def __init__(self, kind, pod):
         """
@@ -61,15 +61,18 @@ class PodPredictor(Predictor):
         self.update = False
         '''Switch to update or not predictor _preprocessing, used when the pod decomposition is updated.'''
 
-        super(PodPredictor, self).__init__(kind, self.pod.points, self.pod.VS())
+        super(
+            PodPredictor,
+            self).__init__(
+            kind,
+            self.pod.points,
+            self.pod.VS())
         self.pod.register_observer(self)
-
 
     def notify(self):
         """Notify the predictor that it requires an update."""
         self.update = True
         self.logger.info('got update notification')
-
 
     def __call__(self, points):
         """Compute predictions.
@@ -80,7 +83,7 @@ class PodPredictor(Predictor):
         """
         if self.update:
             # pod has changed : update predictor
-            1/0
+            1 / 0
             # TEST ME
             # super(PodPredictor, self).__init__(kind, self.pod.VS())
             # self.update = False
