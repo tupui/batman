@@ -39,9 +39,9 @@ try:
             """
             import numpy as np
             import space
-
+            # Creation of the uniform space where compute the Mean Square Error
+            # Estimation
             bounds = np.asarray(sampled_space.corners)
-            #limit_number = bounds.shape[1] ** discretization
             limit_number = discretization ** bounds.shape[1]
             uniform_space = space.Space(
                 sampled_space.corners,
@@ -51,10 +51,8 @@ try:
             mesh = np.asarray(x)
 
             MSE = np.asarray([])
-            #MSE = np.ndarray((len(x)))
             for i, d in enumerate(self.data):
                 MSE = np.append(d.predict(mesh, eval_MSE=True)[1], MSE)
-                #sigma_pred = np.sqrt(MSE)
             sigma_pred = np.sqrt(MSE).reshape((-1, len(self.data)))
             return sigma_pred, mesh
 

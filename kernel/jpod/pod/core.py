@@ -1,9 +1,11 @@
 import logging
+
+import mpi
 import numpy as N
-import svd
 from predictor import Predictor
 from space import SpaceBase
-import mpi
+import svd
+
 
 class Core(object):
     """A class for doing pod with raw arrays.
@@ -17,12 +19,11 @@ class Core(object):
     leave_one_out_predictor = 'rbf'
     '''Predictor kind for the leave one out method.'''
 
-
     def __init__(self, tolerance, dim_max):
-        self.tolerance  = None
+        self.tolerance = None
         '''Tolerance for basis modes filtering'''
 
-        self.dim_max    = None
+        self.dim_max = None
         '''Maximum number of basis modes.'''
 
         self.mean_snapshot = None
@@ -47,12 +48,10 @@ class Core(object):
         else:
             self.dim_max = dim_max
 
-
     def VS(self):
         """Compute V*S matrix product when S is diagonal stored as vector"""
         # TODO: move to pod.py?
         return self.V * self.S
-
 
     def decompose(self, snapshots):
         """Do the POD, snapshots are modified! (zero averaged)
@@ -64,7 +63,7 @@ class Core(object):
 
         # center snapshots
         for i in range(snapshots.shape[1]):
-            snapshots[:,i] -= self.mean_snapshot
+            snapshots[:, i] -= self.mean_snapshot
 
         if mpi.size > 1:
             raise NotImplemented("use dynamic pod in parallel")
@@ -75,7 +74,6 @@ class Core(object):
         self.U, self.S, self.V = svd.filtering(self.U, self.S, self.V,
                                                self.tolerance, self.dim_max)
 
-
     def update(self, snapshot):
         """Update pod with a new snapshot.
 
@@ -85,7 +83,6 @@ class Core(object):
             svd.update(self.U, self.S, self.V, self.mean_snapshot, snapshot)
         self.U, self.S, self.V = svd.filtering(self.U, self.S, self.V,
                                                self.tolerance, self.dim_max)
-
 
     def estimate_quality(self, points):
         """Return the quality estimation and the corresponding point.
@@ -107,9 +104,12 @@ class Core(object):
             points_1 = points[:]
             points_1.pop(i)
 
-            predictor = Predictor(self.leave_one_out_predictor, points_1, V_1*S_1)
+            predictor = Predictor(
+                self.leave_one_out_predictor,
+                points_1,
+                V_1 * S_1)
             alphakpred = N.dot(Urot, predictor(points[i])) - \
-                         float(points_nb) / float(points_nb-1) * self.V[i]*self.S
+                float(points_nb) / float(points_nb - 1) * self.V[i] * self.S
 
             error[i] = N.linalg.norm(alphakpred)
 
@@ -118,9 +118,9 @@ class Core(object):
         error = error.reshape(-1)
         index = error.argmax()
 
-        if True: # orignal jpod 1 strategy
+        if True:  # orignal jpod 1 strategy
             error_max = 0.
-            for i in range(len(error)): # TODO: enumerate
+            for i in range(len(error)):  # TODO: enumerate
                 if i not in self.refined_points:
                     if error[i] > error_max:
                         index = i
@@ -129,29 +129,28 @@ class Core(object):
 
         return (float(quality), points[index])
 
-def estimate_kriging(self, points):
+    def estimate_kriging(self, discre):
         """Return the quality estimation and the corresponding point.
 
         :param points: list of points in the parameter space.
 
         The quality estimation is done with the leave-one-out method.
         """
-        points_nb = len(points)
         error = N.empty(points_nb)
 
         for i in range(error.shape[0]):
-            V_1 = N.delete(self.V, i, 0)
-
-            (Urot, S_1, V_1) = svd.downgrade(self.S, V_1)
-            (Urot, S_1, V_1) = svd.filtering(Urot, S_1, V_1, self.tolerance,
+            (Urot, S_1, V_1) = svd.filtering(self.U, self.S, self.V, self.tolerance,
                                              self.dim_max)
 
             points_1 = points[:]
             points_1.pop(i)
 
-            predictor = Predictor(self.leave_one_out_predictor, points_1, V_1*S_1)
+            predictor = Predictor(
+                self.leave_one_out_predictor,
+                points_1,
+                V_1 * S_1)
             alphakpred = N.dot(Urot, predictor(points[i])) - \
-                         float(points_nb) / float(points_nb-1) * self.V[i]*self.S
+                float(points_nb) / float(points_nb - 1) * self.V[i] * self.S
 
             error[i] = N.linalg.norm(alphakpred)
 
@@ -160,9 +159,9 @@ def estimate_kriging(self, points):
         error = error.reshape(-1)
         index = error.argmax()
 
-        if True: # orignal jpod 1 strategy
+        if True:  # orignal jpod 1 strategy
             error_max = 0.
-            for i in range(len(error)): # TODO: enumerate
+            for i in range(len(error)):  # TODO: enumerate
                 if i not in self.refined_points:
                     if error[i] > error_max:
                         index = i
