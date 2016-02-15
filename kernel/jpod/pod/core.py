@@ -141,7 +141,7 @@ class Core(object):
         """
         import numpy as np
         from operator import itemgetter
-
+        # Creation of the uniform sampling space
         corners = ((min(points, key=itemgetter(1))[0], min(points, key=itemgetter(1))[1]),
                    (max(points, key=itemgetter(1))[0], max(points, key=itemgetter(1))[1]))
         bounds = np.asarray(corners)
@@ -151,8 +151,8 @@ class Core(object):
             limit_number,
             plot=False)
         full_space = uniform_space.sampling('uniform', discre)
-        mesh = np.asarray(full_space)
 
+        # Computation of the MSE estimation
         points_nb = len(full_space)
         error = N.empty(points_nb)
 
@@ -165,7 +165,7 @@ class Core(object):
                 points_1,
                 self.VS)
 
-            alpha1pred = predictor(points[i], True)[0]
+            MSE = predictor(points[i], True)[0]
 
             error[i] = alphakpred * 1.96 * 2
 

@@ -1,14 +1,15 @@
 """A command line interface to jpod."""
 
-import os
-import sys
-from misc import logging_conf
 import logging
 from optparse import OptionParser
-import numpy as N
+import os
+import sys
+
 from driver import Driver
 from misc import import_file
+from misc import logging_conf
 import mpi
+import numpy as N
 from pod import Snapshot
 
 
@@ -46,7 +47,7 @@ def run(settings, options):
         driver.fixed_sampling_pod(settings.pod['type'] != 'static')
 
         if settings.pod['type'] == 'auto':
-            driver.automatic_resampling_pod()
+            driver.automatic_resampling_pod_kriging()  # MODIFICATIONS HERE
 
         driver.write_pod()
     else:
@@ -61,13 +62,14 @@ def run(settings, options):
     if False and driver.provider.is_function:
         error = N.zeros(N.asarray(settings.prediction['points']).shape[0])
 
-        for i,n in enumerate(snapshots):
+        for i, n in enumerate(snapshots):
             n = Snapshot.convert(n)
             p = settings.prediction['points'][i]
-            error[i] = 100 * ((n.data - driver.provider(p)) / driver.provider(p))[0]
+            error[i] = 100 * \
+                ((n.data - driver.provider(p)) / driver.provider(p))[0]
         if mpi.myid == 0:
             logger.info('Relative error (inf norm) = %g',
-                               N.linalg.norm(error, N.inf))
+                        N.linalg.norm(error, N.inf))
 
 
 def output_option(option, opt, value, parser):
@@ -79,7 +81,7 @@ def parse_command_line_and_run(argv=None):
     """Parse and check options, and then call XXX()."""
 
     if argv is None:
-        argv = sys.argv #[1:]
+        argv = sys.argv  # [1:]
 
     parser = OptionParser(usage=help_message, version=__version__)
 
@@ -142,10 +144,8 @@ def parse_command_line_and_run(argv=None):
         run(settings, options)
         return 0
     except:
-        logger.exception('Exception caught on cpu %i'%mpi.myid)
+        logger.exception('Exception caught on cpu %i' % mpi.myid)
         return 1
-
-
 
 
 if __name__ == "__main__":
