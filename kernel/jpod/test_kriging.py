@@ -1,14 +1,15 @@
-#import matplotlib.pyplot as plt
+from matplotlib import cm
+from sklearn.gaussian_process import GaussianProcess
+
+from algebra import Kriging
+import matplotlib.pyplot as plt
 import numpy as np
 from space import Point
 import space
-#import refiner
-#import resampling
-#import sampling
-#import space
-from algebra import Kriging
 
-from sklearn.gaussian_process import GaussianProcess
+# Data from
+# http://scikit-learn.org/stable/auto_examples/gaussian_process/plot_gp_probabilistic_classification_after_regression.html#example-gaussian-process-plot-gp-probabilistic-classification-after-regression-py
+# Testing of the MSE value
 
 
 def g(x):
@@ -28,33 +29,31 @@ X = np.array([[-4.61611719, -6.00099547],
 
 # Observations
 y = g(X)
-yt = y.reshape(8,1)
+yt = y.reshape(8, 1)
 
-gp = GaussianProcess(theta0=5e-1)
+test = Kriging(X, yt)
 
-# Don't perform MLE or you'll get a perfect prediction for this simple example!
+#A = Point((-2, -2))
 
+borne = ((np.amin(X[:, 0]), np.amin(X[:, 1])),
+         (np.amax(X[:, 0]), np.amax(X[:, 1])))
 
-test = Kriging(X,yt)
+espace = space.Space(borne, 200, plot=False)
+espace.sampling('halton', 10)
 
-A = Point((-2,-2))
+f, grid = test.error_estimation(espace, 20)
+z = f.reshape((20, 20))
 
+print f.shape
+Xgrid = grid[:, 0].reshape((20, 20))
+Ygrid = grid[:, 1].reshape((20, 20))
+fsol = f.reshape((20, 20))
 
+#---- Plot
+levels = np.linspace(f.min(), f.max(), 10)
 
-espace = space.Space(((0,0),(1,1)), 100, plot=False)
-espace.sampling('halton',10)
-
-
-
-
-f = test.error_estimation(espace,10)
-
-print f
-
-g= np.append(f,f)
-
-print g.shape
-print g
-
-# Instanciate and fit Gaussian Process Model
-
+plt.contourf(Xgrid, Ygrid, fsol, cmap=cm.jet, levels=levels)
+plt.scatter(X[:, 0].reshape((1, 8)), X[:, 1].reshape(
+    (1, 8)), marker='o', c='b', s=30, zorder=10)
+plt.title('Kriging MSE estimation')
+plt.show()
