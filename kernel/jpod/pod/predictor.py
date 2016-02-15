@@ -28,21 +28,19 @@ class Predictor(object):
 
         self.logger.info('Created predictor of kind %s', kind)
 
-    def __call__(self, point, error=None):
+    def __call__(self, point):
         """Compute a prediction.
 
         point: point at which prediction will be done
 
         Returns a numpy array with result.
         """
-        if error == True:
-            MSE = self.predictor.MSE(point)
-            #self.logger.debug('Computed prediction at point %s', point)
-            return MSE
-        else:
-            result = self.predictor.evaluate(point)
-            self.logger.debug('Computed prediction at point %s', point)
-            return result
+        MSE = self.predictor.MSE(point)
+        #self.logger.debug('Computed prediction at point %s', point)
+        return MSE
+        result = self.predictor.evaluate(point)
+        self.logger.debug('Computed prediction at point %s', point)
+        return result
 
 
 class PodPredictor(Predictor):

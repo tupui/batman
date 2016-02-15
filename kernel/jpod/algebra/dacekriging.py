@@ -32,43 +32,6 @@ try:
                 v[i] = d.predict(point_array, eval_MSE=False, batch_size=None)
             return v
 
-        def MSE(self, point):
-            """Compute the Mean Square Error estimation of the Kriging
-
-            point : point coordinates
-            """
-            import numpy as np
-
-            point_array = np.asarray(point).reshape(1, len(point))
-            v = np.ndarray((len(self.data)))
-            for i, d in enumerate(self.data):
-                v[i] = d.predict(point_array, eval_MSE=True)[1]
-            return v
-
-        def error_estimation(self, sampled_space, discretization):
-            """Compute the Gaussian confidence interval of the Kriging
-            sampled_space : Sampling space ::class Space
-            discretization : discretization of the space to search the maximum error
-            """
-            import numpy as np
-            import space
-            # Creation of the uniform space where compute the Mean Square Error
-            # Estimation
-            bounds = np.asarray(sampled_space.corners)
-            limit_number = discretization ** bounds.shape[1]
-            uniform_space = space.Space(
-                sampled_space.corners,
-                limit_number,
-                plot=False)
-            x = uniform_space.sampling('uniform', discretization)
-            mesh = np.asarray(x)
-
-            MSE = np.asarray([])
-            for i, d in enumerate(self.data):
-                MSE = np.append(d.predict(mesh, eval_MSE=True)[1], MSE)
-            sigma_pred = np.sqrt(MSE).reshape((-1, len(self.data)))
-            return sigma_pred, mesh
-
 except ImportError:
     class Kriging(object):
 

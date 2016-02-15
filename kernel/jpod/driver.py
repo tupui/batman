@@ -282,25 +282,6 @@ class Driver(object):
 
             self._pod_processing(new_points, True)
 
-    def automatic_resampling_pod_kriging(self):
-        """docstring for static_pod"""
-        if self.pod is None:
-            raise Exception(
-                "driver's pod has not been initialized, call init_pod first.")
-
-        while True:
-            quality, point = self.pod.estimate_kriging()
-
-            if quality <= self.pod_quality:
-                break
-
-            try:
-                new_points = point  # FIXME: restart !
-            except FullSpaceError:
-                break
-
-            self._pod_processing(new_points, True)
-
     def write_pod(self):
         """docstring for static_pod"""
         self.pod.write(os.path.join(self.output, self.output_tree['pod']))

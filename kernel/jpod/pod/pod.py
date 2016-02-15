@@ -134,27 +134,6 @@ class Pod(Core):
                          point)
         return self.quality
 
-    def estimate_kriging(self, discre):
-        """Quality estimator of kriging.
-
-        Estimate the quality of the pod by the confidence interval of the kriging.
-        This part is sequential.
-        """
-        if self.quality_kriging is None:
-            self.logger.info('Estimating pod quality...')
-            # get rid of the potential tons of predictor creation messages
-            logging.getLogger('pod.predictor').setLevel(logging.WARNING)
-            self.quality_kriging = super(
-                Pod,
-                self).estimate_kriging(
-                self.points, discre)
-            logging.getLogger('pod.predictor').setLevel(logging.INFO)
-
-        (quality_kriging, point_kriging) = self.quality_kriging
-        self.logger.info('pod quality = %g, max error location = %s', quality_kriging,
-                         point_point)
-        return self.quality_kriging
-
     def predict(self, method, points, path=None):
         """Predict snapshots.
 

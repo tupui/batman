@@ -47,7 +47,7 @@ def run(settings, options):
         driver.fixed_sampling_pod(settings.pod['type'] != 'static')
 
         if settings.pod['type'] == 'auto':
-            driver.automatic_resampling_pod_kriging()  # MODIFICATIONS HERE
+            driver.automatic_resampling_pod()
 
         driver.write_pod()
     else:
