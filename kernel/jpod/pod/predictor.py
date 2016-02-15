@@ -35,9 +35,6 @@ class Predictor(object):
 
         Returns a numpy array with result.
         """
-        MSE = self.predictor.MSE(point)
-        #self.logger.debug('Computed prediction at point %s', point)
-        return MSE
         result = self.predictor.evaluate(point)
         self.logger.debug('Computed prediction at point %s', point)
         return result
