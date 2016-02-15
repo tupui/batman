@@ -129,30 +129,45 @@ class Core(object):
 
         return (float(quality), points[index])
 
-    def estimate_kriging(self, discre):
-        """Return the quality estimation and the corresponding point.
+    def estimate_kriging(self, points, discre):
+        """Return the quality kriging estimation and the corresponding point
+        for the FIRST POD coefficient
 
         :param points: list of points in the parameter space.
+        :param discre: number of points per dimension creating a uniform sampling.
+                        Higher it will be, finer will be the investigation on the maximum error
 
-        The quality estimation is done with the leave-one-out method.
+        The quality estimation is done with the Gaussian confidence interval of the MSE
         """
+        import numpy as np
+        from operator import itemgetter
+        # Creation of the uniform sampling space
+        corners = ((min(points, key=itemgetter(1))[0], min(points, key=itemgetter(1))[1]),
+                   (max(points, key=itemgetter(1))[0], max(points, key=itemgetter(1))[1]))
+        bounds = np.asarray(corners)
+        limit_number = discretization ** bounds.shape[1]
+        uniform_space = space.Space(
+            corners,
+            limit_number,
+            plot=False)
+        full_space = uniform_space.sampling('uniform', discre)
+
+        # Computation of the MSE estimation
+        points_nb = len(full_space)
         error = N.empty(points_nb)
 
         for i in range(error.shape[0]):
-            (Urot, S_1, V_1) = svd.filtering(self.U, self.S, self.V, self.tolerance,
-                                             self.dim_max)
-
             points_1 = points[:]
             points_1.pop(i)
 
             predictor = Predictor(
-                self.leave_one_out_predictor,
+                'kriging',
                 points_1,
-                V_1 * S_1)
-            alphakpred = N.dot(Urot, predictor(points[i])) - \
-                float(points_nb) / float(points_nb - 1) * self.V[i] * self.S
+                self.VS)
 
-            error[i] = N.linalg.norm(alphakpred)
+            MSE = predictor(points[i], True)[0]
+
+            error[i] = alphakpred * 1.96 * 2
 
         quality = N.linalg.norm(error)**2 / error.shape[0]
 

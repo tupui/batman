@@ -134,7 +134,7 @@ class Pod(Core):
                          point)
         return self.quality
 
-    def estimate_kriging(self):
+    def estimate_kriging(self, discre):
         """Quality estimator of kriging.
 
         Estimate the quality of the pod by the confidence interval of the kriging.
@@ -147,7 +147,7 @@ class Pod(Core):
             self.quality_kriging = super(
                 Pod,
                 self).estimate_kriging(
-                self.points)
+                self.points, discre)
             logging.getLogger('pod.predictor').setLevel(logging.INFO)
 
         (quality_kriging, point_kriging) = self.quality_kriging

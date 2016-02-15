@@ -31,8 +31,15 @@ X = np.array([[-4.61611719, -6.00099547],
 y = g(X)
 yt = y.reshape(8, 1)
 
-test = Kriging(X, yt)
+on_y_croit = np.append(yt, yt, axis=1)
+blabla = on_y_croit.reshape(8, 2)
+print blabla
 
+test = Kriging(X, yt)
+test27 = Kriging(X, blabla)
+
+what = test27.evaluate((0, 0))
+print what
 #A = Point((-2, -2))
 
 borne = ((np.amin(X[:, 0]), np.amin(X[:, 1])),
@@ -40,6 +47,8 @@ borne = ((np.amin(X[:, 0]), np.amin(X[:, 1])),
 
 espace = space.Space(borne, 200, plot=False)
 espace.sampling('halton', 10)
+
+print len(espace)
 
 f, grid = test.error_estimation(espace, 20)
 z = f.reshape((20, 20))
