@@ -7,16 +7,16 @@ space = {
                          
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max'  : 24,
+    'size_max'  : 225,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
     # Method used to generate the points
     # format : one of 'uniform', 'halton', 'sobol', 'lhcc', 'lhcr'
-        'method' : 'sobol',
+        'method' : 'lhcc',
     # Number of samples to be generated
     # format : integer
-        'size'   : 16,
+        'size'   : 225,
     }
 }
 
@@ -66,7 +66,7 @@ pod = {
     'dim_max'   : 100,
 # Type of pod to perform.
 # format : one of 'static', 'dynamic', 'auto'
-    'type'      : 'auto',
+    'type'      : 'static',
 # Stopping criterion for automatic resampling
 # format : float
     'quality'   : 0.001*1.e-300,
@@ -85,7 +85,7 @@ pod = {
 prediction = {
 # Method used to generate a snapshot
 # format : one of 'rbf' , 'kriging'
-    'method' : 'kriging',
+    'method' : 'rbf',
 # Set of points at which the predictions are made
 # format : list of tuples of floats
     'points' : [ ],
@@ -93,7 +93,7 @@ prediction = {
 
 
 import numpy as N
-num = 20
+num = 50 
 x = N.linspace(space['corners'][0][0], space['corners'][1][0], num=num)
 y = N.linspace(space['corners'][0][1], space['corners'][1][1], num=num)
 xy = []
@@ -101,3 +101,5 @@ for i in x:
     for j in y:
         xy += [(float(i),float(j))]
 prediction['points'] = xy
+
+

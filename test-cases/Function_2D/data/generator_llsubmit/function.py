@@ -34,7 +34,7 @@ X2 = float(x2)
 #                       FUNCTION
 #-----------------------------------------------------------------
 
-F = -math.sin(X2)*(math.pow(math.sin(X2*X2/math.pi),20.))-math.sin(X2)*(math.pow(math.sin(2*X1*X1/math.pi),20.))
+F = -1.0-math.sin(X1)*(math.pow(math.sin(X1*X1/math.pi),20.))-math.sin(X2)*(math.pow(math.sin(2*X2*X2/math.pi),20.))
 
 #------------------------------------------------------------------
 #                       Output

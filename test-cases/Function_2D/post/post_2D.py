@@ -6,7 +6,7 @@ import subprocess
 import sys
 import numpy as np
 import h5py
-import math
+import math 
 import argparse
 
 n = 0
@@ -33,6 +33,16 @@ y = np.zeros((nx,ny))
 xs = np.zeros((ns))
 ys = np.zeros((ns))
 F = np.zeros((nx,ny))
+F12 = np.zeros((nx,ny))
+
+#------------------------------------------------------------------
+#                       YOUR FUNCTION
+#-----------------------------------------------------------------
+
+XB1=0
+XB2=math.pi
+YB1=0
+YB2=math.pi
 
 print "Read PREDICTIONS -> HEAD.py"
 
@@ -45,15 +55,17 @@ with open('./HEAD.dat', 'r') as a:
                 A= re.match(r'x1 = (.*$)',line, re.M | re.I)
                 if A:
                         x1 = "{:.7}".format(A.group(1))
+#                       print "x ",i,j,float(x1)
                         x[i,j]=float(x1)
 #                       print float(x1)
                 B= re.match(r'x2 = (.*$)',line, re.M | re.I)
                 if B:
                         x2 = "{:.7}".format(B.group(1))
+#                       print "y ",i,j,float(x2)
                         y[i,j]=float(x2)
                         i=i+1
 #                       print float(x2)
-                if i==20:
+                if i==nx:
                         j=j+1
                         i=0
 
@@ -97,10 +109,10 @@ with open('./FUNC.dat', 'r') as a:
                 x3 = "{:.16}".format(D.group(1))
 #               print float(x3)
                 F[i,j]=float(x3)
-                i=i+1
-                if i==20:
-                        j=j+1
-                        i=0
+                j=j+1
+                if j==ny:
+                        i=i+1
+                        j=0
                 n =n + 1
 #print "Total number of points : ", n
 #------------------------------------------------------------------
@@ -119,11 +131,11 @@ print "Write Function_2D.dat"
 
 with open('./Function_2D.dat', 'w') as f:
         f.writelines('TITLE = \" FUNCTION 1D \" \n')
-        f.writelines('VARIABLES = \"x\", \"y\", \"F\"  \n')
+        f.writelines('VARIABLES = \"x1\", \"x2\", \"F\"  \n')
         f.writelines('ZONE T = \"zone1\" , I='+str(nx)+', J='+str(ny)+', F=BLOCK  \n')
         k=0
-        for i in range(nx):
-            for j in range(ny):
+        for j in range(ny):
+            for i in range(nx):
                 f.writelines("{:.7E}".format(x[i,j])+"\t ")
                 k = k + 1
                 if k==7 :
@@ -131,8 +143,8 @@ with open('./Function_2D.dat', 'w') as f:
                     f.writelines('\n')
         f.writelines('\n')
         k = 0
-        for i in range(nx):
-            for j in range(ny):
+        for j in range(ny):
+            for i in range(nx):
                 f.writelines("{:.7E}".format(y[i,j])+"\t ")
                 k = k + 1
                 if k==7 :
@@ -148,6 +160,99 @@ with open('./Function_2D.dat', 'w') as f:
                     k=0
                     f.writelines('\n')
 
-#-----------------------------------------------------------------
+print "Write Ref_Function_2D.dat"
 
+with open('./Ref_Function_2D.dat', 'w') as f:
+        f.writelines('TITLE = \"FUNCTION\" \n')
+        f.writelines('VARIABLES = \"x1\", \"x2\", \"F12\"  \n')
+        f.writelines('ZONE T = \"BIG ZONE\" , I='+str(nx)+', J='+str(ny)+', F=BLOCK  \n')
+        k=0
+        for j in range(ny):
+            for i in range(nx):
+                X1 = XB1+i*(XB2-XB1)/(nx-1)
+                f.writelines("{:.7E}".format(X1)+"\t ")
+                k = k + 1
+                if k==7 :
+                    k=0
+                    f.writelines('\n')
+        f.writelines('\n')
+        k = 0
+        for j in range(ny):
+            for i in range(nx):
+                X2 = YB1+j*(YB2-YB1)/(ny-1)
+                f.writelines("{:.7E}".format(X2)+"\t ")
+                k = k + 1
+                if k==7 :
+                    k=0
+                    f.writelines('\n')
+        f.writelines('\n')
+        k=0
+        for j in range(ny):
+            for i in range(nx):
+                X1 = XB1+i*(XB2-XB1)/(nx-1)
+                X2 = YB1+j*(YB2-YB1)/(ny-1)
+                F12[i,j] = -1.0-math.sin(X1)*(math.pow(math.sin(X1*X1/math.pi),20.))-math.sin(X2)*(math.pow(math.sin(2*X2*X2/math.pi),20.))
+                f.writelines("{:.7E}".format(F12[i,j])+"\t")
+                k = k + 1
+                if k==7 :
+                    k=0
+                    f.writelines('\n')
+
+print "Write Error_2D.dat"
+
+with open('./Error_2D.dat', 'w') as f:
+        f.writelines('TITLE = \"FUNCTION\" \n')
+        f.writelines('VARIABLES = \"x1\", \"x2\", \"Error\"  \n')
+        f.writelines('ZONE T = \"BIG ZONE\" , I='+str(nx)+', J='+str(ny)+', F=BLOCK  \n')
+
+        k=0
+        Err_max=0.
+        Err_L2=0.
+        Err_L2_F12=0.
+
+        for j in range(ny):
+            for i in range(nx):
+                X1 = XB1+i*(XB2-XB1)/(nx-1)
+                f.writelines("{:.7E}".format(X1)+"\t ")
+                k = k + 1
+                if k==7 :
+                    k=0
+                    f.writelines('\n')
+        f.writelines('\n')
+        k = 0
+        for j in range(ny):
+            for i in range(nx):
+                X2 = YB1+j*(YB2-YB1)/(ny-1)
+                f.writelines("{:.7E}".format(X2)+"\t ")
+                k = k + 1
+                if k==7 :
+                    k=0
+                    f.writelines('\n')
+        f.writelines('\n')
+        k=0
+        for j in range(ny):
+            for i in range(nx):
+                X1 = XB1+i*(XB2-XB1)/(nx-1)
+                X2 = YB1+j*(YB2-YB1)/(ny-1)
+
+                Err = 100.*(abs(F12[i,j]-F[i,j])/abs(F12[i,j]))
+                Err_L2 = Err_L2+(abs(F12[i,j]-F[i,j]))**2 
+                Err_L2_F12 =  (F12[i,j])**2 + Err_L2
+
+                f.writelines("{:.7E}".format(Err)+"\t")
+
+                aaa = [Err,Err_max]
+                Err_max=max(aaa)
+#               print X1,X2,Err_max,Err,format(Err)
+
+                k = k + 1
+                if k==7 :
+                    k=0
+                    f.writelines('\n')
+
+#print"Max(F12) :",Fmax
+print "Lmax(Error) :", Err_max
+print "L2(Error) :", np.sqrt(Err_L2/Err_L2_F12) 
+
+#-----------------------------------------------------------------
 

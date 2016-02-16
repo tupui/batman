@@ -1,12 +1,23 @@
+import logging
 import os
 import shutil
 import subprocess
+
+from concurrent import futures
+
+from misc import OrderedDict
+import mpi
+import numpy as N
+from pod import Snapshot, Pod
+from space import Space, FullSpaceError, AlienPointError
+from tasks import PodServerTask, SnapshotTask, Task
 try:
     subprocess.Popen.terminate
 except AttributeError:
     # fix for python < 2.6
     # the following missing functions comes from python2.6 subprocess module
     import signal
+
     def subprocess_send_signal(self, sig):
         """Send a signal to the process
         """
@@ -20,14 +31,6 @@ except AttributeError:
     subprocess.Popen.send_signal = subprocess_send_signal
     subprocess.Popen.terminate = subprocess_terminate
 
-import numpy as N
-import logging
-from pod import Snapshot, Pod
-from space import Space, FullSpaceError, AlienPointError
-from concurrent import futures
-from tasks import PodServerTask, SnapshotTask, Task
-import mpi
-from misc import OrderedDict
 
 # force numpy to raise an exception on floating-point errors
 N.seterr(all='raise', under='warn')
@@ -37,36 +40,39 @@ class SnapshotProvider(object):
     """Utility class to make the code more readable.
     This is how the provider type is figured out.
     """
+
     def __init__(self, provider):
         self.provider = provider
+
     @property
     def is_file(self):
         return isinstance(self.provider, list)
+
     @property
     def is_job(self):
         return isinstance(self.provider, dict)
+
     @property
     def is_function(self):
         return callable(self.provider)
+
     def __getitem__(self, key):
         return self.provider[key]
+
     def __call__(self, *args, **kwargs):
         return self.provider(*args, **kwargs)
-
-
 
 
 class Driver(object):
     """docstring for Driver"""
 
     output_tree = {
-    # 'snapshot-template' : 'snapshot-template',
-    'snapshots'         : 'snapshots',
-    'pod'               : 'pod',
-    'predictions'       : 'predictions',
+        # 'snapshot-template' : 'snapshot-template',
+        'snapshots': 'snapshots',
+        'pod': 'pod',
+        'predictions': 'predictions',
     }
     '''Structure of the output directory.'''
-
 
     def __init__(self, snapshot_settings, space_settings, output, plot=False):
         self.pod_quality = None
@@ -105,7 +111,6 @@ class Driver(object):
         # parameter space and points
         self._init_space(space_settings, plot)
 
-
     def _init_snapshot(self, settings):
         """docstring for _init_snapshot"""
         Snapshot.initialize(settings['io'])
@@ -118,7 +123,10 @@ class Driver(object):
             data_files = []
             for files in settings['io']['filenames'].values():
                 for f in files:
-                    data_files += [os.path.join(self.provider['data-directory'], f)]
+                    data_files += [
+                        os.path.join(
+                            self.provider['data-directory'],
+                            f)]
 
             SnapshotTask.initialize(
                 self.provider['context'],
@@ -131,8 +139,7 @@ class Driver(object):
 
             # snapshots generation manager
             self.snapshooter = futures.ThreadPoolExecutor(
-                               max_workers=settings['max_workers'])
-
+                max_workers=settings['max_workers'])
 
     def _init_space(self, settings, plot):
         # space
@@ -152,7 +159,10 @@ class Driver(object):
                 try:
                     self.space.add([point])
                 except AlienPointError:
-                    self.logger.info('Ignoring snapshot\n\t%s\n\tbecause its point %s is outside the space.', path, point)
+                    self.logger.info(
+                        'Ignoring snapshot\n\t%s\n\tbecause its point %s is outside the space.',
+                        path,
+                        point)
                 else:
                     self.initial_points[point] = path
 
@@ -170,7 +180,6 @@ class Driver(object):
             else:
                 raise TypeError('Bad space provider.')
 
-
     def __del__(self):
         """docstring for __del__"""
         # terminate pending tasks
@@ -178,7 +187,6 @@ class Driver(object):
            and self.external_pod is not None:
             self.logger.info('Terminating the external pod.')
             self.external_pod.terminate()
-
 
     def _pod_processing(self, points, update):
         """docstring for fname"""
@@ -224,13 +232,13 @@ class Driver(object):
                 snapshots = _snapshots
             self.pod.decompose(snapshots)
 
-
     def init_pod(self, settings, script):
         self.pod_quality = settings.pod['quality']
 
         if settings.pod['server'] is not None:
             if mpi.size > 1:
-                raise Exception('When using the external pod, the driver must be sequential.')
+                raise Exception(
+                    'When using the external pod, the driver must be sequential.')
 
             self.logger.info('Using external pod.')
             # get the pod server running and connect to its through its proxy
@@ -247,18 +255,18 @@ class Driver(object):
             # the snapshot class is initialized as a by product
             self.pod = Pod(settings.pod['tolerance'], settings.pod['dim_max'])
 
-
     def fixed_sampling_pod(self, update):
         """docstring for static_pod"""
         if self.pod is None:
-            raise Exception("driver's pod has not been initialized, call init_pod first.")
+            raise Exception(
+                "driver's pod has not been initialized, call init_pod first.")
         self._pod_processing(self.initial_points, update)
-
 
     def automatic_resampling_pod(self):
         """docstring for static_pod"""
         if self.pod is None:
-            raise Exception("driver's pod has not been initialized, call init_pod first.")
+            raise Exception(
+                "driver's pod has not been initialized, call init_pod first.")
 
         while True:
             quality, point = self.pod.estimate_quality()
@@ -267,23 +275,21 @@ class Driver(object):
                 break
 
             try:
-                new_points = self.space.refine_around(point) # FIXME: restart !
+                new_points = self.space.refine_around(
+                    point)  # FIXME: restart !
             except FullSpaceError:
                 break
 
             self._pod_processing(new_points, True)
 
-
     def write_pod(self):
         """docstring for static_pod"""
         self.pod.write(os.path.join(self.output, self.output_tree['pod']))
-
 
     def read_pod(self, path=None):
         """docstring for static_pod"""
         path = path or os.path.join(self.output, self.output_tree['pod'])
         self.pod.read(path)
-
 
     def prediction(self, settings, write=False):
         if self.external_pod is not None \
@@ -293,7 +299,6 @@ class Driver(object):
             output = None
 
         return self.pod.predict(settings['method'], settings['points'], output)
-
 
     def restart(self):
         self.logger.info('Restarting pod.')
@@ -305,7 +310,7 @@ class Driver(object):
         if set(processed_points).issubset(self.initial_points):
             # static or dynamic pod is not finished, the remaining points have
             # to be processed
-            self.initial_points = [p for p in self.initial_points \
+            self.initial_points = [p for p in self.initial_points
                                    if p not in processed_points]
         else:
             # static or dynamic pod is done,
@@ -323,11 +328,11 @@ class Driver(object):
 #         finally:
 #             self.finalize()
 #     return wrapped_method
-# 
-# 
+#
+#
 # class SafeDriver(Driver):
-#     
-# 
+#
+#
 #     """docstring for SafeDriver"""
 #     def finalize(self):
 #         # terminate pending tasks

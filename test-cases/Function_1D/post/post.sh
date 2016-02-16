@@ -1,1 +1,1 @@
- python post_1D.py 20 
+ python post_1D.py 20 5 

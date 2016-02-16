@@ -1,13 +1,14 @@
-##  ==========================================================================
-##                Project: cfd - POD - Copyright (c) 2009 by CERFACS
-##  Type   :
-##  File   : sampling.py
-##  Vers   : V1.0
-##  Chrono : No  Date       Author                 V   Comments
-##           1.0 11/08/2009 Braconnier             0.1 Creation
-##  ==========================================================================
+# ==========================================================================
+# Project: cfd - POD - Copyright (c) 2009 by CERFACS
+# Type   :
+# File   : sampling.py
+# Vers   : V1.0
+# Chrono : No  Date       Author                 V   Comments
+# 1.0 11/08/2009 Braconnier             0.1 Creation
+# ==========================================================================
 
 import numpy as N
+
 
 def mat_yy(dim):
     n = 2 ** dim
@@ -16,7 +17,8 @@ def mat_yy(dim):
         k = 2 ** (j + 1)
         nk = n / k
         for i in range(k):
-            yy[i * nk:(i + 1) * nk, j:j + 1] = (-1) ** (i + 1) * N.ones([nk, 1])
+            yy[i * nk:(i + 1) * nk, j:j + 1] = (-1) ** (i + 1) * \
+                N.ones([nk, 1])
     return yy
 
 
@@ -418,7 +420,7 @@ def sobol(dim, n1, bounds):
     r = N.zeros([n, dim])
     for i in range(n):
         (r[i:i + 1, :], seed, seed1, lastq1) = i4_sobol(dim, seed, seed1,
-                lastq1)
+                                                        lastq1)
     r = r[1:n, 0:dim]
     m = 2 ** dim
     r = N.concatenate((N.zeros([m, dim]), r), 0)
@@ -480,6 +482,6 @@ if __name__ == '__main__':
         bounds[1, i] = input('max ')
     tag = 'HALT'
     S = sampling(dim, np, bounds, tag, file)
-    (ns, ms) = shape(S)
+    (ns, ms) = N.shape(S)
     for i in range(ns):
         print S[i, :]
