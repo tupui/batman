@@ -1,1 +1,1 @@
- python post_2D.py 20 20 16
+ python post_2D.py 50 50 225

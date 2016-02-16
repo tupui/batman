@@ -11,11 +11,14 @@ def filtering(U, S, V, tolerance, dim_max):
     dim_max   : maximum number of modes
     """
     total_sum = N.sum(S)
-    if total_sum == 0.and S.size == 1:
-        total_sum = 1.
+#   if total_sum == 0.and S.size == 1:
+#       total_sum = 1.
 
     for i in range(S.shape[0]):
         dim = i+1
+#   JCJ modification for Michalevicz Function !
+        if total_sum == 0. : total_sum = 0.0001 
+#
         if N.sum(S[:i+1]) / total_sum > tolerance: break
     dim = min(dim, dim_max)
 
