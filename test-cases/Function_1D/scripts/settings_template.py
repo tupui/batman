@@ -3,7 +3,7 @@ space = {
 # Lower and upper end points (corners) that define a portion of space.
 # format : 2-tuple of tuples with end points coordinates.
    'corners'         : ((0.0, ), (2.0, ),),
-                         
+   'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
     'size_max'  : 20,
@@ -12,10 +12,10 @@ space = {
     'provider' : {
     # Method used to generate the points
     # format : one of 'uniform', 'halton', 'sobol', 'lhcc', 'lhcr'
-        'method' : 'uniform',
+        'method' : 'lhcc',
     # Number of samples to be generated
     # format : integer
-        'size'   : 8,
+        'size'   : 4,
     }
 }
 

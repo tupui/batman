@@ -143,7 +143,7 @@ class Driver(object):
 
     def _init_space(self, settings, plot):
         # space
-        self.space = Space(settings['corners'], settings.get('size_max'),
+        self.space = Space(settings['corners'], settings.get('size_max'), settings.get('delta_space'),
                            plot)
 
         # initial points

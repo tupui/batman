@@ -39,10 +39,19 @@ F12 = np.zeros((nx,ny))
 #                       YOUR FUNCTION
 #-----------------------------------------------------------------
 
-XB1=0
+#XB1=1.0
 XB2=math.pi
-YB1=0
+XB1=0.
+#YB1=1.0
 YB2=math.pi
+YB1=0. 
+
+# JCJ extension
+#delta_space = 0.05
+#XB1 = XB1 - delta_space * (XB2-XB1)
+#XB2 = XB2 + delta_space * (XB2-XB1)
+#YB1 = YB1 - delta_space * (YB2-YB1)
+#YB2 = YB2 + delta_space * (YB2-YB1)
 
 print "Read PREDICTIONS -> HEAD.py"
 
@@ -136,7 +145,7 @@ with open('./Function_2D.dat', 'w') as f:
         k=0
         for j in range(ny):
             for i in range(nx):
-                f.writelines("{:.7E}".format(x[i,j])+"\t ")
+                f.writelines("{:.7E}".format(x[j,i])+"\t ")
                 k = k + 1
                 if k==7 :
                     k=0
@@ -145,7 +154,7 @@ with open('./Function_2D.dat', 'w') as f:
         k = 0
         for j in range(ny):
             for i in range(nx):
-                f.writelines("{:.7E}".format(y[i,j])+"\t ")
+                f.writelines("{:.7E}".format(y[j,i])+"\t ")
                 k = k + 1
                 if k==7 :
                     k=0
@@ -154,7 +163,7 @@ with open('./Function_2D.dat', 'w') as f:
         k=0
         for i in range(nx):
             for j in range(ny):
-                f.writelines("{:.7E}".format(F[i,j])+"\t")
+                f.writelines("{:.7E}".format(F[j,i])+"\t")
                 k = k + 1
                 if k==7 :
                     k=0
@@ -243,7 +252,11 @@ with open('./Error_2D.dat', 'w') as f:
 
                 aaa = [Err,Err_max]
                 Err_max=max(aaa)
-#               print X1,X2,Err_max,Err,format(Err)
+                if Err == Err_max :
+                   xmax = x1
+                   ymax = x2 
+                   imax = i
+                   jmax = j
 
                 k = k + 1
                 if k==7 :
@@ -251,7 +264,7 @@ with open('./Error_2D.dat', 'w') as f:
                     f.writelines('\n')
 
 #print"Max(F12) :",Fmax
-print "Lmax(Error) :", Err_max
+print "Lmax(Error), xmax, ymax, imax, jmax :", Err_max, xmax, ymax, imax, jmax
 print "L2(Error) :", np.sqrt(Err_L2/Err_L2_F12) 
 
 #-----------------------------------------------------------------

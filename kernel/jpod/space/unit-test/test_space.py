@@ -78,7 +78,7 @@ class SpaceTest(unittest.TestCase):
 
 
     def test_add(self):
-        s = Space(corners, names, 1)
+        s = Space(corners, names, 0.0, 1)
         self.assertRaises(AlienPointError, s.add, [(0,2)])
         s.add([(0,0)])
         self.assertRaises(UnicityError, s.add , [(0,0)])

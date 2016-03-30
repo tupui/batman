@@ -87,7 +87,7 @@ class Space(SpaceBase):
     logger = logging.getLogger(__name__)
 
 
-    def __init__(self, corners, max_points_nb, plot=False):
+    def __init__(self, corners_user, max_points_nb, delta_space, plot=False):
         """
         :param corners: lower and upper corner points that define the space
         :param max_points_nb: maximum number of points allowed in the space
@@ -104,7 +104,19 @@ class Space(SpaceBase):
         self.plot = None
         '''Points plotter with matplotlib.'''
 
+        # Extension of space
+
+        c1 = []
+        c2 = []
+
+        for i in range(len(corners_user[0])):
+            c1.append(corners_user[0][i] - delta_space * (corners_user[1][i]-corners_user[0][i]))  
+            c2.append(corners_user[1][i] + delta_space * (corners_user[1][i]-corners_user[0][i]))
+        
+        corners = (tuple(c1),tuple(c2),) 
+
         # corner points
+   
         try:
             self.corners = [Point(p) for p in corners]
         except Exception, e:

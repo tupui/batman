@@ -4,7 +4,7 @@ job_llsubmit = {
 # Command line or python function to invoque for computing a snapshot.
 # If it's a shell command line, it will be executed from the context directory (see 'context' key).
 # format : python function object or string ('bash', 'qsub', 'sbatch')
-    'command' : 'sbatch', 
+    'command' : 'bash', 
 # Script to be executed by the command
 # The script path must be relative to the context directory.
 # format : string

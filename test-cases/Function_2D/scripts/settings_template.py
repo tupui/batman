@@ -2,21 +2,21 @@
 space = {
 # Lower and upper end points (corners) that define a portion of space.
 # format : 2-tuple of tuples with end points coordinates.
-   'corners'         : ((0., 0.),
+   'corners'         : ((1., 1.),
                         (3.1415, 3.1415),),
-                         
+   'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max'  : 225,
+    'size_max'  : 125,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
     # Method used to generate the points
     # format : one of 'uniform', 'halton', 'sobol', 'lhcc', 'lhcr'
-        'method' : 'lhcc',
+        'method' : 'halton',
     # Number of samples to be generated
     # format : integer
-        'size'   : 225,
+        'size'   : 125,
     }
 }
 
@@ -85,7 +85,7 @@ pod = {
 prediction = {
 # Method used to generate a snapshot
 # format : one of 'rbf' , 'kriging'
-    'method' : 'rbf',
+    'method' : 'kriging',
 # Set of points at which the predictions are made
 # format : list of tuples of floats
     'points' : [ ],
@@ -100,6 +100,6 @@ xy = []
 for i in x:
     for j in y:
         xy += [(float(i),float(j))]
-prediction['points'] = xy
+        prediction['points'] = xy
 
 
