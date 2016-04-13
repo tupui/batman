@@ -8,7 +8,7 @@
 # ==========================================================================
 
 import numpy as N
-
+import openturns as ot
 
 def mat_yy(dim):
     n = 2 ** dim
@@ -81,6 +81,18 @@ def halton(dim, n1, bounds):
         for j in range(dim):
             if yy[i, j] > 0.:
                 r[i, j] = 1.
+    for i in range(dim):
+        b = bounds[0, i]
+        a = bounds[1, i] - b
+        for j in range(n1):
+            r[j, i] = a * r[j, i] + b
+    return r
+
+
+def halton_ot(dim, n1, bounds):
+    seq = ot.HaltonSequence(dim)
+    seq_pt = seq.generate(n1)
+    r = N.array(seq_pt)
     for i in range(dim):
         b = bounds[0, i]
         a = bounds[1, i] - b

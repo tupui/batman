@@ -195,7 +195,8 @@ class Space(SpaceBase):
         Returns the list of points.
         """
         if   kind == 'halton':  sampler = sampling.halton
-        elif kind == 'lhcc':    sampler = sampling.clhc
+        elif kind == 'halton_ot': sampler = sampling.halton_ot
+	elif kind == 'lhcc':    sampler = sampling.clhc
         elif kind == 'lhcr':    sampler = sampling.rlhc
         elif kind == 'sobol':   sampler = sampling.sobol
         elif kind == 'uniform':
