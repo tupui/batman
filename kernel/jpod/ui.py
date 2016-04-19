@@ -27,12 +27,10 @@ def run(settings, options):
     if not options.restart \
        and not options.no_pod:
         mpi.clean_makedirs(options.output)
-
+	# tell that the output directory has previously been clean
+	logger.info('cleaning : %s', options.output)
     # setup logging, after directory creation
     logging_conf.setup(options.output, 'driver')
-
-    # tell that the output directory has previously been clean
-    logger.info('cleaning : %s', options.output)
 
     driver = Driver(settings.snapshot, settings.space, options.output,
                     options.plot)
@@ -56,7 +54,10 @@ def run(settings, options):
 
     snapshots = driver.prediction(settings.prediction,
                                   write=options.save_snapshots)
-
+    
+    if options.uq:
+        driver.uq(settings.uq)
+    
     logger.info(driver.pod)
 
     if False and driver.provider.is_function:
@@ -124,6 +125,12 @@ def parse_command_line_and_run(argv=None):
         action='store_true',
         default=False,
         help='do not compute pod but read it from disk, [default: %default].')
+
+    parser.add_option(
+        '-u', '--uq',
+        action='store_true',
+        default=False,
+        help='Uncertainty Quantification study')
 
     # parse command line
     (options, args) = parser.parse_args()

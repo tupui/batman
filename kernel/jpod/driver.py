@@ -11,6 +11,7 @@ import numpy as N
 from pod import Snapshot, Pod
 from space import Space, FullSpaceError, AlienPointError
 from tasks import PodServerTask, SnapshotTask, Task
+from uq import UQ
 try:
     subprocess.Popen.terminate
 except AttributeError:
@@ -299,6 +300,11 @@ class Driver(object):
             output = None
 
         return self.pod.predict(settings['method'], settings['points'], output)
+    
+    def uq(self, settings):
+	print "HELLLLLOOOOOOOO"
+        analyse = UQ(settings)	
+	analyse.sobol()        
 
     def restart(self):
         self.logger.info('Restarting pod.')
