@@ -56,7 +56,7 @@ def run(settings, options):
                                   write=options.save_snapshots)
     
     if options.uq:
-        driver.uq(settings.uq)
+        driver.uq(settings)
     
     logger.info(driver.pod)
 
