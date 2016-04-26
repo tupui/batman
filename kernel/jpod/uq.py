@@ -8,6 +8,7 @@ This class is intented to implement statistical tools provided by the OpenTURNS 
 
 import logging
 import numpy as np
+from scipy import integrate
 import openturns as ot
 from openturns.viewer import View
 
@@ -16,7 +17,6 @@ class UQ(object):
     logger = logging.getLogger(__name__)
     def __init__(self, jpod, settings):
         self.logger.info("UQ module")
-        #if 'test' in settings.uq:
         try:
             self.test = settings.uq['test']
         except:
@@ -27,9 +27,9 @@ class UQ(object):
         self.pod = jpod
         p_lst = settings.snapshot['io']['parameter_names']
         self.p = len(p_lst)
-        # Check output dimension
         self.output = settings.snapshot['io']['shapes'][0][0][0]
         self.model = ot.PythonFunction(self.p, self.output, self.func)
+        self.int_model = ot.PythonFunction(self.p, 1, self.int_func)
 
     def func(self, coords):
         """Evaluate the pod on a given point.
@@ -47,6 +47,25 @@ class UQ(object):
         except:
             f_eval = f_eval[0].data
         return f_eval
+
+    def int_func(self, coords):
+        """Evaluate the pod on a given point and return the integral.
+
+        The function uses the pod and interpolate it using Kriging's method to reconstruct the solution.
+
+        :param lst coords: The parameters set to calculate the solution from.
+        :return: The integral of the function.
+        :rtype: float
+
+        """
+        f_eval = self.pod.predict(self.method_pod, [coords])
+        try:
+            input, f_eval = np.split(f_eval[0].data, 2)
+            int_f_eval = integrate.simps(f_eval, input)
+        except:
+            f_eval = f_eval[0].data
+            int_f_eval = f_eval
+        return [int_f_eval.item()]
 
     def error_pod(self, distribution, s_first, function):
         """Compute the error between the POD and the analytic function.
@@ -76,7 +95,7 @@ class UQ(object):
         sample = distribution.getSample(self.points_sample)
         for _, j in enumerate(sample):
             eval_ref = model_ref(j)[0]
-            eval_pod = self.model(j)[0]
+            eval_pod = self.int_model(j)[0]
             eval_mean = eval_mean + eval_ref
             err_max = max(err_max, 100 * abs(eval_pod - eval_ref) / abs(eval_ref))
             err_l2 = err_l2 + (eval_pod - eval_ref) ** 2
@@ -90,7 +109,7 @@ class UQ(object):
         print("L_max(error %): {}\nQ2(error): {}\nL2(sobol first order indices error): {}".format(err_max, err_q2, s_err_l2))
 
         output_ref = model_ref(sample)
-        output = self.model(sample)
+        output = self.int_model(sample)
         qq_plot = ot.VisualTest_DrawQQplot(output_ref, output)
         View(qq_plot).show()
 
@@ -113,7 +132,7 @@ class UQ(object):
             sample1 = distribution.getSample(self.points_sample)
             sample2 = distribution.getSample(self.points_sample)
 
-            sobol = ot.SensitivityAnalysis(sample1, sample2, self.model)
+            sobol = ot.SensitivityAnalysis(sample1, sample2, self.int_model)
             
             print "\n----- Sobol indices -----\n"
             s_second = sobol.getSecondOrderIndices()
@@ -126,7 +145,7 @@ class UQ(object):
             print "\n----- FAST indices -----\n"
             # TODO use corners
             distribution = ot.ComposedDistribution([ot.Uniform(-np.pi, np.pi)] * self.p)
-            fast = ot.FAST(self.model, distribution, self.points_sample)
+            fast = ot.FAST(self.int_model, distribution, self.points_sample)
             s_first = fast.getFirstOrderIndices()
             s_total = fast.getTotalOrderIndices()
 
@@ -158,4 +177,3 @@ class UQ(object):
         print "Standard deviation: ", output.computeStandardDeviationPerComponent()
         print "Variance: ", output.computeVariance()
 
-        
