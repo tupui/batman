@@ -78,7 +78,7 @@ class Driver(object):
     def __init__(self, snapshot_settings, space_settings, output, plot=False):
         self.pod_quality = None
         '''POD automatic resampling quality.'''
-
+        
         self.output = output
         '''Path to output directory.'''
 
@@ -128,7 +128,6 @@ class Driver(object):
                         os.path.join(
                             self.provider['data-directory'],
                             f)]
-
             SnapshotTask.initialize(
                 self.provider['context'],
                 self.provider['command'],
@@ -302,9 +301,9 @@ class Driver(object):
         return self.pod.predict(settings['method'], settings['points'], output)
     
     def uq(self, settings):
-	print "HELLLLLOOOOOOOO"
-        analyse = UQ(settings)	
-	analyse.sobol()        
+        analyse = UQ(self.pod, settings)	
+	sobol = analyse.sobol()
+        analyse.error_propagation()
 
     def restart(self):
         self.logger.info('Restarting pod.')
