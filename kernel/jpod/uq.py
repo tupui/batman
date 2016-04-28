@@ -8,7 +8,6 @@ This class is intented to implement statistical tools provided by the OpenTURNS 
 
 import logging
 import numpy as np
-from scipy import integrate
 import openturns as ot
 from openturns.viewer import View
 
@@ -27,6 +26,7 @@ class UQ(object):
         self.pod = jpod
         p_lst = settings.snapshot['io']['parameter_names']
         self.p = len(p_lst)
+        self.input = None
         self.output = settings.snapshot['io']['shapes'][0][0][0]
         self.model = ot.PythonFunction(self.p, self.output, self.func)
         self.int_model = ot.PythonFunction(self.p, 1, self.int_func)
@@ -43,7 +43,9 @@ class UQ(object):
         """
         f_eval = self.pod.predict(self.method_pod, [coords])
         try:
-            _, f_eval = np.split(f_eval[0].data, 2)
+            input, f_eval = np.split(f_eval[0].data, 2)
+            if self.input is None:
+            	self.input = input
         except:
             f_eval = f_eval[0].data
         return f_eval
@@ -61,7 +63,7 @@ class UQ(object):
         f_eval = self.pod.predict(self.method_pod, [coords])
         try:
             input, f_eval = np.split(f_eval[0].data, 2)
-            int_f_eval = integrate.simps(f_eval, input)
+            int_f_eval = np.trapz(f_eval, input)
         except:
             f_eval = f_eval[0].data
             int_f_eval = f_eval
@@ -172,8 +174,44 @@ class UQ(object):
         distribution = ot.ComposedDistribution([ot.Normal(0.3, 0.35), ot.Normal(0.1, 0.01), ot.Normal(-0.8, 0.01)])
         sample = distribution.getSample(self.points_sample)
         output = self.model(sample)
+        mean = output.computeMean()
+        sd = output.computeStandardDeviationPerComponent()
+        sd_min = mean - sd
+        sd_max = mean + sd
+        var = output.computeVariance()
+        min = output.getMin()
+        max = output.getMax()
         print "\n----- Moment evaluation -----"
-        print "Mean value: ", output.computeMean()
-        print "Standard deviation: ", output.computeStandardDeviationPerComponent()
-        print "Variance: ", output.computeVariance()
+#       print "Mean value: ", mean
+#       print "Standard deviation: ", sd
+#       print "Variance: ", var
+#       print "Max: ", max
+#       print "Min: ", min
+        
+        nb_value = np.size(self.input)
+
+        with open('./moment.dat', 'w') as f:
+            f.writelines('TITLE = \" Moment evaluation \" \n')
+            f.writelines('VARIABLES = \"x\" \"Min\" \"SD_min\"  \"Mean\" \"SD_max\"  \"Max\" \n')
+            f.writelines('ZONE T = \"zone1 \" , I='+str(self.output)+', F=BLOCK  \n') 
+
+            for w in [self.input, min, sd_min, mean, sd_max, max]:
+               for i in range(nb_value):
+                   f.writelines("{:.7E}".format(float(w[i])) + "\t ")
+                   if i % 1000:
+                       f.writelines('\n')
+            f.writelines('\n')
+
+
+
+
+
+
+
+
+
+
+
+
+
 
