@@ -106,16 +106,16 @@ class UQ:
             int_f_eval = f_eval
         return [int_f_eval.item()]
 
-    def error_pod(self, distribution, s_first, function):
+    def error_pod(self, distribution, indices, function):
         """Compute the error between the POD and the analytic function.
 
         For test purpose. From the POD of the function, evaluate the error
         using the analytical evaluation of the function on the sample points.
 
-        Also, it computes the error on the Sobol first order indices.
+        Also, it computes the error on the Sobol first and total order indices.
 
         :param ot.NumericalSample sample: input sample.
-        :param ot. s_first: Sobol first order indices computed using the POD.
+        :param lst(array) indices: Sobol first order indices computed using the POD.
         :param str function: name of the analytic function.
 
         """
@@ -124,7 +124,11 @@ class UQ:
             formula = ['sin(X1)+7*sin(X2)*sin(X2)+0.1*((X3)*(X3)*(X3)*(X3))*sin(X1)']
             model_ref = ot.NumericalMathFunction(['X1', 'X2', 'X3'], ['Y'], formula)
             s_first_th = np.array([0.3139, 0.4424, 0.])
-            s_err_l2 = np.sqrt(np.sum((s_first_th - s_first) ** 2))
+	    s_second_th = np.array([[0., 0., 0.2], [0., 0., 0.], [0.2, 0., 0.]]) 
+	    s_total_th = np.array([0.558, 0.442, 0.244])
+            s_err_l2_second = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
+            s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
+            s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
         elif function == 'Rosenbrock':
             formula = ['100*(X2-X1*X1)*(X2-X1*X1) + (X1-1)*(X1-1) + 100*(X3-X2*X2)*(X3-X2*X2) + (X2-1)*(X2-1)']
             model_ref = ot.NumericalMathFunction(['X1', 'X2', 'X3'], ['Y'], formula)
@@ -150,7 +154,7 @@ class UQ:
             eval_var = eval_var + (eval_mean - eval_ref) ** 2
         err_q2 = 1 - err_l2 / eval_var
         print "\n----- POD error -----"
-        print("L_inf(error): {}\nQ2(error): {}\nL2(sobol first order indices error): {}".format(err_max, err_q2, s_err_l2))
+        print("L_inf(error): {}\nQ2(error): {}\nL2(sobol first, second and total order indices error): {}, {}, {}".format(err_max, err_q2, s_err_l2_first, s_err_l2_second, s_err_l2_total))
 
         output_ref = model_ref(sample)
         output = self.int_model(sample)
@@ -207,22 +211,24 @@ class UQ:
         # correlated = indices - uncorrelated
 
         # Draw importance factors
-        s1 = ot.NumericalPointWithDescription(s_first)
-        s1.setDescription(self.p_lst)
+        s_plt = ot.NumericalPointWithDescription(s_total)
+        s_plt.setDescription(self.p_lst)
         try:
-            i_factor = ot.SensitivityAnalysis.DrawImportanceFactors(s1)
-            i_factor.setTitle("First order Sensitivity Indices")
+            i_factor = ot.SensitivityAnalysis.DrawImportanceFactors(s_plt)
+            i_factor.setTitle("Total order Sensitivity Indices")
             View(i_factor).show()
         except:
             print "Cannot draw importance factors: expected positive values"
 
+        indices[1] = np.array(s_first)
+        indices[2] = np.array(s_total)
+
+	# Compute error of the POD with a known function
         try:
-            self.error_pod(distribution, s_first, self.test)
+            self.error_pod(distribution, indices, self.test)
         except AttributeError:
             print "No analytical function to compare the POD from"
 
-        indices[1] = np.array(s_first)
-        indices[2] = np.array(s_total)
         return indices
 
     def error_propagation(self):
