@@ -67,6 +67,7 @@ class UQ:
         self.f_input = None
         self.model = ot.PythonFunction(self.p_len, self.output_len, self.func)
         self.int_model = ot.PythonFunction(self.p_len, 1, self.int_func)
+	self.snapshot = settings.space['size_max']
 
     def func(self, coords):
         """Evaluate the POD on a given point.
@@ -155,13 +156,14 @@ class UQ:
         err_q2 = 1 - err_l2 / eval_var
         print "\n----- POD error -----"
         print("L_inf(error): {}\nQ2(error): {}\nL2(sobol first, second and total order indices error): {}, {}, {}".format(err_max, err_q2, s_err_l2_first, s_err_l2_second, s_err_l2_total))
+        # Write error to file pod_err.dat
+        with open('./pod_err.dat', 'w') as f:
+            f.writelines(str(self.snapshot)+' '+str(err_q2)+' '+str(self.points_sample)+' '+str(s_err_l2_first)+' '+str(s_err_l2_second)+' '+str(s_err_l2_total))
 
         output_ref = model_ref(sample)
         output = self.int_model(sample)
         qq_plot = ot.VisualTest_DrawQQplot(output_ref, output)
         View(qq_plot).show()
-
-        # return model_ref
 
     def sobol(self):
         """Compute the sobol indices.
