@@ -9,6 +9,8 @@
 
 import numpy as N
 import openturns as ot
+from os import times
+ot.RandomGenerator.SetSeed(int(100 * times()[4]))
 
 def mat_yy(dim):
     n = 2 ** dim
