@@ -179,7 +179,7 @@ class UQ:
             sobol = ot.SensitivityAnalysis(sample1, sample2, self.int_model)
             sobol.setBlockSize(int(ot.ResourceMap.Get("parallel-threads")))
 
-            print "\n----- Sobol indices -----\n"
+            print "\n----- Sobol indices -----"
             s_second = sobol.getSecondOrderIndices()
             s_first = sobol.getFirstOrderIndices()
             s_total = sobol.getTotalOrderIndices()
@@ -187,7 +187,7 @@ class UQ:
             indices[0] = np.array(s_second)
 
         elif self.method_sobol == 'FAST':
-            print "\n----- FAST indices -----\n"
+            print "\n----- FAST indices -----"
             # TODO use corners
             distribution = ot.ComposedDistribution([ot.Uniform(-np.pi, np.pi)] * self.p_len)
             fast = ot.FAST(self.int_model, distribution, self.points_sample)
@@ -260,7 +260,6 @@ class UQ:
         for i in range(self.output_len):
             pdf = kernel.build(output[:, i])
             pdf_pts[i] = np.array(pdf.computePDF(output[:, i]))
-        print pdf_pts
         # Write moments to file
         with open('./moment.dat', 'w') as f:
             f.writelines('TITLE = \" Moment evaluation \" \n')
@@ -270,7 +269,7 @@ class UQ:
             else:
                 f.writelines('VARIABLES = \"x\" \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
                 w_lst = [self.f_input, min, sd_min, mean, sd_max, max]
-                f.writelines('ZONE T = \"Moments \" , I='+str(self.output_len)+', F=BLOCK  \n')
+            f.writelines('ZONE T = \"Moments \" , I='+str(self.output_len)+', F=BLOCK  \n')
             for w in w_lst:
                 for i in range(self.output_len):
                     f.writelines("{:.7E}".format(float(w[i])) + "\t ")
@@ -280,15 +279,19 @@ class UQ:
 
         # Write PDF to file
         with open('./pdf.dat', 'w') as f:
-            f.writelines('VARIABLES =  \"x\" \"output\" \"PDF\" \n')
+            f.writelines('TITLE = \" Probability Density Functions \" \n')
             f.writelines('ZONE T = \"PDF \" , I='+str(self.output_len)+', J='+str(self.points_sample)+',  F=BLOCK  \n')
-            # X
-            for j in range(self.points_sample):
-                for i in range(self.output_len):
-                    f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
-                    if (i % 1000) or (j % 1000):
-                        f.writelines('\n')
-            f.writelines('\n')
+            if self.output_len == 1:
+                f.writelines('VARIABLES =  \"output\" \"PDF\" \n')
+            else:
+                f.writelines('VARIABLES =  \"x\" \"output\" \"PDF\" \n')
+                # X
+                for j in range(self.points_sample):
+                    for i in range(self.output_len):
+                        f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
+                        if (i % 1000) or (j % 1000):
+                            f.writelines('\n')
+                f.writelines('\n')
             # Output
             for j in range(self.points_sample):
                 for i in range(self.output_len):
@@ -304,9 +307,9 @@ class UQ:
                         f.writelines('\n')
             f.writelines('\n')
 
-        pdf = kernel.build(output[:, 1])
-        fig = pdf.drawPDF()
-        View(fig).show()
-        pdf = kernel.build(output[:, 0])
-        fig = pdf.drawPDF()
-        View(fig).show()
+        #pdf = kernel.build(output[:, 1])
+        #fig = pdf.drawPDF()
+        #View(fig).show()
+        #pdf = kernel.build(output[:, 0])
+        #fig = pdf.drawPDF()
+        #View(fig).show()
