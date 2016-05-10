@@ -1,8 +1,14 @@
+# -*- coding: utf-8 -*-
 """
 UQ class
 ========
 
 This class is intented to implement statistical tools provided by the OpenTURNS framework.
+
+Example:
+>> analyse = UQ(pod, settings)
+>> sobol = analyse.sobol()
+>> analyse.error_propagation()
 
 """
 
@@ -10,31 +16,62 @@ import logging
 import numpy as np
 import openturns as ot
 from openturns.viewer import View
+from os import times
+ot.RandomGenerator.SetSeed(int(100 * times()[4]))
+
+# TODO several ouput files for function.py
 
 
-class UQ(object):
+class UQ:
+    """UQ class.
+
+    It implements the following methods:
+    - func(self, coords)
+    - int_func(self, coords)
+    - error_pod(self, distribution, s_first, function)
+    - sobol(self)
+    - error_propagation(self).
+
+    """
+
     logger = logging.getLogger(__name__)
+
     def __init__(self, jpod, settings):
+        """Init the UQ class.
+
+        From the settings file, get:
+        - Method to use for the Sensitivity Analysis (SA),
+        - Number of prediction to use for SA,
+        - Method to use to predict a new snapshot,
+        - The list of input variables,
+        - The lengh of the output function.
+
+        Also, it creates the `model` and `int_model` ot.PythonFunction().
+
+        :param pod jpod: The POD,
+        :param dict settings: The settings_template file.
+
+        """
         self.logger.info("UQ module")
         try:
             self.test = settings.uq['test']
         except:
             pass
+        self.pod = jpod
         self.method_sobol = settings.uq['method']
         self.points_sample = settings.uq['points']
         self.method_pod = settings.prediction['method']
-        self.pod = jpod
-        p_lst = settings.snapshot['io']['parameter_names']
-        self.p = len(p_lst)
-        self.input = None
-        self.output = settings.snapshot['io']['shapes'][0][0][0]
-        self.model = ot.PythonFunction(self.p, self.output, self.func)
-        self.int_model = ot.PythonFunction(self.p, 1, self.int_func)
+        self.p_lst = settings.snapshot['io']['parameter_names']
+        self.output_len = settings.snapshot['io']['shapes'][0][0][0]
+        self.p_len = len(self.p_lst)
+        self.f_input = None
+        self.model = ot.PythonFunction(self.p_len, self.output_len, self.func)
+        self.int_model = ot.PythonFunction(self.p_len, 1, self.int_func)
 
     def func(self, coords):
-        """Evaluate the pod on a given point.
+        """Evaluate the POD on a given point.
 
-        The function uses the pod and interpolate it using Kriging's method to reconstruct the solution.
+        The function uses the POD and interpolate it using Kriging's method to reconstruct the solution.
 
         :param lst coords: The parameters set to calculate the solution from.
         :return: The fonction evaluation.
@@ -43,17 +80,17 @@ class UQ(object):
         """
         f_eval = self.pod.predict(self.method_pod, [coords])
         try:
-            input, f_eval = np.split(f_eval[0].data, 2)
-            if self.input is None:
-            	self.input = input
+            f_input, f_eval = np.split(f_eval[0].data, 2)
+            if self.f_input is None:
+                self.f_input = f_input
         except:
             f_eval = f_eval[0].data
         return f_eval
 
     def int_func(self, coords):
-        """Evaluate the pod on a given point and return the integral.
+        """Evaluate the POD on a given point and return the integral.
 
-        The function uses the pod and interpolate it using Kriging's method to reconstruct the solution.
+        Same as `func` but compute the integral using the trapezoidale rule.
 
         :param lst coords: The parameters set to calculate the solution from.
         :return: The integral of the function.
@@ -62,8 +99,8 @@ class UQ(object):
         """
         f_eval = self.pod.predict(self.method_pod, [coords])
         try:
-            input, f_eval = np.split(f_eval[0].data, 2)
-            int_f_eval = np.trapz(f_eval, input)
+            f_input, f_eval = np.split(f_eval[0].data, 2)
+            int_f_eval = np.trapz(f_eval, f_input)
         except:
             f_eval = f_eval[0].data
             int_f_eval = f_eval
@@ -82,13 +119,18 @@ class UQ(object):
         :param str function: name of the analytic function.
 
         """
+        # TODO add Functions, be able to do n-D Rosenbrock etc use PythonFunction. 
         if function == 'Ishigami':
             formula = ['sin(X1)+7*sin(X2)*sin(X2)+0.1*((X3)*(X3)*(X3)*(X3))*sin(X1)']
             model_ref = ot.NumericalMathFunction(['X1', 'X2', 'X3'], ['Y'], formula)
             s_first_th = np.array([0.3139, 0.4424, 0.])
             s_err_l2 = np.sqrt(np.sum((s_first_th - s_first) ** 2))
+        elif function == 'Rosenbrock':
+            formula = ['100*(X2-X1*X1)*(X2-X1*X1) + (X1-1)*(X1-1) + 100*(X3-X2*X2)*(X3-X2*X2) + (X2-1)*(X2-1)']
+            model_ref = ot.NumericalMathFunction(['X1', 'X2', 'X3'], ['Y'], formula)
+        # elif function == 'Langermann':
         else:
-            print "No or wrong analytical function, options are: Ishigami"
+            print "No or wrong analytical function, options are: Ishigami (3D), Rosenbrock (3D)"
             return
 
         err_max = 0.
@@ -99,7 +141,7 @@ class UQ(object):
             eval_ref = model_ref(j)[0]
             eval_pod = self.int_model(j)[0]
             eval_mean = eval_mean + eval_ref
-            err_max = max(err_max, 100 * abs(eval_pod - eval_ref) / abs(eval_ref))
+            err_max = max(err_max, abs(eval_pod - eval_ref))
             err_l2 = err_l2 + (eval_pod - eval_ref) ** 2
         eval_mean = eval_mean / self.points_sample
         eval_var = 0.
@@ -108,14 +150,14 @@ class UQ(object):
             eval_var = eval_var + (eval_mean - eval_ref) ** 2
         err_q2 = 1 - err_l2 / eval_var
         print "\n----- POD error -----"
-        print("L_max(error %): {}\nQ2(error): {}\nL2(sobol first order indices error): {}".format(err_max, err_q2, s_err_l2))
+        print("L_inf(error): {}\nQ2(error): {}\nL2(sobol first order indices error): {}".format(err_max, err_q2, s_err_l2))
 
         output_ref = model_ref(sample)
         output = self.int_model(sample)
         qq_plot = ot.VisualTest_DrawQQplot(output_ref, output)
         View(qq_plot).show()
 
-        return model_ref
+        # return model_ref
 
     def sobol(self):
         """Compute the sobol indices.
@@ -130,15 +172,16 @@ class UQ(object):
         indices = [[], [], []]
         if self.method_sobol == 'sobol':
             # TODO use corners
-            distribution = ot.ComposedDistribution([ot.Uniform(-np.pi, np.pi)] * self.p, ot.IndependentCopula(self.p))
+            distribution = ot.ComposedDistribution([ot.Uniform(-np.pi, np.pi)] * self.p_len, ot.IndependentCopula(self.p_len))
             sample1 = distribution.getSample(self.points_sample)
             sample2 = distribution.getSample(self.points_sample)
 
             sobol = ot.SensitivityAnalysis(sample1, sample2, self.int_model)
-            
+            sobol.setBlockSize(int(ot.ResourceMap.Get("parallel-threads")))
+
             print "\n----- Sobol indices -----\n"
             s_second = sobol.getSecondOrderIndices()
-            s_first = np.array(sobol.getFirstOrderIndices())
+            s_first = sobol.getFirstOrderIndices()
             s_total = sobol.getTotalOrderIndices()
             print "Second order: ", s_second
             indices[0] = np.array(s_second)
@@ -146,7 +189,7 @@ class UQ(object):
         elif self.method_sobol == 'FAST':
             print "\n----- FAST indices -----\n"
             # TODO use corners
-            distribution = ot.ComposedDistribution([ot.Uniform(-np.pi, np.pi)] * self.p)
+            distribution = ot.ComposedDistribution([ot.Uniform(-np.pi, np.pi)] * self.p_len)
             fast = ot.FAST(self.int_model, distribution, self.points_sample)
             s_first = fast.getFirstOrderIndices()
             s_total = fast.getTotalOrderIndices()
@@ -156,6 +199,22 @@ class UQ(object):
 
         print "First order: ", s_first
         print "Total: ", s_total
+
+        # TODO ANCOVA
+        # ancova = ot.ANCOVA(results, sample)
+        # indices = ancova.getIndices()
+        # uncorrelated = ancova.getUncorrelatedIndices()
+        # correlated = indices - uncorrelated
+
+        # Draw importance factors
+        s1 = ot.NumericalPointWithDescription(s_first)
+        s1.setDescription(self.p_lst)
+        try:
+            i_factor = ot.SensitivityAnalysis.DrawImportanceFactors(s1)
+            i_factor.setTitle("First order Sensitivity Indices")
+            View(i_factor).show()
+        except:
+            print "Cannot draw importance factors: expected positive values"
 
         try:
             self.error_pod(distribution, s_first, self.test)
@@ -167,51 +226,87 @@ class UQ(object):
         return indices
 
     def error_propagation(self):
-        """Compute the mean and standard deviation.
+        """Compute the moments.
+
+        All 4 order moments are computed for every output of the function.
+        It also compute the PDF for these outputs as a 2D cartesian plot.
+
+        The file moment.dat contains the moments and the file pdf.dat contains the PDFs.
 
         """
+        print "\n----- Moment evaluation -----"
         # TODO be able to change the distributions and corners
         distribution = ot.ComposedDistribution([ot.Normal(0.3, 0.35), ot.Normal(0.1, 0.01), ot.Normal(-0.8, 0.01)])
         sample = distribution.getSample(self.points_sample)
         output = self.model(sample)
+        output = output.sort()
         mean = output.computeMean()
         sd = output.computeStandardDeviationPerComponent()
         sd_min = mean - sd
         sd_max = mean + sd
-        var = output.computeVariance()
+        # var = output.computeVariance()
         min = output.getMin()
         max = output.getMax()
-        print "\n----- Moment evaluation -----"
-#       print "Mean value: ", mean
-#       print "Standard deviation: ", sd
-#       print "Variance: ", var
-#       print "Max: ", max
-#       print "Min: ", min
-        
-        nb_value = np.size(self.input)
+        kernel = ot.KernelSmoothing()
+        # print "Mean value: ", mean
+        # print "Standard deviation: ", sd
+        # print "Variance: ", var
+        # print "Max: ", max
+        # print "Min: ", min
 
+        # Create the PDFs
+        output_pts = np.array(output)
+	pdf_pts = [None] * self.output_len
+        for i in range(self.output_len):
+            pdf = kernel.build(output[:, i])
+            pdf_pts[i] = np.array(pdf.computePDF(output[:, i]))
+        print pdf_pts
+        # Write moments to file
         with open('./moment.dat', 'w') as f:
             f.writelines('TITLE = \" Moment evaluation \" \n')
-            f.writelines('VARIABLES = \"x\" \"Min\" \"SD_min\"  \"Mean\" \"SD_max\"  \"Max\" \n')
-            f.writelines('ZONE T = \"zone1 \" , I='+str(self.output)+', F=BLOCK  \n') 
+            if self.output_len == 1:
+                f.writelines('VARIABLES = \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
+                w_lst = [min, sd_min, mean, sd_max, max]
+            else:
+                f.writelines('VARIABLES = \"x\" \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
+                w_lst = [self.f_input, min, sd_min, mean, sd_max, max]
+                f.writelines('ZONE T = \"Moments \" , I='+str(self.output_len)+', F=BLOCK  \n')
+            for w in w_lst:
+                for i in range(self.output_len):
+                    f.writelines("{:.7E}".format(float(w[i])) + "\t ")
+                    if i % 1000:
+                        f.writelines('\n')
+                f.writelines('\n')
 
-            for w in [self.input, min, sd_min, mean, sd_max, max]:
-               for i in range(nb_value):
-                   f.writelines("{:.7E}".format(float(w[i])) + "\t ")
-                   if i % 1000:
-                       f.writelines('\n')
+        # Write PDF to file
+        with open('./pdf.dat', 'w') as f:
+            f.writelines('VARIABLES =  \"x\" \"output\" \"PDF\" \n')
+            f.writelines('ZONE T = \"PDF \" , I='+str(self.output_len)+', J='+str(self.points_sample)+',  F=BLOCK  \n')
+            # X
+            for j in range(self.points_sample):
+                for i in range(self.output_len):
+                    f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
+                    if (i % 1000) or (j % 1000):
+                        f.writelines('\n')
+            f.writelines('\n')
+            # Output
+            for j in range(self.points_sample):
+                for i in range(self.output_len):
+                    f.writelines("{:.7E}".format(float(output_pts[j][i])) + "\t ")
+                    if (i % 1000) or (j % 1000):
+                        f.writelines('\n')
+            f.writelines('\n')
+            # PDF
+            for j in range(self.points_sample):
+                for i in range(self.output_len):
+                    f.writelines("{:.7E}".format(float(pdf_pts[i][j])) + "\t ")
+                    if (i % 1000) or (j % 1000):
+                        f.writelines('\n')
             f.writelines('\n')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+        pdf = kernel.build(output[:, 1])
+        fig = pdf.drawPDF()
+        View(fig).show()
+        pdf = kernel.build(output[:, 0])
+        fig = pdf.drawPDF()
+        View(fig).show()
