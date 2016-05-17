@@ -39,12 +39,12 @@ F12 = np.zeros((nx,ny))
 #                       YOUR FUNCTION
 #-----------------------------------------------------------------
 
-#XB1=1.0
+XB1=1.0
 XB2=math.pi
-XB1=0.
-#YB1=1.0
+#XB1=0.
+YB1=1.0
 YB2=math.pi
-YB1=0. 
+#YB1=0. 
 
 # JCJ extension
 #delta_space = 0.05
