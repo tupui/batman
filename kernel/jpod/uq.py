@@ -17,10 +17,9 @@ import numpy as np
 import openturns as ot
 from openturns.viewer import View
 from os import times
-ot.RandomGenerator.SetSeed(int(100 * times()[4]))
 
-# TODO several ouput files for function.py
-
+# TODO several output files for function.py
+# TODO create output folder for UQ
 
 class UQ:
     """UQ class.
@@ -59,7 +58,7 @@ class UQ:
             pass
         self.pod = jpod
         self.method_sobol = settings.uq['method']
-        self.points_sample = settings.uq['points']
+        self.points_sample = settings.uq['sample']
         self.method_pod = settings.prediction['method']
         self.p_lst = settings.snapshot['io']['parameter_names']
         self.output_len = settings.snapshot['io']['shapes'][0][0][0]
@@ -113,7 +112,11 @@ class UQ:
         For test purpose. From the POD of the function, evaluate the error
         using the analytical evaluation of the function on the sample points.
 
+        r2 = 1 - err_l2/var_model
+
         Also, it computes the error on the Sobol first and total order indices.
+
+        err_l2 = sum()
 
         :param ot.NumericalSample sample: input sample.
         :param lst(array) indices: Sobol first order indices computed using the POD.
@@ -256,11 +259,6 @@ class UQ:
         min = output.getMin()
         max = output.getMax()
         kernel = ot.KernelSmoothing()
-        # print "Mean value: ", mean
-        # print "Standard deviation: ", sd
-        # print "Variance: ", var
-        # print "Max: ", max
-        # print "Min: ", min
 
         # Create the PDFs
         output_pts = np.array(output)
@@ -315,9 +313,3 @@ class UQ:
                         f.writelines('\n')
             f.writelines('\n')
 
-        #pdf = kernel.build(output[:, 1])
-        #fig = pdf.drawPDF()
-        #View(fig).show()
-        #pdf = kernel.build(output[:, 0])
-        #fig = pdf.drawPDF()
-        #View(fig).show()
