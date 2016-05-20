@@ -27,7 +27,7 @@ LIB_DIR = lib
 OBJ := $(MISC:.f90=.o)
 
 
-all: directories $(OBJ)
+all: directories $(OBJ) scikit-lear
 	$(F2PY) $(F2PY_FLAGS) --build-dir $(OBJ_DIR) -c $(OBJ_DIR)/io_tools.o $(SRC) -m $(MODULE)
 	mv $(MODULE).so `dirname $(SRC)`
 
@@ -35,6 +35,9 @@ all: directories $(OBJ)
 directories:
 	@if [ ! -d $(OBJ_DIR) ] ; then mkdir -p $(OBJ_DIR) ; fi;
 	@if [ ! -d $(LIB_DIR) ] ; then mkdir -p $(LIB_DIR) ; fi;
+
+scikit-learn:
+	cd jpod/scikit-learn/ ; python setup.py install --user 
 
 clean:
 	rm -rf $(OBJ_DIR) $(LIB_DIR)
