@@ -27,7 +27,7 @@ LIB_DIR = lib
 OBJ := $(MISC:.f90=.o)
 
 
-all: directories $(OBJ) scikit-lear
+all: directories $(OBJ) scikit-learn
 	$(F2PY) $(F2PY_FLAGS) --build-dir $(OBJ_DIR) -c $(OBJ_DIR)/io_tools.o $(SRC) -m $(MODULE)
 	mv $(MODULE).so `dirname $(SRC)`
 
