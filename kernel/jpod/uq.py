@@ -147,14 +147,15 @@ class UQ:
         sample = distribution.getSample(self.points_sample)
         for _, j in enumerate(sample):
             eval_ref = model_ref(j)[0]
-            eval_pod = self.int_model(j)[0]
+            eval_pod = self.model(j)[0]
             eval_mean = eval_mean + eval_ref
             err_max = max(err_max, abs(eval_pod - eval_ref))
             err_l2 = err_l2 + (eval_pod - eval_ref) ** 2
         eval_mean = eval_mean / self.points_sample
         eval_var = 0.
         for _, j in enumerate(sample):
-            eval_ref = model_ref(j)[0]
+            #eval_ref = model_ref(j)[0]
+            eval_ref = self.model(j)[0]
             eval_var = eval_var + (eval_mean - eval_ref) ** 2
         err_q2 = 1 - err_l2 / eval_var
         print "\n----- POD error -----"
