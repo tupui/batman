@@ -25,10 +25,11 @@ def run(settings, options):
     """Run the driver along."""
     # clean up output directory
     if not options.restart \
-       and not options.no_pod:
+       and not options.no_pod and not options.pred:
         mpi.clean_makedirs(options.output)
-	# tell that the output directory has previously been clean
-	logger.info('cleaning : %s', options.output)
+    	# tell that the output directory has previously been clean
+    	logger.info('cleaning : %s', options.output)
+
     # setup logging, after directory creation
     logging_conf.setup(options.output, 'driver')
 
@@ -36,24 +37,34 @@ def run(settings, options):
                     options.plot)
 
     driver.init_pod(settings, options.script)
+    update = settings.pod['type'] != 'static'
 
-    if not options.no_pod:
+    if not options.no_pod and not options.pred:
         # the pod will be computed
         if options.restart:
             driver.restart()
+            update = True
 
-        driver.fixed_sampling_pod(settings.pod['type'] != 'static')
+        driver.fixed_sampling_pod(update)
 
         if settings.pod['type'] == 'auto':
             driver.automatic_resampling_pod()
 
         driver.write_pod()
-    else:
+
+    elif options.no_pod or options.pred:
         # just read the existing pod
         driver.read_pod()
 
-    snapshots = driver.prediction(settings.prediction,
+    if not options.pred:
+        snapshots = driver.prediction(settings.prediction,
                                   write=options.save_snapshots)
+        driver.write_model()
+    else:
+        snapshots = driver.prediction_without_computation(
+            settings.prediction,
+            write=True)
+        logger.info('Prediction without model building')
     
     if options.uq:
         driver.uq(settings)
@@ -131,6 +142,13 @@ def parse_command_line_and_run(argv=None):
         action='store_true',
         default=False,
         help='Uncertainty Quantification study')
+
+    parser.add_option(
+        '-p',
+        action='store_true',
+        default=False,
+        dest='pred',
+        help='compute prediction and write it from disk, [default: %default].')
 
     # parse command line
     (options, args) = parser.parse_args()

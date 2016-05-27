@@ -7,7 +7,7 @@ space = {
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max' : 100 ,
+    'size_max' : 20 ,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -16,7 +16,7 @@ space = {
         'method' : 'halton',
     # Number of samples to be generated
     # format : integer
-        'size' : 100 ,
+        'size' : 20 ,
     }
 }
 
@@ -28,7 +28,7 @@ snapshot = {
 #    'provider' : functions.partial(functions.f199, 5),
 # Maximum number of simultaneous running snapshot provider
 # format : integer > 0
-    'max_workers' : 50,
+    'max_workers' : 1,
 # Input output settings
     'io' : {
     # Names of the parameters
@@ -98,4 +98,18 @@ uq = {
     'test' : 'Ishigami',
     'sample' : 10000 ,
 }
+
+
+import numpy as N
+num = 10
+x = N.linspace(space['corners'][0][0], space['corners'][1][0], num=num)
+y = N.linspace(space['corners'][0][1], space['corners'][1][1], num=num)
+z = N.linspace(space['corners'][0][2], space['corners'][1][2], num=num)
+
+xy = []
+for i in x:
+    for j in y:
+	for k in z:
+        	xy += [(float(i),float(j),float(k))]
+        	prediction['points'] = xy
 
