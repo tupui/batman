@@ -300,31 +300,54 @@ class Driver(object):
 
         return self.pod.predict(settings['method'], settings['points'], output)
     
+    def prediction_without_computation(self, settings, write=False):
+        if self.external_pod is not None \
+           or write:
+            output = os.path.join(self.output, self.output_tree['predictions'])
+        else:
+            output = None
+        model = self.read_model()
+        return self.pod.predict_without_computation(
+            model, settings['points'], output)
+
+    def write_model(self):
+        """docstring for static_pod"""
+        self.pod.write_model(
+            os.path.join(
+                self.output,
+                self.output_tree['pod']))
+
+    def read_model(self, path=None):
+        """docstring for static_pod"""
+        path = path or os.path.join(self.output, self.output_tree['pod'])
+        return self.pod.read_model(path)
+
     def uq(self, settings):
         analyse = UQ(self.pod, settings)	
 	sobol = analyse.sobol()
         analyse.error_propagation()
 
+
     def restart(self):
-        self.logger.info('Restarting pod.')
-        # read the pod data
-        self.pod.read(os.path.join(self.output, self.output_tree['pod']))
-        # points that have been already processed
-        processed_points = self.pod.points
+            self.logger.info('Restarting pod.')
+            # read the pod data
+            self.pod.read(os.path.join(self.output, self.output_tree['pod']))
+            # points that have been already processed
+            processed_points = self.pod.points
+            self.snapshot_counter = len(processed_points)
 
-        if set(processed_points).issubset(self.initial_points):
-            # static or dynamic pod is not finished, the remaining points have
-            # to be processed
-            self.initial_points = [p for p in self.initial_points
-                                   if p not in processed_points]
-        else:
-            # static or dynamic pod is done,
-            # the eventual automatic resampling has to continue from the processed points
-            # FIXME: space needs the refiner structure!
-            self.initial_points = []
-            self.space.empty()
-            self.space.add(processed_points)
-
+            if set(processed_points).issubset(self.initial_points):
+                # static or dynamic pod is not finished, the remaining points have
+                # to be processed
+                self.initial_points = [p for p in self.initial_points
+                                       if p not in processed_points]
+            else:
+                # static or dynamic pod is done,
+                # the eventual automatic resampling has to continue from the processed points
+                # FIXME: space needs the refiner structure!
+                self.initial_points = []
+                self.space.empty()
+                self.space.add(processed_points)
 
 # def catch_and_clean(method):
 #     def wrapped_method(self, *args, **kwargs):

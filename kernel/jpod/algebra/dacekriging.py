@@ -18,8 +18,8 @@ try:
             :param array output: The observed data.
 	    
 	    """
-	    kernel = 1.0 * RBF(length_scale=10., length_scale_bounds=(0.01, 100.))
-	    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
+	    self.kernel = 1.0 * RBF(length_scale=10., length_scale_bounds=(0.01, 100.))
+	    gp = GaussianProcessRegressor(kernel=self.kernel, n_restarts_optimizer=9)
             self.data = []
             for column in output.T:
                 self.data += [ gp.fit(input, column) ]
