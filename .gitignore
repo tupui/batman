@@ -1,1 +1,3 @@
 *.pyc
+kernel/jpod/scikit-learn/*
+test_cases/*/output/
