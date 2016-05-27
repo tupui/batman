@@ -194,16 +194,23 @@ class Space(SpaceBase):
 
         Returns the list of points.
         """
-        if   kind == 'halton':  sampler = sampling.halton
-        elif kind == 'halton_ot': sampler = sampling.halton_ot
-	elif kind == 'lhcc':    sampler = sampling.clhc
-        elif kind == 'lhcr':    sampler = sampling.rlhc
-        elif kind == 'sobol':   sampler = sampling.sobol
+        if kind == 'halton':
+            sampler = sampling.halton
+        elif kind == 'lhcc':
+            sampler = sampling.clhc
+        elif kind == 'lhcr':
+            sampler = sampling.rlhc
+        elif kind == 'sobol':
+            sampler = sampling.sobol
+        elif kind == 'sobolscramble':
+            sampler = sampling.sobol_scramble
+        elif kind == 'faure':
+            sampler = sampling.faure
         elif kind == 'uniform':
             sampler = sampling.uniform
             n = [n] * len(self.corners[1])
         else:
-            raise ValueError('Bad sampling method: '+kind)
+            raise ValueError('Bad sampling method: ' + kind)
 
         bounds  = N.array(self.corners)
         samples = sampler(bounds.shape[1], n, bounds)

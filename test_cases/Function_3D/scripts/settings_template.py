@@ -13,7 +13,7 @@ space = {
     'provider' : {
     # Method used to generate the points
     # format : one of 'uniform', 'halton', 'sobol', 'lhcc', 'lhcr'
-        'method' : 'halton_ot',
+        'method' : 'halton',
     # Number of samples to be generated
     # format : integer
         'size' : 100 ,
