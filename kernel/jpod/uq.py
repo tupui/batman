@@ -181,7 +181,8 @@ class UQ:
         indices = [[], [], []]
         if self.method_sobol == 'sobol':
             # TODO use corners
-            distribution = ot.ComposedDistribution([ot.Uniform(-np.pi, np.pi)] * self.p_len, ot.IndependentCopula(self.p_len))
+            #distribution = ot.ComposedDistribution([ot.Uniform(-np.pi, np.pi)] * self.p_len, ot.IndependentCopula(self.p_len))
+            distribution = ot.ComposedDistribution([ot.Normal(4035., 400.), ot.Uniform(15., 60.)], ot.IndependentCopula(self.p_len))
             sample1 = distribution.getSample(self.points_sample)
             sample2 = distribution.getSample(self.points_sample)
 
@@ -247,7 +248,7 @@ class UQ:
         """
         print "\n----- Moment evaluation -----"
         # TODO be able to change the distributions and corners
-        distribution = ot.ComposedDistribution([ot.Normal(0.3, 0.35), ot.Normal(0.1, 0.01), ot.Normal(-0.8, 0.01)])
+        distribution = ot.ComposedDistribution([ot.Normal(4035., 400.), ot.Uniform(15., 60.)])
         sample = distribution.getSample(self.points_sample)
         output = self.model(sample)
         output = output.sort()

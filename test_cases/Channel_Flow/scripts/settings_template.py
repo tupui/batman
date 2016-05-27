@@ -2,8 +2,8 @@
 space = {
 # Lower and upper end points (corners) that define a portion of space.
 # format : 2-tuple of tuples with end points coordinates.
-   'corners'         : ((-3.1415, -3.1415, -3.1415),
-                        (3.1415, 3.1415, 3.1415),),
+   'corners'         : ((3500., 10.),
+                        (4500., 65.),),
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
@@ -13,7 +13,7 @@ space = {
     'provider' : {
     # Method used to generate the points
     # format : one of 'uniform', 'halton', 'sobol', 'lhcc', 'lhcr'
-        'method' : 'halton_ot',
+        'method' : 'halton',
     # Number of samples to be generated
     # format : integer
         'size' : 100 ,
@@ -33,7 +33,7 @@ snapshot = {
     'io' : {
     # Names of the parameters
     # format : list of strings
-        'parameter_names': ['x1','x2', 'x3'],
+        'parameter_names': ['x1','x2'],
     # File format
     # format : one of 'fmt_tp', 'numpy'
         'format' : 'fmt_tp',
@@ -48,10 +48,10 @@ snapshot = {
         'template_directory' : None,
     # Names of the variables contained in a snapshot
     # format : list of strings
-        'variables' : ['F'],
+        'variables' : ['X','F'],
     # Shapes of one variable for each file and each mpi cpu
     # When ran on only 1 cpu, all shapes are gathered
-        'shapes' : {0: [(1,)]},
+        'shapes' : {0: [(40000,)]},
     },
 }
 
@@ -95,7 +95,7 @@ uq = {
 # Type of Sobol analysis: 'sobol', 'FAST' (if FAST, no second-order indices)
     'method' : 'sobol',
 # Use a test method: 'Ishigami'
-    'test' : 'Ishigami',
+#    'test' : 'Ishigami',
     'sample' : 10000 ,
 }
 

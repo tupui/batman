@@ -24,31 +24,67 @@ with open('./jpod-data/header.py', 'r') as a:
                 B= re.match(r'x2 = (.*$)',line, re.M | re.I)
                 if B:
                         x2 = "{:.7}".format(B.group(1))
-		C= re.match(r'x3 = (.*$)',line, re.M | re.I)
-                if C:
-                        x3 = "{:.7}".format(C.group(1))
-print "X1 =", x1 
-print "X2 =", x2
-print "X3 =", x3
+#print "X1 =", x1 
+#print "X2 =", x2
 
-X1 = float(x1)
-X2 = float(x2)
-X3 = float(x3)
+Q = float(x1)
+Ks = float(x2)
 
 #------------------------------------------------------------------
 #                       FUNCTION
 #-----------------------------------------------------------------
 
-F = np.sin(X1)+7*np.sin(X2)**2+0.1*(X3**4)*np.sin(X1)
+L=500.
+I=5e-4
+g=9.8
+dx=1
+longueur=40000
+Long=longueur/dx
+hc=np.power((Q**2)/(g*L*L),1./3.);
+hn=np.power((Q**2)/(I*L*L*Ks*Ks),3./10.);
+hinit=10.
+hh=hinit*np.ones(Long);
+
+for i in xrange(2,Long):
+    hh[Long-i]=hh[Long-i+1]-dx*I*((1-np.power(hh[Long-i+1]/hn,-10./3.))/(1-np.power(hh[Long-i+1]/hc,-3.)))
+h=hh
+
+X=np.arange(dx, longueur+1, dx)
+
+Zref=-X*I
+Z=Zref+h
+
+#import matplotlib.pyplot as plt
+#plt.figure(1)
+#plt.plot(X, h)
+#plt.show()
 
 #------------------------------------------------------------------
 #                       Output
 #-----------------------------------------------------------------
 
+nb_value = np.size(X)
+
 with open('./cfd-output-data/function.dat', 'w') as f:
-        f.writelines('TITLE = \"FUNCTION\" \n')
-        f.writelines('VARIABLES =  \"F\"  \n')
-        f.writelines('ZONE F = \"zone1\" , I='+str(1)+', F=BLOCK  \n')
-        f.writelines("{:.7E}".format(F)+"\t ")
+    f.writelines('TITLE = \"FUNCTION\" \n')
+    f.writelines('VARIABLES = \"X\" \"F\"  \n')
+    f.writelines('ZONE F = \"zone1\" , I='+str(nb_value)+', F=BLOCK  \n')
+    for i in range(len(X)):
+        f.writelines("{:.7E}".format(float(X[i]))+"\t ")
+	if i % 1000:
+            f.writelines('\n')
+    f.writelines('\n')
+
+    for i in range(len(h)):
+        f.writelines("{:.7E}".format(float(h[i]))+"\t ")
+        if i % 1000:
+            f.writelines('\n')
         f.writelines('\n')
+
+#        f.writelines("{:.7E}".format(1)+"\t ")
+#        f.writelines("{:.7E}".format(2)+"\t ")
+#        f.writelines('\n')
+#        f.writelines("{:.7E}".format(F)+"\t ")
+#        f.writelines("{:.7E}".format(F2)+"\t ")
+#        f.writelines('\n')
 
