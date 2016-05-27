@@ -72,6 +72,7 @@ class Driver(object):
         'snapshots': 'snapshots',
         'pod': 'pod',
         'predictions': 'predictions',
+	'uq': 'uq',
     }
     '''Structure of the output directory.'''
 
@@ -301,7 +302,8 @@ class Driver(object):
         return self.pod.predict(settings['method'], settings['points'], output)
     
     def uq(self, settings):
-        analyse = UQ(self.pod, settings)	
+        output = os.path.join(self.output, self.output_tree['uq'])
+        analyse = UQ(self.pod, settings, output)	
 	sobol = analyse.sobol()
         analyse.error_propagation()
 
