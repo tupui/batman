@@ -265,7 +265,10 @@ class UQ:
         output_pts = np.array(output)
 	pdf_pts = [None] * self.output_len
         for i in range(self.output_len):
-            pdf = kernel.build(output[:, i])
+            try:
+	        pdf = kernel.build(output[:, i])
+            except:
+	        pdf = ot.Dirac(output[i,i])
             pdf_pts[i] = np.array(pdf.computePDF(output[:, i]))
         # Write moments to file
         with open('./moment.dat', 'w') as f:
@@ -287,11 +290,12 @@ class UQ:
         # Write PDF to file
         with open('./pdf.dat', 'w') as f:
             f.writelines('TITLE = \" Probability Density Functions \" \n')
-            f.writelines('ZONE T = \"PDF \" , I='+str(self.output_len)+', J='+str(self.points_sample)+',  F=BLOCK  \n')
             if self.output_len == 1:
                 f.writelines('VARIABLES =  \"output\" \"PDF\" \n')
+                f.writelines('ZONE T = \"PDF \" , I='+str(self.output_len)+', J='+str(self.points_sample)+',  F=BLOCK  \n')
             else:
                 f.writelines('VARIABLES =  \"x\" \"output\" \"PDF\" \n')
+                f.writelines('ZONE T = \"PDF \" , I='+str(self.output_len)+', J='+str(self.points_sample)+',  F=BLOCK  \n')
                 # X
                 for j in range(self.points_sample):
                     for i in range(self.output_len):
