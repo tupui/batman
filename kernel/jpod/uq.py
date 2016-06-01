@@ -6,7 +6,7 @@ UQ class
 This class is intented to implement statistical tools provided by the OpenTURNS framework.
 
 Example:
->> analyse = UQ(pod, settings)
+>> analyse = UQ(pod, settings, output)
 >> sobol = analyse.sobol()
 >> analyse.error_propagation()
 
@@ -15,11 +15,8 @@ Example:
 import logging
 import numpy as np
 import openturns as ot
-from openturns.viewer import View
-from os import times
-
-# TODO several output files for function.py
-# TODO create output folder for UQ
+#from openturns.viewer import View
+from os import times, mkdir
 
 class UQ:
     """UQ class.
@@ -35,7 +32,7 @@ class UQ:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, jpod, settings):
+    def __init__(self, jpod, settings, output):
         """Init the UQ class.
 
         From the settings file, get:
@@ -56,6 +53,8 @@ class UQ:
             self.test = settings.uq['test']
         except:
             pass
+        self.output_folder = output
+        mkdir(output)
         self.pod = jpod
         self.method_sobol = settings.uq['method']
         self.points_sample = settings.uq['sample']
@@ -112,7 +111,7 @@ class UQ:
         For test purpose. From the POD of the function, evaluate the error
         using the analytical evaluation of the function on the sample points.
 
-        r2 = 1 - err_l2/var_model
+        Q2 = 1 - err_l2/var_model
 
         Also, it computes the error on the Sobol first and total order indices.
 
@@ -175,29 +174,30 @@ class UQ:
         eval_mean = 0.
         sample = distribution.getSample(self.points_sample)
         for _, j in enumerate(sample):
-            eval_ref = model_ref(j)[100]
-            eval_pod = self.model(j)[100]
+            eval_ref = model_ref(j)[0]
+            eval_pod = self.model(j)[0]
             eval_mean = eval_mean + eval_ref
             err_max = max(err_max, abs(eval_pod - eval_ref))
             err_l2 = err_l2 + (eval_pod - eval_ref) ** 2
         eval_mean = eval_mean / self.points_sample
         eval_var = 0.
         for _, j in enumerate(sample):
-            eval_ref = model_ref(j)[100]
+            #eval_ref = model_ref(j)[0]
+            eval_ref = self.model(j)[0]
             eval_var = eval_var + (eval_mean - eval_ref) ** 2
         err_q2 = 1 - err_l2 / eval_var
-	err_q2 = err_l2 / self.points_sample
         print "\n----- POD error -----"
         print("L_inf(error): {}\nQ2(error): {}\nL2(sobol first, second and total order indices error): {}, {}, {}".format(err_max, err_q2, s_err_l2_first, s_err_l2_second, s_err_l2_total))
         # Write error to file pod_err.dat
-        with open('./pod_err.dat', 'w') as f:
+        with open(self.output_folder + '/pod_err.dat', 'w') as f:
             f.writelines(str(self.snapshot)+' '+str(err_q2)+' '+str(self.points_sample)+' '+str(s_err_l2_first)+' '+str(s_err_l2_second)+' '+str(s_err_l2_total))
 
         try:
 	    output_ref = model_ref(sample)
             output = self.int_model(sample)
             qq_plot = ot.VisualTest_DrawQQplot(output_ref, output)
-            View(qq_plot).show()
+            #View(qq_plot).show()
+            qq_plot.draw(self.output_folder + '/qq_plot.png')
         except:
 	    print "Cannot draw QQplot with output dimension > 1"
 
@@ -255,7 +255,8 @@ class UQ:
         try:
             i_factor = ot.SensitivityAnalysis.DrawImportanceFactors(s_plt)
             i_factor.setTitle("Total order Sensitivity Indices")
-            View(i_factor).show()
+            #View(i_factor).show()
+	    i_factor.draw(self.output_folder + '/i_factor.png')
         except:
             print "Cannot draw importance factors: expected positive values"
 
@@ -304,7 +305,7 @@ class UQ:
 	        pdf = ot.Normal(output[i,i], 0.001)
             pdf_pts[i] = np.array(pdf.computePDF(output[:, i]))
         # Write moments to file
-        with open('./moment.dat', 'w') as f:
+        with open(self.output_folder + '/moment.dat', 'w') as f:
             f.writelines('TITLE = \" Moment evaluation \" \n')
             if self.output_len == 1:
                 f.writelines('VARIABLES = \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
@@ -321,7 +322,7 @@ class UQ:
                 f.writelines('\n')
 
         # Write PDF to file
-        with open('./pdf.dat', 'w') as f:
+        with open(self.output_folder + '/pdf.dat', 'w') as f:
             f.writelines('TITLE = \" Probability Density Functions \" \n')
             if self.output_len == 1:
                 f.writelines('VARIABLES =  \"output\" \"PDF\" \n')
