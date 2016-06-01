@@ -7,7 +7,7 @@ space = {
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max' : 1000 ,
+    'size_max' : 200 ,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -16,7 +16,7 @@ space = {
         'method' : 'halton',
     # Number of samples to be generated
     # format : integer
-        'size' : 1000 ,
+        'size' : 200 ,
     }
 }
 
@@ -97,5 +97,7 @@ uq = {
 # Use a test method: 'Ishigami'
     'test' : 'Channel_Flow',
     'sample' : 1000 ,
+# Uncertainty propagation. Enter the PDF of the inputs. x1: Normal(mu, sigma), x2: Uniform(inf, sup)
+    'pdf' : ['Normal(4035., 400.)', 'Uniform(15., 60.)']
 }
 

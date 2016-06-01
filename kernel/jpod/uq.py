@@ -58,6 +58,7 @@ class UQ:
         self.pod = jpod
         self.method_sobol = settings.uq['method']
         self.points_sample = settings.uq['sample']
+	self.pdf = settings.uq['pdf']
         self.method_pod = settings.prediction['method']
         self.p_lst = settings.snapshot['io']['parameter_names']
         self.output_len = settings.snapshot['io']['shapes'][0][0][0]
@@ -214,8 +215,11 @@ class UQ:
         indices = [[], [], []]
         if self.method_sobol == 'sobol':
             # TODO use corners
-            #distribution = ot.ComposedDistribution([ot.Uniform(-np.pi, np.pi)] * self.p_len, ot.IndependentCopula(self.p_len))
-            distribution = ot.ComposedDistribution([ot.Normal(4035., 400.), ot.Uniform(15., 60.)], ot.IndependentCopula(self.p_len))
+	    input_pdf = "ot." + self.pdf[0]
+	    for i in xrange(self.p_len-1):
+		input_pdf = input_pdf + ", ot." + self.pdf[i+1]
+            distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))") 
+	    #distribution = ot.ComposedDistribution([ot.Normal(4035., 400.), ot.Uniform(15., 60.)], ot.IndependentCopula(self.p_len))
             sample1 = distribution.getSample(self.points_sample)
             sample2 = distribution.getSample(self.points_sample)
 
