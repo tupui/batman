@@ -136,7 +136,36 @@ class UQ:
         elif function == 'Rosenbrock':
             formula = ['100*(X2-X1*X1)*(X2-X1*X1) + (X1-1)*(X1-1) + 100*(X3-X2*X2)*(X3-X2*X2) + (X2-1)*(X2-1)']
             model_ref = ot.NumericalMathFunction(['X1', 'X2', 'X3'], ['Y'], formula)
-        # elif function == 'Langermann':
+        elif function == 'Channel_Flow':
+	    def channel_flow(x):
+	        Q = x[0]
+		Ks = x[1]
+	        L=500.
+		I=5e-4
+		g=9.8
+		dx=100
+		longueur=40000
+		Long=longueur/dx
+		hc=np.power((Q**2)/(g*L*L),1./3.);
+		hn=np.power((Q**2)/(I*L*L*Ks*Ks),3./10.);
+		hinit=10.
+		hh=hinit*np.ones(Long);
+		for i in xrange(2,Long):
+		    hh[Long-i]=hh[Long-i+1]-dx*I*((1-np.power(hh[Long-i+1]/hn,-10./3.))/(1-np.power(hh[Long-i+1]/hc,-3.)))
+		h=hh
+
+		X=np.arange(dx, longueur+1, dx)
+
+		Zref=-X*I
+		return Zref+h
+	    model_ref = ot.PythonFunction(2, 400, channel_flow)
+            s_first_th = np.array([0.1, 0.8])
+            s_second_th = np.array([[0., 0.1], [0.1, 0.]])
+            s_total_th = np.array([0.1, 0.9])
+            s_err_l2_second = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
+            s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
+            s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
+
         else:
             print "No or wrong analytical function, options are: Ishigami (3D), Rosenbrock (3D)"
             return
@@ -146,27 +175,31 @@ class UQ:
         eval_mean = 0.
         sample = distribution.getSample(self.points_sample)
         for _, j in enumerate(sample):
-            eval_ref = model_ref(j)[0]
-            eval_pod = self.int_model(j)[0]
+            eval_ref = model_ref(j)[100]
+            eval_pod = self.model(j)[100]
             eval_mean = eval_mean + eval_ref
             err_max = max(err_max, abs(eval_pod - eval_ref))
             err_l2 = err_l2 + (eval_pod - eval_ref) ** 2
         eval_mean = eval_mean / self.points_sample
         eval_var = 0.
         for _, j in enumerate(sample):
-            eval_ref = model_ref(j)[0]
+            eval_ref = model_ref(j)[100]
             eval_var = eval_var + (eval_mean - eval_ref) ** 2
         err_q2 = 1 - err_l2 / eval_var
+	err_q2 = err_l2 / self.points_sample
         print "\n----- POD error -----"
         print("L_inf(error): {}\nQ2(error): {}\nL2(sobol first, second and total order indices error): {}, {}, {}".format(err_max, err_q2, s_err_l2_first, s_err_l2_second, s_err_l2_total))
         # Write error to file pod_err.dat
         with open('./pod_err.dat', 'w') as f:
             f.writelines(str(self.snapshot)+' '+str(err_q2)+' '+str(self.points_sample)+' '+str(s_err_l2_first)+' '+str(s_err_l2_second)+' '+str(s_err_l2_total))
 
-        output_ref = model_ref(sample)
-        output = self.int_model(sample)
-        qq_plot = ot.VisualTest_DrawQQplot(output_ref, output)
-        View(qq_plot).show()
+        try:
+	    output_ref = model_ref(sample)
+            output = self.int_model(sample)
+            qq_plot = ot.VisualTest_DrawQQplot(output_ref, output)
+            View(qq_plot).show()
+        except:
+	    print "Cannot draw QQplot with output dimension > 1"
 
     def sobol(self):
         """Compute the sobol indices.
@@ -268,7 +301,7 @@ class UQ:
             try:
 	        pdf = kernel.build(output[:, i])
             except:
-	        pdf = ot.Dirac(output[i,i])
+	        pdf = ot.Normal(output[i,i], 0.001)
             pdf_pts[i] = np.array(pdf.computePDF(output[:, i]))
         # Write moments to file
         with open('./moment.dat', 'w') as f:

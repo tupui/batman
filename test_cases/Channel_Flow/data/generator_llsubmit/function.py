@@ -37,8 +37,8 @@ Ks = float(x2)
 L=500.
 I=5e-4
 g=9.8
-dx=1
-longueur=40000
+dx=100
+longueur=40000 # 40000
 Long=longueur/dx
 hc=np.power((Q**2)/(g*L*L),1./3.);
 hn=np.power((Q**2)/(I*L*L*Ks*Ks),3./10.);
@@ -68,7 +68,7 @@ nb_value = np.size(X)
 with open('./cfd-output-data/function.dat', 'w') as f:
     f.writelines('TITLE = \"FUNCTION\" \n')
     f.writelines('VARIABLES = \"X\" \"F\"  \n')
-    f.writelines('ZONE F = \"zone1\" , I='+str(nb_value)+', F=BLOCK  \n')
+    f.writelines('ZONE T=\"zone1\" , I='+str(nb_value)+', F=BLOCK  \n')
     for i in range(len(X)):
         f.writelines("{:.7E}".format(float(X[i]))+"\t ")
 	if i % 1000:
@@ -76,7 +76,7 @@ with open('./cfd-output-data/function.dat', 'w') as f:
     f.writelines('\n')
 
     for i in range(len(h)):
-        f.writelines("{:.7E}".format(float(h[i]))+"\t ")
+        f.writelines("{:.7E}".format(float(Z[i]))+"\t ")
         if i % 1000:
             f.writelines('\n')
         f.writelines('\n')

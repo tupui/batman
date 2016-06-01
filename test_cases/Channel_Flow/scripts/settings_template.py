@@ -7,7 +7,7 @@ space = {
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max' : 100 ,
+    'size_max' : 1000 ,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -16,7 +16,7 @@ space = {
         'method' : 'halton',
     # Number of samples to be generated
     # format : integer
-        'size' : 100 ,
+        'size' : 1000 ,
     }
 }
 
@@ -51,7 +51,7 @@ snapshot = {
         'variables' : ['X','F'],
     # Shapes of one variable for each file and each mpi cpu
     # When ran on only 1 cpu, all shapes are gathered
-        'shapes' : {0: [(40000,)]},
+        'shapes' : {0: [(400,)]},
     },
 }
 
@@ -60,7 +60,7 @@ pod = {
 # Tolerance of the modes to be kept.
 # A percentage of the sum of the singular values, values that account for less than of this tolerance are ignored.
 # format : float
-    'tolerance' : 0.99,
+    'tolerance' : 0.8,
 # Maximum number of modes to be kept
 # format : integer
     'dim_max'   : 100,
@@ -95,7 +95,7 @@ uq = {
 # Type of Sobol analysis: 'sobol', 'FAST' (if FAST, no second-order indices)
     'method' : 'sobol',
 # Use a test method: 'Ishigami'
-#    'test' : 'Ishigami',
-    'sample' : 10000 ,
+    'test' : 'Channel_Flow',
+    'sample' : 1000 ,
 }
 
