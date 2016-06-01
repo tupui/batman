@@ -223,7 +223,7 @@ class UQ:
             i_factor = ot.SensitivityAnalysis.DrawImportanceFactors(s_plt)
             i_factor.setTitle("Total order Sensitivity Indices")
             #View(i_factor).show()
-	    i_factor.draw(self.output_folder + 'i_factor.png')
+	    i_factor.draw(self.output_folder + '/i_factor.png')
         except:
             print "Cannot draw importance factors: expected positive values"
 
