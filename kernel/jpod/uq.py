@@ -54,7 +54,10 @@ class UQ:
         except:
             pass
         self.output_folder = output
-        mkdir(output)
+        try:
+	    mkdir(output)
+	except:
+	    pass
         self.pod = jpod
         self.method_sobol = settings.uq['method']
         self.points_sample = settings.uq['sample']
