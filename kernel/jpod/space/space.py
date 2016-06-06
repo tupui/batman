@@ -87,11 +87,10 @@ class Space(SpaceBase):
     logger = logging.getLogger(__name__)
 
 
-    def __init__(self, corners_user, max_points_nb, delta_space, plot=False):
+    def __init__(self, corners_user, max_points_nb, delta_space):
         """
         :param corners: lower and upper corner points that define the space
         :param max_points_nb: maximum number of points allowed in the space
-        :param plot: switch to plot 2D space with matplotlib
         """
         super(Space, self).__init__()
 
@@ -100,9 +99,6 @@ class Space(SpaceBase):
 
         self.refiner = None
         '''Refiner for resampling.'''
-
-        self.plot = None
-        '''Points plotter with matplotlib.'''
 
         # Extension of space
 
@@ -127,12 +123,6 @@ class Space(SpaceBase):
             if corners[0][i] == corners[1][i]:
                 raise ValueError('%dth corners coordinate are equal'%(i+1))
 
-        if plot:
-            import matplotlib.pyplot
-            self.plot = matplotlib.pyplot
-            self.plot.axis([self.corners[0][0], self.corners[1][0],
-                            self.corners[0][1], self.corners[1][1]])
-
 
     def __str__(self):
         s  = 'end points           : '
@@ -150,10 +140,7 @@ class Space(SpaceBase):
 
 
     def __del__(self):
-        # save plot to file
-        if self.plot is not None:
-            self.plot.savefig('points.pdf')
-
+        pass
 
     def is_full(self):
         """Returns whether the maximum number of points is reached."""
@@ -175,11 +162,6 @@ class Space(SpaceBase):
             if len(self) > self.max_points_nb:
                 raise FullSpaceError('Maximum number of points reached: %d points'% \
                                      self.max_points_nb)
-
-        if self.plot:
-            for p in points:
-                self.plot.plot(p[0], p[1], glyph)
-            self.plot.draw()
 
 
     def sampling(self, kind, n):

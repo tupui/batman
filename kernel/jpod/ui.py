@@ -33,8 +33,7 @@ def run(settings, options):
     # setup logging, after directory creation
     logging_conf.setup(options.output, 'driver')
 
-    driver = Driver(settings.snapshot, settings.space, options.output,
-                    options.plot)
+    driver = Driver(settings.snapshot, settings.space, options.output)
 
     driver.init_pod(settings, options.script)
     update = settings.pod['type'] != 'static'
@@ -98,12 +97,6 @@ def parse_command_line_and_run(argv=None):
     parser = OptionParser(usage=help_message, version=__version__)
 
     # command line options
-    parser.add_option(
-        '--plot',
-        action='store_true',
-        default=False,
-        help='plot with matplotlib, [default: %default].')
-
     parser.add_option(
         '-s', '--save-snapshots',
         action='store_true',

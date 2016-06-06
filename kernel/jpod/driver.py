@@ -76,7 +76,7 @@ class Driver(object):
     }
     '''Structure of the output directory.'''
 
-    def __init__(self, snapshot_settings, space_settings, output, plot=False):
+    def __init__(self, snapshot_settings, space_settings, output):
         self.pod_quality = None
         '''POD automatic resampling quality.'''
         
@@ -111,7 +111,7 @@ class Driver(object):
         self._init_snapshot(snapshot_settings)
 
         # parameter space and points
-        self._init_space(space_settings, plot)
+        self._init_space(space_settings)
 
     def _init_snapshot(self, settings):
         """docstring for _init_snapshot"""
@@ -142,10 +142,9 @@ class Driver(object):
             self.snapshooter = futures.ThreadPoolExecutor(
                 max_workers=settings['max_workers'])
 
-    def _init_space(self, settings, plot):
+    def _init_space(self, settings):
         # space
-        self.space = Space(settings['corners'], settings.get('size_max'), settings.get('delta_space'),
-                           plot)
+        self.space = Space(settings['corners'], settings.get('size_max'), settings.get('delta_space'))
 
         # initial points
         if self.provider.is_file:
