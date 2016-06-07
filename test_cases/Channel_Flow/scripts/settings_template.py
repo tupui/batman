@@ -2,12 +2,12 @@
 space = {
 # Lower and upper end points (corners) that define a portion of space.
 # format : 2-tuple of tuples with end points coordinates.
-   'corners'         : ((3500., 10.),
-                        (4500., 65.),),
+   'corners'         : ((2500., 15.),
+                        (6000., 60.),),
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max' : 200 ,
+    'size_max' : 300 ,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -16,7 +16,7 @@ space = {
         'method' : 'halton',
     # Number of samples to be generated
     # format : integer
-        'size' : 200 ,
+        'size' : 300 ,
     }
 }
 
@@ -60,7 +60,7 @@ pod = {
 # Tolerance of the modes to be kept.
 # A percentage of the sum of the singular values, values that account for less than of this tolerance are ignored.
 # format : float
-    'tolerance' : 0.8,
+    'tolerance' : 0.9999,
 # Maximum number of modes to be kept
 # format : integer
     'dim_max'   : 100,
@@ -93,10 +93,10 @@ prediction = {
 
 uq = {
 # Type of Sobol analysis: 'sobol', 'FAST' (if FAST, no second-order indices)
-    'method' : 'sobol',
+    'method' : 'FAST',
 # Use a test method: 'Ishigami'
     'test' : 'Channel_Flow',
-    'sample' : 1000 ,
+    'sample' : 20000 ,
 # Uncertainty propagation. Enter the PDF of the inputs. x1: Normal(mu, sigma), x2: Uniform(inf, sup)
     'pdf' : ['Normal(4035., 400.)', 'Uniform(15., 60.)']
 }

@@ -153,7 +153,7 @@ class UQ:
 		hn=np.power((Q**2)/(I*L*L*Ks*Ks),3./10.);
 		hinit=10.
 		hh=hinit*np.ones(Long);
-		for i in xrange(2,Long):
+		for i in xrange(2,Long+1):
 		    hh[Long-i]=hh[Long-i+1]-dx*I*((1-np.power(hh[Long-i+1]/hn,-10./3.))/(1-np.power(hh[Long-i+1]/hc,-3.)))
 		h=hh
 
@@ -165,8 +165,12 @@ class UQ:
             s_first_th = np.array([0.1, 0.8])
             s_second_th = np.array([[0., 0.1], [0.1, 0.]])
             s_total_th = np.array([0.1, 0.9])
-            s_err_l2_second = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
-            s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
+	    try:
+                s_err_l2_second = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
+            except:
+	        print "No Second order indices with FAST"
+		s_err_l2_second = 0.
+	    s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
             s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
 
         else:
@@ -177,6 +181,7 @@ class UQ:
         err_l2 = 0.
         eval_mean = 0.
         sample = distribution.getSample(self.points_sample)
+
         for _, j in enumerate(sample):
             eval_ref = model_ref(j)[0]
             eval_pod = self.model(j)[0]
@@ -217,17 +222,14 @@ class UQ:
         """
         indices = [[], [], []]
         if self.method_sobol == 'sobol':
-            # TODO use corners
 	    input_pdf = "ot." + self.pdf[0]
 	    for i in xrange(self.p_len-1):
 		input_pdf = input_pdf + ", ot." + self.pdf[i+1]
-            distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))") 
-	    #distribution = ot.ComposedDistribution([ot.Normal(4035., 400.), ot.Uniform(15., 60.)], ot.IndependentCopula(self.p_len))
-            sample1 = distribution.getSample(self.points_sample)
+            distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
+            elf.points_sampleample1 = distribution.getSample(self.points_sample)
             sample2 = distribution.getSample(self.points_sample)
-
             sobol = ot.SensitivityAnalysis(sample1, sample2, self.int_model)
-            sobol.setBlockSize(int(ot.ResourceMap.Get("parallel-threads")))
+	    sobol.setBlockSize(int(ot.ResourceMap.Get("parallel-threads")))
 
             print "\n----- Sobol indices -----"
             s_second = sobol.getSecondOrderIndices()
@@ -238,8 +240,10 @@ class UQ:
 
         elif self.method_sobol == 'FAST':
             print "\n----- FAST indices -----"
-            # TODO use corners
-            distribution = ot.ComposedDistribution([ot.Uniform(-np.pi, np.pi)] * self.p_len)
+	    input_pdf = "ot." + self.pdf[0]
+	    for i in xrange(self.p_len-1):
+		input_pdf = input_pdf + ", ot." + self.pdf[i+1]
+            distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
             fast = ot.FAST(self.int_model, distribution, self.points_sample)
             s_first = fast.getFirstOrderIndices()
             s_total = fast.getTotalOrderIndices()
