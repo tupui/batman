@@ -17,6 +17,7 @@ import numpy as np
 import openturns as ot
 #from openturns.viewer import View
 from os import times, mkdir
+import itertools
 
 class UQ:
     """UQ class.
@@ -299,12 +300,15 @@ class UQ:
         # Create the PDFs
         output_pts = np.array(output)
 	pdf_pts = [None] * self.output_len
+	d_PDF = 100
+        sample = self.distribution.getSample(d_PDF)
+        output_extract = self.model(sample)
         for i in range(self.output_len):
             try:
 	        pdf = kernel.build(output[:, i])
             except:
 	        pdf = ot.Normal(output[i,i], 0.001)
-            pdf_pts[i] = np.array(pdf.computePDF(output[:, i]))
+            pdf_pts[i] = np.array(pdf.computePDF(output_extract[:, i]))
         # Write moments to file
         with open(self.output_folder + '/moment.dat', 'w') as f:
             f.writelines('TITLE = \" Moment evaluation \" \n')
@@ -315,41 +319,37 @@ class UQ:
                 f.writelines('VARIABLES = \"x\" \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
                 w_lst = [self.f_input, min, sd_min, mean, sd_max, max]
             f.writelines('ZONE T = \"Moments \" , I='+str(self.output_len)+', F=BLOCK  \n')
-            for w in w_lst:
-                for i in range(self.output_len):
-                    f.writelines("{:.7E}".format(float(w[i])) + "\t ")
-                    if i % 1000:
-                        f.writelines('\n')
-                f.writelines('\n')
+            for w, i in itertools.product(w_lst, range(self.output_len)):
+                f.writelines("{:.7E}".format(float(w[i])) + "\t ")
+                if i % 1000:
+                    f.writelines('\n')
+            f.writelines('\n')
 
         # Write PDF to file
         with open(self.output_folder + '/pdf.dat', 'w') as f:
             f.writelines('TITLE = \" Probability Density Functions \" \n')
             if self.output_len == 1:
                 f.writelines('VARIABLES =  \"output\" \"PDF\" \n')
-                f.writelines('ZONE T = \"PDF \" , I='+str(self.output_len)+', J='+str(self.points_sample)+',  F=BLOCK  \n')
+                f.writelines('ZONE T = \"PDF \" , I='+str(self.output_len)+', J='+str(d_PDF)+',  F=BLOCK  \n')
             else:
                 f.writelines('VARIABLES =  \"x\" \"output\" \"PDF\" \n')
-                f.writelines('ZONE T = \"PDF \" , I='+str(self.output_len)+', J='+str(self.points_sample)+',  F=BLOCK  \n')
+                f.writelines('ZONE T = \"PDF \" , I='+str(self.output_len)+', J='+str(d_PDF)+',  F=BLOCK  \n')
                 # X
-                for j in range(self.points_sample):
-                    for i in range(self.output_len):
-                        f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
-                        if (i % 1000) or (j % 1000):
-                            f.writelines('\n')
+		for j, i in itertools.product(range(d_PDF), range(self.output_len)):
+                    f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
+                    if (i % 1000) or (j % 1000):
+                        f.writelines('\n')
                 f.writelines('\n')
             # Output
-            for j in range(self.points_sample):
-                for i in range(self.output_len):
-                    f.writelines("{:.7E}".format(float(output_pts[j][i])) + "\t ")
-                    if (i % 1000) or (j % 1000):
-                        f.writelines('\n')
+	    for j, i in itertools.product(range(d_PDF), range(self.output_len)):
+                f.writelines("{:.7E}".format(float(output_extract[j][i])) + "\t ")
+                if (i % 1000) or (j % 1000):
+                    f.writelines('\n')
             f.writelines('\n')
             # PDF
-            for j in range(self.points_sample):
-                for i in range(self.output_len):
-                    f.writelines("{:.7E}".format(float(pdf_pts[i][j])) + "\t ")
-                    if (i % 1000) or (j % 1000):
-                        f.writelines('\n')
+	    for j, i in itertools.product(range(d_PDF), range(self.output_len)):
+                f.writelines("{:.7E}".format(float(pdf_pts[i][j])) + "\t ")
+                if (i % 1000) or (j % 1000):
+                    f.writelines('\n')
             f.writelines('\n')
 
