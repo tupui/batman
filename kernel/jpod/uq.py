@@ -24,7 +24,7 @@ class UQ:
     It implements the following methods:
     - func(self, coords)
     - int_func(self, coords)
-    - error_pod(self, distribution, s_first, function)
+    - error_pod(self, indices, function)
     - sobol(self)
     - error_propagation(self).
 
@@ -59,13 +59,17 @@ class UQ:
 	except:
 	    pass
         self.pod = jpod
+        self.p_lst = settings.snapshot['io']['parameter_names']
+        self.p_len = len(self.p_lst)
         self.method_sobol = settings.uq['method']
         self.points_sample = settings.uq['sample']
-	self.pdf = settings.uq['pdf']
-        self.method_pod = settings.prediction['method']
-        self.p_lst = settings.snapshot['io']['parameter_names']
+	pdf = settings.uq['pdf']
+	input_pdf = "ot." + pdf[0]
+	for i in xrange(self.p_len-1):
+            input_pdf = input_pdf + ", ot." + pdf[i+1]
+	self.distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
+	self.method_pod = settings.prediction['method']
         self.output_len = settings.snapshot['io']['shapes'][0][0][0]
-        self.p_len = len(self.p_lst)
         self.f_input = None
         self.model = ot.PythonFunction(self.p_len, self.output_len, self.func)
         self.int_model = ot.PythonFunction(self.p_len, 1, self.int_func)
@@ -109,7 +113,7 @@ class UQ:
             int_f_eval = f_eval
         return [int_f_eval.item()]
 
-    def error_pod(self, distribution, indices, function):
+    def error_pod(self, indices, function):
         """Compute the error between the POD and the analytic function.
 
         For test purpose. From the POD of the function, evaluate the error
@@ -126,16 +130,12 @@ class UQ:
         :param str function: name of the analytic function.
 
         """
-        # TODO add Functions, be able to do n-D Rosenbrock etc use PythonFunction. 
         if function == 'Ishigami':
             formula = ['sin(X1)+7*sin(X2)*sin(X2)+0.1*((X3)*(X3)*(X3)*(X3))*sin(X1)']
             model_ref = ot.NumericalMathFunction(['X1', 'X2', 'X3'], ['Y'], formula)
             s_first_th = np.array([0.3139, 0.4424, 0.])
 	    s_second_th = np.array([[0., 0., 0.2], [0., 0., 0.], [0.2, 0., 0.]]) 
 	    s_total_th = np.array([0.558, 0.442, 0.244])
-            s_err_l2_second = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
-            s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
-            s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
         elif function == 'Rosenbrock':
             formula = ['100*(X2-X1*X1)*(X2-X1*X1) + (X1-1)*(X1-1) + 100*(X3-X2*X2)*(X3-X2*X2) + (X2-1)*(X2-1)']
             model_ref = ot.NumericalMathFunction(['X1', 'X2', 'X3'], ['Y'], formula)
@@ -165,22 +165,21 @@ class UQ:
             s_first_th = np.array([0.1, 0.8])
             s_second_th = np.array([[0., 0.1], [0.1, 0.]])
             s_total_th = np.array([0.1, 0.9])
-	    try:
-                s_err_l2_second = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
-            except:
-	        print "No Second order indices with FAST"
-		s_err_l2_second = 0.
-	    s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
-            s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
-
         else:
             print "No or wrong analytical function, options are: Ishigami (3D), Rosenbrock (3D)"
             return
+        try:
+	    s_err_l2_second = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
+	except:
+	    print "No Second order indices with FAST"
+	    s_err_l2_second = 0.
+	s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
+	s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
 
         err_max = 0.
         err_l2 = 0.
         eval_mean = 0.
-        sample = distribution.getSample(self.points_sample)
+        sample = self.distribution.getSample(self.points_sample)
 
         for _, j in enumerate(sample):
             eval_ref = model_ref(j)[0]
@@ -201,58 +200,48 @@ class UQ:
         with open(self.output_folder + '/pod_err.dat', 'w') as f:
             f.writelines(str(self.snapshot)+' '+str(err_q2)+' '+str(self.points_sample)+' '+str(s_err_l2_first)+' '+str(s_err_l2_second)+' '+str(s_err_l2_total))
 
-        try:
+        if self.output_len == 1:
 	    output_ref = model_ref(sample)
             output = self.int_model(sample)
             qq_plot = ot.VisualTest_DrawQQplot(output_ref, output)
             #View(qq_plot).show()
             qq_plot.draw(self.output_folder + '/qq_plot.png')
-        except:
+        else:
 	    print "Cannot draw QQplot with output dimension > 1"
 
     def sobol(self):
-        """Compute the sobol indices.
+        """Compute the Sobol' indices.
 
-        It returns the seond, first and total order indices of Sobol.
+        It returns the second, first and total order indices of Sobol'.
         The second order indices are only available with the sobol method.
 
-        :return: The Sobol indices
+        :return: The Sobol' indices
         :rtype: lst
 
         """
         indices = [[], [], []]
         if self.method_sobol == 'sobol':
-	    input_pdf = "ot." + self.pdf[0]
-	    for i in xrange(self.p_len-1):
-		input_pdf = input_pdf + ", ot." + self.pdf[i+1]
-            distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
-            elf.points_sampleample1 = distribution.getSample(self.points_sample)
-            sample2 = distribution.getSample(self.points_sample)
-            sobol = ot.SensitivityAnalysis(sample1, sample2, self.int_model)
+            print "\n----- Sobol' indices -----"
+	    sample1 = self.distribution.getSample(self.points_sample)
+            sample2 = self.distribution.getSample(self.points_sample)
+            sobol = ot.SensitivityAnalysis(sample1, sample2, self.model)
 	    sobol.setBlockSize(int(ot.ResourceMap.Get("parallel-threads")))
-
-            print "\n----- Sobol indices -----"
-            s_second = sobol.getSecondOrderIndices()
-            s_first = sobol.getFirstOrderIndices()
-            s_total = sobol.getTotalOrderIndices()
-            print "Second order: ", s_second
-            indices[0] = np.array(s_second)
-
+            for i in range(self.output_len):
+                indices[0].append(np.array(sobol.getSecondOrderIndices(i)))
+            print "Second order: ", indices[0]
         elif self.method_sobol == 'FAST':
-            print "\n----- FAST indices -----"
-	    input_pdf = "ot." + self.pdf[0]
-	    for i in xrange(self.p_len-1):
-		input_pdf = input_pdf + ", ot." + self.pdf[i+1]
-            distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
-            fast = ot.FAST(self.int_model, distribution, self.points_sample)
-            s_first = fast.getFirstOrderIndices()
-            s_total = fast.getTotalOrderIndices()
-
+	    print "\n----- FAST indices -----"
+	    sobol = ot.FAST(self.model, self.distribution, self.points_sample)
         else:
-            print("The method {} doesn't exist".format(self.method_sobol))
+	    print("The method {} doesn't exist".format(self.method_sobol))
+	    return
+            
+	for i in range(self.output_len):
+	    indices[1].append(np.array(sobol.getFirstOrderIndices(i)))
+	    indices[2].append(np.array(sobol.getTotalOrderIndices(i)))
 
-        print "First order: ", s_first
-        print "Total: ", s_total
+        print "First order: ", indices[1]
+        print "Total: ", indices[2]
 
         # TODO ANCOVA
         # ancova = ot.ANCOVA(results, sample)
@@ -260,26 +249,29 @@ class UQ:
         # uncorrelated = ancova.getUncorrelatedIndices()
         # correlated = indices - uncorrelated
 
-        # Draw importance factors
-        s_plt = ot.NumericalPointWithDescription(s_total)
-        s_plt.setDescription(self.p_lst)
-        try:
-            i_factor = ot.SensitivityAnalysis.DrawImportanceFactors(s_plt)
-            i_factor.setTitle("Total order Sensitivity Indices")
-            #View(i_factor).show()
-	    i_factor.draw(self.output_folder + '/i_factor.png')
-        except:
-            print "Cannot draw importance factors: expected positive values"
-
-        indices[1] = np.array(s_first)
-        indices[2] = np.array(s_total)
+        # Write Sobol' indices to file
+#        with open(self.output_folder + '/sensitivity.dat', 'w') as f:
+#            f.writelines('TITLE = \" Sobol indices \" \n')
+#            if self.output_len == 1:
+#                f.writelines('VARIABLES = \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
+#                w_lst = [min, sd_min, mean, sd_max, max]
+#            else:
+#                f.writelines('VARIABLES = \"x\" \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
+#                w_lst = [self.f_input, min, sd_min, mean, sd_max, max]
+#            f.writelines('ZONE T = \"Moments \" , I='+str(self.output_len)+', F=BLOCK  \n')
+#            for w in w_lst:
+#                for i in range(self.output_len):
+#                    f.writelines("{:.7E}".format(float(w[i])) + "\t ")
+#                    if i % 1000:
+#                        f.writelines('\n')
+#                f.writelines('\n')
 
 	# Compute error of the POD with a known function
         try:
-            self.error_pod(distribution, indices, self.test)
+            self.error_pod(indices, self.test)
         except AttributeError:
             print "No analytical function to compare the POD from"
-
+        
         return indices
 
     def error_propagation(self):
@@ -292,9 +284,7 @@ class UQ:
 
         """
         print "\n----- Moment evaluation -----"
-        # TODO be able to change the distributions and corners
-        distribution = ot.ComposedDistribution([ot.Normal(4035., 400.), ot.Uniform(15., 60.)])
-        sample = distribution.getSample(self.points_sample)
+        sample = self.distribution.getSample(self.points_sample)
         output = self.model(sample)
         output = output.sort()
         mean = output.computeMean()

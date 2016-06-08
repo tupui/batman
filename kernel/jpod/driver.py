@@ -326,7 +326,10 @@ class Driver(object):
         output = os.path.join(self.output, self.output_tree['uq'])
         analyse = UQ(self.pod, settings, output)	
 	sobol = analyse.sobol()
-        analyse.error_propagation()
+	try:
+            analyse.error_propagation()
+	except:
+	    print "No PDF specified: no uncertainty propagation"
 
 
     def restart(self):
