@@ -202,7 +202,7 @@ class Space(SpaceBase):
 
         self.logger.info('Created %d samples with the %s method', len(self),
                          kind)
-
+        self.logger.debug("Points are: \n {}".format(samples))
         return self
 
 

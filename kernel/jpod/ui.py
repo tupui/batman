@@ -60,7 +60,11 @@ def run(settings, options):
 
     elif options.no_pod or options.pred:
         # just read the existing pod
-        driver.read_pod()
+        try:
+            driver.read_pod()
+        except IOError:
+            logger.exception("POD need to be computed: re-try without -n")
+            raise SystemExit
 
     if not options.pred:
         snapshots = driver.prediction(settings.prediction, write=options.save_snapshots)

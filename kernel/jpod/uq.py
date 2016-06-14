@@ -50,7 +50,6 @@ class UQ:
         :param dict settings: The settings_template file.
 
         """
-        UQ.logger.info("Test")
         self.logger.info("UQ module")
         try:
             self.test = settings.uq['test']
@@ -64,9 +63,13 @@ class UQ:
         self.pod = jpod
         self.p_lst = settings.snapshot['io']['parameter_names']
         self.p_len = len(self.p_lst)
-        self.method_sobol = settings.uq['method']
-        self.points_sample = settings.uq['sample']
-        pdf = settings.uq['pdf']
+        try:
+            self.method_sobol = settings.uq['method']
+            self.points_sample = settings.uq['sample']
+            pdf = settings.uq['pdf']
+        except KeyError:
+            self.logger.exception("Need to configure method, sample and PDF")
+            raise SystemExit
         input_pdf = "ot." + pdf[0]
         for i in xrange(self.p_len - 1):
             input_pdf = input_pdf + ", ot." + pdf[i + 1]
