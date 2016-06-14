@@ -1,5 +1,4 @@
 from module_import import import_file
-from logging_conf import setup
 import os
 
 def clean_path(path):
