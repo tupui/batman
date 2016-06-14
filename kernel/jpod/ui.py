@@ -1,37 +1,44 @@
 """A command line interface to jpod."""
 
 import logging
-from optparse import OptionParser
+from logging.config import dictConfig
+from logging.handlers import RotatingFileHandler
+import argparse
 import os
-import sys
-
-from driver import Driver
-from misc import import_file
-from misc import logging_conf
+import json
 import mpi
 import numpy as N
+from misc import import_file
+from driver import Driver
 from pod import Snapshot
 
 
-help_message = '''
-jpod settings_file.py
+description_message = '''
+JPOD creates a surrogate model using POD+Kriging and perform UQ.
 '''
-__version__ = 2
+__version__ = 1.2
 
-logger = logging.getLogger('ui')
-
+path = os.path.dirname(os.path.realpath(__file__)) + '/misc/logging.json'
+with open(path, 'r') as file:
+    logging_config = json.load(file)
 
 def run(settings, options):
     """Run the driver along."""
+    dictConfig(logging_config)
+    if options.verbose:
+	console = logging.getLogger().handlers[0]
+	console.setLevel(logging.DEBUG)
+        logging.getLogger().removeHandler('console')
+	logging.getLogger().addHandler(console)
+
+    logger = logging.getLogger('JPOD main')
+    
     # clean up output directory
     if not options.restart \
        and not options.no_pod and not options.pred:
         mpi.clean_makedirs(options.output)
-    	# tell that the output directory has previously been clean
-    	logger.info('cleaning : %s', options.output)
-
-    # setup logging, after directory creation
-    logging_conf.setup(options.output, 'driver')
+        # tell that the output directory has previously been clean
+        logger.debug('cleaning : %s', options.output)
 
     driver = Driver(settings.snapshot, settings.space, options.output)
 
@@ -56,18 +63,17 @@ def run(settings, options):
         driver.read_pod()
 
     if not options.pred:
-        snapshots = driver.prediction(settings.prediction,
-                                  write=options.save_snapshots)
+        snapshots = driver.prediction(settings.prediction, write=options.save_snapshots)
         driver.write_model()
     else:
         snapshots = driver.prediction_without_computation(
             settings.prediction,
             write=True)
         logger.info('Prediction without model building')
-    
+
     if options.uq:
         driver.uq(settings)
-    
+
     logger.info(driver.pod)
 
     if False and driver.provider.is_function:
@@ -83,88 +89,90 @@ def run(settings, options):
                         N.linalg.norm(error, N.inf))
 
 
-def output_option(option, opt, value, parser):
+def abs_path(value):
     """Get absolute path."""
-    parser.values.output = os.path.abspath(value)
+    return os.path.abspath(value)
 
 
-def parse_command_line_and_run(argv=None):
-    """Parse and check options, and then call XXX()."""
+def parse_command_line_and_run():
+    """Parse and check options, and then call run()."""
+    # parser
+    parser = argparse.ArgumentParser(prog="JPOD", description=description_message)
+    parser.add_argument('--version', action='version', version="%(prog)s {}".format(__version__))
 
-    if argv is None:
-        argv = sys.argv  # [1:]
+    # Positionnal arguments
+    parser.add_argument(
+        'task',
+        help='path to the task to run')
 
-    parser = OptionParser(usage=help_message, version=__version__)
+    # Optionnal arguments
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        default=False,
+        help='Set verbosity from WARNING to DEBUG, [default: %(default)s].')
 
-    # command line options
-    parser.add_option(
+    parser.add_argument(
         '-s', '--save-snapshots',
         action='store_true',
         default=False,
-        help='save the snapshots to disk when using a function, [default: %default].')
+        help='save the snapshots to disk when using a function, [default: %(default)s].')
 
-    parser.add_option(
+    parser.add_argument(
         '-o', '--output',
-        type='string',
-        # action='store',
-        action='callback',
-        callback=output_option,
-        default='.',
-        help='path to output directory, [default: %default].')
+        type=abs_path,
+        default='./',
+        help='path to output directory, [default: %(default)s].')
 
-    parser.add_option(
+    parser.add_argument(
         '--set',
         action='append',
         default=[],
         help='jpod settings to override the file ones, pass "setting_name[key1]...[keyN]=value", [default: none]')
 
-    parser.add_option(
+    parser.add_argument(
         '-r', '--restart',
         action='store_true',
         default=False,
-        help='restart pod, [default: %default].')
+        help='restart pod, [default: %(default)s].')
 
-    parser.add_option(
+    parser.add_argument(
         '-n', '--no-pod',
         action='store_true',
         default=False,
-        help='do not compute pod but read it from disk, [default: %default].')
+        help='do not compute pod but read it from disk, [default: %(default)s].')
 
-    parser.add_option(
+    parser.add_argument(
         '-u', '--uq',
         action='store_true',
         default=False,
         help='Uncertainty Quantification study')
 
-    parser.add_option(
+    parser.add_argument(
         '-p',
         action='store_true',
         default=False,
         dest='pred',
-        help='compute prediction and write it from disk, [default: %default].')
+        help='compute prediction and write it from disk, [default: %(default)s].')
 
     # parse command line
-    (options, args) = parser.parse_args()
+    options = parser.parse_args()
 
-    if len(args) != 1:
-        parser.error("incorrect number of arguments")
-    settings = import_file(args[0])
+    settings = import_file(options.task)
 
     # store settings absolute file path
-    options.script = os.path.abspath(args[0])
+    options.script = os.path.abspath(options.task)
 
     # override input script settings from command line
     for s in options.set:
-        logger.info('overriding setting : %s', s)
+        logger.warn('overriding setting : %s', s)
         exec s in settings.__dict__
 
-    try:
-        run(settings, options)
-        return 0
-    except:
-        logger.exception('Exception caught on cpu %i' % mpi.myid)
-        return 1
+    #try:
+    run(settings, options)
+    #except:
+    #    logger.exception('Exception caught on cpu %i' % mpi.myid)
 
 
 if __name__ == "__main__":
-    sys.exit(parse_command_line_and_run())
+    parse_command_line_and_run()
