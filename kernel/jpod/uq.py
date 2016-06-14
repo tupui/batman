@@ -341,12 +341,12 @@ class UQ:
             else:
                 f.writelines('VARIABLES =  \"x\" \"output\" \"PDF\" \n')
                 f.writelines('ZONE T = \"PDF \" , I=' + str(self.output_len) + ', J=' + str(d_PDF) + ',  F=BLOCK  \n')
-            # X
-            for j, i in itertools.product(range(d_PDF), range(self.output_len)):
-                f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
-                if (i % 1000) or (j % 1000):
-                    f.writelines('\n')
-            f.writelines('\n')
+                # X
+                for j, i in itertools.product(range(d_PDF), range(self.output_len)):
+                    f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
+                    if (i % 1000) or (j % 1000):
+                        f.writelines('\n')
+                f.writelines('\n')
             # Output
             for j, i in itertools.product(range(d_PDF), range(self.output_len)):
                 f.writelines("{:.7E}".format(float(output_extract[j][i])) + "\t ")
