@@ -36,7 +36,7 @@ class Predictor(object):
         Returns a numpy array with result.
         """
         result = self.predictor.evaluate(point)
-        self.logger.debug('Computed prediction at point %s', point)
+        #self.logger.debug('Computed prediction at point %s', point)
         return result
 
 
