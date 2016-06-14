@@ -226,7 +226,7 @@ class UQ:
 	    for i in xrange(self.p_len-1):
 		input_pdf = input_pdf + ", ot." + self.pdf[i+1]
             distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
-            elf.points_sampleample1 = distribution.getSample(self.points_sample)
+            sample1 = distribution.getSample(self.points_sample)
             sample2 = distribution.getSample(self.points_sample)
             sobol = ot.SensitivityAnalysis(sample1, sample2, self.int_model)
 	    sobol.setBlockSize(int(ot.ResourceMap.Get("parallel-threads")))
