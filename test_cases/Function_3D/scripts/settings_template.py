@@ -97,6 +97,8 @@ uq = {
 # Use a test method: 'Ishigami'
     'test' : 'Ishigami',
     'sample' : 10000 ,
+# Uncertainty propagation. Enter the PDF of the inputs. x1: Normal(mu, sigma), x2: Uniform(inf, sup)
+    'pdf' : ['Uniform(-3.1415, 3.1415)', 'Uniform(-3.1415, 3.1415)', 'Uniform(-3.1415, 3.1415)']
 }
 
 

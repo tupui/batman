@@ -293,7 +293,7 @@ class UQ:
         """
         print "\n----- Moment evaluation -----"
         # TODO be able to change the distributions and corners
-        distribution = ot.ComposedDistribution([ot.Normal(4035., 400.), ot.Uniform(15., 60.)])
+        distribution = ot.ComposedDistribution([ot.Uniform(-3.1415, 3.1415), ot.Uniform(-3.1415, 3.1415), ot.Uniform(-3.1415, 3.1415)])
         sample = distribution.getSample(self.points_sample)
         output = self.model(sample)
         output = output.sort()
@@ -308,12 +308,12 @@ class UQ:
 
         # Create the PDFs
         output_pts = np.array(output)
-	pdf_pts = [None] * self.output_len
+        pdf_pts = [None] * self.output_len
         for i in range(self.output_len):
             try:
-	        pdf = kernel.build(output[:, i])
+	            pdf = kernel.build(output[:, i])
             except:
-	        pdf = ot.Normal(output[i,i], 0.001)
+	            pdf = ot.Normal(output[i,i], 0.001)
             pdf_pts[i] = np.array(pdf.computePDF(output[:, i]))
         # Write moments to file
         with open(self.output_folder + '/moment.dat', 'w') as f:
