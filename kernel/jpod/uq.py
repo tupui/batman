@@ -7,7 +7,7 @@ This class is intented to implement statistical tools provided by the OpenTURNS 
 
 Example:
 >> analyse = UQ(pod, settings, output)
->> sobol = analyse.sobol()
+>> analyse.sobol()
 >> analyse.error_propagation()
 
 """
@@ -15,8 +15,10 @@ Example:
 import logging
 import numpy as np
 import openturns as ot
-#from openturns.viewer import View
-from os import times, mkdir
+# from openturns.viewer import View
+from os import mkdir
+import itertools
+
 
 class UQ:
     """UQ class.
@@ -24,7 +26,7 @@ class UQ:
     It implements the following methods:
     - func(self, coords)
     - int_func(self, coords)
-    - error_pod(self, distribution, s_first, function)
+    - error_pod(self, indices, function)
     - sobol(self)
     - error_propagation(self).
 
@@ -55,21 +57,33 @@ class UQ:
             pass
         self.output_folder = output
         try:
-	    mkdir(output)
-	except:
-	    pass
+            mkdir(output)
+        except:
+            pass
         self.pod = jpod
-        self.method_sobol = settings.uq['method']
-        self.points_sample = settings.uq['sample']
-	self.pdf = settings.uq['pdf']
-        self.method_pod = settings.prediction['method']
         self.p_lst = settings.snapshot['io']['parameter_names']
-        self.output_len = settings.snapshot['io']['shapes'][0][0][0]
         self.p_len = len(self.p_lst)
+        try:
+            self.method_sobol = settings.uq['method']
+            self.points_sample = settings.uq['sample']
+            pdf = settings.uq['pdf']
+        except KeyError:
+            self.logger.exception("Need to configure method, sample and PDF")
+            raise SystemExit
+        input_pdf = "ot." + pdf[0]
+        for i in xrange(self.p_len - 1):
+            input_pdf = input_pdf + ", ot." + pdf[i + 1]
+        self.distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
+        self.method_pod = settings.prediction['method']
+        self.output_len = settings.snapshot['io']['shapes'][0][0][0]
         self.f_input = None
         self.model = ot.PythonFunction(self.p_len, self.output_len, self.func)
         self.int_model = ot.PythonFunction(self.p_len, 1, self.int_func)
-	self.snapshot = settings.space['size_max']
+        self.snapshot = settings.space['size_max']
+
+    def __repr__(self):
+        """Information about object."""
+        return "UQ object: Method({}), Input({}), Distribution({})".format(self.method_sobol, self.p_lst, self.distribution)
 
     def func(self, coords):
         """Evaluate the POD on a given point.
@@ -109,7 +123,7 @@ class UQ:
             int_f_eval = f_eval
         return [int_f_eval.item()]
 
-    def error_pod(self, distribution, indices, function):
+    def error_pod(self, indices, function):
         """Compute the error between the POD and the analytic function.
 
         For test purpose. From the POD of the function, evaluate the error
@@ -121,66 +135,64 @@ class UQ:
 
         err_l2 = sum()
 
-        :param ot.NumericalSample sample: input sample.
         :param lst(array) indices: Sobol first order indices computed using the POD.
         :param str function: name of the analytic function.
 
         """
-        # TODO add Functions, be able to do n-D Rosenbrock etc use PythonFunction. 
         if function == 'Ishigami':
             formula = ['sin(X1)+7*sin(X2)*sin(X2)+0.1*((X3)*(X3)*(X3)*(X3))*sin(X1)']
             model_ref = ot.NumericalMathFunction(['X1', 'X2', 'X3'], ['Y'], formula)
             s_first_th = np.array([0.3139, 0.4424, 0.])
-	    s_second_th = np.array([[0., 0., 0.2], [0., 0., 0.], [0.2, 0., 0.]]) 
-	    s_total_th = np.array([0.558, 0.442, 0.244])
-            s_err_l2_second = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
-            s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
-            s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
+            s_second_th = np.array([[0., 0., 0.2], [0., 0., 0.], [0.2, 0., 0.]])
+            s_total_th = np.array([0.558, 0.442, 0.244])
         elif function == 'Rosenbrock':
             formula = ['100*(X2-X1*X1)*(X2-X1*X1) + (X1-1)*(X1-1) + 100*(X3-X2*X2)*(X3-X2*X2) + (X2-1)*(X2-1)']
             model_ref = ot.NumericalMathFunction(['X1', 'X2', 'X3'], ['Y'], formula)
+            s_first_th = np.array([0.229983, 0.4855, 0.130659])
+            s_second_th = np.array([[0., 0.0920076, 0.00228908], [0.0920076, 0., 0.0935536], [0.00228908, 0.0935536, 0.]])
+            s_total_th = np.array([0.324003, 0.64479, 0.205122])
         elif function == 'Channel_Flow':
-	    def channel_flow(x):
-	        Q = x[0]
-		Ks = x[1]
-	        L=500.
-		I=5e-4
-		g=9.8
-		dx=100
-		longueur=40000
-		Long=longueur/dx
-		hc=np.power((Q**2)/(g*L*L),1./3.);
-		hn=np.power((Q**2)/(I*L*L*Ks*Ks),3./10.);
-		hinit=10.
-		hh=hinit*np.ones(Long);
-		for i in xrange(2,Long+1):
-		    hh[Long-i]=hh[Long-i+1]-dx*I*((1-np.power(hh[Long-i+1]/hn,-10./3.))/(1-np.power(hh[Long-i+1]/hc,-3.)))
-		h=hh
+            def channel_flow(x):
+                Q = x[0]
+                Ks = x[1]
+                L = 500.
+                I = 5e-4
+                g = 9.8
+                dx = 100
+                longueur = 40000
+                Long = longueur / dx
+                hc = np.power((Q**2) / (g * L * L), 1. / 3.)
+                hn = np.power((Q**2) / (I * L * L * Ks * Ks), 3. / 10.)
+                hinit = 10.
+                hh = hinit * np.ones(Long)
+                for i in xrange(2, Long + 1):
+                    hh[Long - i] = hh[Long - i + 1] - dx * I * ((1 - np.power(hh[Long - i + 1] / hn, -10. / 3.)) / (1 - np.power(hh[Long - i + 1] / hc, -3.)))
+                h = hh
 
-		X=np.arange(dx, longueur+1, dx)
+                X = np.arange(dx, longueur + 1, dx)
 
-		Zref=-X*I
-		return Zref+h
-	    model_ref = ot.PythonFunction(2, 400, channel_flow)
+                Zref = - X * I
+                return Zref + h
+            model_ref = ot.PythonFunction(2, 400, channel_flow)
             s_first_th = np.array([0.1, 0.8])
             s_second_th = np.array([[0., 0.1], [0.1, 0.]])
             s_total_th = np.array([0.1, 0.9])
-	    try:
-                s_err_l2_second = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
-            except:
-	        print "No Second order indices with FAST"
-		s_err_l2_second = 0.
-	    s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
-            s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
-
         else:
-            print "No or wrong analytical function, options are: Ishigami (3D), Rosenbrock (3D)"
+            self.logger.error("Wrong analytical function, options are: Ishigami, Rosenbrock and Channel_Flow")
             return
+        try:
+            s_err_l2_second = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
+        except:
+            self.logger.warn("No Second order indices with FAST")
+
+        s_err_l2_second = 0.
+        s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
+        s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
 
         err_max = 0.
         err_l2 = 0.
         eval_mean = 0.
-        sample = distribution.getSample(self.points_sample)
+        sample = self.distribution.getSample(self.points_sample)
 
         for _, j in enumerate(sample):
             eval_ref = model_ref(j)[0]
@@ -191,96 +203,101 @@ class UQ:
         eval_mean = eval_mean / self.points_sample
         eval_var = 0.
         for _, j in enumerate(sample):
-            #eval_ref = model_ref(j)[0]
+            # eval_ref = model_ref(j)[0]
             eval_ref = self.model(j)[0]
             eval_var = eval_var + (eval_mean - eval_ref) ** 2
         err_q2 = 1 - err_l2 / eval_var
-        print "\n----- POD error -----"
-        print("L_inf(error): {}\nQ2(error): {}\nL2(sobol first, second and total order indices error): {}, {}, {}".format(err_max, err_q2, s_err_l2_first, s_err_l2_second, s_err_l2_total))
+
+        self.logger.info("\n----- POD error -----")
+        self.logger.info("L_inf(error): {}\nQ2(error): {}\nL2(sobol first, second and total order indices error): {}, {}, {}".format(err_max, err_q2, s_err_l2_first, s_err_l2_second, s_err_l2_total))
         # Write error to file pod_err.dat
         with open(self.output_folder + '/pod_err.dat', 'w') as f:
-            f.writelines(str(self.snapshot)+' '+str(err_q2)+' '+str(self.points_sample)+' '+str(s_err_l2_first)+' '+str(s_err_l2_second)+' '+str(s_err_l2_total))
+            f.writelines(str(self.snapshot) + ' ' + str(err_q2) + ' ' + str(self.points_sample) + ' ' + str(s_err_l2_first) + ' ' + str(s_err_l2_second) + ' ' + str(s_err_l2_total))
 
-        try:
-	    output_ref = model_ref(sample)
+        if self.output_len == 1:
+            output_ref = model_ref(sample)
             output = self.int_model(sample)
             qq_plot = ot.VisualTest_DrawQQplot(output_ref, output)
-            #View(qq_plot).show()
+            # View(qq_plot).show()
             qq_plot.draw(self.output_folder + '/qq_plot.png')
-        except:
-	    print "Cannot draw QQplot with output dimension > 1"
+        else:
+            self.logger.debug("Cannot draw QQplot with output dimension > 1")
 
     def sobol(self):
-        """Compute the sobol indices.
+        """Compute the Sobol' indices.
 
-        It returns the seond, first and total order indices of Sobol.
+        It returns the second, first and total order indices of Sobol'.
         The second order indices are only available with the sobol method.
 
-        :return: The Sobol indices
+        :return: The Sobol' indices
         :rtype: lst
 
         """
         indices = [[], [], []]
         if self.method_sobol == 'sobol':
-	    input_pdf = "ot." + self.pdf[0]
-	    for i in xrange(self.p_len-1):
-		input_pdf = input_pdf + ", ot." + self.pdf[i+1]
-            distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
-            sample1 = distribution.getSample(self.points_sample)
-            sample2 = distribution.getSample(self.points_sample)
-            sobol = ot.SensitivityAnalysis(sample1, sample2, self.int_model)
-	    sobol.setBlockSize(int(ot.ResourceMap.Get("parallel-threads")))
-
-            print "\n----- Sobol indices -----"
-            s_second = sobol.getSecondOrderIndices()
-            s_first = sobol.getFirstOrderIndices()
-            s_total = sobol.getTotalOrderIndices()
-            print "Second order: ", s_second
-            indices[0] = np.array(s_second)
-
+            self.logger.info("\n----- Sobol' indices -----")
+            sample1 = self.distribution.getSample(self.points_sample)
+            sample2 = self.distribution.getSample(self.points_sample)
+            sobol = ot.SensitivityAnalysis(sample1, sample2, self.model)
+            sobol.setBlockSize(int(ot.ResourceMap.Get("parallel-threads")))
+            for i in range(self.output_len):
+                indices[0].append(np.array(sobol.getSecondOrderIndices(i)))
+            self.logger.debug("Second order: {}".format(indices[0]))
         elif self.method_sobol == 'FAST':
-            print "\n----- FAST indices -----"
-	    input_pdf = "ot." + self.pdf[0]
-	    for i in xrange(self.p_len-1):
-		input_pdf = input_pdf + ", ot." + self.pdf[i+1]
-            distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
-            fast = ot.FAST(self.int_model, distribution, self.points_sample)
-            s_first = fast.getFirstOrderIndices()
-            s_total = fast.getTotalOrderIndices()
-
+            self.logger.info("\n----- FAST indices -----")
+            sobol = ot.FAST(self.model, self.distribution, self.points_sample)
         else:
-            print("The method {} doesn't exist".format(self.method_sobol))
+            self.logger.error("The method {} doesn't exist".format(self.method_sobol))
+            return
 
-        print "First order: ", s_first
-        print "Total: ", s_total
+        for i in range(self.output_len):
+            indices[1].append(np.array(sobol.getFirstOrderIndices(i)))
+            indices[2].append(np.array(sobol.getTotalOrderIndices(i)))
 
-        # TODO ANCOVA
-        # ancova = ot.ANCOVA(results, sample)
-        # indices = ancova.getIndices()
-        # uncorrelated = ancova.getUncorrelatedIndices()
-        # correlated = indices - uncorrelated
+        self.logger.debug("First order: {}".format(indices[1]))
+        self.logger.debug("Total: {}".format(indices[2]))
 
-        # Draw importance factors
-        s_plt = ot.NumericalPointWithDescription(s_total)
-        s_plt.setDescription(self.p_lst)
+            # TODO ANCOVA
+            # ancova = ot.ANCOVA(results, sample)
+            # indices = ancova.getIndices()
+            # uncorrelated = ancova.getUncorrelatedIndices()
+            # correlated = indices - uncorrelated
+
+        # Write Sobol' indices to file
+        with open(self.output_folder + '/sensitivity.dat', 'w') as f:
+            f.writelines('TITLE = \" Sobol indices \" \n')
+            var = ''
+            for p in self.p_lst:
+                var += ' \"S_' + str(p) + '\" \"S_T_' + str(p) + '\"'
+            var += '\n'
+            if self.output_len == 1:
+                variables = 'VARIABLES =' + var
+                f.writelines(variables)
+                f.writelines('ZONE T = \"Sensitivity \" , I='+str(self.output_len)+', F=BLOCK  \n')
+            else:
+                variables = 'VARIABLES = \"x\"' + var
+                f.writelines(variables)
+                f.writelines('ZONE T = \"Sensitivity \" , I='+str(self.output_len)+', F=BLOCK  \n')
+                # X
+                for i in range(self.output_len):
+                    f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
+                    if i % 1000:
+                        f.writelines('\n')
+                f.writelines('\n')
+            w_lst = [indices[1], indices[2]]
+            for j, w, i in itertools.product(range(self.p_len), w_lst, range(self.output_len)):
+                f.writelines("{:.7E}".format(float(w[i][j])) + "\t ")
+                if i % 1000:
+                    f.writelines('\n')
+            f.writelines('\n')
+
+        # Compute error of the POD with a known function
         try:
-            i_factor = ot.SensitivityAnalysis.DrawImportanceFactors(s_plt)
-            i_factor.setTitle("Total order Sensitivity Indices")
-            #View(i_factor).show()
-	    i_factor.draw(self.output_folder + '/i_factor.png')
-        except:
-            print "Cannot draw importance factors: expected positive values"
-
-        indices[1] = np.array(s_first)
-        indices[2] = np.array(s_total)
-
-	# Compute error of the POD with a known function
-        try:
-            self.error_pod(distribution, indices, self.test)
+            if self.output_len > 1:
+                raise AttributeError
+            self.error_pod(indices, self.test)
         except AttributeError:
-            print "No analytical function to compare the POD from"
-
-        return indices
+            self.logger.info("No analytical function to compare the POD from")
 
     def error_propagation(self):
         """Compute the moments.
@@ -291,10 +308,8 @@ class UQ:
         The file moment.dat contains the moments and the file pdf.dat contains the PDFs.
 
         """
-        print "\n----- Moment evaluation -----"
-        # TODO be able to change the distributions and corners
-        distribution = ot.ComposedDistribution([ot.Uniform(-3.1415, 3.1415), ot.Uniform(-3.1415, 3.1415), ot.Uniform(-3.1415, 3.1415)])
-        sample = distribution.getSample(self.points_sample)
+        self.logger.info("\n----- Moment evaluation -----")
+        sample = self.distribution.getSample(self.points_sample)
         output = self.model(sample)
         output = output.sort()
         mean = output.computeMean()
@@ -307,14 +322,16 @@ class UQ:
         kernel = ot.KernelSmoothing()
 
         # Create the PDFs
-        output_pts = np.array(output)
         pdf_pts = [None] * self.output_len
+        d_PDF = 100
+        sample = self.distribution.getSample(d_PDF)
+        output_extract = self.model(sample)
         for i in range(self.output_len):
             try:
-	            pdf = kernel.build(output[:, i])
+                pdf = kernel.build(output[:, i])
             except:
-	            pdf = ot.Normal(output[i,i], 0.001)
-            pdf_pts[i] = np.array(pdf.computePDF(output[:, i]))
+                pdf = ot.Normal(output[i, i], 0.001)
+            pdf_pts[i] = np.array(pdf.computePDF(output_extract[:, i]))
         # Write moments to file
         with open(self.output_folder + '/moment.dat', 'w') as f:
             f.writelines('TITLE = \" Moment evaluation \" \n')
@@ -324,42 +341,37 @@ class UQ:
             else:
                 f.writelines('VARIABLES = \"x\" \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
                 w_lst = [self.f_input, min, sd_min, mean, sd_max, max]
-            f.writelines('ZONE T = \"Moments \" , I='+str(self.output_len)+', F=BLOCK  \n')
-            for w in w_lst:
-                for i in range(self.output_len):
-                    f.writelines("{:.7E}".format(float(w[i])) + "\t ")
-                    if i % 1000:
-                        f.writelines('\n')
-                f.writelines('\n')
+            f.writelines('ZONE T = \"Moments \" , I=' + str(self.output_len) + ', F=BLOCK  \n')
+            for w, i in itertools.product(w_lst, range(self.output_len)):
+                f.writelines("{:.7E}".format(float(w[i])) + "\t ")
+                if i % 1000:
+                    f.writelines('\n')
+            f.writelines('\n')
 
         # Write PDF to file
         with open(self.output_folder + '/pdf.dat', 'w') as f:
             f.writelines('TITLE = \" Probability Density Functions \" \n')
             if self.output_len == 1:
                 f.writelines('VARIABLES =  \"output\" \"PDF\" \n')
-                f.writelines('ZONE T = \"PDF \" , I='+str(self.output_len)+', J='+str(self.points_sample)+',  F=BLOCK  \n')
+                f.writelines('ZONE T = \"PDF \" , I=' + str(self.output_len) + ', J=' + str(d_PDF) + ',  F=BLOCK  \n')
             else:
                 f.writelines('VARIABLES =  \"x\" \"output\" \"PDF\" \n')
-                f.writelines('ZONE T = \"PDF \" , I='+str(self.output_len)+', J='+str(self.points_sample)+',  F=BLOCK  \n')
+                f.writelines('ZONE T = \"PDF \" , I=' + str(self.output_len) + ', J=' + str(d_PDF) + ',  F=BLOCK  \n')
                 # X
-                for j in range(self.points_sample):
-                    for i in range(self.output_len):
-                        f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
-                        if (i % 1000) or (j % 1000):
-                            f.writelines('\n')
+                for j, i in itertools.product(range(d_PDF), range(self.output_len)):
+                    f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
+                    if (i % 1000) or (j % 1000):
+                        f.writelines('\n')
                 f.writelines('\n')
             # Output
-            for j in range(self.points_sample):
-                for i in range(self.output_len):
-                    f.writelines("{:.7E}".format(float(output_pts[j][i])) + "\t ")
-                    if (i % 1000) or (j % 1000):
-                        f.writelines('\n')
+            for j, i in itertools.product(range(d_PDF), range(self.output_len)):
+                f.writelines("{:.7E}".format(float(output_extract[j][i])) + "\t ")
+                if (i % 1000) or (j % 1000):
+                    f.writelines('\n')
             f.writelines('\n')
             # PDF
-            for j in range(self.points_sample):
-                for i in range(self.output_len):
-                    f.writelines("{:.7E}".format(float(pdf_pts[i][j])) + "\t ")
-                    if (i % 1000) or (j % 1000):
-                        f.writelines('\n')
+            for j, i in itertools.product(range(d_PDF), range(self.output_len)):
+                f.writelines("{:.7E}".format(float(pdf_pts[i][j])) + "\t ")
+                if (i % 1000) or (j % 1000):
+                    f.writelines('\n')
             f.writelines('\n')
-
