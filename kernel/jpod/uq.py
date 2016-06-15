@@ -254,8 +254,8 @@ class UQ:
             indices[1].append(np.array(sobol.getFirstOrderIndices(i)))
             indices[2].append(np.array(sobol.getTotalOrderIndices(i)))
 
-            self.logger.debug("First order: {}".format(indices[1]))
-            self.logger.debug("Total: {}".format(indices[2]))
+        self.logger.debug("First order: {}".format(indices[1]))
+        self.logger.debug("Total: {}".format(indices[2]))
 
             # TODO ANCOVA
             # ancova = ot.ANCOVA(results, sample)
@@ -264,24 +264,37 @@ class UQ:
             # correlated = indices - uncorrelated
 
         # Write Sobol' indices to file
-        # with open(self.output_folder + '/sensitivity.dat', 'w') as f:
-        #    f.writelines('TITLE = \" Sobol indices \" \n')
-        #    if self.output_len == 1:
-        #        f.writelines('VARIABLES = \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
-        #        w_lst = [min, sd_min, mean, sd_max, max]
-        #    else:
-        #        f.writelines('VARIABLES = \"x\" \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
-        #        w_lst = [self.f_input, min, sd_min, mean, sd_max, max]
-        #    f.writelines('ZONE T = \"Moments \" , I='+str(self.output_len)+', F=BLOCK  \n')
-        #    for w in w_lst:
-        #        for i in range(self.output_len):
-        #            f.writelines("{:.7E}".format(float(w[i])) + "\t ")
-        #            if i % 1000:
-        #                f.writelines('\n')
-        #        f.writelines('\n')
+        with open(self.output_folder + '/sensitivity.dat', 'w') as f:
+            f.writelines('TITLE = \" Sobol indices \" \n')
+            var = ''
+            for p in self.p_lst:
+                var += ' \"S_' + str(p) + '\" \"S_T_' + str(p) + '\"'
+            var += '\n'
+            if self.output_len == 1:
+                variables = 'VARIABLES =' + var
+                f.writelines(variables)
+                f.writelines('ZONE T = \"Sensitivity \" , I='+str(self.output_len)+', F=BLOCK  \n')
+            else:
+                variables = 'VARIABLES = \"x\"' + var
+                f.writelines(variables)
+                f.writelines('ZONE T = \"Sensitivity \" , I='+str(self.output_len)+', F=BLOCK  \n')
+                # X
+                for i in range(self.output_len):
+                    f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
+                    if i % 1000:
+                        f.writelines('\n')
+                f.writelines('\n')
+            w_lst = [indices[1], indices[2]]
+            for j, w, i in itertools.product(range(self.p_len), w_lst, range(self.output_len)):
+                f.writelines("{:.7E}".format(float(w[i][j])) + "\t ")
+                if i % 1000:
+                    f.writelines('\n')
+            f.writelines('\n')
 
         # Compute error of the POD with a known function
         try:
+            if self.output_len > 1:
+                raise AttributeError
             self.error_pod(indices, self.test)
         except AttributeError:
             self.logger.info("No analytical function to compare the POD from")
