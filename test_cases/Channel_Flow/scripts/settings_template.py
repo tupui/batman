@@ -93,12 +93,12 @@ prediction = {
 
 uq = {
 # Method used to do Sobol' analysis: 'sobol', 'FAST' (if FAST, no second-order indices)
-    'method' : 'FAST',
+    'method' : 'sobol',
 # Type of indices we want: 'aggregated', 'block'
-    'type' : 'aggregated'
+    'type' : 'aggregated',
 # Use a test method: 'Ishigami'
     'test' : 'Channel_Flow',
-    'sample' : 20000 ,
+    'sample' : 2000 ,
 # Uncertainty propagation. Enter the PDF of the inputs. x1: Normal(mu, sigma), x2: Uniform(inf, sup)
     'pdf' : ['Normal(4035., 400.)', 'Uniform(15., 60.)']
 }

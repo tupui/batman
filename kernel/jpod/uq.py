@@ -299,13 +299,20 @@ class UQ:
             sample = self.distribution.getSample(self.points_sample)
             output = self.model(sample)
             var = output.computeVariance()
-            var_indices = 0.
-            var_sum = 0.
-            for i in range(self.output_len):
-                var_indices = float(var[i]) * indices[:][i]
-                var_sum += float(var[i])
-            aggregated_indices = var_indices / var_sum
-            self.logger.info("aggregated_indices: {}".format())
+            var_indices = [[[0., 0.],[0., 0.]], [0., 0.], [0., 0.]]
+            sum_var_indices = [[[0., 0.],[0., 0.]], [0., 0.], [0., 0.]]
+            for i, j in itertools.product(range(self.output_len), range(3)):
+                try:
+                    var_indices[j] = float(var[i]) * indices[:][j][i]
+                except FloatingPointError:
+                    indices[:][j][i] = 0. * np.nan_to_num(indices[:][j][i])
+                    var_indices[j] = float(var[i]) * indices[:][j][i]
+                sum_var_indices[j] += var_indices[j]
+            sum_var = np.sum(var)
+            aggregated_indices[0] = sum_var_indices[0] / sum_var
+            aggregated_indices[1] = sum_var_indices[1] / sum_var
+            aggregated_indices[2] = sum_var_indices[2] / sum_var
+            self.logger.info("Aggregated_indices: {}".format(aggregated_indices))
 
         # Compute error of the POD with a known function
         try:
