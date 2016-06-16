@@ -65,6 +65,7 @@ class UQ:
         self.p_len = len(self.p_lst)
         try:
             self.method_sobol = settings.uq['method']
+            self.type_indices = settings.uq['type']
             self.points_sample = settings.uq['sample']
             pdf = settings.uq['pdf']
         except KeyError:
@@ -290,6 +291,21 @@ class UQ:
                 if i % 1000:
                     f.writelines('\n')
             f.writelines('\n')
+        
+        # Aggregated Indices
+        if self.type_indices == 'aggregated':
+            self.logger.info("\n----- Aggregated Sensitivity Indices -----")
+            aggregated_indices = [[], [], []]
+            sample = self.distribution.getSample(self.points_sample)
+            output = self.model(sample)
+            var = output.computeVariance()
+            var_indices = 0.
+            var_sum = 0.
+            for i in range(self.output_len):
+                var_indices = float(var[i]) * indices[:][i]
+                var_sum += float(var[i])
+            aggregated_indices = var_indices / var_sum
+            self.logger.info("aggregated_indices: {}".format())
 
         # Compute error of the POD with a known function
         try:
@@ -316,7 +332,6 @@ class UQ:
         sd = output.computeStandardDeviationPerComponent()
         sd_min = mean - sd
         sd_max = mean + sd
-        # var = output.computeVariance()
         min = output.getMin()
         max = output.getMax()
         kernel = ot.KernelSmoothing()

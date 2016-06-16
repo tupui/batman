@@ -92,8 +92,10 @@ prediction = {
 }
 
 uq = {
-# Type of Sobol analysis: 'sobol', 'FAST' (if FAST, no second-order indices)
+# Method used to do Sobol' analysis: 'sobol', 'FAST' (if FAST, no second-order indices)
     'method' : 'FAST',
+# Type of indices we want: 'aggregated', 'block'
+    'type' : 'aggregated'
 # Use a test method: 'Ishigami'
     'test' : 'Channel_Flow',
     'sample' : 20000 ,
