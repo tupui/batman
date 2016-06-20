@@ -209,7 +209,7 @@ class UQ:
         err_q2 = 1 - err_l2 / eval_var
 
         self.logger.info("\n----- POD error -----")
-        self.logger.info("L_inf(error): {}\nQ2(error): {}\nL2(sobol first, second and total order indices error): {}, {}, {}".format(err_max, err_q2, s_err_l2_first, s_err_l2_second, s_err_l2_total))
+        self.logger.info("\nL_inf(error): {}\nQ2(error): {}\nL2(sobol first, second and total order indices error): {}, {}, {}".format(err_max, err_q2, s_err_l2_first, s_err_l2_second, s_err_l2_total))
         # Write error to file pod_err.dat
         with open(self.output_folder + '/pod_err.dat', 'w') as f:
             f.writelines(str(self.snapshot) + ' ' + str(err_q2) + ' ' + str(self.points_sample) + ' ' + str(s_err_l2_first) + ' ' + str(s_err_l2_second) + ' ' + str(s_err_l2_total))
