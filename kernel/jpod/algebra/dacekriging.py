@@ -34,16 +34,16 @@ class Kriging():
     def evaluate(self, point):
         """Make a prediction. 
 
-            From a point, make a new prediction.
+           From a point, make a new prediction.
 
-            :param list point: The point to evaluate.
-            :return: The predictions.
-            :rtype: list
+           :param list point: The point to evaluate.
+           :return: The predictions.
+           :rtype: list
 
         """
         point_array = np.asarray(point).reshape(1, len(point))
         v = np.ndarray((len(self.data)))
         for i, gp in enumerate(self.data):
-            v[i] = gp.predict(point_array, return_std=False, return_cov=False)
+	    v[i] = gp.predict(point_array, return_std=False, return_cov=False)
         return v
 

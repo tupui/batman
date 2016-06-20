@@ -129,12 +129,6 @@ def parse_command_line_and_run():
         help='path to output directory, [default: %(default)s].')
 
     parser.add_argument(
-        '--set',
-        action='append',
-        default=[],
-        help='jpod settings to override the file ones, pass "setting_name[key1]...[keyN]=value", [default: none]')
-
-    parser.add_argument(
         '-r', '--restart',
         action='store_true',
         default=False,
@@ -167,16 +161,7 @@ def parse_command_line_and_run():
     # store settings absolute file path
     options.script = os.path.abspath(options.task)
 
-    # override input script settings from command line
-    for s in options.set:
-        logger.warn('overriding setting : %s', s)
-        exec s in settings.__dict__
-
-    #try:
     run(settings, options)
-    #except:
-    #    logger.exception('Exception caught on cpu %i' % mpi.myid)
-
 
 if __name__ == "__main__":
     parse_command_line_and_run()
