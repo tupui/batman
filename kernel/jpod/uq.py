@@ -374,6 +374,7 @@ class UQ:
             except:
                 pdf = ot.Normal(output[i, i], 0.001)
             pdf_pts[i] = np.array(pdf.computePDF(output_extract[:, i]))
+            pdf_pts[i] = np.nan_to_num(pdf_pts[i])
         # Write moments to file
         with open(self.output_folder + '/moment.dat', 'w') as f:
             f.writelines('TITLE = \" Moment evaluation \" \n')
