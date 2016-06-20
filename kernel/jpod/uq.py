@@ -304,43 +304,33 @@ class UQ:
         # Aggregated Indices
         if self.type_indices == 'aggregated':
             self.logger.info("\n----- Aggregated Sensitivity Indices -----")
-            aggregated_indices = [[], [], []]
             sample = self.distribution.getSample(self.points_sample)
             output = self.model(sample)
-            var = output.computeVariance()
+            output_var = output.computeVariance()
             sum_var_indices = [np.zeros((self.p_len, self.p_len)), np.zeros((self.p_len)), np.zeros((self.p_len))] 
             for i, j in itertools.product(range(self.output_len), range(3)):
                 indices[:][j][i] = np.nan_to_num(indices[:][j][i])
-                sum_var_indices[j] += float(var[i]) * indices[:][j][i]
-            sum_var = np.sum(var)
+                sum_var_indices[j] += float(output_var[i]) * indices[:][j][i]
+            sum_var = np.sum(output_var)
             for i in range(3):
-                aggregated_indices[i] = sum_var_indices[i] / sum_var
-            self.logger.info("Aggregated_indices: {}".format(aggregated_indices))
+                indices[i] = sum_var_indices[i] / sum_var
+            self.logger.info("Aggregated_indices: {}".format(indices))
             
             with open(self.output_folder + '/sensitivity_aggregated.dat', 'w') as f:
                 f.writelines('TITLE = \" Sobol indices \" \n')
-                var = ''
-                for p in self.p_lst:
-                    var += ' \"S_' + str(p) + '\" \"S_T_' + str(p) + '\"'
-                var += '\n'
                 variables = 'VARIABLES =' + var
                 f.writelines(variables)
                 f.writelines('ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
-                w_lst = [aggregated_indices[1], aggregated_indices[2]]
+                w_lst = [indices[1], indices[2]]
                 for j, w in itertools.product(range(self.p_len), w_lst):
                     f.writelines("{:.7E}".format(float(w[j])) + "\t ")
                     if i % 1000:
                         f.writelines('\n')
                 f.writelines('\n')
         
-
         # Compute error of the POD with a known function
-        try:
-            if self.output_len > 1:
-                raise AttributeError
+        if self.type_indices in ['aggregated', 'block']: 
             self.error_pod(indices, self.test)
-        except AttributeError:
-            self.logger.info("No analytical function to compare the POD from")
 
     def error_propagation(self):
         """Compute the moments.
