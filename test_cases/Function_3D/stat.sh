@@ -7,10 +7,10 @@
 ##SBATCH --mail-type all
 #SBATCH --share
 
-module load application/openturns/1.6rc1
-module load python/2.7
+module load application/openturns/1.7
+module load python/3.3.6
 
 cd ${SLURM_SUBMIT_DIR}
 
-python ~/JPOD/kernel/jpod/ui.py scripts/task.py -o output/task -u -n > jpod_stat.log
+python ~/JPOD/kernel/jpod/ui.py scripts/task.py -o output/task -u -n 
 

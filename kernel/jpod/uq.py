@@ -235,23 +235,31 @@ class UQ:
 
         """
         indices = [[], [], []]
+
+        if self.type_indices == 'block':
+            sobol_model = self.int_model
+            sobol_len = 1
+        else:
+            sobol_model = self.model
+            sobol_len = self.output_len
+
         if self.method_sobol == 'sobol':
             self.logger.info("\n----- Sobol' indices -----")
             sample1 = self.distribution.getSample(self.points_sample)
             sample2 = self.distribution.getSample(self.points_sample)
-            sobol = ot.SensitivityAnalysis(sample1, sample2, self.model)
+            sobol = ot.SensitivityAnalysis(sample1, sample2, sobol_model)
             sobol.setBlockSize(int(ot.ResourceMap.Get("parallel-threads")))
-            for i in range(self.output_len):
+            for i in range(sobol_len):
                 indices[0].append(np.array(sobol.getSecondOrderIndices(i)))
             self.logger.debug("Second order: {}".format(indices[0]))
         elif self.method_sobol == 'FAST':
             self.logger.info("\n----- FAST indices -----")
-            sobol = ot.FAST(self.model, self.distribution, self.points_sample)
+            sobol = ot.FAST(sobol_model, self.distribution, self.points_sample)
         else:
             self.logger.error("The method {} doesn't exist".format(self.method_sobol))
             return
 
-        for i in range(self.output_len):
+        for i in range(sobol_len):
             indices[1].append(np.array(sobol.getFirstOrderIndices(i)))
             indices[2].append(np.array(sobol.getTotalOrderIndices(i)))
 
@@ -264,17 +272,17 @@ class UQ:
             # uncorrelated = ancova.getUncorrelatedIndices()
             # correlated = indices - uncorrelated
 
-        # Write Sobol' indices to file
+        # Write Sobol' indices to file: block or map
         with open(self.output_folder + '/sensitivity.dat', 'w') as f:
             f.writelines('TITLE = \" Sobol indices \" \n')
             var = ''
             for p in self.p_lst:
                 var += ' \"S_' + str(p) + '\" \"S_T_' + str(p) + '\"'
             var += '\n'
-            if self.output_len == 1:
+            if (self.output_len == 1) or (self.type_indices == 'block'):
                 variables = 'VARIABLES =' + var
                 f.writelines(variables)
-                f.writelines('ZONE T = \"Sensitivity \" , I='+str(self.output_len)+', F=BLOCK  \n')
+                f.writelines('ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
             else:
                 variables = 'VARIABLES = \"x\"' + var
                 f.writelines(variables)
@@ -285,8 +293,9 @@ class UQ:
                     if i % 1000:
                         f.writelines('\n')
                 f.writelines('\n')
+            # Indices
             w_lst = [indices[1], indices[2]]
-            for j, w, i in itertools.product(range(self.p_len), w_lst, range(self.output_len)):
+            for j, w, i in itertools.product(range(self.p_len), w_lst, range(sobol_len)):
                 f.writelines("{:.7E}".format(float(w[i][j])) + "\t ")
                 if i % 1000:
                     f.writelines('\n')
@@ -313,6 +322,23 @@ class UQ:
             aggregated_indices[1] = sum_var_indices[1] / sum_var
             aggregated_indices[2] = sum_var_indices[2] / sum_var
             self.logger.info("Aggregated_indices: {}".format(aggregated_indices))
+            
+            with open(self.output_folder + '/sensitivity_aggregated.dat', 'w') as f:
+                f.writelines('TITLE = \" Sobol indices \" \n')
+                var = ''
+                for p in self.p_lst:
+                    var += ' \"S_' + str(p) + '\" \"S_T_' + str(p) + '\"'
+                var += '\n'
+                variables = 'VARIABLES =' + var
+                f.writelines(variables)
+                f.writelines('ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
+                w_lst = [aggregated_indices[1], aggregated_indices[2]]
+                for j, w in itertools.product(range(self.p_len), w_lst):
+                    f.writelines("{:.7E}".format(float(w[j])) + "\t ")
+                    if i % 1000:
+                        f.writelines('\n')
+                f.writelines('\n')
+        
 
         # Compute error of the POD with a known function
         try:
