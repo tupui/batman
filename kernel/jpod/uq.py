@@ -308,19 +308,13 @@ class UQ:
             sample = self.distribution.getSample(self.points_sample)
             output = self.model(sample)
             var = output.computeVariance()
-            var_indices = [[[0., 0.],[0., 0.]], [0., 0.], [0., 0.]]
-            sum_var_indices = [[[0., 0.],[0., 0.]], [0., 0.], [0., 0.]]
+            sum_var_indices = [np.zeros((self.p_len, self.p_len)), np.zeros((self.p_len)), np.zeros((self.p_len))] 
             for i, j in itertools.product(range(self.output_len), range(3)):
-                try:
-                    var_indices[j] = float(var[i]) * indices[:][j][i]
-                except FloatingPointError:
-                    indices[:][j][i] = 0. * np.nan_to_num(indices[:][j][i])
-                    var_indices[j] = float(var[i]) * indices[:][j][i]
-                sum_var_indices[j] += var_indices[j]
+                indices[:][j][i] = np.nan_to_num(indices[:][j][i])
+                sum_var_indices[j] += float(var[i]) * indices[:][j][i]
             sum_var = np.sum(var)
-            aggregated_indices[0] = sum_var_indices[0] / sum_var
-            aggregated_indices[1] = sum_var_indices[1] / sum_var
-            aggregated_indices[2] = sum_var_indices[2] / sum_var
+            for i in range(3):
+                aggregated_indices[i] = sum_var_indices[i] / sum_var
             self.logger.info("Aggregated_indices: {}".format(aggregated_indices))
             
             with open(self.output_folder + '/sensitivity_aggregated.dat', 'w') as f:
