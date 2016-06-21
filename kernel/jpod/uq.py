@@ -54,7 +54,7 @@ class UQ:
         try:
             self.test = settings.uq['test']
         except:
-            pass
+            self.test = None
         self.output_folder = output
         try:
             mkdir(output)
@@ -69,12 +69,15 @@ class UQ:
             self.points_sample = settings.uq['sample']
             pdf = settings.uq['pdf']
         except KeyError:
-            self.logger.exception("Need to configure method, sample and PDF")
+            self.logger.exception("Need to configure method, type, sample and PDF")
             raise SystemExit
         input_pdf = "ot." + pdf[0]
         for i in xrange(self.p_len - 1):
             input_pdf = input_pdf + ", ot." + pdf[i + 1]
         self.distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
+        # self.experiment = ot.MonteCarloExperiment(self.distribution, self.points_sample)
+        self.experiment = ot.LHSExperiment(self.distribution, self.points_sample)
+        self.sample = self.experiment.generate()
         self.method_pod = settings.prediction['method']
         self.output_len = settings.snapshot['io']['shapes'][0][0][0]
         self.f_input = None
@@ -193,9 +196,8 @@ class UQ:
         err_max = 0.
         err_l2 = 0.
         eval_mean = 0.
-        sample = self.distribution.getSample(self.points_sample)
 
-        for _, j in enumerate(sample):
+        for _, j in enumerate(self.sample):
             eval_ref = model_ref(j)[0]
             eval_pod = self.model(j)[0]
             eval_mean = eval_mean + eval_ref
@@ -203,7 +205,7 @@ class UQ:
             err_l2 = err_l2 + (eval_pod - eval_ref) ** 2
         eval_mean = eval_mean / self.points_sample
         eval_var = 0.
-        for _, j in enumerate(sample):
+        for _, j in enumerate(self.sample):
             # eval_ref = model_ref(j)[0]
             eval_ref = self.model(j)[0]
             eval_var = eval_var + (eval_mean - eval_ref) ** 2
@@ -216,8 +218,8 @@ class UQ:
             f.writelines(str(self.snapshot) + ' ' + str(err_q2) + ' ' + str(self.points_sample) + ' ' + str(s_err_l2_first) + ' ' + str(s_err_l2_second) + ' ' + str(s_err_l2_total))
 
         if self.output_len == 1:
-            output_ref = model_ref(sample)
-            output = self.int_model(sample)
+            output_ref = model_ref(self.sample)
+            output = self.int_model(self.sample)
             qq_plot = ot.VisualTest_DrawQQplot(output_ref, output)
             # View(qq_plot).show()
             qq_plot.draw(self.output_folder + '/qq_plot.png')
@@ -245,8 +247,9 @@ class UQ:
 
         if self.method_sobol == 'sobol':
             self.logger.info("\n----- Sobol' indices -----")
-            sample1 = self.distribution.getSample(self.points_sample)
-            sample2 = self.distribution.getSample(self.points_sample)
+            sample1 = self.sample
+            experiment = ot.LHSExperiment(self.distribution, self.points_sample)
+            sample2 = experiment.generate()
             sobol = ot.SensitivityAnalysis(sample1, sample2, sobol_model)
             sobol.setBlockSize(int(ot.ResourceMap.Get("parallel-threads")))
             for i in range(sobol_len):
@@ -304,8 +307,7 @@ class UQ:
         # Aggregated Indices
         if self.type_indices == 'aggregated':
             self.logger.info("\n----- Aggregated Sensitivity Indices -----")
-            sample = self.distribution.getSample(self.points_sample)
-            output = self.model(sample)
+            output = self.model(self.sample)
             output_var = output.computeVariance()
             sum_var_indices = [np.zeros((self.p_len, self.p_len)), np.zeros((self.p_len)), np.zeros((self.p_len))] 
             for i, j in itertools.product(range(self.output_len), range(3)):
@@ -329,7 +331,7 @@ class UQ:
                 f.writelines('\n')
         
         # Compute error of the POD with a known function
-        if self.type_indices in ['aggregated', 'block']: 
+        if (self.type_indices in ['aggregated', 'block']) and (self.test is not None): 
             self.error_pod(indices, self.test)
 
     def error_propagation(self):
@@ -342,8 +344,7 @@ class UQ:
 
         """
         self.logger.info("\n----- Moment evaluation -----")
-        sample = self.distribution.getSample(self.points_sample)
-        output = self.model(sample)
+        output = self.model(self.sample)
         output = output.sort()
         mean = output.computeMean()
         sd = output.computeStandardDeviationPerComponent()

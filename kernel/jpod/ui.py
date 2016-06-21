@@ -125,7 +125,7 @@ def parse_command_line_and_run():
     parser.add_argument(
         '-o', '--output',
         type=abs_path,
-        default='./',
+        default='./output',
         help='path to output directory, [default: %(default)s].')
 
     parser.add_argument(

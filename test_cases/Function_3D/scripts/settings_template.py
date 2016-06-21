@@ -7,7 +7,7 @@ space = {
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max' : 100 ,
+    'size_max' : 200 ,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -16,7 +16,7 @@ space = {
         'method' : 'halton',
     # Number of samples to be generated
     # format : integer
-        'size' : 100 ,
+        'size' : 200 ,
     }
 }
 
@@ -95,7 +95,7 @@ uq = {
 # Type of Sobol analysis: 'sobol', 'FAST' (if FAST, no second-order indices)
     'method' : 'sobol',
 # Type of indices we want: 'aggregated', 'block'
-    'type' : 'aggregated'
+    'type' : 'aggregated',
 # Use a test method: 'Ishigami'
     'test' : 'Ishigami',
     'sample' : 10000 ,
