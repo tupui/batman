@@ -65,9 +65,11 @@ pod = {
 # format : integer
     'dim_max'   : 100,
 # Type of pod to perform.
-# format : one of 'static', 'dynamic', 'auto'
-    'type'      : 'dynamic',
-# Stopping criterion for automatic resampling
+# format : one of 'static', 'dynamic'
+    'type'      : 'static',
+# Resampling strategy: None, 'MSE', 'QuadTree'
+    'resample'  : None,
+# Stopping criterion for resampling
 # format : float
     'quality'   : 0.001*1.e-300,
 # Server settings

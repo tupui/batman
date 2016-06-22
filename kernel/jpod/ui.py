@@ -51,10 +51,11 @@ def run(settings, options):
             driver.restart()
             update = True
 
-        driver.fixed_sampling_pod(update)
-
-        if settings.pod['type'] == 'auto':
-            driver.automatic_resampling_pod()
+        driver.sampling_pod(update)
+        
+        if settings.pod['resample'] is not None:
+            refiner = settings.pod['resample']
+            driver.resampling_pod(refiner)
 
         driver.write_pod()
 
@@ -63,7 +64,7 @@ def run(settings, options):
         try:
             driver.read_pod()
         except IOError:
-            logger.exception("POD need to be computed: re-try without -n")
+            logger.exception("POD need to be computed: check output folder or re-try without -n")
             raise SystemExit
 
     if not options.pred:
@@ -74,11 +75,11 @@ def run(settings, options):
             settings.prediction,
             write=True)
         logger.info('Prediction without model building')
+    
+    logger.info(driver.pod)
 
     if options.uq:
         driver.uq(settings)
-
-    logger.info(driver.pod)
 
     if False and driver.provider.is_function:
         error = N.zeros(N.asarray(settings.prediction['points']).shape[0])

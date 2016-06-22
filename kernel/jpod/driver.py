@@ -255,14 +255,14 @@ class Driver(object):
             # the snapshot class is initialized as a by product
             self.pod = Pod(settings.pod['tolerance'], settings.pod['dim_max'])
 
-    def fixed_sampling_pod(self, update):
+    def sampling_pod(self, update):
         """docstring for static_pod"""
         if self.pod is None:
             raise Exception(
                 "driver's pod has not been initialized, call init_pod first.")
         self._pod_processing(self.initial_points, update)
 
-    def automatic_resampling_pod(self):
+    def resampling_pod(self, refiner):
         """docstring for static_pod"""
         if self.pod is None:
             raise Exception(
@@ -275,8 +275,7 @@ class Driver(object):
                 break
 
             try:
-                new_points = self.space.refine_around(
-                    point)  # FIXME: restart !
+                new_points = self.space.refine_around(point, refiner) 
             except FullSpaceError:
                 break
 

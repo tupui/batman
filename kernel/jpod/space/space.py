@@ -97,9 +97,6 @@ class Space(SpaceBase):
         self.max_points_nb = int(max_points_nb)
         '''Maximum number of points.'''
 
-        self.refiner = None
-        '''Refiner for resampling.'''
-
         # Extension of space
 
         c1 = []
@@ -206,13 +203,15 @@ class Space(SpaceBase):
         return self
 
 
-    def refine_around(self, point):
+    def refine_around(self, point, refiner):
         """Refine the samples around `point`, update space points and return the new points."""
-        # initial strategy
-        self.refiner = self.refiner or QuadTreeRefiner(self)
-        # self.refiner = QuadTreeRefiner(self)
-
-        new_points = [Point(p) for p in self.refiner.refine(point)]
+        # Refinement strategy
+        if refiner == 'QuadTree':
+            refiner = QuadTreeRefiner(self)
+        elif refiner == 'MSE':
+            refiner = None
+        
+        new_points = [Point(p) for p in refiner.refine(point)]
         self.add(new_points, 'g*')
 
         msg  = 'Refined sampling with new points : ' + '\n'
