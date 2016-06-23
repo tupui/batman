@@ -32,10 +32,10 @@ class MSE():
 
     def get_point(self):
         import numpy as N
-        num = 3
-        x = N.linspace(-3, 3, num=num)
-        y = N.linspace(-3, 3, num=num)
-        z = N.linspace(-3, 3, num=num)
+        num = 25
+        x = N.linspace(-2, 2, num=num)
+        y = N.linspace(-2, 2, num=num)
+        z = N.linspace(-2, 2, num=num)
         #y = N.linspace(space['corners'][0][1], space['corners'][1][1], num=num)
         xyz = []
         sigma_max = 0.

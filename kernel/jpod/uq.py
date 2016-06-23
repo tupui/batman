@@ -188,8 +188,8 @@ class UQ:
             s_err_l2_second = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
         except:
             self.logger.warn("No Second order indices with FAST")
+            s_err_l2_second = 0.
 
-        s_err_l2_second = 0.
         s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
         s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
 
