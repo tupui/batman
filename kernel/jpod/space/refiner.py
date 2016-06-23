@@ -12,6 +12,8 @@ import logging
 import numpy as N
 import resampling
 import itertools
+from scipy.optimize import differential_evolution
+
 
 class MSE():
     """MSE class.
@@ -28,7 +30,7 @@ class MSE():
 
     def func(self, coords):
         f, sigma = self.pod.predict('kriging', [coords])
-        return sigma
+        return - sigma
 
     def get_point(self):
         import numpy as N
@@ -43,9 +45,17 @@ class MSE():
         for i, j, k in itertools.product(x, y, z):
             xyz = [float(i),float(j), float(k)]
             sigma = self.func(xyz)
-            if sigma > sigma_max:
+            if sigma < sigma_max:
                 point = xyz
                 sigma_max = sigma
+        
+        print "Brute: ", point
+
+        result = differential_evolution(self.func, [(-2, 2), (-2, 2), (-2, 2)])
+        
+        point = result.x
+        
+        print "Evolution: ", point
         
         return point
 
