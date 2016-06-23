@@ -269,17 +269,17 @@ class Driver(object):
                 "driver's pod has not been initialized, call init_pod first.")
 
         while True:
-            quality, point = self.pod.estimate_quality()
-
+            #quality, point = self.pod.estimate_quality()
+            quality = 100.
             if quality <= self.pod_quality:
                 break
 
             try:
-                new_points = self.space.refine_around(point, refiner) 
+                new_point = self.space.refine(self.pod, refiner) 
             except FullSpaceError:
                 break
 
-            self._pod_processing(new_points, True)
+            self._pod_processing(new_point, True)
 
     def write_pod(self):
         """docstring for static_pod"""

@@ -4,7 +4,7 @@ import pickle
 import numpy as N
 import sampling
 from point import Point
-from refiner import QuadTreeRefiner
+from refiner import MSE
 
 
 class UnicityError(Exception):
@@ -144,7 +144,7 @@ class Space(SpaceBase):
         return len(self) >= self.max_points_nb
 
 
-    def add(self, points, glyph=None):
+    def add(self, points):
         """Add `points` to the space, raise if space is over full."""
         for point in points:
             # check point is inside
@@ -193,9 +193,8 @@ class Space(SpaceBase):
 
         bounds  = N.array(self.corners)
         samples = sampler(bounds.shape[1], n, bounds)
-
         self.empty()
-        self.add([s.tolist() for s in samples], 'ro')
+        self.add([s.tolist() for s in samples])
 
         self.logger.info('Created %d samples with the %s method', len(self),
                          kind)
@@ -203,19 +202,16 @@ class Space(SpaceBase):
         return self
 
 
-    def refine_around(self, point, refiner):
-        """Refine the samples around `point`, update space points and return the new points."""
+    def refine(self, pod, refiner):
+        """Refine the sample, update space points and return the new point."""
         # Refinement strategy
-        if refiner == 'QuadTree':
-            refiner = QuadTreeRefiner(self)
-        elif refiner == 'MSE':
-            refiner = None
-        
-        new_points = [Point(p) for p in refiner.refine(point)]
-        self.add(new_points, 'g*')
+        if refiner == 'MSE':
+            error = MSE(pod)
+            point = error.get_point()
 
-        msg  = 'Refined sampling with new points : ' + '\n'
-        msg += '\t' + '\n\t'.join([str(p) for p in new_points])
-        self.logger.info(msg)
+        point = [Point(point)]
+        self.add(point)
 
-        return new_points
+        self.logger.info('Refined sampling with new point: ' + str(point))
+
+        return point
