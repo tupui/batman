@@ -68,10 +68,10 @@ def run(settings, options):
             raise SystemExit
 
     if not options.pred:
-        snapshots = driver.prediction(settings.prediction, write=options.save_snapshots)
+        snapshots, _ = driver.prediction(settings.prediction, write=options.save_snapshots)
         driver.write_model()
     else:
-        snapshots = driver.prediction_without_computation(
+        snapshots, _ = driver.prediction_without_computation(
             settings.prediction,
             write=True)
         logger.info('Prediction without model building')

@@ -35,9 +35,9 @@ class Predictor(object):
 
         Returns a numpy array with result.
         """
-        result = self.predictor.evaluate(point)
+        result, sigma = self.predictor.evaluate(point)
         #self.logger.debug('Computed prediction at point %s', point)
-        return result
+        return result, sigma
 
 
 class PodPredictor(Predictor):
@@ -50,6 +50,8 @@ class PodPredictor(Predictor):
         pod  : a pod
         kind : name of prediction method, rbf or kriging
         """
+        self.kind = kind
+
         self.pod = pod
         '''Pod used for predictions.'''
 
@@ -59,7 +61,7 @@ class PodPredictor(Predictor):
         super(
             PodPredictor,
             self).__init__(
-            kind,
+            self.kind,
             self.pod.points,
             self.pod.VS())
         self.pod.register_observer(self)
@@ -77,16 +79,15 @@ class PodPredictor(Predictor):
         Returns a list of snapshots.
         """
         if self.update:
-            # pod has changed : update predictor
-            1 / 0
-            # TEST ME
-            # super(PodPredictor, self).__init__(kind, self.pod.VS())
-            # self.update = False
+        # pod has changed : update predictor
+            super(PodPredictor, self).__init__(self.kind, self.pod.points, self.pod.VS())
+            self.update = False
 
         results = []
+        sigma = []
         for p in points:
-            v = super(PodPredictor, self).__call__(p)
+            v, sigma = super(PodPredictor, self).__call__(p)
             result = self.pod.mean_snapshot + np.dot(self.pod.U, v)
             results += [Snapshot(p, result)]
 
-        return results
+        return results, sigma

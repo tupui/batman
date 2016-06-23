@@ -43,7 +43,8 @@ class Kriging():
         """
         point_array = np.asarray(point).reshape(1, len(point))
         v = np.ndarray((len(self.data)))
+        sigma = np.ndarray((len(self.data)))
         for i, gp in enumerate(self.data):
-	    v[i] = gp.predict(point_array, return_std=False, return_cov=False)
-        return v
+            v[i], sigma[i] = gp.predict(point_array, return_std=True, return_cov=False)
+        return v, sigma
 

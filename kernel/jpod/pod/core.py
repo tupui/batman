@@ -108,7 +108,8 @@ class Core(object):
                 self.leave_one_out_predictor,
                 points_1,
                 V_1 * S_1)
-            alphakpred = N.dot(Urot, predictor(points[i])) - \
+            prediction, _ = predictor(points[i])
+            alphakpred = N.dot(Urot, prediction) - \
                 float(points_nb) / float(points_nb - 1) * self.V[i] * self.S
 
             error[i] = N.linalg.norm(alphakpred)
