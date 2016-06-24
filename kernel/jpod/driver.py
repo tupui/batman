@@ -262,7 +262,7 @@ class Driver(object):
                 "driver's pod has not been initialized, call init_pod first.")
         self._pod_processing(self.initial_points, update)
 
-    def resampling_pod(self, refiner):
+    def resampling_pod(self, method):
         """docstring for static_pod"""
         if self.pod is None:
             raise Exception(
@@ -275,7 +275,7 @@ class Driver(object):
                 break
 
             try:
-                new_point = self.space.refine(self.pod, refiner) 
+                new_point = self.space.refine(self.pod, method) 
             except FullSpaceError:
                 break
 

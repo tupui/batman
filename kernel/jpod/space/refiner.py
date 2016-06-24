@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Refinement Module
-=================
+Refinement Class
+================
 
-This module defines all resampling strategies that can be used.
+This class defines all resampling strategies that can be used.
 
 """
 
@@ -13,52 +13,64 @@ import numpy as N
 import resampling
 import itertools
 from scipy.optimize import differential_evolution
+import numpy as np
 
 
-class MSE():
-    """MSE class.
-
-    It returns the point where the mean square error (sigma) is maximum.
-    To do so, it uses Gaussian Process information.
-
+class Refiner():
+    """Refiner class.
+    
+    Defines the methods:
+    - mse(self)
+    - leave_one_out_mse(self)
 
     """
 
-    def __init__(self, pod):
+    def __init__(self, pod, corners):
         self.pod = pod
+        self.corners = np.array(corners).T
         self.point = None
 
     def func(self, coords):
-        f, sigma = self.pod.predict('kriging', [coords])
-        return - sigma
+        """Get the MSE for a given point.
+       
+        Retrieve the Gaussian Process estimation of sigma.
+        Return - sigma in order to have a minimization problem.
 
-    def get_point(self):
-        import numpy as N
-        num = 25
-        x = N.linspace(-2, 2, num=num)
-        y = N.linspace(-2, 2, num=num)
-        z = N.linspace(-2, 2, num=num)
-        #y = N.linspace(space['corners'][0][1], space['corners'][1][1], num=num)
-        xyz = []
-        sigma_max = 0.
-        point = []
-        for i, j, k in itertools.product(x, y, z):
-            xyz = [float(i),float(j), float(k)]
-            sigma = self.func(xyz)
-            if sigma < sigma_max:
-                point = xyz
-                sigma_max = sigma
+        :return: - sigma
+        :rtype: float
+       
+        """ 
+        _, sigma = self.pod.predict('kriging', [coords])
+        sum_sigma = np.sum(self.pod.S * sigma)
+        return - sum_sigma
+
+    def mse(self):
+        """Find the point at max MSE.
+
+        It returns the point where the mean square error (sigma) is maximum.
+        To do so, it uses Gaussian Process information.
+        A genetic algorithm get the global maximum of the function.
+
+        :return: The coordinate of the point to add
+        :rtype: lst(float)
         
-        print "Brute: ", point
+        """
+        result = differential_evolution(self.func, self.corners)
+        return result.x
 
-        result = differential_evolution(self.func, [(-2, 2), (-2, 2), (-2, 2)])
+    def leave_one_out_mse(self):
+        """Mixture of Leave-one-out and MSE.
+
+        Estimate the quality of the POD by leave-one-out and add a point arround the max error point.
+        The point is added within an hypercube around the max error point.
+
+        :return: The coordinate of the point to add
+        :rtype: lst(float)
         
-        point = result.x
-        
-        print "Evolution: ", point
-        
-        return point
-
-
-
+        """
+        quality, point = self.pod.estimate_quality()
+        point = np.array(point)
+        hypercube = np.array([point * 0.9, point * 1.1]).T
+        result = differential_evolution(self.func, hypercube)
+        return result.x
 

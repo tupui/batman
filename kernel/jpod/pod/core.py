@@ -16,7 +16,7 @@ class Core(object):
     refined_points = []
     '''For the original jpod 1 resampling strategy.'''
 
-    leave_one_out_predictor = 'rbf'
+    leave_one_out_predictor = 'kriging'
     '''Predictor kind for the leave one out method.'''
 
     def __init__(self, tolerance, dim_max):

@@ -4,7 +4,7 @@ import pickle
 import numpy as N
 import sampling
 from point import Point
-from refiner import MSE
+from refiner import Refiner
 
 
 class UnicityError(Exception):
@@ -202,12 +202,14 @@ class Space(SpaceBase):
         return self
 
 
-    def refine(self, pod, refiner):
+    def refine(self, pod, method):
         """Refine the sample, update space points and return the new point."""
+        refiner = Refiner(pod, self.corners)
         # Refinement strategy
-        if refiner == 'MSE':
-            error = MSE(pod)
-            point = error.get_point()
+        if method == 'MSE':
+            point = refiner.mse()
+        elif method == 'leave-one-out':
+            point = refiner.leave_one_out_mse()
 
         point = [Point(point)]
         self.add(point)
