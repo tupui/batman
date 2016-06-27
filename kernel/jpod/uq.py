@@ -241,13 +241,13 @@ class UQ:
         s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
 
         eval_mean = np.zeros(self.output_len)
-        eval_pod = np.empty(self.points_sample)
+        eval_pod = []
         err_max = 0.
         err_l2 = 0.
        
         for i, j in enumerate(self.sample):
             eval_ref = np.array(model_ref(j))
-            eval_pod[i] = np.array(self.model(j))
+            eval_pod.append(np.array(self.model(j)))
             eval_mean = eval_mean + eval_ref
             err_max = max(err_max, max(abs(eval_pod[i] - eval_ref)))
             err_l2 = err_l2 + np.sum((eval_pod[i] - eval_ref) ** 2)

@@ -93,38 +93,32 @@ class Core(object):
         """
         points_nb = len(points)
         error = np.empty(points_nb)
-        mean = 0.
+        model_pod = []
+        mean = np.zeros(len(self.S))
 
-        for i in range(error.shape[0]):
+        for i in range(points_nb):
             V_1 = np.delete(self.V, i, 0)
 
             (Urot, S_1, V_1) = svd.downgrade(self.S, V_1)
-            (Urot, S_1, V_1) = svd.filtering(Urot, S_1, V_1, self.tolerance,
-                                             self.dim_max)
+            (Urot, S_1, V_1) = svd.filtering(Urot, S_1, V_1, self.tolerance, self.dim_max)
 
             points_1 = points[:]
             points_1.pop(i)
 
-            predictor = Predictor(
-                self.leave_one_out_predictor,
-                points_1,
-                V_1 * S_1)
+            predictor = Predictor(self.leave_one_out_predictor, points_1, V_1 * S_1)
             prediction, _ = predictor(points[i])
             ref = float(points_nb) / float(points_nb - 1) * self.V[i] * self.S
-            alphakpred = np.dot(Urot, prediction) - ref
+            model_pod.append(np.dot(Urot, prediction))
 
-            error[i] = np.linalg.norm(alphakpred)
-            mean = mean + np.linalg.norm(ref)
+            error[i] = np.sum((model_pod[i] - ref) ** 2)
+            mean = mean + ref
 
-        mean = mean / error.shape[0]
+        mean = mean / points_nb
         var = 0.
-        for i in range(error.shape[0]):
-            ref = float(points_nb) / float(points_nb - 1) * self.V[i] * self.S
-            ref = np.linalg.norm(ref)
-            var = var + (mean - ref) ** 2
-
-        quality = np.linalg.norm(error) ** 2 / error.shape[0]
-        err_q2 = 1 - quality / var
+        for i in range(points_nb):
+            var = var + np.sum((mean - model_pod[i]) ** 2)
+        quality = np.sum(error) / points_nb
+        err_q2 = 1 - np.sum(error) / var
 
         print "Q2 POD: ", err_q2
 
