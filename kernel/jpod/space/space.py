@@ -165,14 +165,14 @@ class Space(SpaceBase):
     def sampling(self, kind, n):
         """Create point samples in the parameter space.
 
-        kind: method of sampling
-        n   : number of samples
-
         Minimum number of samples for halton and sobol : 4
         For uniform sampling, the number of points is per dimensions.
         The points are registered into the space and replace existing ones.
 
-        Returns the list of points.
+        :param str kind: method of sampling
+        :param int n: number of samples
+        :return: List of points
+        :rtype: self
         """
         if kind == 'halton':
             sampler = sampling.halton
@@ -204,7 +204,13 @@ class Space(SpaceBase):
 
 
     def refine(self, pod, method):
-        """Refine the sample, update space points and return the new point."""
+        """Refine the sample, update space points and return the new point.
+        
+        :param pod: POD
+        :param str method: Resampling strategy
+        :return: List of points to add
+        :rtype: lst(tuple(float))
+        """
         refiner = Refiner(pod, self.corners_user)
         # Refinement strategy
         if method == 'MSE':

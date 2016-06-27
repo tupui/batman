@@ -24,7 +24,7 @@ class Refiner():
 
     :Example:
 
-    >> corners = [(10, 400), (18, 450)]
+    >> corners = ((10, 400), (18, 450))
     >> resample = Refiner(pod, corners)
     >> new_point = resample.mse()
 
@@ -33,7 +33,11 @@ class Refiner():
     logger = logging.getLogger(__name__)
 
     def __init__(self, pod, corners):
-        """Initialize the refiner with the POD and space corners."""
+        """Initialize the refiner with the POD and space corners.
+        
+        :param pod: POD
+        :param tuple(tuple(float)) corners: Boundaries to add a point within
+        """
         self.pod = pod
         self.corners = np.array(corners).T
         self.point = None
@@ -48,6 +52,7 @@ class Refiner():
 
         The function returns - sum_sigma in order to have a minimization problem.
 
+        :param lst(float) coords: coordinate of the point
         :return: - sum_sigma
         :rtype: float
 
@@ -89,7 +94,6 @@ class Refiner():
         # Construct the hypercube around the point
         hypercube = np.array([point * 0.99, point * 1.01]).T
         self.logger.debug("Hypercube: {}".format(hypercube))
-
         result = differential_evolution(self.func, hypercube)
 
         return result.x

@@ -23,10 +23,10 @@ class Kriging():
 
     :Example:
 
-    >> input = [[2, 4], [3, 5], [6, 9]
-    >> output = [[12, 1], [10, 2], [9, 4]]
+    >> input = np.array([2, 4], [3, 5], [6, 9])
+    >> output = np.array([12, 1], [10, 2], [9, 4])
     >> predictor = Kriging(input, output)
-    >> point = [5, 8]
+    >> point = (5.0, 8.0)
     >> prediction = predictor.evaluate([point])
 
     Reference
@@ -43,10 +43,10 @@ class Kriging():
 
         Uses input and output to construct a predictor using Gaussian Process.
 
-        `self.data` contains the predictors as a list of the size of the `ouput`.
+        `self.data` contains the predictors as a list(array) of the size of the `ouput`.
 
-        :param array input: The input used to generate the output.
-        :param array output: The observed data.
+        :param ndarray input: The input used to generate the output.
+        :param ndarray output: The observed data.
 
         """
         self.kernel = 1.0 * RBF(length_scale=10., length_scale_bounds=(0.01, 100.))
@@ -66,9 +66,11 @@ class Kriging():
 
         From a point, make a new prediction.
 
-        :param list point: The point to evaluate.
+        :param tuple(float) point: The point to evaluate.
         :return: The predictions.
-        :rtype: list
+        :rtype: lst
+        :return: The standard deviations.
+        :rtype: lst
 
         """
         point_array = np.asarray(point).reshape(1, len(point))
