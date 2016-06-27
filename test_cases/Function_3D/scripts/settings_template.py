@@ -7,7 +7,7 @@ space = {
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max' : 200 ,
+    'size_max' : 102 ,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -16,7 +16,7 @@ space = {
         'method' : 'halton',
     # Number of samples to be generated
     # format : integer
-        'size' : 200 ,
+        'size' : 102 ,
     }
 }
 
@@ -67,8 +67,8 @@ pod = {
 # Type of pod to perform.
 # format : one of 'static', 'dynamic'
     'type'      : 'static',
-# Resampling strategy: None, 'MSE', 'QuadTree'
-    'resample'  : None,
+# Resampling strategy: None, 'MSE'
+    'resample'  : 'leave-one-out',
 # Stopping criterion for resampling
 # format : float
     'quality'   : 0.001*1.e-300,
@@ -90,7 +90,7 @@ prediction = {
     'method' : 'kriging',
 # Set of points at which the predictions are made
 # format : list of tuples of floats
-    'points' : [ ],
+    'points' : [[1, 3, 5] ],
 }
 
 uq = {

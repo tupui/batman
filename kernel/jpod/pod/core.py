@@ -1,7 +1,7 @@
 import logging
 
 import mpi
-import numpy as N
+import numpy as np
 from predictor import Predictor
 from space import SpaceBase
 import svd
@@ -59,7 +59,7 @@ class Core(object):
         snapshots : array(nb of data per snapshot, nb of samples)
         """
         # compute mean snapshot
-        self.mean_snapshot = N.average(snapshots, 1)
+        self.mean_snapshot = np.average(snapshots, 1)
 
         # center snapshots
         for i in range(snapshots.shape[1]):
@@ -69,7 +69,7 @@ class Core(object):
             raise NotImplemented("use dynamic pod in parallel")
 
         # TODO: play with svd optional arguments
-        self.U, self.S, self.V = N.linalg.svd(snapshots, full_matrices=True)
+        self.U, self.S, self.V = np.linalg.svd(snapshots, full_matrices=True)
         self.V = self.V.T
         self.U, self.S, self.V = svd.filtering(self.U, self.S, self.V,
                                                self.tolerance, self.dim_max)
@@ -92,10 +92,11 @@ class Core(object):
         The quality estimation is done with the leave-one-out method.
         """
         points_nb = len(points)
-        error = N.empty(points_nb)
+        error = np.empty(points_nb)
+        mean = 0.
 
         for i in range(error.shape[0]):
-            V_1 = N.delete(self.V, i, 0)
+            V_1 = np.delete(self.V, i, 0)
 
             (Urot, S_1, V_1) = svd.downgrade(self.S, V_1)
             (Urot, S_1, V_1) = svd.filtering(Urot, S_1, V_1, self.tolerance,
@@ -109,12 +110,23 @@ class Core(object):
                 points_1,
                 V_1 * S_1)
             prediction, _ = predictor(points[i])
-            alphakpred = N.dot(Urot, prediction) - \
-                float(points_nb) / float(points_nb - 1) * self.V[i] * self.S
+            ref = float(points_nb) / float(points_nb - 1) * self.V[i] * self.S
+            alphakpred = np.dot(Urot, prediction) - ref
 
-            error[i] = N.linalg.norm(alphakpred)
+            error[i] = np.linalg.norm(alphakpred)
+            mean = mean + np.linalg.norm(ref)
 
-        quality = N.linalg.norm(error)**2 / error.shape[0]
+        mean = mean / error.shape[0]
+        var = 0.
+        for i in range(error.shape[0]):
+            ref = float(points_nb) / float(points_nb - 1) * self.V[i] * self.S
+            ref = np.linalg.norm(ref)
+            var = var + (mean - ref) ** 2
+
+        quality = np.linalg.norm(error) ** 2 / error.shape[0]
+        err_q2 = 1 - quality / var
+
+        print "Q2 POD: ", err_q2
 
         error = error.reshape(-1)
         index = error.argmax()
