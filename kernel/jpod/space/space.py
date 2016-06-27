@@ -89,8 +89,9 @@ class Space(SpaceBase):
 
     def __init__(self, corners_user, max_points_nb, delta_space):
         """
-        :param corners: lower and upper corner points that define the space
+        :param corners_user: lower and upper corner points that define the space
         :param max_points_nb: maximum number of points allowed in the space
+        :param float delta_sapce: dillatation of the space for prior sampling
         """
         super(Space, self).__init__()
 
@@ -98,7 +99,6 @@ class Space(SpaceBase):
         '''Maximum number of points.'''
 
         # Extension of space
-
         c1 = []
         c2 = []
 
@@ -109,12 +109,13 @@ class Space(SpaceBase):
         corners = (tuple(c1),tuple(c2),) 
 
         # corner points
-   
         try:
             self.corners = [Point(p) for p in corners]
         except Exception, e:
             e.args = ('bad corner points: ' + e.args[0],)
             raise
+
+        self.corners_user = corners_user
 
         for i in range(len(corners[0])):
             if corners[0][i] == corners[1][i]:
@@ -204,7 +205,7 @@ class Space(SpaceBase):
 
     def refine(self, pod, method):
         """Refine the sample, update space points and return the new point."""
-        refiner = Refiner(pod, self.corners)
+        refiner = Refiner(pod, self.corners_user)
         # Refinement strategy
         if method == 'MSE':
             point = refiner.mse()
