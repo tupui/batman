@@ -1,16 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-UQ class
-========
+"""Uncertainty Quantification."""
 
-This class is intented to implement statistical tools provided by the OpenTURNS framework.
-
-Example:
->> analyse = UQ(pod, settings, output)
->> analyse.sobol()
->> analyse.error_propagation()
-
-"""
+# Authors: Pamphile ROY <roy.pamphile@gmail.fr>
+# Copyright: CERFACS
 
 import logging
 import numpy as np
@@ -21,14 +13,57 @@ import itertools
 
 
 class UQ:
-    """UQ class.
+
+    u"""
+    UQ class
+    ========
+
+    This class is intented to implement statistical tools provided by the OpenTURNS     framework.
+
+    It is called using option `-u`. Configuration is done from *settings*:
+
+    1. Computes Sobol' indices (map and block or aggragated),
+    2. Compare the result with a know function if available,
+    3. Propagate uncertainties from input distributions.
+
+    At each step, an output file is beeing written within the UQ folder.
 
     It implements the following methods:
-    - func(self, coords)
-    - int_func(self, coords)
-    - error_pod(self, indices, function)
-    - sobol(self)
-    - error_propagation(self).
+
+    - :func:`func`
+    - :func:`int_func`
+    - :func:`error_pod`
+    - :func:`sobol`
+    - :func:`error_propagation`
+
+    Usage
+    -----
+
+    The *settings* file must contain:
+
+        'UQ' : {
+
+        'method' : sobol, (or FAST)
+        'type' : aggregated, (or block)
+        'sample' : 20000,
+        'pdf' : [Normal(sigma, mu), Uniform(inf, sup)] (OpenTURNS factories)
+
+        }
+
+    :Example:
+
+    >> analyse = UQ(pod, settings, output)
+    >> analyse.sobol()
+    >> analyse.error_propagation()
+
+    References
+    ----------
+
+    A. Marrel, N. Saint-Geours. M. De Lozzo: Sensitivity Analysis of Spatial and/or     Temporal Phenomena. Handbook of Uncertainty Quantification. 2015.   DOI:10.1007/978-3-319-11259-6_39-1
+
+    B. Iooss: Revue sur l’analyse de sensibilité globale de modèles numériques.     Journal de la Société Française de Statistique. 2010
+
+    M. Baudin, A. Dutfoy, B. Iooss, A. Popelin: OpenTURNS: An industrial software   for uncertainty quantification in simulation. 2015. ArXiv ID: 1501.05242
 
     """
 
@@ -37,14 +72,16 @@ class UQ:
     def __init__(self, jpod, settings, output):
         """Init the UQ class.
 
-        From the settings file, get:
+        From the settings file, it gets:
+
         - Method to use for the Sensitivity Analysis (SA),
+        - Type of Sobol' indices to compute,
         - Number of prediction to use for SA,
         - Method to use to predict a new snapshot,
         - The list of input variables,
         - The lengh of the output function.
 
-        Also, it creates the `model` and `int_model` ot.PythonFunction().
+        Also, it creates the `model` and `int_model` as `ot.PythonFunction()`.
 
         :param pod jpod: The POD,
         :param dict settings: The settings_template file.
@@ -59,7 +96,7 @@ class UQ:
         try:
             mkdir(output)
         except:
-            pass
+            self.logger.debug("Output folder already exists.")
         self.pod = jpod
         self.p_lst = settings.snapshot['io']['parameter_names']
         self.p_len = len(self.p_lst)
@@ -71,13 +108,16 @@ class UQ:
         except KeyError:
             self.logger.exception("Need to configure method, type, sample and PDF")
             raise SystemExit
+
         input_pdf = "ot." + pdf[0]
         for i in xrange(self.p_len - 1):
             input_pdf = input_pdf + ", ot." + pdf[i + 1]
         self.distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
-        # self.experiment = ot.MonteCarloExperiment(self.distribution, self.points_sample)
+        #self.experiment = ot.MonteCarloExperiment(self.distribution, self.points_sample)
         self.experiment = ot.LHSExperiment(self.distribution, self.points_sample)
         self.sample = self.experiment.generate()
+        self.logger.info("Created {} samples with an LHS experiment".format(self.points_sample))
+        
         self.method_pod = settings.prediction['method']
         self.output_len = settings.snapshot['io']['shapes'][0][0][0]
         self.f_input = None
@@ -90,9 +130,10 @@ class UQ:
         return "UQ object: Method({}), Input({}), Distribution({})".format(self.method_sobol, self.p_lst, self.distribution)
 
     def func(self, coords):
-        """Evaluate the POD on a given point.
+        """Evaluate the POD at a given point.
 
-        The function uses the POD and interpolate it using Kriging's method to reconstruct the solution.
+        This function calls the `predict()` function to compute a prediction.
+        If the prediction returns a vector, it create `self.f_input` which contains the discretisation information.
 
         :param lst coords: The parameters set to calculate the solution from.
         :return: The fonction evaluation.
@@ -109,9 +150,10 @@ class UQ:
         return f_eval
 
     def int_func(self, coords):
-        """Evaluate the POD on a given point and return the integral.
+        """Evaluate the POD at a given point and return the integral.
 
-        Same as `func` but compute the integral using the trapezoidale rule.
+        Same as :func:`func` but compute the integral using the trapezoidale rule.
+        It simply returns the prediction in case of a scalar output.
 
         :param lst coords: The parameters set to calculate the solution from.
         :return: The integral of the function.
@@ -128,16 +170,21 @@ class UQ:
         return [int_f_eval.item()]
 
     def error_pod(self, indices, function):
-        """Compute the error between the POD and the analytic function.
+        r"""Compute the error between the POD and the analytic function.
 
-        For test purpose. From the POD of the function, evaluate the error
+        .. warning:: For test purpose only. Choises are Ishigami, Rosenbrock and Channel Flow test functions.
+
+        From the surrogate of the function, evaluate the error
         using the analytical evaluation of the function on the sample points.
 
-        Q2 = 1 - err_l2/var_model
+        .. math:: Q^2 = 1 - \frac{err_{l2}}{var_{model}}
 
-        Also, it computes the error on the Sobol first and total order indices.
+        Knowing that :math:`err_{l2} = \sum \frac{(prediction - reference)^2}{n}`,
+                     :math:`var_{model} = \sum \frac{(prediction - mean)^2}{n}`
 
-        err_l2 = sum()
+        Also, it computes the mean square error on the Sobol first and total order indices.
+
+        A summary is written within `pod_err.dat`.
 
         :param lst(array) indices: Sobol first order indices computed using the POD.
         :param str function: name of the analytic function.
@@ -193,22 +240,20 @@ class UQ:
         s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
         s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
 
+        eval_mean = np.zeros(self.output_len)
         err_max = 0.
         err_l2 = 0.
-        eval_mean = 0.
-
         for _, j in enumerate(self.sample):
-            eval_ref = model_ref(j)[0]
-            eval_pod = self.model(j)[0]
+            eval_ref = np.array([model_ref(j)[i] for i in range(self.output_len)])
+            eval_pod = np.array([self.model(j)[i] for i in range(self.output_len)])
             eval_mean = eval_mean + eval_ref
-            err_max = max(err_max, abs(eval_pod - eval_ref))
-            err_l2 = err_l2 + (eval_pod - eval_ref) ** 2
+            err_max = max(err_max, max(abs(eval_pod - eval_ref)))
+            err_l2 = err_l2 + np.sum((eval_pod - eval_ref) ** 2)
         eval_mean = eval_mean / self.points_sample
         eval_var = 0.
         for _, j in enumerate(self.sample):
-            # eval_ref = model_ref(j)[0]
-            eval_ref = self.model(j)[0]
-            eval_var = eval_var + (eval_mean - eval_ref) ** 2
+            eval_ref = np.array([self.model(j)[i] for i in range(self.output_len)])
+            eval_var = eval_var + np.sum((eval_mean - eval_ref) ** 2)
         err_q2 = 1 - err_l2 / eval_var
 
         self.logger.info("\n----- POD error -----")
@@ -217,6 +262,7 @@ class UQ:
         with open(self.output_folder + '/pod_err.dat', 'w') as f:
             f.writelines(str(self.snapshot) + ' ' + str(err_q2) + ' ' + str(self.points_sample) + ' ' + str(s_err_l2_first) + ' ' + str(s_err_l2_second) + ' ' + str(s_err_l2_total))
 
+        # Write a QQplot in case of a scalar output
         if self.output_len == 1:
             output_ref = model_ref(self.sample)
             output = self.int_model(self.sample)
@@ -227,13 +273,25 @@ class UQ:
             self.logger.debug("Cannot draw QQplot with output dimension > 1")
 
     def sobol(self):
-        """Compute the Sobol' indices.
+        """Compute Sobol' indices.
 
         It returns the second, first and total order indices of Sobol'.
-        The second order indices are only available with the sobol method.
+        Two methods are possible for the indices:
 
-        :return: The Sobol' indices
-        :rtype: lst
+        - `sobol`
+        - `FAST`
+
+        .. warnings:: The second order indices are only available with the sobol method.
+
+        And three types of computation are availlable for the global indices:
+
+        - `block`
+        - `map`
+        - `aggregated`
+
+        If *aggregated*, *map* indices are computed. In case of a scalar value, all types returns the same values. *map* or *block* indices are written within `sensitivity.dat` and aggregated indices within `sensitivity_aggregated.dat`.
+
+        Finally, it calls :func:`error_pod` in order to compare the indices with their analytical values.
 
         """
         indices = [[], [], []]
@@ -269,11 +327,11 @@ class UQ:
         self.logger.debug("First order: {}".format(indices[1]))
         self.logger.debug("Total: {}".format(indices[2]))
 
-            # TODO ANCOVA
-            # ancova = ot.ANCOVA(results, sample)
-            # indices = ancova.getIndices()
-            # uncorrelated = ancova.getUncorrelatedIndices()
-            # correlated = indices - uncorrelated
+        # TODO ANCOVA
+        # ancova = ot.ANCOVA(results, sample)
+        # indices = ancova.getIndices()
+        # uncorrelated = ancova.getUncorrelatedIndices()
+        # correlated = indices - uncorrelated
 
         # Write Sobol' indices to file: block or map
         with open(self.output_folder + '/sensitivity.dat', 'w') as f:
@@ -289,7 +347,7 @@ class UQ:
             else:
                 variables = 'VARIABLES = \"x\"' + var
                 f.writelines(variables)
-                f.writelines('ZONE T = \"Sensitivity \" , I='+str(self.output_len)+', F=BLOCK  \n')
+                f.writelines('ZONE T = \"Sensitivity \" , I=' + str(self.output_len) + ', F=BLOCK  \n')
                 # X
                 for i in range(self.output_len):
                     f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
@@ -303,13 +361,13 @@ class UQ:
                 if i % 1000:
                     f.writelines('\n')
             f.writelines('\n')
-        
+
         # Aggregated Indices
         if self.type_indices == 'aggregated':
             self.logger.info("\n----- Aggregated Sensitivity Indices -----")
             output = self.model(self.sample)
             output_var = output.computeVariance()
-            sum_var_indices = [np.zeros((self.p_len, self.p_len)), np.zeros((self.p_len)), np.zeros((self.p_len))] 
+            sum_var_indices = [np.zeros((self.p_len, self.p_len)), np.zeros((self.p_len)), np.zeros((self.p_len))]
             for i, j in itertools.product(range(self.output_len), range(3)):
                 indices[:][j][i] = np.nan_to_num(indices[:][j][i])
                 sum_var_indices[j] += float(output_var[i]) * indices[:][j][i]
@@ -317,7 +375,7 @@ class UQ:
             for i in range(3):
                 indices[i] = sum_var_indices[i] / sum_var
             self.logger.info("Aggregated_indices: {}".format(indices))
-            
+
             with open(self.output_folder + '/sensitivity_aggregated.dat', 'w') as f:
                 f.writelines('TITLE = \" Sobol indices \" \n')
                 variables = 'VARIABLES =' + var
@@ -329,9 +387,9 @@ class UQ:
                     if i % 1000:
                         f.writelines('\n')
                 f.writelines('\n')
-        
+
         # Compute error of the POD with a known function
-        if (self.type_indices in ['aggregated', 'block']) and (self.test is not None): 
+        if (self.type_indices in ['aggregated', 'block']) and (self.test is not None):
             self.error_pod(indices, self.test)
 
     def error_propagation(self):
@@ -340,7 +398,7 @@ class UQ:
         All 4 order moments are computed for every output of the function.
         It also compute the PDF for these outputs as a 2D cartesian plot.
 
-        The file moment.dat contains the moments and the file pdf.dat contains the PDFs.
+        The file `moment.dat` contains the moments and the file `pdf.dat` contains the PDFs.
 
         """
         self.logger.info("\n----- Moment evaluation -----")
@@ -366,6 +424,7 @@ class UQ:
                 pdf = ot.Normal(output[i, i], 0.001)
             pdf_pts[i] = np.array(pdf.computePDF(output_extract[:, i]))
             pdf_pts[i] = np.nan_to_num(pdf_pts[i])
+
         # Write moments to file
         with open(self.output_folder + '/moment.dat', 'w') as f:
             f.writelines('TITLE = \" Moment evaluation \" \n')
