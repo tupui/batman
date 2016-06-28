@@ -7,7 +7,7 @@ space = {
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max'  : 150,
+    'size_max'  : 100,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -16,7 +16,7 @@ space = {
         'method' : 'sobol',
     # Number of samples to be generated
     # format : integer
-        'size'   : 50,
+        'size'   : 100,
     }
 }
 
@@ -28,7 +28,7 @@ snapshot = {
 #    'provider' : functions.partial(functions.f1, 5),
 # Maximum number of simultaneous running snapshot provider
 # format : integer > 0
-    'max_workers' : 1,
+    'max_workers' : 5,
 # Input output settings
     'io' : {
     # Names of the parameters
@@ -67,9 +67,11 @@ pod = {
 # Type of pod to perform.
 # format : one of 'static', 'dynamic', 'auto'
     'type'      : 'static',
+# Resampling strategy: None, 'MSE', 'leave-one-out'
+    'resample'  : 'MSE',
 # Stopping criterion for automatic resampling
 # format : float
-    'quality'   : 0.001*1.e-300,
+    'quality'   : 0.8,
 # Server settings
 # None means no server, the pod processing is run from the main python interpreter
     'server' : None,

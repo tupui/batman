@@ -7,7 +7,7 @@ space = {
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max' : 102 ,
+    'size_max' : 100 ,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -16,7 +16,7 @@ space = {
         'method' : 'halton',
     # Number of samples to be generated
     # format : integer
-        'size' : 102 ,
+        'size' : 80 ,
     }
 }
 
@@ -67,11 +67,11 @@ pod = {
 # Type of pod to perform.
 # format : one of 'static', 'dynamic'
     'type'      : 'static',
-# Resampling strategy: None, 'MSE'
+# Resampling strategy: None, 'MSE', 'leave-one-out'
     'resample'  : 'leave-one-out',
 # Stopping criterion for resampling
 # format : float
-    'quality'   : 0.001*1.e-300,
+    'quality'   : 0.80,            
 # Server settings
 # None means no server, the pod processing is run from the main python interpreter
     'server' : None,

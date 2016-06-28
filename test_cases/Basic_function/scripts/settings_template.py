@@ -66,9 +66,11 @@ pod = {
 # Type of pod to perform.
 # format : one of 'static', 'dynamic', 'auto'
     'type'      : 'static',
+# Resampling strategy: None, 'MSE', 'leave-one-out'
+    'resample'  : 'leave-one-out',
 # Stopping criterion for automatic resampling
 # format : float
-    'quality'   : 0.001*1.e-300,
+    'quality'   : 0.8,
 # Server settings
 # None means no server, the pod processing is run from the main python interpreter
     'server' : None,
