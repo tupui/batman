@@ -138,7 +138,9 @@ class Refiner():
         distances = np.array([np.linalg.norm(self.pod.points[i] - point) for i in range(len(self.pod.points))])
         distances = distances[np.nonzero(distances)]
         distance = min(distances) / 2
+        self.logger.debug("Prior Distance min: {}".format(distance))
         distance = distance * indices[2]
+        self.logger.debug("Post Distance min: {}".format(distance))
 
         # Construct the hypercube around the point
         hypercube = np.array([point - distance, point + distance]).T
