@@ -20,13 +20,11 @@ except AttributeError:
     import signal
 
     def subprocess_send_signal(self, sig):
-        """Send a signal to the process
-        """
+        """Send a signal to the process."""
         os.kill(self.pid, sig)
 
     def subprocess_terminate(self):
-        """Terminate the process with SIGTERM
-        """
+        """Terminate the process with SIGTERM."""
         self.send_signal(signal.SIGTERM)
 
     subprocess.Popen.send_signal = subprocess_send_signal
@@ -65,21 +63,22 @@ class SnapshotProvider(object):
 
 
 class Driver(object):
-    """docstring for Driver"""
+
+    """docstring for Driver."""
 
     output_tree = {
         # 'snapshot-template' : 'snapshot-template',
         'snapshots': 'snapshots',
         'pod': 'pod',
         'predictions': 'predictions',
-	'uq': 'uq',
+        'uq': 'uq',
     }
     '''Structure of the output directory.'''
 
     def __init__(self, snapshot_settings, space_settings, output):
         self.pod_quality = None
         '''POD automatic resampling quality.'''
-        
+
         self.output = output
         '''Path to output directory.'''
 
@@ -181,7 +180,7 @@ class Driver(object):
                 raise TypeError('Bad space provider.')
 
     def __del__(self):
-        """docstring for __del__"""
+        """docstring for __del__."""
         # terminate pending tasks
         if mpi.myid == 0 \
            and self.external_pod is not None:
@@ -189,7 +188,7 @@ class Driver(object):
             self.external_pod.terminate()
 
     def _pod_processing(self, points, update):
-        """docstring for fname"""
+        """docstring for fname."""
         # snapshots generation
         snapshots = []
         for p in points:
@@ -256,37 +255,37 @@ class Driver(object):
             self.pod = Pod(settings.pod['tolerance'], settings.pod['dim_max'])
 
     def sampling_pod(self, update):
-        """docstring for static_pod"""
+        """docstring for static_pod."""
         if self.pod is None:
             raise Exception(
                 "driver's pod has not been initialized, call init_pod first.")
         self._pod_processing(self.initial_points, update)
 
-    def resampling_pod(self, method):
-        """docstring for static_pod"""
+    def resampling_pod(self, settings):
+        """docstring for static_pod."""
         if self.pod is None:
             raise Exception(
                 "driver's pod has not been initialized, call init_pod first.")
 
         while True:
-            #quality, point = self.pod.estimate_quality()
+            # quality, point = self.pod.estimate_quality()
             quality = 100.
             if quality <= self.pod_quality:
                 break
 
             try:
-                new_point = self.space.refine(self.pod, method) 
+                new_point = self.space.refine(self.pod, settings)
             except FullSpaceError:
                 break
 
             self._pod_processing(new_point, True)
 
     def write_pod(self):
-        """docstring for static_pod"""
+        """docstring for static_pod."""
         self.pod.write(os.path.join(self.output, self.output_tree['pod']))
 
     def read_pod(self, path=None):
-        """docstring for static_pod"""
+        """docstring for static_pod."""
         path = path or os.path.join(self.output, self.output_tree['pod'])
         self.pod.read(path)
 
@@ -298,7 +297,7 @@ class Driver(object):
             output = None
 
         return self.pod.predict(settings['method'], settings['points'], output)
-    
+
     def prediction_without_computation(self, settings, write=False):
         if self.external_pod is not None \
            or write:
@@ -310,60 +309,41 @@ class Driver(object):
             model, settings['points'], output)
 
     def write_model(self):
-        """docstring for static_pod"""
+        """docstring for static_pod."""
         self.pod.write_model(
             os.path.join(
                 self.output,
                 self.output_tree['pod']))
 
     def read_model(self, path=None):
-        """docstring for static_pod"""
+        """docstring for static_pod."""
         path = path or os.path.join(self.output, self.output_tree['pod'])
         return self.pod.read_model(path)
 
     def uq(self, settings):
+        """Perform UQ analysis."""
         output = os.path.join(self.output, self.output_tree['uq'])
-        analyse = UQ(self.pod, settings, output)	
-        sobol = analyse.sobol()
+        analyse = UQ(self.pod, settings, output)
+        analyse.sobol()
         analyse.error_propagation()
 
     def restart(self):
-            self.logger.info('Restarting pod.')
-            # read the pod data
-            self.pod.read(os.path.join(self.output, self.output_tree['pod']))
-            # points that have been already processed
-            processed_points = self.pod.points
-            self.snapshot_counter = len(processed_points)
+        self.logger.info('Restarting pod.')
+        # read the pod data
+        self.pod.read(os.path.join(self.output, self.output_tree['pod']))
+        # points that have been already processed
+        processed_points = self.pod.points
+        self.snapshot_counter = len(processed_points)
 
-            if set(processed_points).issubset(self.initial_points):
+        if set(processed_points).issubset(self.initial_points):
                 # static or dynamic pod is not finished, the remaining points have
                 # to be processed
-                self.initial_points = [p for p in self.initial_points
-                                       if p not in processed_points]
-            else:
-                # static or dynamic pod is done,
-                # the eventual automatic resampling has to continue from the processed points
-                # FIXME: space needs the refiner structure!
-                self.initial_points = []
-                self.space.empty()
-                self.space.add(processed_points)
-
-# def catch_and_clean(method):
-#     def wrapped_method(self, *args, **kwargs):
-#         try:
-#             method(*args, **kwargs)
-#         finally:
-#             self.finalize()
-#     return wrapped_method
-#
-#
-# class SafeDriver(Driver):
-#
-#
-#     """docstring for SafeDriver"""
-#     def finalize(self):
-#         # terminate pending tasks
-#         if mpi.myid == 0 \
-#            and self.external_pod is not None:
-#             self.logger.info('Terminating the external pod.')
-#             self.external_pod.terminate()
+            self.initial_points = [p for p in self.initial_points
+                                   if p not in processed_points]
+        else:
+            # static or dynamic pod is done,
+            # the eventual automatic resampling has to continue from the processed points
+            # FIXME: space needs the refiner structure!
+            self.initial_points = []
+            self.space.empty()
+            self.space.add(processed_points)

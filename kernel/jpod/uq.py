@@ -69,7 +69,7 @@ class UQ:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, jpod, settings, output):
+    def __init__(self, jpod, settings, output=None):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -113,11 +113,11 @@ class UQ:
         for i in xrange(self.p_len - 1):
             input_pdf = input_pdf + ", ot." + pdf[i + 1]
         self.distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
-        #self.experiment = ot.MonteCarloExperiment(self.distribution, self.points_sample)
+        # self.experiment = ot.MonteCarloExperiment(self.distribution, self.points_sample)
         self.experiment = ot.LHSExperiment(self.distribution, self.points_sample)
         self.sample = self.experiment.generate()
         self.logger.info("Created {} samples with an LHS experiment".format(self.points_sample))
-        
+
         self.method_pod = settings.prediction['method']
         self.output_len = settings.snapshot['io']['shapes'][0][0][0]
         self.f_input = None
@@ -244,7 +244,7 @@ class UQ:
         eval_pod = []
         err_max = 0.
         err_l2 = 0.
-       
+
         for i, j in enumerate(self.sample):
             eval_ref = np.array(model_ref(j))
             eval_pod.append(np.array(self.model(j)))
@@ -259,19 +259,23 @@ class UQ:
 
         self.logger.info("\n----- POD error -----")
         self.logger.info("\nL_inf(error): {}\nQ2(error): {}\nL2(sobol first, second and total order indices error): {}, {}, {}".format(err_max, err_q2, s_err_l2_first, s_err_l2_second, s_err_l2_total))
-        # Write error to file pod_err.dat
-        with open(self.output_folder + '/pod_err.dat', 'w') as f:
-            f.writelines(str(self.snapshot) + ' ' + str(err_q2) + ' ' + str(self.points_sample) + ' ' + str(s_err_l2_first) + ' ' + str(s_err_l2_second) + ' ' + str(s_err_l2_total))
 
-        # Write a QQplot in case of a scalar output
-        if self.output_len == 1:
-            output_ref = model_ref(self.sample)
-            output = self.int_model(self.sample)
-            qq_plot = ot.VisualTest_DrawQQplot(output_ref, output)
-            # View(qq_plot).show()
-            qq_plot.draw(self.output_folder + '/qq_plot.png')
-        else:
-            self.logger.debug("Cannot draw QQplot with output dimension > 1")
+        # Write error to file pod_err.dat
+        try:
+            with open(self.output_folder + '/pod_err.dat', 'w') as f:
+                f.writelines(str(self.snapshot) + ' ' + str(err_q2) + ' ' + str(self.points_sample) + ' ' + str(s_err_l2_first) + ' ' + str(s_err_l2_second) + ' ' + str(s_err_l2_total))
+
+            # Write a QQplot in case of a scalar output
+            if self.output_len == 1:
+                output_ref = model_ref(self.sample)
+                output = self.int_model(self.sample)
+                qq_plot = ot.VisualTest_DrawQQplot(output_ref, output)
+                # View(qq_plot).show()
+                qq_plot.draw(self.output_folder + '/qq_plot.png')
+            else:
+                self.logger.debug("Cannot draw QQplot with output dimension > 1")
+        except:
+            self.logger.debug("No output folder to write errors in")
 
     def sobol(self):
         """Compute Sobol' indices.
@@ -290,9 +294,13 @@ class UQ:
         - `map`
         - `aggregated`
 
-        If *aggregated*, *map* indices are computed. In case of a scalar value, all types returns the same values. *map* or *block* indices are written within `sensitivity.dat` and aggregated indices within `sensitivity_aggregated.dat`.
+        If *aggregated*, *map* indices are computed. In case of a scalar value, all types returns the same values.
+        *map* or *block* indices are written within `sensitivity.dat` and aggregated indices within `sensitivity_aggregated.dat`.
 
         Finally, it calls :func:`error_pod` in order to compare the indices with their analytical values.
+
+        :return: Sobol' indices
+        :rtype: lst(np.array)
 
         """
         indices = [[], [], []]
@@ -335,33 +343,36 @@ class UQ:
         # correlated = indices - uncorrelated
 
         # Write Sobol' indices to file: block or map
-        with open(self.output_folder + '/sensitivity.dat', 'w') as f:
-            f.writelines('TITLE = \" Sobol indices \" \n')
-            var = ''
-            for p in self.p_lst:
-                var += ' \"S_' + str(p) + '\" \"S_T_' + str(p) + '\"'
-            var += '\n'
-            if (self.output_len == 1) or (self.type_indices == 'block'):
-                variables = 'VARIABLES =' + var
-                f.writelines(variables)
-                f.writelines('ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
-            else:
-                variables = 'VARIABLES = \"x\"' + var
-                f.writelines(variables)
-                f.writelines('ZONE T = \"Sensitivity \" , I=' + str(self.output_len) + ', F=BLOCK  \n')
-                # X
-                for i in range(self.output_len):
-                    f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
+        try:
+            with open(self.output_folder + '/sensitivity.dat', 'w') as f:
+                f.writelines('TITLE = \" Sobol indices \" \n')
+                var = ''
+                for p in self.p_lst:
+                    var += ' \"S_' + str(p) + '\" \"S_T_' + str(p) + '\"'
+                var += '\n'
+                if (self.output_len == 1) or (self.type_indices == 'block'):
+                    variables = 'VARIABLES =' + var
+                    f.writelines(variables)
+                    f.writelines('ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
+                else:
+                    variables = 'VARIABLES = \"x\"' + var
+                    f.writelines(variables)
+                    f.writelines('ZONE T = \"Sensitivity \" , I=' + str(self.output_len) + ', F=BLOCK  \n')
+                    # X
+                    for i in range(self.output_len):
+                        f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
+                        if i % 1000:
+                            f.writelines('\n')
+                    f.writelines('\n')
+                # Indices
+                w_lst = [indices[1], indices[2]]
+                for j, w, i in itertools.product(range(self.p_len), w_lst, range(sobol_len)):
+                    f.writelines("{:.7E}".format(float(w[i][j])) + "\t ")
                     if i % 1000:
                         f.writelines('\n')
                 f.writelines('\n')
-            # Indices
-            w_lst = [indices[1], indices[2]]
-            for j, w, i in itertools.product(range(self.p_len), w_lst, range(sobol_len)):
-                f.writelines("{:.7E}".format(float(w[i][j])) + "\t ")
-                if i % 1000:
-                    f.writelines('\n')
-            f.writelines('\n')
+        except:
+            self.logger.debug("No output folder to write indices in")
 
         # Aggregated Indices
         if self.type_indices == 'aggregated':
@@ -377,21 +388,26 @@ class UQ:
                 indices[i] = sum_var_indices[i] / sum_var
             self.logger.info("Aggregated_indices: {}".format(indices))
 
-            with open(self.output_folder + '/sensitivity_aggregated.dat', 'w') as f:
-                f.writelines('TITLE = \" Sobol indices \" \n')
-                variables = 'VARIABLES =' + var
-                f.writelines(variables)
-                f.writelines('ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
-                w_lst = [indices[1], indices[2]]
-                for j, w in itertools.product(range(self.p_len), w_lst):
-                    f.writelines("{:.7E}".format(float(w[j])) + "\t ")
-                    if i % 1000:
-                        f.writelines('\n')
-                f.writelines('\n')
+            try:
+                with open(self.output_folder + '/sensitivity_aggregated.dat', 'w') as f:
+                    f.writelines('TITLE = \" Sobol indices \" \n')
+                    variables = 'VARIABLES =' + var
+                    f.writelines(variables)
+                    f.writelines('ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
+                    w_lst = [indices[1], indices[2]]
+                    for j, w in itertools.product(range(self.p_len), w_lst):
+                        f.writelines("{:.7E}".format(float(w[j])) + "\t ")
+                        if i % 1000:
+                            f.writelines('\n')
+                    f.writelines('\n')
+            except:
+                self.logger.debug("No output folder to write aggregated indices in")
 
         # Compute error of the POD with a known function
         if (self.type_indices in ['aggregated', 'block']) and (self.test is not None):
             self.error_pod(indices, self.test)
+
+        return indices
 
     def error_propagation(self):
         """Compute the moments.

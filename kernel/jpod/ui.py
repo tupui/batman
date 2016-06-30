@@ -2,7 +2,6 @@
 
 import logging
 from logging.config import dictConfig
-from logging.handlers import RotatingFileHandler
 import argparse
 import os
 import json
@@ -22,17 +21,18 @@ path = os.path.dirname(os.path.realpath(__file__)) + '/misc/logging.json'
 with open(path, 'r') as file:
     logging_config = json.load(file)
 
+
 def run(settings, options):
     """Run the driver along."""
     dictConfig(logging_config)
     if options.verbose:
-	console = logging.getLogger().handlers[0]
-	console.setLevel(logging.DEBUG)
+        console = logging.getLogger().handlers[0]
+        console.setLevel(logging.DEBUG)
         logging.getLogger().removeHandler('console')
-	logging.getLogger().addHandler(console)
+        logging.getLogger().addHandler(console)
 
     logger = logging.getLogger('JPOD main')
-    
+
     # clean up output directory
     if not options.restart \
        and not options.no_pod and not options.pred:
@@ -52,10 +52,9 @@ def run(settings, options):
             update = True
 
         driver.sampling_pod(update)
-        
+
         if settings.pod['resample'] is not None:
-            refiner = settings.pod['resample']
-            driver.resampling_pod(refiner)
+            driver.resampling_pod(settings)
 
         driver.write_pod()
 
@@ -75,7 +74,7 @@ def run(settings, options):
             settings.prediction,
             write=True)
         logger.info('Prediction without model building')
-    
+
     logger.info(driver.pod)
 
     if options.uq:
