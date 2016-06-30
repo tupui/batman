@@ -43,6 +43,7 @@ class Refiner():
         """
         self.pod = pod
         self.kind = settings.prediction['method']
+        self.settings = settings
         self.corners = np.array(corners).T
         self.point = None
 
@@ -134,14 +135,21 @@ class Refiner():
         indices = analyse.sobol()
 
         # Determine the distance between the point and all other points in Space
-        distances = [np.linalg.norm(self.pod.points[i] - point) for i in range(len(self.points))]
-        distance = min(distances) * indices
+        distances = np.array([np.linalg.norm(self.pod.points[i] - point) for i in range(len(self.pod.points))])
+        distances = distances[np.nonzero(distances)]
+        distance = min(distances) / 2
+        distance = distance * indices
 
         # Construct the hypercube around the point
         hypercube = np.array([point - distance, point + distance]).T
+        self.logger.debug("Prior Hypercube:\n{}".format(hypercube))
+        self.logger.debug("Corners:\n{}".format(self.corners))
+        hypercube[:, 0] = np.maximum(hypercube[:, 0], self.corners[:, 0])
+        hypercube[:, 1] = np.minimum(hypercube[:, 1], self.corners[:, 1])
+        self.logger.debug("Post Hypercube:\n{}".format(hypercube))
 
-
-        self.logger.debug("Hypercube: {}".format(hypercube))
+        # Global search of the point within the hypercube
         result = differential_evolution(self.func, hypercube)
 
         return result.x
+

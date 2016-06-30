@@ -7,7 +7,7 @@ space = {
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max' : 100 ,
+    'size_max' : 101 ,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -16,7 +16,7 @@ space = {
         'method' : 'halton',
     # Number of samples to be generated
     # format : integer
-        'size' : 80 ,
+        'size' : 99 ,
     }
 }
 
@@ -67,8 +67,8 @@ pod = {
 # Type of pod to perform.
 # format : one of 'static', 'dynamic'
     'type'      : 'static',
-# Resampling strategy: None, 'MSE', 'leave-one-out'
-    'resample'  : 'leave-one-out',
+# Resampling strategy: None, 'MSE', 'loo_mse', 'loo_sobol'
+    'resample'  : 'loo_sobol',
 # Stopping criterion for resampling
 # format : float
     'quality'   : 0.80,            
@@ -90,7 +90,7 @@ prediction = {
     'method' : 'kriging',
 # Set of points at which the predictions are made
 # format : list of tuples of floats
-    'points' : [[1, 3, 5] ],
+    'points' : [],
 }
 
 uq = {
@@ -100,7 +100,7 @@ uq = {
     'type' : 'aggregated',
 # Use a test method: 'Ishigami'
     'test' : 'Ishigami',
-    'sample' : 10000 ,
+    'sample' : 1000 ,
 # Uncertainty propagation. Enter the PDF of the inputs. x1: Normal(mu, sigma), x2: Uniform(inf, sup)
     'pdf' : ['Uniform(-3.1415, 3.1415)', 'Uniform(-3.1415, 3.1415)', 'Uniform(-3.1415, 3.1415)']
 }
