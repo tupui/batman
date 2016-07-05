@@ -115,6 +115,7 @@ class Space(SpaceBase):
             raise
 
         self.corners_user = corners_user
+        self.refined_pod_points = []
 
         for i in range(len(corners[0])):
             if corners[0][i] == corners[1][i]:
@@ -198,7 +199,7 @@ class Space(SpaceBase):
         """Refine the sample, update space points and return the new point(s).
 
         :param pod: POD
-        :param str method: Resampling strategy
+        :param dict settings: Settings file
         :return: List of points to add
         :rtype: lst(tuple(float))
         """
@@ -211,12 +212,12 @@ class Space(SpaceBase):
             new_point = refiner.leave_one_out_mse()
         elif method == 'loo_sobol':
             new_point = refiner.leave_one_out_sobol()
-        elif method == 'loo_min_max':
-            new_point = refiner.leave_one_out_min_max()
+        elif method == 'extrema':
+            new_point, self.refined_pod_points = refiner.extrema(self.refined_pod_points)
 
         point = [Point(point) for point in [new_point]]
         self.add(point)
 
-        self.logger.info('Refined sampling with new point: ' + str(point))
+        self.logger.info('Refined sampling with new point: {}'.format(str(point)))
 
         return point
