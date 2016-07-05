@@ -110,7 +110,7 @@ class UQ:
             raise SystemExit
 
         input_pdf = "ot." + pdf[0]
-        for i in xrange(self.p_len - 1):
+        for i in range(self.p_len - 1):
             input_pdf = input_pdf + ", ot." + pdf[i + 1]
         self.distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
         # self.experiment = ot.MonteCarloExperiment(self.distribution, self.points_sample)
@@ -216,7 +216,7 @@ class UQ:
                 hn = np.power((Q**2) / (I * L * L * Ks * Ks), 3. / 10.)
                 hinit = 10.
                 hh = hinit * np.ones(Long)
-                for i in xrange(2, Long + 1):
+                for i in range(2, Long + 1):
                     hh[Long - i] = hh[Long - i + 1] - dx * I * ((1 - np.power(hh[Long - i + 1] / hn, -10. / 3.)) / (1 - np.power(hh[Long - i + 1] / hc, -3.)))
                 h = hh
 
