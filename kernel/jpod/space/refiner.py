@@ -240,14 +240,15 @@ class Refiner():
 
         # Get max-max and max-min then min-max and min-min
         for sign in [-1., 1.]:
+            self.logger.debug("Sign: {}".format(sign))
             # Get a sample point where there is an extrema around
             while point is None:
                 # Get min or max point
                 evaluations = np.array([self.func(pod_point, sign) for _, pod_point in enumerate(self.pod.points)])
                 min_idx = np.argmin(evaluations)
                 point = self.pod.points[min_idx]
-                point_eval = min(evaluations)
-                self.logger.debug("Extremum located at sample point: {} -> {}".format(point, - point_eval))
+                point_eval = sign * min(evaluations)
+                self.logger.debug("Extremum located at sample point: {} -> {}".format(point, point_eval))
 
                 # Construct the hypercube around the point
                 distance = self.distance_min(point)
@@ -255,21 +256,29 @@ class Refiner():
 
                 # Global search of the point within the hypercube
                 first_extremum = differential_evolution(self.func, hypercube, args=(sign,))
-                self.logger.debug("Optimization first extremum: {} -> {}".format(first_extremum.x, - first_extremum.fun))
+                self.logger.debug("Optimization first extremum: {} -> {}".format(first_extremum.x, sign * first_extremum.fun))
                 second_extremum = differential_evolution(self.func, hypercube, args=(-sign,))
-                self.logger.debug("Optimization second extremum: {} -> {}".format(second_extremum.x, second_extremum.fun))
+                self.logger.debug("Optimization second extremum: {} -> {}".format(second_extremum.x, - sign * second_extremum.fun))
 
-                if first_extremum.fun < point_eval:
-                    print point, first_extremum.x
-                    new_points.append(first_extremum.x + (first_extremum.x - point))
-                    if second_extremum.fun < point_eval:
-                        new_points.append(second_extremum.x + (second_extremum.x - point))
+                if sign == -1.:
+                    if sign * first_extremum.fun > point_eval:
+                        new_points.append(first_extremum.x + (first_extremum.x - point))
+                        if - sign * second_extremum.fun < point_eval:
+                            new_points.append(second_extremum.x + (second_extremum.x - point))
+                    else:
+                        point = None
                 else:
-                    point = None
+                    if sign * first_extremum.fun < point_eval:
+                        new_points.append(first_extremum.x + (first_extremum.x - point))
+                        if - sign * second_extremum.fun > point_eval:
+                            new_points.append(second_extremum.x + (second_extremum.x - point))
+                    else:
+                        point = None
 
                 # new_points.append(point + (point - result.x)) if result.fun < self.func(point, sign) else None
                 self.pod.points = np.delete(self.pod.points, min_idx, 0)
                 self.logger.debug("New points: {}".format(new_points))
+            point = None
                 
             refined_pod_points.append(min_idx)
 
