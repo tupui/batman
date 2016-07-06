@@ -214,6 +214,8 @@ class Space(SpaceBase):
             new_point = refiner.leave_one_out_sobol()
         elif method == 'extrema':
             new_point, self.refined_pod_points = refiner.extrema(self.refined_pod_points)
+        elif method == 'hybrid':
+            new_point, self.refined_pod_points = refiner.hybrid(self.refined_pod_points)
 
         try:
             point = [Point(point) for point in [new_point]]

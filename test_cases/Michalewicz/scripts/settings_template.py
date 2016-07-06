@@ -7,16 +7,16 @@ space = {
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max'  : 100,
+    'size_max'  : 27,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
     # Method used to generate the points
     # format : one of 'uniform', 'halton', 'sobol', 'lhcc', 'lhcr'
-        'method' : 'sobol',
+        'method' : 'halton',
     # Number of samples to be generated
     # format : integer
-        'size'   : 100,
+        'size'   : 20,
     }
 }
 
@@ -28,7 +28,7 @@ snapshot = {
 #    'provider' : functions.partial(functions.f1, 5),
 # Maximum number of simultaneous running snapshot provider
 # format : integer > 0
-    'max_workers' : 5,
+    'max_workers' : 50,
 # Input output settings
     'io' : {
     # Names of the parameters
@@ -67,8 +67,9 @@ pod = {
 # Type of pod to perform.
 # format : one of 'static', 'dynamic', 'auto'
     'type'      : 'static',
-# Resampling strategy: None, 'MSE', 'leave-one-out'
-    'resample'  : 'MSE',
+# Resampling strategy: None, 'MSE', 'loo_mse', 'loo_sobol', 'extrema', 'hybrid'
+    'resample'  : 'hybrid',
+    'strategy' : {'MSE' : 2, 'loo_sobol' : 1, 'extrema' : 1},
 # Stopping criterion for automatic resampling
 # format : float
     'quality'   : 0.8,
@@ -92,6 +93,18 @@ prediction = {
 # format : list of tuples of floats
     'points' : [ ],
 }
+
+uq = {
+# Type of Sobol analysis: 'sobol', 'FAST' (if FAST, no second-order indices)
+    'method' : 'sobol',
+    # Type of indices we want: 'aggregated', 'block'
+    'type' : 'aggregated',
+    # Use a test method: 'Ishigami'
+    'sample' : 5000 ,
+    # Uncertainty propagation. Enter the PDF of the inputs. x1: Normal(mu, sigma), x2: Uniform(inf, sup)
+    'pdf' : ['Uniform(-2.048, 2.048)', 'Uniform(-2.048, 2.048)']
+}
+
 
 
 import numpy as N

@@ -29,7 +29,7 @@ class Refiner():
     - :func:`leave_one_out_mse`
     - :func:`leave_one_out_sobol`
     - :func:`extrema`
-    - :func:`composite`
+    - :func:`hybrid`
 
     :Example:
 
@@ -306,12 +306,36 @@ class Refiner():
 
         return new_points, refined_pod_points
 
-    def composite(self):
+    def hybrid(self, refined_pod_points):
         """Composite resampling strategy.
 
-        Uses all methods one after the other to add new points.
+        Uses all methods one after another to add new points.
+        It uses the navigator defined within settings file.
 
         :return: The coordinate of the point to add
         :rtype: lst(float)
 
         """
+        self.logger.info(">>---Hybrid strategy---<<")
+        strategies = self.settings.pod['strategy']
+        for method in strategies:
+            if strategies[method] > 0: 
+                if method == 'MSE':
+                    new_point = self.mse()
+                    break
+                elif method == 'loo_mse':
+                    new_point = self.leave_one_out_mse()
+                    break
+                elif method == 'loo_sobol':
+                    new_point = self.leave_one_out_sobol()
+                    break
+                elif method == 'extrema':
+                    new_point, refined_pod_points = self.extrema(refined_pod_points)
+                    break
+                else:
+                    self.logger.exception("Resampling method does't exits")
+                    raise SystemExit 
+                self.settings.pod['strategy'][method] -= 1
+            
+        return new_point, refined_pod_points
+
