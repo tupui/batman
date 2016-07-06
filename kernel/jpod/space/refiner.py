@@ -7,6 +7,7 @@
 import logging
 from scipy.optimize import differential_evolution
 import numpy as np
+import copy
 from uq import UQ
 
 
@@ -53,10 +54,10 @@ class Refiner():
         :param tuple(tuple(float)) corners: Boundaries to add a point within
         """
         self.pod = pod
+        self.points = copy.deepcopy(pod.points)
         self.kind = settings.prediction['method']
         self.settings = settings
         self.corners = np.array(corners).T
-        self.point = None
 
     def func(self, coords, sign):
         r"""Get the prediction for a given point.
@@ -116,7 +117,7 @@ class Refiner():
         :rtype: float
 
         """
-        distances = np.array([np.linalg.norm(pod_point - point) for _, pod_point in enumerate(self.pod.points)])
+        distances = np.array([np.linalg.norm(pod_point - point) for _, pod_point in enumerate(self.points)])
         distances = distances[np.nonzero(distances)]
         distance = min(distances)  # * 3 / 2
         self.logger.debug("Distance min: {}".format(distance))
@@ -126,10 +127,13 @@ class Refiner():
     def hypercube(self, point, distance):
         """Get the hypercube to add a point in.
 
+        Propagate the distance around the anchor.
+        Ensure that new values are bounded by corners.
+
         :param np.array point: Anchor point
         :param float distance: The distance of influence
-        :return: The distance to the nearest point
-        :rtype: float
+        :return: The hypercube around the point
+        :rtype: np.array
 
         """
         hypercube = np.array([point - distance, point + distance]).T
@@ -171,7 +175,7 @@ class Refiner():
         :rtype: lst(float)
 
         """
-        self.logger.debug("Leave-one-out + MSE strategy")
+        self.logger.info("Leave-one-out + MSE strategy")
         # Get the point of max error by LOOCV
         _, point = self.pod.estimate_quality()
         point = np.array(point)
@@ -195,7 +199,7 @@ class Refiner():
         :rtype: lst(float)
 
         """
-        self.logger.debug("Leave-one-out + Sobol strategy")
+        self.logger.info("Leave-one-out + Sobol strategy")
         # Get the point of max error by LOOCV
         _, point = self.pod.estimate_quality()
         point = np.array(point)
@@ -228,10 +232,10 @@ class Refiner():
 
         """
         # Get the kind of extrema to compute
-        self.logger.debug("Extrema strategy")
+        self.logger.info("Extrema strategy")
 
         try:
-            self.pod.points = np.delete(self.pod.points, refined_pod_points, 0)
+            self.points = np.delete(self.points, refined_pod_points, 0)
         except:
             self.logger.debug("No point to delete")
 
@@ -244,9 +248,9 @@ class Refiner():
             # Get a sample point where there is an extrema around
             while point is None:
                 # Get min or max point
-                evaluations = np.array([self.func(pod_point, sign) for _, pod_point in enumerate(self.pod.points)])
+                evaluations = np.array([self.func(pod_point, sign) for _, pod_point in enumerate(self.points)])
                 min_idx = np.argmin(evaluations)
-                point = self.pod.points[min_idx]
+                point = self.points[min_idx]
                 point_eval = sign * min(evaluations)
                 self.logger.debug("Extremum located at sample point: {} -> {}".format(point, point_eval))
 
@@ -262,27 +266,39 @@ class Refiner():
 
                 if sign == -1.:
                     if sign * first_extremum.fun > point_eval:
-                        new_points.append(first_extremum.x + (first_extremum.x - point))
+                        first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
+                        first_extremum = np.maximum(first_extremum, self.corners[:, 0])
+                        first_extremum = np.minimum(first_extremum, self.corners[:, 1])
+                        new_points.append(first_extremum[0].tolist())
                         if - sign * second_extremum.fun < point_eval:
-                            new_points.append(second_extremum.x + (second_extremum.x - point))
+                            second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
+                            second_extremum = np.maximum(second_extremum, self.corners[:, 0])
+                            second_extremum = np.minimum(second_extremum, self.corners[:, 1])
+                            new_points.append(second_extremum[0].tolist())
                     else:
                         point = None
                 else:
                     if sign * first_extremum.fun < point_eval:
-                        new_points.append(first_extremum.x + (first_extremum.x - point))
+                        first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
+                        first_extremum = np.maximum(first_extremum, self.corners[:, 0])
+                        first_extremum = np.minimum(first_extremum, self.corners[:, 1])
+                        new_points.append(first_extremum[0].tolist())
                         if - sign * second_extremum.fun > point_eval:
-                            new_points.append(second_extremum.x + (second_extremum.x - point))
+                            second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
+                            second_extremum = np.maximum(second_extremum, self.corners[:, 0])
+                            second_extremum = np.minimum(second_extremum, self.corners[:, 1])
+                            new_points.append(second_extremum[0].tolist())
                     else:
                         point = None
 
                 # new_points.append(point + (point - result.x)) if result.fun < self.func(point, sign) else None
-                self.pod.points = np.delete(self.pod.points, min_idx, 0)
+                self.points = np.delete(self.points, min_idx, 0)
                 self.logger.debug("New points: {}".format(new_points))
             point = None
                 
             refined_pod_points.append(min_idx)
 
-        self.logger.debug("Max-max: {}\nMax-min: {}\nMin-max: {}\nMin-min: {}".format(new_points[0], new_points[1], new_points[2], new_points[3]))
+        self.logger.debug("\nMax-max: {}\nMax-min: {}\nMin-max: {}\nMin-min: {}".format(new_points[0], new_points[1], new_points[2], new_points[3]))
 
         return new_points, refined_pod_points
 
