@@ -201,7 +201,7 @@ class Space(SpaceBase):
         :param pod: POD
         :param dict settings: Settings file
         :return: List of points to add
-        :rtype: lst(tuple(float))
+        :rtype: space.point.Point -> lst(tuple(float))
         """
         refiner = Refiner(pod, settings, self.corners_user)
         # Refinement strategy
@@ -215,7 +215,11 @@ class Space(SpaceBase):
         elif method == 'extrema':
             new_point, self.refined_pod_points = refiner.extrema(self.refined_pod_points)
 
-        point = [Point(point) for point in [new_point]]
+        try:
+            point = [Point(point) for point in [new_point]]
+        except TypeError:
+            point = [Point(point) for point in new_point]
+
         self.add(point)
 
         self.logger.info('Refined sampling with new point: {}'.format(str(point)))
