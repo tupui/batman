@@ -266,12 +266,14 @@ class Refiner():
 
                 if sign == -1.:
                     if sign * first_extremum.fun > point_eval:
-                        first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
+                        #first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
+                        first_extremum = np.array([first_extremum.x])
                         first_extremum = np.maximum(first_extremum, self.corners[:, 0])
                         first_extremum = np.minimum(first_extremum, self.corners[:, 1])
                         new_points.append(first_extremum[0].tolist())
                         if - sign * second_extremum.fun < point_eval:
-                            second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
+                            #second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
+                            second_extremum = np.array([second_extremum.x])
                             second_extremum = np.maximum(second_extremum, self.corners[:, 0])
                             second_extremum = np.minimum(second_extremum, self.corners[:, 1])
                             new_points.append(second_extremum[0].tolist())
@@ -279,12 +281,14 @@ class Refiner():
                         point = None
                 else:
                     if sign * first_extremum.fun < point_eval:
-                        first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
+                        #first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
+                        first_extremum = np.array([first_extremum.x])
                         first_extremum = np.maximum(first_extremum, self.corners[:, 0])
                         first_extremum = np.minimum(first_extremum, self.corners[:, 1])
                         new_points.append(first_extremum[0].tolist())
                         if - sign * second_extremum.fun > point_eval:
-                            second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
+                            #second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
+                            second_extremum = np.array([second_extremum.x])
                             second_extremum = np.maximum(second_extremum, self.corners[:, 0])
                             second_extremum = np.minimum(second_extremum, self.corners[:, 1])
                             new_points.append(second_extremum[0].tolist())
