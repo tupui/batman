@@ -7,7 +7,7 @@ space = {
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max'  : 27,
+    'size_max'  : 21,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -68,8 +68,8 @@ pod = {
 # format : one of 'static', 'dynamic', 'auto'
     'type'      : 'static',
 # Resampling strategy: None, 'MSE', 'loo_mse', 'loo_sobol', 'extrema', 'hybrid'
-    'resample'  : 'hybrid',
-    'strategy' : {'MSE' : 2, 'loo_sobol' : 1, 'extrema' : 1},
+    'resample'  : 'extrema',
+    'strategy' : (('MSE', 2), ('loo_sobol', 0), ('extrema', 1)),
 # Stopping criterion for automatic resampling
 # format : float
     'quality'   : 0.8,

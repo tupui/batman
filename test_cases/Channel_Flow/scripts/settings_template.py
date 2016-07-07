@@ -69,7 +69,7 @@ pod = {
     'type'      : 'static',
 # Resampling strategy: None, 'MSE', 'loo_mse', 'loo_sobol', 'extrema', 'hybrid'
     'resample'  : 'hybrid',
-    'strategy' : {'MSE' : 3, 'loo_sobol' : 0, 'extrema' : 0},
+    'strategy' : (('MSE', 2), ('loo_sobol', 0), ('extrema', 1)),
 # Stopping criterion for automatic resampling
 # format : float
     'quality'   : 0.001*1.e-300,

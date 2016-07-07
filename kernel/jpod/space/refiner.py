@@ -8,6 +8,7 @@ import logging
 from scipy.optimize import differential_evolution
 import numpy as np
 import copy
+from collections import OrderedDict
 from uq import UQ
 
 
@@ -297,6 +298,7 @@ class Refiner():
 
         """
         self.logger.info(">>---Hybrid strategy---<<")
+        self.settings.pod['strategy'] = OrderedDict(self.settings.pod['strategy'])
         strategies = self.settings.pod['strategy']
         self.logger.debug("Strategy: {}".format(strategies))
         new_point = []
