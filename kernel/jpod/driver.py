@@ -262,15 +262,22 @@ class Driver(object):
         self._pod_processing(self.initial_points, update)
 
     def resampling_pod(self, settings):
-        """docstring for static_pod."""
+        """Resampling of the POD.
+        
+        Generate new samples if quality and number of sample are not satisfied.
+        From a new sample, it re-generates the POD.
+
+        :param settings: JPOD parameters
+ 
+        """
         if self.pod is None:
             raise Exception(
                 "driver's pod has not been initialized, call init_pod first.")
 
-        while True:
+        while len(self.pod.points) < settings.space['size_max']:
             # quality, point = self.pod.estimate_quality()
-            quality = 100.
-            if quality <= self.pod_quality:
+            quality = 0.
+            if quality >= self.pod_quality:
                 break
 
             try:

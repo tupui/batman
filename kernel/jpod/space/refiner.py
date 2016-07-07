@@ -210,7 +210,7 @@ class Refiner():
 
         # Modify min distance with Sobol' indices
         distance = self.distance_min(point)
-        distance = distance * indices[2]
+        distance = distance * abs(indices[2])
         self.logger.debug("Post Distance min: {}".format(distance))
 
         # Construct the hypercube around the point
@@ -298,6 +298,8 @@ class Refiner():
         """
         self.logger.info(">>---Hybrid strategy---<<")
         strategies = self.settings.pod['strategy']
+        self.logger.debug("Strategy: {}".format(strategies))
+        new_point = []
         for method in strategies:
             if strategies[method] > 0: 
                 if method == 'MSE':

@@ -7,7 +7,7 @@ space = {
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max' : 22 ,
+    'size_max' : 21 ,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -67,8 +67,9 @@ pod = {
 # Type of pod to perform.
 # format : one of 'static', 'dynamic', 'auto'
     'type'      : 'static',
-# Resampling strategy: None, 'MSE', 'leave-one-out'
-    'resample'  : 'leave-one-out',
+# Resampling strategy: None, 'MSE', 'loo_mse', 'loo_sobol', 'extrema', 'hybrid'
+    'resample'  : 'hybrid',
+    'strategy' : {'MSE' : 3, 'loo_sobol' : 0, 'extrema' : 0},
 # Stopping criterion for automatic resampling
 # format : float
     'quality'   : 0.001*1.e-300,
@@ -100,7 +101,7 @@ uq = {
     'type' : 'aggregated',
 # Use a test method: 'Ishigami'
     'test' : 'Channel_Flow',
-    'sample' : 50000 ,
+    'sample' : 1000 ,
 # Uncertainty propagation. Enter the PDF of the inputs. x1: Normal(mu, sigma), x2: Uniform(inf, sup)
     'pdf' : ['Normal(4035., 400.)', 'Uniform(15., 60.)']
 }
