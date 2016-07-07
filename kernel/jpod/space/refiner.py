@@ -225,33 +225,28 @@ class Refiner():
         """Find the min or max point.
 
         Using an anchor point based on the extremum value at sample points,
-        search the hypercube around it. If a new extremum is found, return a point.
+        search the hypercube around it. If a new extremum is found, it uses Nelder-Mead method to add a new point.
+        The point is then bounded back by the hypercube.
 
         :return: The coordinate of the point to add
         :rtype: lst(float)
 
         """
-        # Get the kind of extrema to compute
         self.logger.info("Extrema strategy")
-
-        try:
-            self.points = np.delete(self.points, refined_pod_points, 0)
-        except:
-            self.logger.debug("No point to delete")
-
+        self.points = np.delete(self.points, refined_pod_points, 0)
         point = None
         new_points = []
 
         # Get max-max and max-min then min-max and min-min
         for sign in [-1., 1.]:
-            self.logger.debug("Sign: {}".format(sign))
+            self.logger.debug("Sign (-1 : Maximum ; 1 : Minimum) -> {}".format(sign))
             # Get a sample point where there is an extrema around
             while point is None:
                 # Get min or max point
                 evaluations = np.array([self.func(pod_point, sign) for _, pod_point in enumerate(self.points)])
                 min_idx = np.argmin(evaluations)
                 point = self.points[min_idx]
-                point_eval = sign * min(evaluations)
+                point_eval = min(evaluations) * sign
                 self.logger.debug("Extremum located at sample point: {} -> {}".format(point, point_eval))
 
                 # Construct the hypercube around the point
@@ -260,42 +255,29 @@ class Refiner():
 
                 # Global search of the point within the hypercube
                 first_extremum = differential_evolution(self.func, hypercube, args=(sign,))
-                self.logger.debug("Optimization first extremum: {} -> {}".format(first_extremum.x, sign * first_extremum.fun))
+                first_extremum.fun *= sign
+                self.logger.debug("Optimization first extremum: {} -> {}".format(first_extremum.x, first_extremum.fun))
                 second_extremum = differential_evolution(self.func, hypercube, args=(-sign,))
-                self.logger.debug("Optimization second extremum: {} -> {}".format(second_extremum.x, - sign * second_extremum.fun))
-
-                # Maximum case
-                if sign == -1.:
-                    if sign * first_extremum.fun > point_eval:
-                        first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
-                        first_extremum = np.maximum(first_extremum, hypercube[:, 0])
-                        first_extremum = np.minimum(first_extremum, hypercube[:, 1])
-                        new_points.append(first_extremum[0].tolist())
-                        self.logger.debug("Max-max: {}".format(first_extremum[0]))
-                        if - sign * second_extremum.fun < point_eval:
-                            second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
-                            second_extremum = np.maximum(second_extremum, hypercube[:, 0])
-                            second_extremum = np.minimum(second_extremum, hypercube[:, 1])
-                            new_points.append(second_extremum[0].tolist())
-                            self.logger.debug("Max-min: {}".format(second_extremum[0]))
-                    else:
-                        point = None
-                # Minimum case
+                second_extremum.fun *= - sign
+                self.logger.debug("Optimization second extremum: {} -> {}".format(second_extremum.x, second_extremum.fun))
+                
+                # Check for new extrema, compare with the sample point
+                if sign * first_extremum.fun < sign * point_eval:
+                    # Nelder-Mead expansion
+                    first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
+                    # Constrain to the hypercube
+                    first_extremum = np.maximum(first_extremum, hypercube[:, 0])
+                    first_extremum = np.minimum(first_extremum, hypercube[:, 1])
+                    new_points.append(first_extremum[0].tolist())
+                    self.logger.debug("Extremum-max: {}".format(first_extremum[0]))
+                    if sign * second_extremum.fun > sign * point_eval:
+                        second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
+                        second_extremum = np.maximum(second_extremum, hypercube[:, 0])
+                        second_extremum = np.minimum(second_extremum, hypercube[:, 1])
+                        new_points.append(second_extremum[0].tolist())
+                        self.logger.debug("Extremum-min: {}".format(second_extremum[0]))
                 else:
-                    if sign * first_extremum.fun < point_eval:
-                        first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
-                        first_extremum = np.maximum(first_extremum, hypercube[:, 0])
-                        first_extremum = np.minimum(first_extremum, hypercube[:, 1])
-                        new_points.append(first_extremum[0].tolist())
-                        self.logger.debug("Min-max: {}".format(first_extremum[0]))
-                        if - sign * second_extremum.fun > point_eval:
-                            second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
-                            second_extremum = np.maximum(second_extremum, hypercube[:, 0])
-                            second_extremum = np.minimum(second_extremum, hypercube[:, 1])
-                            new_points.append(second_extremum[0].tolist())
-                            self.logger.debug("Min-min: {}".format(second_extremum[0]))
-                    else:
-                        point = None
+                    point = None
 
                 self.points = np.delete(self.points, min_idx, 0)
 
@@ -316,9 +298,7 @@ class Refiner():
         """
         self.logger.info(">>---Hybrid strategy---<<")
         strategies = self.settings.pod['strategy']
-        print "Strategy:", strategies
         for method in strategies:
-            print "Left", strategies[method]
             if strategies[method] > 0: 
                 if method == 'MSE':
                     new_point = self.mse()
