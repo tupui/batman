@@ -264,45 +264,43 @@ class Refiner():
                 second_extremum = differential_evolution(self.func, hypercube, args=(-sign,))
                 self.logger.debug("Optimization second extremum: {} -> {}".format(second_extremum.x, - sign * second_extremum.fun))
 
+                # Maximum case
                 if sign == -1.:
                     if sign * first_extremum.fun > point_eval:
-                        #first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
-                        first_extremum = np.array([first_extremum.x])
-                        first_extremum = np.maximum(first_extremum, self.corners[:, 0])
-                        first_extremum = np.minimum(first_extremum, self.corners[:, 1])
+                        first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
+                        first_extremum = np.maximum(first_extremum, hypercube[:, 0])
+                        first_extremum = np.minimum(first_extremum, hypercube[:, 1])
                         new_points.append(first_extremum[0].tolist())
+                        self.logger.debug("Max-max: {}".format(first_extremum[0]))
                         if - sign * second_extremum.fun < point_eval:
-                            #second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
-                            second_extremum = np.array([second_extremum.x])
-                            second_extremum = np.maximum(second_extremum, self.corners[:, 0])
-                            second_extremum = np.minimum(second_extremum, self.corners[:, 1])
+                            second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
+                            second_extremum = np.maximum(second_extremum, hypercube[:, 0])
+                            second_extremum = np.minimum(second_extremum, hypercube[:, 1])
                             new_points.append(second_extremum[0].tolist())
+                            self.logger.debug("Max-min: {}".format(second_extremum[0]))
                     else:
                         point = None
+                # Minimum case
                 else:
                     if sign * first_extremum.fun < point_eval:
-                        #first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
-                        first_extremum = np.array([first_extremum.x])
-                        first_extremum = np.maximum(first_extremum, self.corners[:, 0])
-                        first_extremum = np.minimum(first_extremum, self.corners[:, 1])
+                        first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
+                        first_extremum = np.maximum(first_extremum, hypercube[:, 0])
+                        first_extremum = np.minimum(first_extremum, hypercube[:, 1])
                         new_points.append(first_extremum[0].tolist())
+                        self.logger.debug("Min-max: {}".format(first_extremum[0]))
                         if - sign * second_extremum.fun > point_eval:
-                            #second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
-                            second_extremum = np.array([second_extremum.x])
-                            second_extremum = np.maximum(second_extremum, self.corners[:, 0])
-                            second_extremum = np.minimum(second_extremum, self.corners[:, 1])
+                            second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
+                            second_extremum = np.maximum(second_extremum, hypercube[:, 0])
+                            second_extremum = np.minimum(second_extremum, hypercube[:, 1])
                             new_points.append(second_extremum[0].tolist())
+                            self.logger.debug("Min-min: {}".format(second_extremum[0]))
                     else:
                         point = None
 
-                # new_points.append(point + (point - result.x)) if result.fun < self.func(point, sign) else None
                 self.points = np.delete(self.points, min_idx, 0)
-                self.logger.debug("New points: {}".format(new_points))
-            point = None
-                
-            refined_pod_points.append(min_idx)
 
-        self.logger.debug("\nMax-max: {}\nMax-min: {}\nMin-max: {}\nMin-min: {}".format(new_points[0], new_points[1], new_points[2], new_points[3]))
+            point = None
+            refined_pod_points.append(min_idx)
 
         return new_points, refined_pod_points
 
@@ -318,7 +316,9 @@ class Refiner():
         """
         self.logger.info(">>---Hybrid strategy---<<")
         strategies = self.settings.pod['strategy']
+        print "Strategy:", strategies
         for method in strategies:
+            print "Left", strategies[method]
             if strategies[method] > 0: 
                 if method == 'MSE':
                     new_point = self.mse()
@@ -334,8 +334,9 @@ class Refiner():
                     break
                 else:
                     self.logger.exception("Resampling method does't exits")
-                    raise SystemExit 
-                self.settings.pod['strategy'][method] -= 1
+                    raise SystemExit
+        
+        self.settings.pod['strategy'][method] -= 1
             
         return new_point, refined_pod_points
 
