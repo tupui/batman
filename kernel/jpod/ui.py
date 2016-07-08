@@ -15,7 +15,7 @@ from pod import Snapshot
 description_message = '''
 JPOD creates a surrogate model using POD+Kriging and perform UQ.
 '''
-__version__ = 1.2
+__version__ = '1.2dev'
 
 path = os.path.dirname(os.path.realpath(__file__)) + '/misc/logging.json'
 with open(path, 'r') as file:
@@ -34,13 +34,12 @@ def run(settings, options):
     logger = logging.getLogger('JPOD main')
 
     # clean up output directory
-    if not options.restart \
-       and not options.no_pod and not options.pred:
+    if not options.restart and not options.no_pod and not options.pred:
         mpi.clean_makedirs(options.output)
         # tell that the output directory has previously been clean
-        logger.debug('cleaning : %s', options.output)
+        logger.debug('cleaning : {}'.format(options.output))
 
-    driver = Driver(settings.snapshot, settings.space, options.output)
+    driver = Driver(settings, options.output)
 
     driver.init_pod(settings, options.script)
     update = settings.pod['type'] != 'static'
@@ -77,6 +76,9 @@ def run(settings, options):
 
     logger.info(driver.pod)
 
+    if options.q2:
+        driver.pod.estimate_quality()
+
     if options.uq:
         driver.uq(settings)
 
@@ -86,8 +88,7 @@ def run(settings, options):
         for i, n in enumerate(snapshots):
             n = Snapshot.convert(n)
             p = settings.prediction['points'][i]
-            error[i] = 100 * \
-                ((n.data - driver.provider(p)) / driver.provider(p))[0]
+            error[i] = 100 * ((n.data - driver.provider(p)) / driver.provider(p))[0]
         if mpi.myid == 0:
             logger.info('Relative error (inf norm) = %g',
                         N.linalg.norm(error, N.inf))
@@ -114,45 +115,50 @@ def parse_command_line_and_run():
         '-v', '--verbose',
         action='store_true',
         default=False,
-        help='Set verbosity from WARNING to DEBUG, [default: %(default)s].')
+        help='set verbosity from WARNING to DEBUG, [default: %(default)s]')
 
     parser.add_argument(
         '-s', '--save-snapshots',
         action='store_true',
         default=False,
-        help='save the snapshots to disk when using a function, [default: %(default)s].')
+        help='save the snapshots to disk when using a function, [default: %(default)s]')
 
     parser.add_argument(
         '-o', '--output',
         type=abs_path,
         default='./output',
-        help='path to output directory, [default: %(default)s].')
+        help='path to output directory, [default: %(default)s]')
 
     parser.add_argument(
         '-r', '--restart',
         action='store_true',
         default=False,
-        help='restart pod, [default: %(default)s].')
+        help='restart pod, [default: %(default)s]')
 
     parser.add_argument(
         '-n', '--no-pod',
         action='store_true',
         default=False,
-        help='do not compute pod but read it from disk, [default: %(default)s].')
+        help='do not compute pod but read it from disk, [default: %(default)s]')
 
     parser.add_argument(
         '-u', '--uq',
         action='store_true',
         default=False,
-        help='Uncertainty Quantification study')
+        help='Uncertainty Quantification study, [default: %(default)s].')
 
     parser.add_argument(
-        '-p',
+        '-p', '--pred',
         action='store_true',
         default=False,
-        dest='pred',
-        help='compute prediction and write it from disk, [default: %(default)s].')
+        help='compute prediction and write it on disk, [default: %(default)s]')
 
+    parser.add_argument(
+        '-q', '--q2',
+        action='store_true',
+        default=False,
+        help='estimate Q2 and find the point with max MSE, [default: %(default)s]')
+    
     # parse command line
     options = parser.parse_args()
 

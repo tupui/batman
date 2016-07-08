@@ -75,9 +75,11 @@ class Driver(object):
     }
     '''Structure of the output directory.'''
 
-    def __init__(self, snapshot_settings, space_settings, output):
+    def __init__(self, settings, output):
         self.pod_quality = None
         '''POD automatic resampling quality.'''
+
+        self.settings = settings
 
         self.output = output
         '''Path to output directory.'''
@@ -107,10 +109,10 @@ class Driver(object):
         '''Counter for numbering the snapshots.'''
 
         # snapshot computation
-        self._init_snapshot(snapshot_settings)
+        self._init_snapshot(self.settings.snapshot)
 
         # parameter space and points
-        self._init_space(space_settings)
+        self._init_space(self.settings.space)
 
     def _init_snapshot(self, settings):
         """docstring for _init_snapshot"""

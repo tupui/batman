@@ -85,11 +85,16 @@ class Core(object):
                                                self.tolerance, self.dim_max)
 
     def estimate_quality(self, points):
-        """Return the quality estimation and the corresponding point.
+        """Quality estimation of the model.
 
-        :param points: list of points in the parameter space.
+        The quality estimation is done using the leave-one-out method.
+        Q2 is computed and the point with max MSE is looked up.
 
-        The quality estimation is done with the leave-one-out method.
+        :param lst points: Points in the parameter space
+        :return: Q2 error
+        :rtype: float
+        :return: Max MSE point
+        :rtype: lst(float)
         """
         points_nb = len(points)
         error = np.empty(points_nb)
@@ -117,10 +122,8 @@ class Core(object):
         for i in range(points_nb):
             var = var + np.sum((mean - np.dot(self.U, self.V[i] * self.S)) ** 2)
         
-        quality = np.sum(error) / points_nb
+        # Compute Q2
         err_q2 = 1 - np.sum(error) / var
-
-        print "Q2 POD: ", err_q2
 
         error = error.reshape(-1)
         index = error.argmax()
@@ -134,4 +137,4 @@ class Core(object):
                         error_max = error[i]
             self.refined_points += [index]
 
-        return (float(quality), points[index])
+        return err_q2, points[index]
