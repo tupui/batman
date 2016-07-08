@@ -254,7 +254,7 @@ class UQ:
         eval_mean = eval_mean / self.points_sample
         eval_var = 0.
         for i, j in enumerate(self.sample):
-            eval_var = eval_var + np.sum((eval_mean - eval_pod[i]) ** 2)
+            eval_var = eval_var + np.sum((eval_mean - eval_ref[i]) ** 2)
         err_q2 = 1 - err_l2 / eval_var
 
         self.logger.info("\n----- POD error -----")

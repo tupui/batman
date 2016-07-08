@@ -107,16 +107,16 @@ class Core(object):
 
             predictor = Predictor(self.leave_one_out_predictor, points_1, V_1 * S_1)
             prediction, _ = predictor(points[i])
-            ref = float(points_nb) / float(points_nb - 1) * self.V[i] * self.S
-            model_pod.append(np.dot(Urot, prediction))
 
-            error[i] = np.sum((model_pod[i] - ref) ** 2)
-            mean = mean + ref
+            error[i] = np.sum((np.dot(Urot, prediction) - float(points_nb) / float(points_nb - 1) * self.V[i] * self.S) ** 2)
 
+            mean = np.dot(self.U, self.V[i] * self.S)
+        
         mean = mean / points_nb
         var = 0.
         for i in range(points_nb):
-            var = var + np.sum((mean - model_pod[i]) ** 2)
+            var = var + np.sum((mean - np.dot(self.U, self.V[i] * self.S)) ** 2)
+        
         quality = np.sum(error) / points_nb
         err_q2 = 1 - np.sum(error) / var
 
