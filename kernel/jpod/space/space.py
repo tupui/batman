@@ -86,21 +86,24 @@ class Space(SpaceBase):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, corners_user, max_points_nb, delta_space):
-        """
-        :param corners_user: lower and upper corner points that define the space
-        :param max_points_nb: maximum number of points allowed in the space
-        :param float delta_sapce: dillatation of the space for prior sampling
+    def __init__(self, settings):
+        """Generate a Space.
+        
+        Dilate the space using the delta space.
+
+        :param dict settings: JPOD settings
+
         """
         super(Space, self).__init__()
 
-        self.max_points_nb = int(max_points_nb)
-        '''Maximum number of points.'''
+        self.settings = settings
+        corners_user = settings.space['corners']
+        delta_space = settings.space['delta_space']
+        self.max_points_nb = int(settings.space['size_max'])
 
         # Extension of space
         c1 = []
         c2 = []
-
         for i in range(len(corners_user[0])):
             c1.append(corners_user[0][i] - delta_space * (corners_user[1][i]-corners_user[0][i]))
             c2.append(corners_user[1][i] + delta_space * (corners_user[1][i]-corners_user[0][i]))
@@ -114,7 +117,7 @@ class Space(SpaceBase):
             e.args = ('bad corner points: ' + e.args[0],)
             raise
 
-        self.corners_user = corners_user
+        # Point of the sample resampled around
         self.refined_pod_points = []
 
         for i in range(len(corners[0])):
@@ -195,17 +198,16 @@ class Space(SpaceBase):
         self.logger.debug("Points are: \n {}".format(samples))
         return self
 
-    def refine(self, pod, settings):
+    def refine(self, pod):
         """Refine the sample, update space points and return the new point(s).
 
         :param pod: POD
-        :param dict settings: Settings file
         :return: List of points to add
         :rtype: space.point.Point -> lst(tuple(float))
         """
-        refiner = Refiner(pod, settings, self.corners_user)
+        refiner = Refiner(pod, self.settings)
         # Refinement strategy
-        method = settings.pod['resample']
+        method = self.settings.pod['resample']
         if method == 'MSE':
             new_point = refiner.mse()
         elif method == 'loo_mse':

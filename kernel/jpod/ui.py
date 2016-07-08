@@ -21,7 +21,6 @@ path = os.path.dirname(os.path.realpath(__file__)) + '/misc/logging.json'
 with open(path, 'r') as file:
     logging_config = json.load(file)
 
-
 def run(settings, options):
     """Run the driver along."""
     dictConfig(logging_config)
@@ -39,9 +38,8 @@ def run(settings, options):
         # tell that the output directory has previously been clean
         logger.debug('cleaning : {}'.format(options.output))
 
-    driver = Driver(settings, options.output)
+    driver = Driver(settings, options.script, options.output)
 
-    driver.init_pod(settings, options.script)
     update = settings.pod['type'] != 'static'
 
     if not options.no_pod and not options.pred:
@@ -53,7 +51,7 @@ def run(settings, options):
         driver.sampling_pod(update)
 
         if settings.pod['resample'] is not None:
-            driver.resampling_pod(settings)
+            driver.resampling_pod()
 
         driver.write_pod()
 
@@ -80,7 +78,7 @@ def run(settings, options):
         driver.pod.estimate_quality()
 
     if options.uq:
-        driver.uq(settings)
+        driver.uq()
 
     if False and driver.provider.is_function:
         error = N.zeros(N.asarray(settings.prediction['points']).shape[0])

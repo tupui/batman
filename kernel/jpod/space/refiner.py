@@ -47,7 +47,7 @@ class Refiner():
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, pod, settings, corners):
+    def __init__(self, pod, settings):
         """Initialize the refiner with the POD and space corners.
 
         :param pod: POD
@@ -58,7 +58,7 @@ class Refiner():
         self.points = copy.deepcopy(pod.points)
         self.kind = settings.prediction['method']
         self.settings = settings
-        self.corners = np.array(corners).T
+        self.corners = np.array(settings.space['corners']).T
 
     def func(self, coords, sign):
         r"""Get the prediction for a given point.
