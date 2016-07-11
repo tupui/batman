@@ -10,8 +10,10 @@ Contents:
    CHANGES
    tutorial
    README
+   tasks
    space
    pod
+   algebra
    uq
 
 .. .. autosummary::
