@@ -1,5 +1,34 @@
 # -*- coding: utf-8 -*-
-"""Resampling the space of parameters."""
+"""
+Refinement Class
+================
+
+This class defines all resampling strategies that can be used.
+
+It implements the following methods:
+
+- :func:`Refiner.func`
+- :func:`Refiner.func_mse`
+- :func:`Refiner.distance_min`
+- :func:`Refiner.hypercube`
+- :func:`Refiner.mse`
+- :func:`Refiner.leave_one_out_mse`
+- :func:`Refiner.leave_one_out_sobol`
+- :func:`Refiner.extrema`
+- :func:`Refiner.hybrid`
+
+:Example::
+
+    >> corners = ((10, 400), (18, 450))
+    >> resample = Refiner(pod, corners)
+    >> new_point = resample.mse()
+
+References
+----------
+
+C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptative de réponses non régulières par Krigeage et plans d'expériences, Application à la quantification des incertitudes en ingénierie des réservoirs pétroliers. Université Louis Pasteur. 2006
+
+"""
 
 # Authors: Pamphile ROY <roy.pamphile@gmail.fr>
 # Copyright: CERFACS
@@ -14,36 +43,7 @@ from uq import UQ
 
 class Refiner():
 
-    """
-    Refinement Class
-    ================
-
-    This class defines all resampling strategies that can be used.
-
-    It implements the following methods:
-
-    - :func:`func`
-    - :func:`func_mse`
-    - :func:`distance_min`
-    - :func:`hypercube`
-    - :func:`mse`
-    - :func:`leave_one_out_mse`
-    - :func:`leave_one_out_sobol`
-    - :func:`extrema`
-    - :func:`hybrid`
-
-    :Example:
-
-    >> corners = ((10, 400), (18, 450))
-    >> resample = Refiner(pod, corners)
-    >> new_point = resample.mse()
-
-    References
-    ----------
-
-    C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptative de réponses non régulières par Krigeage et plans d'expériences, Application à la quantification des incertitudes en ingénierie des réservoirs pétroliers. Université Louis Pasteur. 2006
-
-    """
+    """Resampling the space of parameters."""
 
     logger = logging.getLogger(__name__)
 

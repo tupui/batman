@@ -1,5 +1,55 @@
 # -*- coding: utf-8 -*-
-"""Uncertainty Quantification."""
+"""
+UQ class
+========
+
+This class is intented to implement statistical tools provided by the OpenTURNS     framework.
+
+It is called using option `-u`. Configuration is done from *settings*:
+
+1. Computes Sobol' indices (map and block or aggragated),
+2. Compare the result with a know function if available,
+3. Propagate uncertainties from input distributions.
+
+At each step, an output file is beeing written within the UQ folder.
+
+It implements the following methods:
+
+- :func:`UQ.func`
+- :func:`UQ.int_func`
+- :func:`UQ.error_pod`
+- :func:`UQ.sobol`
+- :func:`UQ.error_propagation`
+
+Usage
+-----
+
+The *settings* file must contains the following parameters::
+
+    'UQ' : {
+        'method' : sobol, (or FAST)
+        'type' : aggregated, (or block)
+        'sample' : 20000,
+        'pdf' : [Normal(sigma, mu), Uniform(inf, sup)] (OpenTURNS factories)
+    }
+
+:Example::
+
+    >> analyse = UQ(pod, settings, output)
+    >> analyse.sobol()
+    >> analyse.error_propagation()
+
+References
+----------
+
+A. Marrel, N. Saint-Geours. M. De Lozzo: Sensitivity Analysis of Spatial and/or Temporal Phenomena. Handbook of Uncertainty Quantification. 2015.   DOI:10.1007/978-3-319-11259-6_39-1
+
+B. Iooss: Revue sur l’analyse de sensibilité globale de modèles numériques. Journal de la Société Française de Statistique. 2010
+
+M. Baudin, A. Dutfoy, B. Iooss, A. Popelin: OpenTURNS: An industrial software for uncertainty quantification in simulation. 2015. ArXiv ID: 1501.05242
+
+
+"""
 
 # Authors: Pamphile ROY <roy.pamphile@gmail.fr>
 # Copyright: CERFACS
@@ -14,58 +64,7 @@ import itertools
 
 class UQ:
 
-    u"""
-    UQ class
-    ========
-
-    This class is intented to implement statistical tools provided by the OpenTURNS     framework.
-
-    It is called using option `-u`. Configuration is done from *settings*:
-
-    1. Computes Sobol' indices (map and block or aggragated),
-    2. Compare the result with a know function if available,
-    3. Propagate uncertainties from input distributions.
-
-    At each step, an output file is beeing written within the UQ folder.
-
-    It implements the following methods:
-
-    - :func:`func`
-    - :func:`int_func`
-    - :func:`error_pod`
-    - :func:`sobol`
-    - :func:`error_propagation`
-
-    Usage
-    -----
-
-    The *settings* file must contain:
-
-        'UQ' : {
-
-        'method' : sobol, (or FAST)
-        'type' : aggregated, (or block)
-        'sample' : 20000,
-        'pdf' : [Normal(sigma, mu), Uniform(inf, sup)] (OpenTURNS factories)
-
-        }
-
-    :Example:
-
-    >> analyse = UQ(pod, settings, output)
-    >> analyse.sobol()
-    >> analyse.error_propagation()
-
-    References
-    ----------
-
-    A. Marrel, N. Saint-Geours. M. De Lozzo: Sensitivity Analysis of Spatial and/or     Temporal Phenomena. Handbook of Uncertainty Quantification. 2015.   DOI:10.1007/978-3-319-11259-6_39-1
-
-    B. Iooss: Revue sur l’analyse de sensibilité globale de modèles numériques.     Journal de la Société Française de Statistique. 2010
-
-    M. Baudin, A. Dutfoy, B. Iooss, A. Popelin: OpenTURNS: An industrial software   for uncertainty quantification in simulation. 2015. ArXiv ID: 1501.05242
-
-    """
+    """Uncertainty Quantification class."""
 
     logger = logging.getLogger(__name__)
 
@@ -132,7 +131,7 @@ class UQ:
     def func(self, coords):
         """Evaluate the POD at a given point.
 
-        This function calls the `predict()` function to compute a prediction.
+        This function calls the :func:`predict` function to compute a prediction.
         If the prediction returns a vector, it create `self.f_input` which contains the discretisation information.
 
         :param lst coords: The parameters set to calculate the solution from.
@@ -179,8 +178,7 @@ class UQ:
 
         .. math:: Q^2 = 1 - \frac{err_{l2}}{var_{model}}
 
-        Knowing that :math:`err_{l2} = \sum \frac{(prediction - reference)^2}{n}`,
-                     :math:`var_{model} = \sum \frac{(prediction - mean)^2}{n}`
+        Knowing that :math:`err_{l2} = \sum \frac{(prediction - reference)^2}{n}`, :math:`var_{model} = \sum \frac{(prediction - mean)^2}{n}`
 
         Also, it computes the mean square error on the Sobol first and total order indices.
 
@@ -286,7 +284,7 @@ class UQ:
         - `sobol`
         - `FAST`
 
-        .. warnings:: The second order indices are only available with the sobol method.
+        .. warning:: The second order indices are only available with the sobol method.
 
         And three types of computation are availlable for the global indices:
 

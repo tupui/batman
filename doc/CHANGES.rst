@@ -10,6 +10,8 @@ Version 1.3
 New features
 ------------
 
+    - Add resampling strategies with :class:`refiner`
+
 Enhancements
 ------------
 
@@ -23,7 +25,7 @@ Version 1.2
 New features
 ------------
 
-    - Add Class :class:`UQ`
+    - Add uncertainty quantification capability with :class:`UQ`
 
 Enhancements
 ------------
