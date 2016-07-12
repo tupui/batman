@@ -298,9 +298,20 @@ class Refiner():
 
         """
         self.logger.info(">>---Hybrid strategy---<<")
+
+        try:
+            self.logger.debug('Strategy: {}'.format(self.settings.pod['strategy_full'])) 
+        except KeyError:
+            self.settings.pod['strategy_full'] = self.settings.pod['strategy']
+            self.logger.info('Strategy: {}'.format(self.settings.pod['strategy_full']))
+
         self.settings.pod['strategy'] = OrderedDict(self.settings.pod['strategy'])
         strategies = self.settings.pod['strategy']
-        self.logger.debug("Strategy: {}".format(strategies))
+        
+        if sum(strategies.values()) == 0:
+            self.settings.pod['strategy'] = self.settings.pod['strategy_full']
+            strategies = self.settings.pod['strategy']
+        
         new_point = []
         for method in strategies:
             if strategies[method] > 0: 
