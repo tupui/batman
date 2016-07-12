@@ -10,7 +10,7 @@ Version 1.3
 New features
 ------------
 
-    - Add resampling strategies with :class:`refiner`
+    - Add resampling strategies with :class:`space.refiner`
 
 Enhancements
 ------------
@@ -25,7 +25,7 @@ Version 1.2
 New features
 ------------
 
-    - Add uncertainty quantification capability with :class:`UQ`
+    - Add uncertainty quantification capability with :class:`uq`
 
 Enhancements
 ------------

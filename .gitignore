@@ -2,3 +2,5 @@
 kernel/jpod/scikit-learn/*
 test_cases/*/output/
 doc/_build/*
+*.log
+*.swp

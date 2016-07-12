@@ -1,5 +1,5 @@
-Algebra module
-**************
+Surrogate module
+****************
 
 .. automodule:: surrogate.kriging
    :members:
