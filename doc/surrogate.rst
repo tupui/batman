@@ -1,11 +1,11 @@
 Algebra module
 **************
 
-.. automodule:: algebra.dacekriging
+.. automodule:: surrogate.kriging
    :members:
    :undoc-members:
 
-.. automodule:: algebra.RBFnet
+.. automodule:: surrogate.RBFnet
    :members:
    :undoc-members:
 

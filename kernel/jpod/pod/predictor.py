@@ -1,6 +1,6 @@
 import logging
 
-from algebra import RBFnet, Kriging
+from surrogate import RBFnet, Kriging
 import numpy as np
 from snapshot import Snapshot
 

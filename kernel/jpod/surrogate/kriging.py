@@ -1,5 +1,24 @@
 # -*- coding: utf-8 -*-
-"""Kriging based on Gaussian Process."""
+"""
+Kriging Class
+=============
+
+Interpolation using Gaussian Process method.
+
+:Example::
+
+    >> input = np.array([2, 4], [3, 5], [6, 9])
+    >> output = np.array([12, 1], [10, 2], [9, 4])
+    >> predictor = Kriging(input, output)
+    >> point = (5.0, 8.0)
+    >> prediction = predictor.evaluate([point])
+
+Reference
+---------
+
+F. Pedregosa et al.: Scikit-learn: Machine Learning in Python. Journal of Machine Learning Research. 2011. ArXiv ID: 1201.0490
+
+"""
 
 # Authors: Pamphile ROY <roy.pamphile@gmail.fr>
 # Copyright: CERFACS
@@ -15,26 +34,7 @@ import logging
 
 class Kriging():
 
-    """
-    Kriging Class
-    =============
-
-    Interpolation using Gaussian Process method.
-
-    :Example:
-
-    >> input = np.array([2, 4], [3, 5], [6, 9])
-    >> output = np.array([12, 1], [10, 2], [9, 4])
-    >> predictor = Kriging(input, output)
-    >> point = (5.0, 8.0)
-    >> prediction = predictor.evaluate([point])
-
-    Reference
-    ---------
-
-    F. Pedregosa et al.: Scikit-learn: Machine Learning in Python. Journal of Machine Learning Research. 2011. ArXiv ID: 1201.0490
-
-    """
+    """Kriging based on Gaussian Process."""
 
     logger = logging.getLogger(__name__)
 

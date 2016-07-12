@@ -1,5 +1,3 @@
-__docformat__ = "reStructuredText"
-
 """Input output management entry point.
 
 An input-output, or io, is used to deal with the permanent storage of a dataset.

@@ -13,7 +13,7 @@ Contents:
    tasks
    space
    pod
-   algebra
+   surrogate
    uq
 
 .. .. autosummary::

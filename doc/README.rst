@@ -47,7 +47,7 @@ Following is a quick reference:
 * :py:mod:`ui`: user interface,
 * :py:mod:`driver`: contains the main functions,
 * :py:mod:`uq`: uncertainty quantification,
-* :py:mod:`algebra`: constructs the surrogate model,
+* :py:mod:`surrogate`: constructs the surrogate model,
 * :py:mod:`space`: defines the (re)sampling space,
 * :py:mod:`pod`: constructs the POD,
 * :py:mod:`tasks`: 
