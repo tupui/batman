@@ -5,13 +5,17 @@ Kriging Class
 
 Interpolation using Gaussian Process method.
 
-:Example::
+:Example:
+::
 
-    >> input = np.array([2, 4], [3, 5], [6, 9])
-    >> output = np.array([12, 1], [10, 2], [9, 4])
+    >> from kriging import Kriging
+    >> import numpy as np
+    >> input = np.array([[2, 4], [3, 5], [6, 9]])
+    >> output = np.array([[12, 1], [10, 2], [9, 4]])
     >> predictor = Kriging(input, output)
     >> point = (5.0, 8.0)
-    >> prediction = predictor.evaluate([point])
+    >> predictor.evaluate(point)
+    (array([ 8.4363201 ,  3.77281636]), array([ 0.76631883,  0.15439491]))
 
 Reference
 ---------

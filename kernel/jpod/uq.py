@@ -3,7 +3,9 @@
 UQ class
 ========
 
-This class is intented to implement statistical tools provided by the OpenTURNS     framework.
+This class is intented to implement statistical tools provided by the OpenTURNS framework.
+
+.. seealso:: The documentation of the used class :class:`openturns.SensitivityAnalysis`
 
 It is called using option `-u`. Configuration is done from *settings*:
 
@@ -33,7 +35,8 @@ The *settings* file must contains the following parameters::
         'pdf' : [Normal(sigma, mu), Uniform(inf, sup)] (OpenTURNS factories)
     }
 
-:Example::
+:Example:
+::
 
     >> analyse = UQ(pod, settings, output)
     >> analyse.sobol()
