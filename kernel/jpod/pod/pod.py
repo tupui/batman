@@ -143,7 +143,7 @@ class Pod(Core):
         if self.predictor is None:
             self.predictor = PodPredictor(method, self)
 
-        snapshots = self.predictor(points)
+        snapshots, sigma = self.predictor(points)
 
         if path is not None:
             s_list = []
@@ -152,7 +152,7 @@ class Pod(Core):
                 s_list += [s_path]
                 s.write(s_path)
             snapshots = s_list
-        return snapshots
+        return snapshots, sigma
 
     def predict_without_computation(self, model_predictor, points, path=None):
         """Predict snapshots.
@@ -161,7 +161,7 @@ class Pod(Core):
         """
         self.predictor = model_predictor
 
-        snapshots = self.predictor(points)
+        snapshots, sigma = self.predictor(points)
 
         if path is not None:
             s_list = []
@@ -170,7 +170,7 @@ class Pod(Core):
                 s_list += [s_path]
                 s.write(s_path)
             snapshots = s_list
-        return snapshots
+        return snapshots, sigma
 
     def write(self, path):
         """Save a pod to disk.

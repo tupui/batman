@@ -1,7 +1,7 @@
 import logging
 
 import mpi
-import numpy as N
+import numpy as np
 from predictor import Predictor
 from space import SpaceBase
 import svd
@@ -16,7 +16,7 @@ class Core(object):
     refined_points = []
     '''For the original jpod 1 resampling strategy.'''
 
-    leave_one_out_predictor = 'rbf'
+    leave_one_out_predictor = 'kriging'
     '''Predictor kind for the leave one out method.'''
 
     def __init__(self, tolerance, dim_max):
@@ -59,7 +59,7 @@ class Core(object):
         snapshots : array(nb of data per snapshot, nb of samples)
         """
         # compute mean snapshot
-        self.mean_snapshot = N.average(snapshots, 1)
+        self.mean_snapshot = np.average(snapshots, 1)
 
         # center snapshots
         for i in range(snapshots.shape[1]):
@@ -69,7 +69,7 @@ class Core(object):
             raise NotImplemented("use dynamic pod in parallel")
 
         # TODO: play with svd optional arguments
-        self.U, self.S, self.V = N.linalg.svd(snapshots, full_matrices=True)
+        self.U, self.S, self.V = np.linalg.svd(snapshots, full_matrices=True)
         self.V = self.V.T
         self.U, self.S, self.V = svd.filtering(self.U, self.S, self.V,
                                                self.tolerance, self.dim_max)
@@ -85,35 +85,45 @@ class Core(object):
                                                self.tolerance, self.dim_max)
 
     def estimate_quality(self, points):
-        """Return the quality estimation and the corresponding point.
+        """Quality estimation of the model.
 
-        :param points: list of points in the parameter space.
+        The quality estimation is done using the leave-one-out method.
+        Q2 is computed and the point with max MSE is looked up.
 
-        The quality estimation is done with the leave-one-out method.
+        :param lst points: Points in the parameter space
+        :return: Q2 error
+        :rtype: float
+        :return: Max MSE point
+        :rtype: lst(float)
         """
         points_nb = len(points)
-        error = N.empty(points_nb)
+        error = np.empty(points_nb)
+        model_pod = []
+        mean = np.zeros(len(self.S))
 
-        for i in range(error.shape[0]):
-            V_1 = N.delete(self.V, i, 0)
+        for i in range(points_nb):
+            V_1 = np.delete(self.V, i, 0)
 
             (Urot, S_1, V_1) = svd.downgrade(self.S, V_1)
-            (Urot, S_1, V_1) = svd.filtering(Urot, S_1, V_1, self.tolerance,
-                                             self.dim_max)
+            (Urot, S_1, V_1) = svd.filtering(Urot, S_1, V_1, self.tolerance, self.dim_max)
 
             points_1 = points[:]
             points_1.pop(i)
 
-            predictor = Predictor(
-                self.leave_one_out_predictor,
-                points_1,
-                V_1 * S_1)
-            alphakpred = N.dot(Urot, predictor(points[i])) - \
-                float(points_nb) / float(points_nb - 1) * self.V[i] * self.S
+            predictor = Predictor(self.leave_one_out_predictor, points_1, V_1 * S_1)
+            prediction, _ = predictor(points[i])
 
-            error[i] = N.linalg.norm(alphakpred)
+            error[i] = np.sum((np.dot(Urot, prediction) - float(points_nb) / float(points_nb - 1) * self.V[i] * self.S) ** 2)
 
-        quality = N.linalg.norm(error)**2 / error.shape[0]
+            mean = np.dot(self.U, self.V[i] * self.S)
+        
+        mean = mean / points_nb
+        var = 0.
+        for i in range(points_nb):
+            var = var + np.sum((mean - np.dot(self.U, self.V[i] * self.S)) ** 2)
+        
+        # Compute Q2
+        err_q2 = 1 - np.sum(error) / var
 
         error = error.reshape(-1)
         index = error.argmax()
@@ -127,4 +137,4 @@ class Core(object):
                         error_max = error[i]
             self.refined_points += [index]
 
-        return (float(quality), points[index])
+        return err_q2, points[index]
