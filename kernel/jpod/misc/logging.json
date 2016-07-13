@@ -10,11 +10,11 @@
               "formatter": "console",
               "level": "INFO"},
         "file": {"class": "logging.handlers.RotatingFileHandler",  
-              "formatter": "file",
+             "formatter": "file",
              "filename": "JPOD.log",
-             "maxBytes": "1024000",
-             "backupCount": "1",
-              "level": "DEBUG"}
+             "maxBytes": 1024000,
+             "backupCount": 1,
+             "level": "DEBUG"}
     },
     "loggers":{
        "": {

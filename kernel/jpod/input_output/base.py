@@ -1,6 +1,6 @@
 import os
 import numpy as N
-from dataset import DatasetInfo, Dataset, ShapeError, DataSizeError
+from .dataset import DatasetInfo, Dataset, ShapeError, DataSizeError
 
 __docformat__ = "reStructuredText"
 

@@ -2,9 +2,9 @@ import logging
 
 import mpi
 import numpy as np
-from predictor import Predictor
+from .predictor import Predictor
 from space import SpaceBase
-import svd
+from . import svd
 
 
 class Core(object):

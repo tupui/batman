@@ -1,7 +1,7 @@
 import os
 import re
 import logging
-from task import Task
+from .task import Task
 import rpyc
 import socket
 import numpy as N

@@ -2,11 +2,11 @@ import logging
 import os
 import pickle
 
-from core import Core
+from .core import Core
 import mpi
 import numpy as N
-from predictor import PodPredictor
-from snapshot import Snapshot
+from .predictor import PodPredictor
+from .snapshot import Snapshot
 from space import SpaceBase
 
 
@@ -240,7 +240,7 @@ class Pod(Core):
             """
             # Write the model
             file_name = os.path.join(path, 'model')
-            with open(file_name, 'w') as fichier:
+            with open(file_name, 'wb') as fichier:
                 mon_pickler = pickle.Pickler(fichier)
                 mon_pickler.dump(self.predictor)
             self.logger.info('Wrote model to %s', path)

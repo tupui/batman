@@ -4,7 +4,7 @@ import time
 import logging
 import shutil
 from misc import clean_path
-from task import Task
+from .task import Task
 from space import Point
 from pod import Snapshot
 

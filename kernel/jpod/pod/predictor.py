@@ -2,7 +2,7 @@ import logging
 
 from surrogate import RBFnet, Kriging
 import numpy as np
-from snapshot import Snapshot
+from .snapshot import Snapshot
 
 
 class Predictor(object):

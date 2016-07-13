@@ -1,9 +1,9 @@
 import logging
 import pickle
 import numpy as N
-import sampling
-from point import Point
-from refiner import Refiner
+from . import sampling
+from .point import Point
+from .refiner import Refiner
 
 
 class UnicityError(Exception):
@@ -113,7 +113,7 @@ class Space(SpaceBase):
         # corner points
         try:
             self.corners = [Point(p) for p in corners]
-        except Exception, e:
+        except Exception as e:
             e.args = ('bad corner points: ' + e.args[0],)
             raise
 

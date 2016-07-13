@@ -3,10 +3,10 @@
 An input-output, or io, is used to deal with the permanent storage of a dataset.
 """
 
-from base import FormatError
-from dataset import DatasetInfo, Dataset, ShapeError, DataSizeError
-from tecplot import TecplotAscii
-from npz import Npz
+from .base import FormatError
+from .dataset import DatasetInfo, Dataset, ShapeError, DataSizeError
+from .tecplot import TecplotAscii
+from .npz import Npz
 
 # list of all supported io classes
 io_types = [

@@ -1,8 +1,9 @@
 import os
 import re
 import logging
-from _tecplot import ascii
-from base import *
+import sys
+from ._tecplot import ascii
+from .base import *
 
 __docformat__ = "reStructuredText"
 

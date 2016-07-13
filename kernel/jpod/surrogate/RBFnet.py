@@ -11,7 +11,7 @@
 #                  par Mark J.L. Orr
 #        www.anc.ed.ac.uk/~mjo/papers/intro.ps
 #
-from TreeCut import Tree
+from .TreeCut import Tree
 
 from math import sqrt, exp
 import numpy as np
@@ -27,13 +27,13 @@ class RBFnet:
 
 
     def show(self):
-        print 'Radial Basis Function'
-        print '  N Sample = %d' % self.Setsize
-        print '  N Input  = %d' % self.Ninput
-        print '  N Output = %d' % self.Noutput
-        print '  N Center = %d' % self.Ncenter
-        print '  Radius   = %s' % self.radius
-        print '  Regparam = %s' % self.regparam
+        print('Radial Basis Function')
+        print('  N Sample = %d' % self.Setsize)
+        print('  N Input  = %d' % self.Ninput)
+        print('  N Output = %d' % self.Noutput)
+        print('  N Center = %d' % self.Ncenter)
+        print('  Radius   = %s' % self.radius)
+        print('  Regparam = %s' % self.regparam)
 
     # # METHODS RBF
 
@@ -257,18 +257,18 @@ if __name__ == '__main__':
 
     # test sans arbre de regression
     rbf1.setNetwork(sample, out, function=my_function)
-    print 'RBF', point
+    print('RBF', point)
     for i in range(2):
-        print point[i, :]
-        print 'evaluation = ', rbf1.evalOut(point[i, :])
+        print(point[i, :])
+        print('evaluation = ', rbf1.evalOut(point[i, :]))
     del rbf1
 
     # test avec arbre de regression
     noutput = out.shape[1]
-    print 'RBF regression Tree'
+    print('RBF regression Tree')
     for n in range(noutput):
         out2 = out[:, n:n + 1]
         rbf = RBFnet(name='rbf')
         rbf.setNetwork(sample, out2, function=my_function, regtree=1)
         for i in range(2):
-            print 'evaluation %d = %f' % (n, rbf.evalOut(point[i, :]))
+            print('evaluation %d = %f' % (n, rbf.evalOut(point[i, :])))

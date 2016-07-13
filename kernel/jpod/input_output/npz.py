@@ -1,6 +1,6 @@
 import logging
 import numpy as N
-from base import *
+from .base import *
 
 __docformat__ = "reStructuredText"
 
