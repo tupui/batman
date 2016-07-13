@@ -6,10 +6,10 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   introduction
+   README
    CHANGES
    tutorial
-   README
+   introduction
    tasks
    space
    pod
