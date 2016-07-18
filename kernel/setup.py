@@ -40,19 +40,13 @@ class CompileSources(Command):
         os.system('make clean')
 
 cmdclasses['build_sphinx'] = BuildSphinx
-cmdclasses['CompileSources'] = CompileSources
+cmdclasses['build_fortran'] = CompileSources
 
 try:
     import scipy
 except ImportError:
     import pip
     pip.main(['install', 'scipy'])
-
-# try:
-#     import h5py
-# except ImportError:
-#     import pip
-#     pip.main(['install', 'h5py'])
 
 sphinx_requires = ['sphinx', 'sphinx_rtd_theme']
 

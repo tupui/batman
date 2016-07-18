@@ -6,6 +6,7 @@ import argparse
 import os
 import json
 
+from jpod import __version__
 from jpod import import_file
 from jpod import Driver
 from jpod import mpi
