@@ -1,7 +1,7 @@
 import logging
 import pickle
 import numpy as N
-from . import sampling
+import sampling
 from .point import Point
 from .refiner import Refiner
 

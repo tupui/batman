@@ -5,17 +5,14 @@ from logging.config import dictConfig
 import argparse
 import os
 import json
-import mpi
-import numpy as N
-from misc import import_file
-from driver import Driver
-from pod import Snapshot
 
+from jpod import import_file
+from jpod import Driver
+from jpod import mpi
 
 description_message = '''
 JPOD creates a surrogate model using POD+Kriging and perform UQ.
 '''
-__version__ = '1.2dev'
 
 path = os.path.dirname(os.path.realpath(__file__)) + '/misc/logging.json'
 with open(path, 'r') as file:
@@ -80,24 +77,12 @@ def run(settings, options):
     if options.uq:
         driver.uq()
 
-    if False and driver.provider.is_function:
-        error = N.zeros(N.asarray(settings.prediction['points']).shape[0])
-
-        for i, n in enumerate(snapshots):
-            n = Snapshot.convert(n)
-            p = settings.prediction['points'][i]
-            error[i] = 100 * ((n.data - driver.provider(p)) / driver.provider(p))[0]
-        if mpi.myid == 0:
-            logger.info('Relative error (inf norm) = %g',
-                        N.linalg.norm(error, N.inf))
-
-
 def abs_path(value):
     """Get absolute path."""
     return os.path.abspath(value)
 
 
-def parse_command_line_and_run():
+def main():
     """Parse and check options, and then call run()."""
     # parser
     parser = argparse.ArgumentParser(prog="JPOD", description=description_message)
@@ -156,7 +141,7 @@ def parse_command_line_and_run():
         action='store_true',
         default=False,
         help='estimate Q2 and find the point with max MSE, [default: %(default)s]')
-    
+
     # parse command line
     options = parser.parse_args()
 
@@ -168,4 +153,4 @@ def parse_command_line_and_run():
     run(settings, options)
 
 if __name__ == "__main__":
-    parse_command_line_and_run()
+    main()

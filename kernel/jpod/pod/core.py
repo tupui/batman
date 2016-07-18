@@ -1,9 +1,9 @@
 import logging
 
-import mpi
+from .. import mpi
 import numpy as np
 from .predictor import Predictor
-from space import SpaceBase
+# from space import SpaceBase
 from . import svd
 
 
