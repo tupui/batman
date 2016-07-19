@@ -3,10 +3,9 @@ import logging
 import shutil
 import re
 import numpy as N
-from input_output import IOFormatSelector, Dataset
-from space import Point
-import mpi
-
+from ..input_output import IOFormatSelector, Dataset
+from ..space import Point
+from .. import mpi
 
 __docformat__ = "reStructuredText"
 

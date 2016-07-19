@@ -3,10 +3,10 @@ import re
 import time
 import logging
 import shutil
-from misc import clean_path
+from ..misc import clean_path
 from .task import Task
-from space import Point
-from pod import Snapshot
+from ..space import Point
+from ..pod import Snapshot
 
 opj = os.path.join
 

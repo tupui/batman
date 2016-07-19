@@ -1,9 +1,9 @@
 # F2PY parameters
 # use "f2py -c --help-fcompiler" to get available parameters
 ifeq ( $(findstring "Python 2.7.9", $(shell python --version 2>&1)), )
-	F2PY   = /data/softs/local/python/3.3.6/bin/f2py3 --verbose
+	F2PY   = f2py3 --verbose
 else
-	F2PY   = /data/softs/local/python2.7/bin/f2py --verbose
+	F2PY   = f2py --verbose
 endif
 F2PY_DEBUG = --debug --noopt --noarch
 # F2PY_DEBUG += --debug-capi
@@ -31,7 +31,7 @@ LIB_DIR = lib
 OBJ := $(MISC:.f90=.o)
 
 
-all: directories $(OBJ) scikit-learn
+all: directories $(OBJ)
 	$(F2PY) $(F2PY_FLAGS) --build-dir $(OBJ_DIR) -c $(OBJ_DIR)/io_tools.o $(SRC) -m $(MODULE)
 	mv $(MODULE)*.so `dirname $(SRC)`
 
@@ -40,11 +40,8 @@ directories:
 	@if [ ! -d $(OBJ_DIR) ] ; then mkdir -p $(OBJ_DIR) ; fi;
 	@if [ ! -d $(LIB_DIR) ] ; then mkdir -p $(LIB_DIR) ; fi;
 
-scikit-learn:
-	cd jpod/scikit-learn/ ; python setup.py install --user 
-
 clean:
-	rm -rf $(OBJ_DIR) $(LIB_DIR)
+	rm -rf $(OBJ_DIR) $(LIB_DIR) *.mod
 
 %.o : %.f90
 	@echo "Compiling $<" ; \

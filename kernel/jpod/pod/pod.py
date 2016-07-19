@@ -3,11 +3,11 @@ import os
 import pickle
 
 from .core import Core
-import mpi
+from .. import mpi
 import numpy as N
 from .predictor import PodPredictor
 from .snapshot import Snapshot
-from space import SpaceBase
+from jpod.space import SpaceBase
 
 
 class Pod(Core):

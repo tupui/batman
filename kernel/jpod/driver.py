@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 import subprocess
 
 from concurrent import futures
@@ -10,7 +9,7 @@ import mpi
 import numpy as N
 from pod import Snapshot, Pod
 from space import Space, FullSpaceError, AlienPointError
-from tasks import PodServerTask, SnapshotTask, Task
+from tasks import PodServerTask, SnapshotTask
 from uq import UQ
 
 subprocess.Popen.terminate

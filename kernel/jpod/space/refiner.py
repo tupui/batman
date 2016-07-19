@@ -38,7 +38,7 @@ from scipy.optimize import differential_evolution
 import numpy as np
 import copy
 from collections import OrderedDict
-from uq import UQ
+from ..uq import UQ
 
 
 class Refiner():

@@ -1,5 +1,5 @@
 import numpy as N
-import mpi
+from .. import mpi
 
 
 def filtering(U, S, V, tolerance, dim_max):
