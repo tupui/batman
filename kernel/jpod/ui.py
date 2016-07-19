@@ -15,6 +15,18 @@ description_message = '''
 JPOD creates a surrogate model using POD+Kriging and perform UQ.
 '''
 
+jpod_banner = r"""
+    _____  _______    ______   _______
+   |     \|       \  /      \ |       \
+    \$$$$$| $$$$$$$\|  $$$$$$\| $$$$$$$\
+      | $$| $$__/ $$| $$  | $$| $$  | $$
+ __   | $$| $$    $$| $$  | $$| $$  | $$
+|  \  | $$| $$$$$$$ | $$  | $$| $$  | $$
+| $$__| $$| $$      | $$__/ $$| $$__/ $$
+ \$$    $$| $$       \$$    $$| $$    $$
+  \$$$$$$  \$$        \$$$$$$  \$$$$$$$
+"""
+
 path = os.path.dirname(os.path.realpath(__file__)) + '/misc/logging.json'
 with open(path, 'r') as file:
     logging_config = json.load(file)
@@ -29,6 +41,8 @@ def run(settings, options):
         logging.getLogger().addHandler(console)
 
     logger = logging.getLogger('JPOD main')
+
+    logger.info(jpod_banner)
 
     # clean up output directory
     if not options.restart and not options.no_pod and not options.pred:

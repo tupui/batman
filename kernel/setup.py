@@ -1,3 +1,19 @@
+"""
+Setup script for JPOD 
+=====================
+
+This script allows to install jpod within the python environment.
+
+Usage
+-----
+::
+
+    python setup.py build_fortran
+    python setup.py install
+    python setup.py build_sphinx
+
+"""
+
 from setuptools import (setup, find_packages, Command)
 
 cmdclasses = dict()
@@ -54,12 +70,12 @@ setup(
     name='jpod',
     version='1.2.dev0',
     packages=find_packages(),
-    entry_points={'console_scripts': ['jpod_ui=jpod.ui:main']},
+    entry_points={'console_scripts': ['jpod=jpod.ui:main']},
     # Package requirements
     install_requires=['futures', 'rpyc', 'mpi4py', 'h5py', 'scikit-learn>=0.18.dev0'],
     dependency_links=['https://github.com/scikit-learn/scikit-learn/archive/master.zip#egg=scikit-learn-0.18.dev0'],
     cmdclass=cmdclasses,
-    extras_require={'build_sphinx': sphinx_requires, },
+    extras_require={'build_sphinx': sphinx_requires},
     # metadata
     maintainer="Pamphile ROY",
     maintainer_email="roy@cerfacs.fr",
