@@ -10,6 +10,7 @@ Contents:
    CHANGES
    tutorial
    introduction
+   settings
    tasks
    space
    pod

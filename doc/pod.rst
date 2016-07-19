@@ -1,22 +1,22 @@
 Pod module
 **********
 
-.. automodule:: pod.core
+.. automodule:: jpod.pod.core
    :members:
    :undoc-members:
 
-.. automodule:: pod.pod
+.. automodule:: jpod.pod.pod
    :members:
    :undoc-members:
 
-.. automodule:: pod.predictor
+.. automodule:: jpod.pod.predictor
    :members:
    :undoc-members:
 
-.. automodule:: pod.snapshot
+.. automodule:: jpod.pod.snapshot
    :members:
    :undoc-members:
 
-.. automodule:: pod.svd
+.. automodule:: jpod.pod.svd
    :members:
    :undoc-members:

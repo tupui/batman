@@ -72,10 +72,9 @@ setup(
     packages=find_packages(),
     entry_points={'console_scripts': ['jpod=jpod.ui:main']},
     # Package requirements
-    install_requires=['futures', 'rpyc', 'mpi4py', 'h5py', 'scikit-learn>=0.18.dev0'],
+    install_requires=['sphinx_rtd_theme', 'futures', 'rpyc', 'mpi4py', 'h5py', 'scikit-learn>=0.18.dev0'],
     dependency_links=['https://github.com/scikit-learn/scikit-learn/archive/master.zip#egg=scikit-learn-0.18.dev0'],
     cmdclass=cmdclasses,
-    extras_require={'build_sphinx': sphinx_requires},
     # metadata
     maintainer="Pamphile ROY",
     maintainer_email="roy@cerfacs.fr",
@@ -95,6 +94,6 @@ setup(
                  'Topic :: Scientific/Engineering',
                  ],
     include_package_data=True,
-    # license="PSF",
+    license="CERFACS",
     url="https://inle.cerfacs.fr/projects/jpod",
 )

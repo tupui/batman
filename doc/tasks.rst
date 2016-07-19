@@ -1,11 +1,11 @@
 Tasks module
 ************
 
-.. automodule:: tasks.task
+.. automodule:: jpod.tasks.task
    :members:
    :undoc-members:
 
-.. automodule:: tasks.snapshot
+.. automodule:: jpod.tasks.snapshot
    :members:
    :undoc-members:
 

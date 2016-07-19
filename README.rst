@@ -12,7 +12,7 @@ README
     Melanie Rochoux,
     Sophie Ricci.
 
-:Version: 1.2   27/05/2016
+:Version: 1.2.dev0   27/05/2016
 
 
 What is JPOD? 
@@ -35,9 +35,9 @@ The required dependencies are:
 
 - Python >= 2.7 or >= 3.3
 - `scikit-learn <http://scikit-learn.org>`_ >= 0.18
-- `OpenTURNS <http://www.openturns.org>`_ >= 1.7
+- `OpenTURNS <http://www.openturns.org>`_ == 1.7
 
-.. note:: OpenTURNS is installed on *NEMO* only for Python 2.7  and scikit-learn is installed by JPOD's installer.
+.. note:: OpenTURNS is installed on *NEMO* only for Python 2.7  other dependencies are satisfied by JPOD's installer.
 
 How to get JPOD
 ---------------
@@ -52,12 +52,16 @@ To download it::
 Then to install::
 
     cd kernel
-    make
+    python setup.py build_fortran
+    python setup.py install
+    python setup.py build_sphinx
+
+The latter is optionnal as it just build the documentation in case of a change.
 
 Getting started
 ---------------
 
-All changes can be found in the :ref:`changes`. ``JPOD`` folder contrains two subfolders: ``kernel`` and ``test_cases``. The latter contains examples that you can adapt to you needs. You can find more information about the cases within the respectives ``README.rst`` file. A detailled example can be found in :ref:`tutorial`. Shoud you be interested by the implementation, consider reeding :ref:`readme`.
+All changes can be found in the :ref:`changes`. ``JPOD`` folder contrains two subfolders: ``kernel`` and ``test_cases``. The latter contains examples that you can adapt to you needs. You can find more information about the cases within the respectives ``README.rst`` file. A detailled example can be found in :ref:`tutorial`. Shoud you be interested by JPOD's implementation, consider reeding :ref:`introduction`.
 
 Development Model
 -----------------

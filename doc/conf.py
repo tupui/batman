@@ -20,7 +20,7 @@
 import os
 import sys
 import sphinx_rtd_theme
-sys.path.insert(0, os.path.abspath('../jpod'))
+sys.path.insert(0, os.path.abspath('../'))
 
 # -- General configuration ------------------------------------------------
 
@@ -77,7 +77,7 @@ author = 'Pamphile ROY'
 # built documents.
 #
 # The short X.Y version.
-version = '1.2'
+version = '1.2.dev0'
 # The full version, including alpha/beta/rc tags.
 release = '1.2'
 

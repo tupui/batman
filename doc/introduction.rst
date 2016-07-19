@@ -44,20 +44,23 @@ General functionment
 The package is composed of several python modules which are self contained within the directory ``kernel/jpod``.
 Following is a quick reference:
 
-* :py:mod:`ui`: user interface,
+* :py:mod:`ui`: command line interface,
 * :py:mod:`driver`: contains the main functions,
 * :py:mod:`uq`: uncertainty quantification,
 * :py:mod:`surrogate`: constructs the surrogate model,
 * :py:mod:`space`: defines the (re)sampling space,
 * :py:mod:`pod`: constructs the POD,
-* :py:mod:`tasks`: 
-* :py:mod:`misc`: define 
+* :py:mod:`tasks`: defines the context to compute each snapshot from,
+* :py:mod:`misc`: defines the logging configuration.
 
-The module :py:mod:`ui` is the main script. It takes one argument which is the task to perform::
+After JPOD has been installed, ``jpod`` is available as a command and it can be imported in python. 
+It is a link to :py:mod:`ui`. The module imports the package and use the function defined in :py:mod:`driver`.
 
-    python ~/JPOD/kernel/jpod/ui.py task.py
+Thus JPOD is launched using::
 
-The latter loads the context to compute each snapshot from. The tool then creates an ``output`` folder which will contain the results of the computation of all the *snapshots*, the *pod* and the *predictions*.
+    python jpod task.py
+
+An ``output`` directory is created and it contains the results of the computations of all the *snapshots*, the *pod* and the *predictions*.
 
 
 .. image:: ./fig/UML.png

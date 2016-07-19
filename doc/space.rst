@@ -5,19 +5,19 @@
 Space module
 ************
 
-.. automodule:: space.space
+.. automodule:: jpod.space.space
    :members:
    :undoc-members:
 
-.. automodule:: space.sampling
+.. automodule:: jpod.space.sampling
    :members:
    :undoc-members:
 
-.. automodule:: space.point
+.. automodule:: jpod.space.point
    :members:
    :undoc-members:
 
-.. automodule:: space.refiner
+.. automodule:: jpod.space.refiner
    :members:
    :undoc-members:
 

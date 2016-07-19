@@ -1,2 +1,0 @@
-.. automodule:: uq
-   :members:
