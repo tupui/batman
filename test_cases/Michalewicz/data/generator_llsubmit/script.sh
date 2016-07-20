@@ -1,5 +1,5 @@
 #!/bin/bash 
-module load python
+# module load python
 
 mkdir cfd-output-data
 

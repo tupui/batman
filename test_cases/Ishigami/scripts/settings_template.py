@@ -2,12 +2,12 @@
 space = {
 # Lower and upper end points (corners) that define a portion of space.
 # format : 2-tuple of tuples with end points coordinates.
-   'corners'         : ((2500., 15.),
-                        (6000., 60.),),
+   'corners'         : ((-3.1415, -3.1415, -3.1415),
+                        (3.1415, 3.1415, 3.1415),),
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max' : 21 ,
+    'size_max' : 30 ,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -33,7 +33,7 @@ snapshot = {
     'io' : {
     # Names of the parameters
     # format : list of strings
-        'parameter_names': ['x1','x2'],
+        'parameter_names': ['x1','x2', 'x3'],
     # File format
     # format : one of 'fmt_tp', 'numpy'
         'format' : 'fmt_tp',
@@ -48,10 +48,10 @@ snapshot = {
         'template_directory' : None,
     # Names of the variables contained in a snapshot
     # format : list of strings
-        'variables' : ['X','F'],
+        'variables' : ['F'],
     # Shapes of one variable for each file and each mpi cpu
     # When ran on only 1 cpu, all shapes are gathered
-        'shapes' : {0: [(400,)]},
+        'shapes' : {0: [(1,)]},
     },
 }
 
@@ -60,19 +60,19 @@ pod = {
 # Tolerance of the modes to be kept.
 # A percentage of the sum of the singular values, values that account for less than of this tolerance are ignored.
 # format : float
-    'tolerance' : 0.9999,
+    'tolerance' : 0.99,
 # Maximum number of modes to be kept
 # format : integer
     'dim_max'   : 100,
 # Type of pod to perform.
-# format : one of 'static', 'dynamic', 'auto'
+# format : one of 'static', 'dynamic'
     'type'      : 'static',
 # Resampling strategy: None, 'MSE', 'loo_mse', 'loo_sobol', 'extrema', 'hybrid'
     'resample'  : 'hybrid',
     'strategy' : (('MSE', 2), ('loo_sobol', 0), ('extrema', 1)),
-# Stopping criterion for automatic resampling
+# Stopping criterion for resampling
 # format : float
-    'quality'   : 0.001*1.e-300,
+    'quality'   : 0.80,            
 # Server settings
 # None means no server, the pod processing is run from the main python interpreter
     'server' : None,
@@ -91,18 +91,19 @@ prediction = {
     'method' : 'kriging',
 # Set of points at which the predictions are made
 # format : list of tuples of floats
-    'points' : [ ],
+    'points' : [],
 }
 
 uq = {
-# Method used to do Sobol' analysis: 'sobol', 'FAST' (if FAST, no second-order indices)
+# Type of Sobol analysis: 'sobol', 'FAST' (if FAST, no second-order indices)
     'method' : 'sobol',
 # Type of indices we want: 'aggregated', 'block'
     'type' : 'aggregated',
 # Use a test method: 'Ishigami'
-    'test' : 'Channel_Flow',
+    'test' : 'Ishigami',
     'sample' : 1000 ,
 # Uncertainty propagation. Enter the PDF of the inputs. x1: Normal(mu, sigma), x2: Uniform(inf, sup)
-    'pdf' : ['Normal(4035., 400.)', 'Uniform(15., 60.)']
+    'pdf' : ['Uniform(-3.1415, 3.1415)', 'Uniform(-3.1415, 3.1415)', 'Uniform(-3.1415, 3.1415)']
 }
+
 
