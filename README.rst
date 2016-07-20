@@ -12,7 +12,7 @@ README
     Melanie Rochoux,
     Sophie Ricci.
 
-:Version: 1.2.dev0   27/05/2016
+:Version: 1.3   20/07/2016
 
 
 What is JPOD? 

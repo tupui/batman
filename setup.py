@@ -68,7 +68,7 @@ sphinx_requires = ['sphinx', 'sphinx_rtd_theme']
 
 setup(
     name='jpod',
-    version='1.2.dev0',
+    version='1.3.0',
     packages=find_packages(),
     entry_points={'console_scripts': ['jpod=jpod.ui:main']},
     # Package requirements
@@ -79,8 +79,8 @@ setup(
     maintainer="Pamphile ROY",
     maintainer_email="roy@cerfacs.fr",
     description="JPOD creates a surrogate model using POD+Kriging and perform UQ.",
-    long_description=open('./doc/README.rst').read(),
-    classifiers=['Development Status :: 3 - Alpha',
+    long_description=open('./README.rst').read(),
+    classifiers=['Development Status :: 5 - Production/Stable',
                  'Environment :: Console',
                  'Intended Audience :: Science/Research',
                  'Intended Audience :: Developers',
