@@ -3,8 +3,10 @@
 *.so
 *.log
 *.swp
-kernel/obj/
-kernel/lib/
-kernel/jpod/scikit-learn/*
+obj/
+lib/
 test_cases/*/output/
 doc/_build/*
+build/
+dist/
+jpod.egg-info/
