@@ -7,7 +7,7 @@ space = {
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max' : 21 ,
+    'size_max' : 20 ,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {

@@ -8,9 +8,8 @@
 #SBATCH --share
 
 module load application/openturns/1.7
-module load python/3.3.6
 
 cd ${SLURM_SUBMIT_DIR}
 
-python ~/JPOD/kernel/jpod/ui.py scripts/task.py -o output/task -u -n 
+python ~/JPOD/jpod/ui.py scripts/task.py -o output/task -u -n 
 

@@ -66,8 +66,8 @@ pod = {
 # Type of pod to perform.
 # format : one of 'static', 'dynamic', 'auto'
     'type'      : 'static',
-# Resampling strategy: None, 'MSE', 'leave-one-out'
-    'resample'  : 'leave-one-out',
+# Resampling strategy: None, 'MSE', 'loo_mse', 'loo_sobol', 'extrema', 'hybrid'
+    'resample'  : 'loo_mse',
 # Stopping criterion for automatic resampling
 # format : float
     'quality'   : 0.8,
