@@ -309,7 +309,7 @@ class Refiner():
         strategies = self.settings.pod['strategy']
         
         if sum(strategies.values()) == 0:
-            self.settings.pod['strategy'] = self.settings.pod['strategy_full']
+            self.settings.pod['strategy'] = OrderedDict(self.settings.pod['strategy_full'])
             strategies = self.settings.pod['strategy']
         
         new_point = []
