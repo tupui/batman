@@ -1,6 +1,7 @@
 import logging
 import os
 import pickle
+import copy
 
 from .core import Core
 from .. import mpi
@@ -123,14 +124,23 @@ class Pod(Core):
         Estimate the quality of the pod by the leave-one-out method.
         This part is sequential.
         """
-        if self.quality is None:
-            self.logger.info('Estimating pod quality...')
-            # get rid of the potential tons of predictor creation messages
-            logging.getLogger('pod.predictor').setLevel(logging.WARNING)
-            self.quality = super(Pod, self).estimate_quality(self.points)
-            logging.getLogger('pod.predictor').setLevel(logging.INFO)
+        self.logger.info('Estimating pod quality...')
 
-        (quality, point) = self.quality
+        # Get rid of predictor creation messages
+        console = logging.getLogger().handlers[0]
+        level_init = copy.copy(self.logger.getEffectiveLevel())
+
+        console.setLevel(logging.WARNING)
+        logging.getLogger().removeHandler('console')
+        logging.getLogger().addHandler(console)
+
+        quality, point = super(Pod, self).estimate_quality(self.points)
+        
+        logging.getLogger().removeHandler('console')
+        console.setLevel(level_init)
+        logging.getLogger().addHandler(console)
+
+        self.quality = quality
         self.logger.info('pod quality = %g, max error location = %s', quality,
                          point)
         return self.quality
@@ -244,58 +254,6 @@ class Pod(Core):
                 mon_pickler = pickle.Pickler(fichier)
                 mon_pickler.dump(self.predictor)
             self.logger.info('Wrote model to %s', path)
-
-            '''
-            # Write informations on the model in model.txt
-            parameter_names = self.io['parameter_names']
-            model_short = self.predictor.predictor
-            file_name2 = os.path.join(path, 'info_model.txt')
-            if model_short.kind == "AdditiveKernel":
-                with open(file_name2, 'w') as fichier2:
-                    fichier2.write("---------Simulation setup--------- \n")
-                    fichier2.write(
-                        "Dimension of the problem : %s \n" %
-                        self.points.dim)
-                    fichier2.write(
-                        "Number of sample points : %s \n \n" % len(
-                            model_short.points))
-                    fichier2.write("---------Kriging model properties--------- \n")
-                    fichier2.write(
-                        "Kernel : %s \n \n" %
-                        model_short.kernel)
-                    fichier2.write("---------Hyperparameter values--------- \n")
-                    for i, GP in enumerate(model_short.prior):
-                        fichier2.write(
-                            " POD MODE : %s and Eigenvalue : %s \n" %
-                            (i, self.S[i]))
-                        #==========================================================
-                        # for j in model_short.hyperparameter:
-                        #     for k in j:
-                        #         fichier2.write(
-                        #             " %s \n" % k)
-                        #==========================================================
-                        fichier2.write("Kriging Model Hyperparameters : %s" % model_short.hyperparameter)[i]
-
-                        for theta_list in model_short.kernel_combination[1:]:
-                            fichier2.write(
-                                "----- Order coupling : %s ----- \n" % len(theta_list[0]))
-                            fichier2.write(
-                                " Sigma %s = %s \n" %
-                                (len(theta_list[0]), model_short.hyperparameter[i][counter]))
-                            counter += 1
-                            for theta_k in theta_list:
-                                fichier2.write(
-                                    " -- Theta %s --\n" %
-                                    [parameter_names[l - 1] for l in theta_k])
-                                for thetha_kk in theta_k:
-                                    counter += (thetha_kk - 1)
-                                    fichier2.write(
-                                        "%s :  %s\n" %
-                                        (parameter_names[thetha_kk - 1], model_short.hyperparameter[i][counter]))
-                                    counter += (self.points.dim - thetha_kk)
-                                    counter += 1
-                        fichier2.write(" \n")
-                        '''
 
     @staticmethod
     def read_model(path):

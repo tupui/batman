@@ -18,7 +18,7 @@ subprocess.Popen.terminate
 N.seterr(all='raise', under='warn')
 
 
-class SnapshotProvider(object):
+class SnapshotProvider():
     """Utility class to make the code more readable.
     This is how the provider type is figured out.
     """
@@ -45,7 +45,7 @@ class SnapshotProvider(object):
         return self.provider(*args, **kwargs)
 
 
-class Driver(object):
+class Driver():
 
     """docstring for Driver."""
 
@@ -257,7 +257,7 @@ class Driver(object):
                 "driver's pod has not been initialized, call init_pod first.")
 
         while len(self.pod.points) < self.settings.space['size_max']:
-            quality, _ = self.pod.estimate_quality()
+            quality = self.pod.estimate_quality()
             if quality >= self.settings.pod['quality']:
                 break
 
@@ -277,16 +277,16 @@ class Driver(object):
         path = path or os.path.join(self.output, self.output_tree['pod'])
         self.pod.read(path)
 
-    def prediction(self, settings, write=False):
+    def prediction(self, write=False):
         if self.external_pod is not None \
            or write:
             output = os.path.join(self.output, self.output_tree['predictions'])
         else:
             output = None
 
-        return self.pod.predict(settings['method'], settings['points'], output)
+        return self.pod.predict(self.settings.prediction['method'], self.settings.prediction['points'], output)
 
-    def prediction_without_computation(self, settings, write=False):
+    def prediction_without_computation(self, write=False):
         if self.external_pod is not None \
            or write:
             output = os.path.join(self.output, self.output_tree['predictions'])
@@ -294,7 +294,7 @@ class Driver(object):
             output = None
         model = self.read_model()
         return self.pod.predict_without_computation(
-            model, settings['points'], output)
+            model, self.settings.prediction['points'], output)
 
     def write_model(self):
         """docstring for static_pod."""
