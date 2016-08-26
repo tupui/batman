@@ -12,12 +12,10 @@ class Predictor(object):
 
     def __init__(self, kind, points, data):
         """
-        kind   : name of prediction method, rbf or kriging
-        points : numpy array of points, one per row
-        data   : numpy array of data at each point, one per row
+        :param str kind: name of prediction method, rbf or kriging
+        :param np.array points : list of points coordinate
+        :param np.array data : output data at each point
         """
-        points = np.array(points)
-
         # predictor object
         if kind == 'rbf':
             self.predictor = RBFnet(points, data)
@@ -31,12 +29,11 @@ class Predictor(object):
     def __call__(self, point):
         """Compute a prediction.
 
-        point: point at which prediction will be done
-
-        Returns a numpy array with result.
+        :param tuple(float) point: point at which prediction will be done
+        :return: Result and standard deviation
+        :rtype: np.arrays
         """
         result, sigma = self.predictor.evaluate(point)
-        #self.logger.debug('Computed prediction at point %s', point)
         return result, sigma
 
 
@@ -47,8 +44,8 @@ class PodPredictor(Predictor):
 
     def __init__(self, kind, pod):
         """
-        pod  : a pod
-        kind : name of prediction method, rbf or kriging
+        :param :class:`jpod.Pod` pod: a pod
+        :param str kind : name of prediction method, rbf or kriging
         """
         self.kind = kind
 
@@ -74,9 +71,9 @@ class PodPredictor(Predictor):
     def __call__(self, points):
         """Compute predictions.
 
-        points: list of points in the parameter space
-
-        Returns a list of snapshots.
+        :param points: list of points in the parameter space
+        :return: Result and standard deviation
+        :rtype: 
         """
         if self.update:
         # pod has changed : update predictor

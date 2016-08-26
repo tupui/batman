@@ -69,7 +69,7 @@ class Core(object):
             raise NotImplemented("use dynamic pod in parallel")
 
         # TODO: play with svd optional arguments
-        self.U, self.S, self.V = np.linalg.svd(snapshots, full_matrices=True)
+        self.U, self.S, self.V = np.linalg.svd(snapshots, full_matrices=False)
         self.V = self.V.T
         self.U, self.S, self.V = svd.filtering(self.U, self.S, self.V,
                                                self.tolerance, self.dim_max)
@@ -130,7 +130,7 @@ class Core(object):
 
         if True:  # orignal jpod 1 strategy
             error_max = 0.
-            for i in range(len(error)):  # TODO: enumerate
+            for i, _ in enumerate(error):
                 if i not in self.refined_points:
                     if error[i] > error_max:
                         index = i

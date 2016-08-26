@@ -33,8 +33,6 @@ class Pod(Core):
         self.quality = None
         '''Quality of the pod, used to know when it needs to be recomputed.'''
 
-        self.quality_kriging = None
-
         self.observers = []
         '''Objects to update on new pod decomposition.'''
 
@@ -122,7 +120,9 @@ class Pod(Core):
         """Quality estimator.
 
         Estimate the quality of the pod by the leave-one-out method.
-        This part is sequential.
+        
+        :return: Q2
+        :rtype: float
         """
         self.logger.info('Estimating pod quality...')
 
@@ -148,7 +148,8 @@ class Pod(Core):
     def predict(self, method, points, path=None):
         """Predict snapshots.
 
-        path : if not set, will return a list of predicted snapshots instances, otherwise write them to disk.
+        :param str method: method used to compute the model
+        :param str path: if not set, will return a list of predicted snapshots instances, otherwise write them to disk.
         """
         if self.predictor is None:
             self.predictor = PodPredictor(method, self)
@@ -167,7 +168,7 @@ class Pod(Core):
     def predict_without_computation(self, model_predictor, points, path=None):
         """Predict snapshots.
 
-        path : if not set, will return a list of predicted snapshots instances, otherwise write them to disk.
+        :param str path: if not set, will return a list of predicted snapshots instances, otherwise write them to disk.
         """
         self.predictor = model_predictor
 
@@ -185,7 +186,7 @@ class Pod(Core):
     def write(self, path):
         """Save a pod to disk.
 
-        :param path: path to a directory.
+        :param str path: path to a directory.
         """
         # create output directory if necessary
         mpi.makedirs(path)
@@ -218,7 +219,7 @@ class Pod(Core):
     def read(self, path):
         """Read a pod from disk.
 
-        :param path: path to a directory.
+        :param str path: path to a directory.
         """
         # points
         self.points.read(os.path.join(path, self.points_file_name))
@@ -246,7 +247,7 @@ class Pod(Core):
             """Save model to disk.
             Write a file containing information on the model
 
-            :param path: path to a directory.
+            :param str path: path to a directory.
             """
             # Write the model
             file_name = os.path.join(path, 'model')
@@ -258,7 +259,7 @@ class Pod(Core):
     @staticmethod
     def read_model(path):
         """Read the model from disk.
-        :param path: path to a output/pod directory.
+        :param str path: path to a output/pod directory.
         """
         file_name = os.path.join(path, 'model')
         with open(file_name, 'r') as fichier:
