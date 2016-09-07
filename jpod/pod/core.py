@@ -115,13 +115,13 @@ class Core(object):
 
             error[i] = np.sum((np.dot(Urot, prediction) - float(points_nb) / float(points_nb - 1) * self.V[i] * self.S) ** 2)
 
-            mean = np.dot(self.U, self.V[i] * self.S)
+            mean += np.dot(self.U, self.V[i] * self.S)
         
         mean = mean / points_nb
         var = 0.
         for i in range(points_nb):
             var = var + np.sum((mean - np.dot(self.U, self.V[i] * self.S)) ** 2)
-        
+       
         # Compute Q2
         err_q2 = 1 - np.sum(error) / var
 
