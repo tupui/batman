@@ -99,7 +99,7 @@ class Core(object):
         points_nb = len(points)
         error = np.empty(points_nb)
         model_pod = []
-        mean = np.zeros(len(self.S))
+        mean = np.zeros(self.mean_snapshot.shape[0])
 
         for i in range(points_nb):
             V_1 = np.delete(self.V, i, 0)
