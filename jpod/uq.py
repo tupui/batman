@@ -142,7 +142,7 @@ class UQ:
         :rtype: float
 
         """
-        f_eval, _ = self.pod.predict(self.method_pod, [coords])
+        f_eval, _ = self.pod.predictor([coords])
         try:
             f_input, f_eval = np.split(f_eval[0].data, 2)
             if self.f_input is None:
@@ -162,7 +162,7 @@ class UQ:
         :rtype: float
 
         """
-        f_eval, _ = self.pod.predict(self.method_pod, [coords])
+        f_eval, _ = self.pod.predictor([coords])
         try:
             f_input, f_eval = np.split(f_eval[0].data, 2)
             int_f_eval = np.trapz(f_eval, f_input)

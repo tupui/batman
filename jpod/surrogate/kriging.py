@@ -53,7 +53,7 @@ class Kriging():
         :param ndarray output: The observed data.
 
         """
-        self.kernel = 1.0 * RBF(length_scale=10., length_scale_bounds=(0.01, 100.))
+        self.kernel = 1.0 * RBF()
         self.data = []
         self.hyperparameter = []
 
