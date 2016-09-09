@@ -29,7 +29,7 @@ class Pod(Core):
     points_file_name = 'points.pickle'
     '''File name for storing the points.'''
 
-    def __init__(self, tolerance, dim_max, snapshot_io=None):
+    def __init__(self, tolerance, dim_max, corners, snapshot_io=None):
         self.quality = None
         '''Quality of the pod, used to know when it needs to be recomputed.'''
 
@@ -39,6 +39,9 @@ class Pod(Core):
         # TODO: refactor observers?
         self.predictor = None
         '''Snapshot predictor.'''
+
+        self.corners = corners
+        '''Space corners.'''
 
         self.points = SpaceBase()
         '''A space to record the points.'''

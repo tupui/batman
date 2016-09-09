@@ -110,7 +110,7 @@ class Core(object):
             points_1 = points[:]
             points_1.pop(i)
 
-            predictor = Predictor(self.leave_one_out_predictor, points_1, V_1 * S_1)
+            predictor = Predictor(self.leave_one_out_predictor, points_1, V_1 * S_1, self.corners)
             prediction, _ = predictor(points[i])
 
             error[i] = np.sum((np.dot(Urot, prediction) - float(points_nb) / float(points_nb - 1) * self.V[i] * self.S) ** 2)

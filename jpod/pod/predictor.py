@@ -10,12 +10,20 @@ class Predictor(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, kind, points, data):
+    def __init__(self, kind, points, data, corners):
         """
         :param str kind: name of prediction method, rbf or kriging
         :param np.array points : list of points coordinate
         :param np.array data : output data at each point
         """
+        # adimentionalize corners
+        bounds = np.array(corners)
+        axis = len(bounds.shape)-1
+        self.bounds_min = np.array((np.amin(bounds, axis=axis).reshape(2,-1)[0, :]))
+        self.bounds_max = np.array((np.amax(bounds, axis=axis).reshape(2,-1)[1, :]))
+        points = np.array(points)
+        points = np.divide(np.subtract(points, self.bounds_min), self.bounds_max - self.bounds_min)
+
         # predictor object
         if kind == 'rbf':
             self.predictor = RBFnet(points, data)
@@ -33,7 +41,9 @@ class Predictor(object):
         :return: Result and standard deviation
         :rtype: np.arrays
         """
+        point = np.divide(np.subtract(point, self.bounds_min), self.bounds_max - self.bounds_min)
         result, sigma = self.predictor.evaluate(point)
+ 
         return result, sigma
 
 
@@ -60,7 +70,8 @@ class PodPredictor(Predictor):
             self).__init__(
             self.kind,
             self.pod.points,
-            self.pod.VS())
+            self.pod.VS(),
+            self.pod.corners)
         self.pod.register_observer(self)
 
     def notify(self):

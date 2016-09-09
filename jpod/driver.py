@@ -236,7 +236,7 @@ class Driver():
         else:
             # directly instantiate the pod,
             # the snapshot class is initialized as a by product
-            self.pod = Pod(self.settings.pod['tolerance'], self.settings.pod['dim_max'])
+            self.pod = Pod(self.settings.pod['tolerance'], self.settings.pod['dim_max'], self.settings.space['corners'])
 
     def sampling_pod(self, update):
         """docstring for static_pod."""
@@ -284,7 +284,7 @@ class Driver():
         else:
             output = None
 
-        return self.pod.predict(self.settings.prediction['method'], self.settings.prediction['points'], output)
+        self.pod.predict(self.settings.prediction['method'], self.settings.prediction['points'], output)
 
     def prediction_without_computation(self, write=False):
         if self.external_pod is not None \
@@ -293,7 +293,7 @@ class Driver():
         else:
             output = None
         model = self.read_model()
-        return self.pod.predict_without_computation(
+        self.pod.predict_without_computation(
             model, self.settings.prediction['points'], output)
 
     def write_model(self):
