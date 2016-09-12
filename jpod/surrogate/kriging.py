@@ -15,7 +15,7 @@ Interpolation using Gaussian Process method.
     >> predictor = Kriging(input, output)
     >> point = (5.0, 8.0)
     >> predictor.evaluate(point)
-    (array([ 8.4363201 ,  3.77281636]), array([ 0.76631883,  0.15439491]))
+    (array([ 8.4526528 ,  3.57976035]), array([ 0.40982369,  0.05522197]))
 
 Reference
 ---------
@@ -46,6 +46,8 @@ class Kriging():
         """Create the predictor.
 
         Uses input and output to construct a predictor using Gaussian Process.
+        Input is to be normalized before and depending on the number of parameters,
+        the kernel is adapted to be anisotropic.
 
         `self.data` contains the predictors as a list(array) of the size of the `ouput`.
 
@@ -53,7 +55,10 @@ class Kriging():
         :param ndarray output: The observed data.
 
         """
-        self.kernel = 1.0 * RBF()
+        input_len = input.shape[1]
+        l_scale = ((1.0),) * input_len
+        scale_bounds = [(1e-03, 1000.0)] * input_len
+        self.kernel = 1.0 * RBF(length_scale=l_scale, length_scale_bounds=scale_bounds)
         self.data = []
         self.hyperparameter = []
 
