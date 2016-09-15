@@ -64,7 +64,7 @@ class Kriging():
 
         # Create a predictor per output
         for column in output.T:
-            gp = GaussianProcessRegressor(kernel=self.kernel, n_restarts_optimizer=10)
+            gp = GaussianProcessRegressor(kernel=self.kernel, n_restarts_optimizer=100)
             self.data += [gp.fit(input, column)]
             self.hyperparameter += [np.exp(gp.kernel_.theta)]
 
