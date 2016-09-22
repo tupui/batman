@@ -26,7 +26,7 @@ class Pod(Core):
     pod_file_name = 'pod.npz'
     '''File name for storing the MPI independent pod data.'''
 
-    points_file_name = 'points.pickle'
+    points_file_name = 'points.dat'
     '''File name for storing the points.'''
 
     def __init__(self, tolerance, dim_max, corners, snapshot_io=None):

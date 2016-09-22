@@ -1,6 +1,6 @@
 import logging
 import pickle
-import numpy as N
+import numpy as np
 import sampling
 from .point import Point
 from .refiner import Refiner
@@ -69,12 +69,12 @@ class SpaceBase(list):
 
     def write(self, path):
         """Write space in the file `path`."""
-        pickle.dump(self, open(path, 'wb'))
+        np.savetxt(path, self)
 
     def read(self, path):
         """Read space from the file `path`."""
         self.empty()
-        self += pickle.load(open(path, 'rb'))
+        self += np.loadtxt(path)
 
     def empty(self):
         """Remove all points."""
@@ -188,7 +188,7 @@ class Space(SpaceBase):
         else:
             raise ValueError('Bad sampling method: ' + kind)
 
-        bounds = N.array(self.corners)
+        bounds = np.array(self.corners)
         samples = sampler(bounds.shape[1], n, bounds)
         self.empty()
         self.add([s.tolist() for s in samples])
