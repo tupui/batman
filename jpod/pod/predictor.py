@@ -87,8 +87,12 @@ class PodPredictor(Predictor):
         :rtype: 
         """
         if self.update:
-        # pod has changed : update predictor
-            super(PodPredictor, self).__init__(self.kind, self.pod.points, self.pod.VS())
+            # pod has changed : update predictor
+            super(PodPredictor, self).__init__(
+                self.kind,
+                self.pod.points,
+                self.pod.VS()
+                self.pod.corners)
             self.update = False
 
         results = []
