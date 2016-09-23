@@ -1,5 +1,5 @@
 """
-Setup script for JPOD 
+Setup script for JPOD
 =====================
 
 This script allows to install jpod within the python environment.
@@ -15,8 +15,13 @@ Usage
 """
 
 from setuptools import (setup, find_packages, Command)
+import re
+import io
+import os
+import subprocess
 
 cmdclasses = dict()
+
 
 class BuildSphinx(Command):
 
@@ -55,6 +60,7 @@ class CompileSources(Command):
         os.system('make')
         os.system('make clean')
 
+
 cmdclasses['build_sphinx'] = BuildSphinx
 cmdclasses['build_fortran'] = CompileSources
 
@@ -64,21 +70,51 @@ except ImportError:
     import pip
     pip.main(['install', 'scipy'])
 
-sphinx_requires = ['sphinx', 'sphinx_rtd_theme']
+
+def find_version(*file_paths):
+    with open(os.path.join(os.path.dirname(__file__), *file_paths),
+              'r') as f:
+        version_file = f.read()
+    commit = subprocess.check_output("git describe --always",
+                                     shell=True).rstrip()
+    branch = subprocess.check_output("git describe --all",
+                                     shell=True).rstrip()
+    version_file = re.sub('(__commit__ = )(.*)',
+                          r'\g<1>' + "'" + commit + "'",
+                          version_file)
+    version_file = re.sub('(__branch__ = )(.*)',
+                          r'\g<1>' + "'" + branch + "'",
+                          version_file)
+    with open(os.path.join(os.path.dirname(__file__), *file_paths),
+              'w') as f:
+        f.write(version_file)
+    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
+                              version_file, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("Unable to find version string.")
+
 
 setup(
     name='jpod',
-    version='1.3.0',
+    version=find_version("jpod", "__init__.py"),
     packages=find_packages(),
     entry_points={'console_scripts': ['jpod=jpod.ui:main']},
     # Package requirements
-    install_requires=['sphinx_rtd_theme', 'futures', 'rpyc', 'mpi4py', 'h5py', 'scikit-learn>=0.18.dev0'],
-    dependency_links=['https://github.com/scikit-learn/scikit-learn/archive/master.zip#egg=scikit-learn-0.18.dev0'],
+    install_requires=['sphinx_rtd_theme',
+                      'futures',
+                      'rpyc',
+                      'mpi4py',
+                      'h5py',
+                      'scikit-learn>=0.18.dev0'],
+    dependency_links=['https://github.com/scikit-learn/scikit-learn\
+                    /archive/master.zip#egg=scikit-learn-0.18.dev0'],
     cmdclass=cmdclasses,
     # metadata
     maintainer="Pamphile ROY",
     maintainer_email="roy@cerfacs.fr",
-    description="JPOD creates a surrogate model using POD+Kriging and perform UQ.",
+    description="JPOD creates a surrogate model using \
+        POD+Kriging and perform UQ.",
     long_description=open('./README.rst').read(),
     classifiers=['Development Status :: 5 - Production/Stable',
                  'Environment :: Console',

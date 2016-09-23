@@ -6,7 +6,7 @@ import argparse
 import os
 import json
 
-from jpod import __version__
+from jpod import __version__, __branch__, __commit__
 from jpod import import_file
 from jpod import Driver
 from jpod import mpi
@@ -31,6 +31,7 @@ path = os.path.dirname(os.path.realpath(__file__)) + '/misc/logging.json'
 with open(path, 'r') as file:
     logging_config = json.load(file)
 
+
 def run(settings, options):
     """Run the driver along."""
     dictConfig(logging_config)
@@ -43,6 +44,8 @@ def run(settings, options):
     logger = logging.getLogger('JPOD main')
 
     logger.info(jpod_banner)
+    logger.info("Branch: {}\n\
+        Last commit: {}".format(__branch__, __commit__))
 
     # clean up output directory
     if not options.restart and not options.no_pod and not options.pred:
@@ -72,7 +75,9 @@ def run(settings, options):
         try:
             driver.read_pod()
         except IOError:
-            logger.exception("POD need to be computed: check output folder or re-try without -n")
+            logger.exception(
+                "POD need to be computed: \
+                check output folder or re-try without -n")
             raise SystemExit
 
     if not options.pred:
@@ -90,6 +95,7 @@ def run(settings, options):
     if options.uq:
         driver.uq()
 
+
 def abs_path(value):
     """Get absolute path."""
     return os.path.abspath(value)
@@ -98,8 +104,11 @@ def abs_path(value):
 def main():
     """Parse and check options, and then call run()."""
     # parser
-    parser = argparse.ArgumentParser(prog="JPOD", description=description_message)
-    parser.add_argument('--version', action='version', version="%(prog)s {}".format(__version__))
+    parser = argparse.ArgumentParser(prog="JPOD",
+                                     description=description_message)
+    parser.add_argument('--version',
+                        action='version',
+                        version="%(prog)s {}".format(__version__))
 
     # Positionnal arguments
     parser.add_argument(
@@ -117,7 +126,8 @@ def main():
         '-s', '--save-snapshots',
         action='store_true',
         default=False,
-        help='save the snapshots to disk when using a function, [default: %(default)s]')
+        help='save the snapshots to disk when using a function,\
+             [default: %(default)s]')
 
     parser.add_argument(
         '-o', '--output',
@@ -135,7 +145,8 @@ def main():
         '-n', '--no-pod',
         action='store_true',
         default=False,
-        help='do not compute pod but read it from disk, [default: %(default)s]')
+        help='do not compute pod but read it from disk,\
+             [default: %(default)s]')
 
     parser.add_argument(
         '-u', '--uq',
@@ -153,7 +164,8 @@ def main():
         '-q', '--q2',
         action='store_true',
         default=False,
-        help='estimate Q2 and find the point with max MSE, [default: %(default)s]')
+        help='estimate Q2 and find the point with max MSE,\
+             [default: %(default)s]')
 
     # parse command line
     options = parser.parse_args()
@@ -164,6 +176,7 @@ def main():
     options.script = os.path.abspath(options.task)
 
     run(settings, options)
+
 
 if __name__ == "__main__":
     main()

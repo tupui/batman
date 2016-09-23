@@ -91,7 +91,7 @@ class PodPredictor(Predictor):
             super(PodPredictor, self).__init__(
                 self.kind,
                 self.pod.points,
-                self.pod.VS()
+                self.pod.VS(),
                 self.pod.corners)
             self.update = False
 
