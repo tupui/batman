@@ -142,11 +142,7 @@ def scrambled_sobol_generate(dim, n1):
 
 def scramble(x):
     """
-    Scramble function as in Owen (1997)
-
-    Reference:
-
-    .. [1] Saltelli, A., Chan, K., Scott, E.M., "Sensitivity Analysis"
+    Scramble function as in Owen (1997) [1]_.
     """
 
     Nt = len(x) - (len(x) % 2)

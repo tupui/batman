@@ -36,6 +36,7 @@ The *settings* file must contains the following parameters::
     }
 
 :Example:
+
 ::
 
     >> analyse = UQ(pod, settings, output)
@@ -85,7 +86,7 @@ class UQ:
 
         Also, it creates the `model` and `int_model` as `ot.PythonFunction()`.
 
-        :param pod jpod: The POD,
+        :param jpod.pod.pod jpod: The POD,
         :param dict settings: The settings_template file.
 
         """
@@ -114,9 +115,11 @@ class UQ:
         input_pdf = "ot." + pdf[0]
         for i in range(self.p_len - 1):
             input_pdf = input_pdf + ", ot." + pdf[i + 1]
-        self.distribution = eval("ot.ComposedDistribution([" + input_pdf + "], ot.IndependentCopula(self.p_len))")
+        self.distribution = eval("ot.ComposedDistribution([" \
+            + input_pdf + "], ot.IndependentCopula(self.p_len))")
         # self.experiment = ot.MonteCarloExperiment(self.distribution, self.points_sample)
-        self.experiment = ot.LHSExperiment(self.distribution, self.points_sample)
+        self.experiment = ot.LHSExperiment(self.distribution,
+                                           self.points_sample)
         self.sample = self.experiment.generate()
         self.logger.info("Created {} samples with an LHS experiment".format(self.points_sample))
 

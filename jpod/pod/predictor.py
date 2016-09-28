@@ -6,23 +6,26 @@ from .snapshot import Snapshot
 
 
 class Predictor(object):
+
     """Manages snapshot prediction."""
 
     logger = logging.getLogger(__name__)
 
     def __init__(self, kind, points, data, corners):
-        """
+        """Init Predictor.
+
         :param str kind: name of prediction method, rbf or kriging
-        :param np.array points : list of points coordinate
-        :param np.array data : output data at each point
+        :param np.array points: list of points coordinate
+        :param np.array data: output data at each point
         """
         # adimentionalize corners
         bounds = np.array(corners)
         axis = len(bounds.shape)-1
-        self.bounds_min = np.array((np.amin(bounds, axis=axis).reshape(2,-1)[0, :]))
-        self.bounds_max = np.array((np.amax(bounds, axis=axis).reshape(2,-1)[1, :]))
+        self.bounds_min = np.array((np.amin(bounds, axis=axis).reshape(2, -1)[0, :]))
+        self.bounds_max = np.array((np.amax(bounds, axis=axis).reshape(2, -1)[1, :]))
         points = np.array(points)
-        points = np.divide(np.subtract(points, self.bounds_min), self.bounds_max - self.bounds_min)
+        points = np.divide(np.subtract(points, self.bounds_min),
+                           self.bounds_max - self.bounds_min)
 
         # predictor object
         if kind == 'rbf':
@@ -41,19 +44,22 @@ class Predictor(object):
         :return: Result and standard deviation
         :rtype: np.arrays
         """
-        point = np.divide(np.subtract(point, self.bounds_min), self.bounds_max - self.bounds_min)
+        point = np.divide(np.subtract(point, self.bounds_min),
+                          self.bounds_max - self.bounds_min)
         result, sigma = self.predictor.evaluate(point)
- 
+
         return result, sigma
 
 
 class PodPredictor(Predictor):
+
     """Manages snapshot prediction."""
 
     logger = logging.getLogger(__name__)
 
     def __init__(self, kind, pod):
-        """
+        """Init POD predictor.
+
         :param :class:`jpod.Pod` pod: a pod
         :param str kind : name of prediction method, rbf or kriging
         """
@@ -83,8 +89,10 @@ class PodPredictor(Predictor):
         """Compute predictions.
 
         :param points: list of points in the parameter space
-        :return: Result and standard deviation
-        :rtype: 
+        :return: Result
+        :rtype: lst(:class:`pod.snapshot.Snapshot`)
+        :return: Standard deviation
+        :rtype: lst(np.array)
         """
         if self.update:
             # pod has changed : update predictor
@@ -96,10 +104,11 @@ class PodPredictor(Predictor):
             self.update = False
 
         results = []
-        sigma = []
+        sigmas = []
         for p in points:
             v, sigma = super(PodPredictor, self).__call__(p)
             result = self.pod.mean_snapshot + np.dot(self.pod.U, v)
             results += [Snapshot(p, result)]
+            sigmas += [sigma]
 
-        return results, sigma
+        return results, sigmas

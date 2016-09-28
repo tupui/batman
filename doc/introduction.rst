@@ -74,12 +74,7 @@ An ``output`` directory is created and it contains the results of the computatio
 Content of ``test_cases``
 .........................
 
-
-
-.. [Thie2009] T. Braconnier and M. Ferrier: Jack Proper Orthogonal Decomposition (JPOD) for Steady Aerodynamic Model. Tech. rep. 2009
 .. [Rasmussen2006] CE. Rasmussen and C. Williams: Gaussian processes for machine learning. MIT Press. 2006. ISBN: 026218253X
-.. [Damblin2013] G. Damblin, M. Couplet, B. Iooss: Numerical studies of space filling designs : optimization of Latin Hypercube Samples and subprojection properties. Journal of Simulation. 2013.
 .. [Gunes2006] H. Gunes, S. Sirisup and GE. Karniadakis: “Gappydata:ToKrigornottoKrig?”. Journal of Com putational Physics. 2006. DOI: 10. 1016/j.jcp.2005.06.023
-
 .. [Draper1995] D. Draper: “Assessmentand Propagation ofModelUncertainty”. Journal of the Royal Statistical Society. 1995.
 

@@ -125,7 +125,6 @@ References
 .. [Matheron1963] G. Matheron. “Principles of Geostatistics”. Economic Geology 58. 1963.
 .. [Robinson2008] G.K.Robinson.“That BLUP is a good thing: the estimation of random effects”. Statistical Science 6.1. 1991. DOI: 10.1214/ss/1177011926.
 .. [Bohling2005] G. Bohling. "Kriging". Tech.rep. 2005.
-.. [Rasmussen2006] CE. Rasmussenand C. Williams. "Gaussian processes for machine learning". MIT Press.2006. ISBN: 026218253X
 .. [Forrester2009] Forrester and A.J. Keane.“Recent advances in surrogate-based optimization”. Progress in Aerospace Sciences 2009. DOI: 10.1016/j.paerosci.2008.11.001
 
 Surrogate module

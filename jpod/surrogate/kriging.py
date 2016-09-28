@@ -6,6 +6,7 @@ Kriging Class
 Interpolation using Gaussian Process method.
 
 :Example:
+
 ::
 
     >> from kriging import Kriging
@@ -58,13 +59,15 @@ class Kriging():
         input_len = input.shape[1]
         l_scale = ((1.0),) * input_len
         scale_bounds = [(1e-03, 1000.0)] * input_len
-        self.kernel = 1.0 * RBF(length_scale=l_scale, length_scale_bounds=scale_bounds)
+        self.kernel = 1.0 * RBF(length_scale=l_scale,
+                                length_scale_bounds=scale_bounds)
         self.data = []
         self.hyperparameter = []
 
         # Create a predictor per output
         for column in output.T:
-            gp = GaussianProcessRegressor(kernel=self.kernel, n_restarts_optimizer=100)
+            gp = GaussianProcessRegressor(kernel=self.kernel,
+                                          n_restarts_optimizer=100)
             self.data += [gp.fit(input, column)]
             self.hyperparameter += [np.exp(gp.kernel_.theta)]
 
@@ -89,6 +92,8 @@ class Kriging():
 
         # Compute a prediction per predictor
         for i, gp in enumerate(self.data):
-            prediction[i], sigma[i] = gp.predict(point_array, return_std=True, return_cov=False)
+            prediction[i], sigma[i] = gp.predict(point_array,
+                                                 return_std=True,
+                                                 return_cov=False)
 
         return prediction, sigma

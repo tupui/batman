@@ -1,4 +1,3 @@
-jpod/__init__.py
 .DS_Store
 *.pyc
 *.so
@@ -11,3 +10,4 @@ doc/_build/*
 build/
 dist/
 jpod.egg-info/
+./jpod/__init__.py
