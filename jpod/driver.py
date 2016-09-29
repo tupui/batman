@@ -257,7 +257,7 @@ class Driver():
                 "driver's pod has not been initialized, call init_pod first.")
 
         while len(self.pod.points) < self.settings.space['size_max']:
-            quality = self.pod.estimate_quality()
+            quality, _ = self.pod.estimate_quality()
             if quality >= self.settings.pod['quality']:
                 break
 

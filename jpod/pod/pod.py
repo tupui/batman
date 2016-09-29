@@ -146,7 +146,7 @@ class Pod(Core):
         self.quality = quality
         self.logger.info('pod quality = %g, max error location = %s', quality,
                          point)
-        return self.quality
+        return self.quality, point
 
     def predict(self, method, points, path=None):
         """Predict snapshots.

@@ -63,7 +63,7 @@ class Refiner():
     def func(self, coords, sign):
         r"""Get the prediction for a given point.
 
-        Retrieve the Gaussian Process estimation of sigma: the mean square error.
+        Retrieve Gaussian Process estimation of sigma: the mean square error.
         A composite indicator is constructed using POD's modes.
 
         .. math:: \sum S_i^2 \times f_i
@@ -82,7 +82,7 @@ class Refiner():
             _, f = np.split(f[0].data, 2)
         except:
             f = f[0].data
-        #sum_f = np.sum(self.pod.S ** 2 * f)
+        # sum_f = np.sum(self.pod.S ** 2 * f)
         sum_f = np.sum(f)
 
         return sign * sum_f
@@ -90,12 +90,12 @@ class Refiner():
     def func_mse(self, coords):
         r"""Get the MSE for a given point.
 
-        Retrieve the Gaussian Process estimation of sigma: the mean square error.
+        Retrieve Gaussian Process estimation of sigma: the mean square error.
         A composite indicator is constructed using POD's modes.
 
         .. math:: \sum S_i^2 \times \sigma_i
 
-        The function returns - sum_sigma in order to have a minimization problem.
+        Function returns - sum_sigma in order to have a minimization problem.
 
         :param lst(float) coords: coordinate of the point
         :return: - sum_sigma
@@ -110,15 +110,16 @@ class Refiner():
     def distance_min(self, point):
         """Get the distance of influence.
 
-        Compute the distance, L2 norm between the anchor point and every sampling points.
-        It returns the minimal distance.
+        Compute the distance, L2 norm between the anchor point and
+        every sampling points. It returns the minimal distance.
 
         :param np.array point: Anchor point
         :return: The distance to the nearest point
         :rtype: float
 
         """
-        distances = np.array([np.linalg.norm(pod_point - point) for _, pod_point in enumerate(self.points)])
+        distances = np.array([np.linalg.norm(pod_point - point)
+                              for _, pod_point in enumerate(self.points)])
         distances = distances[np.nonzero(distances)]
         distance = min(distances)  # * 3 / 2
         self.logger.debug("Distance min: {}".format(distance))
@@ -168,9 +169,11 @@ class Refiner():
     def leave_one_out_mse(self):
         """Mixture of Leave-one-out and MSE.
 
-        Estimate the quality of the POD by *leave-one-out cross validation* (LOOCV), and add a point arround the max error point.
+        Estimate the quality of the POD by *leave-one-out cross validation*
+        (LOOCV), and add a point arround the max error point.
         The point is added within an hypercube around the max error point.
-        The size of the hypercube is equal to the distance with the nearest point.
+        The size of the hypercube is equal to the distance with
+        the nearest point.
 
         :return: The coordinate of the point to add
         :rtype: lst(float)
@@ -193,8 +196,9 @@ class Refiner():
     def leave_one_out_sobol(self):
         """Mixture of Leave-one-out and Sobol' indices.
 
-        Same as function :func:`leave_one_out_mse` but change the shape of the hypercube.
-        Using Sobol' indices, the corners are shrinked by the corresponding percentage of the total indices.
+        Same as function :func:`leave_one_out_mse` but change the shape
+        of the hypercube. Using Sobol' indices, the corners are shrinked
+        by the corresponding percentage of the total indices.
 
         :return: The coordinate of the point to add
         :rtype: lst(float)
@@ -240,43 +244,62 @@ class Refiner():
 
         # Get max-max and max-min then min-max and min-min
         for sign in [-1., 1.]:
-            self.logger.debug("Sign (-1 : Maximum ; 1 : Minimum) -> {}".format(sign))
+            self.logger.debug("Sign (-1 : Maximum ; 1 : Minimum) -> {}"
+                              .format(sign))
             # Get a sample point where there is an extrema around
             while point is None:
                 # Get min or max point
-                evaluations = np.array([self.func(pod_point, sign) for _, pod_point in enumerate(self.points)])
+                evaluations = np.array([self.func(pod_point, sign)
+                                        for _, pod_point in enumerate(self.points)])
                 min_idx = np.argmin(evaluations)
                 point = self.points[min_idx]
                 point_eval = min(evaluations) * sign
-                self.logger.debug("Extremum located at sample point: {} -> {}".format(point, point_eval))
+                self.logger.debug("Extremum located at sample point: {} -> {}"
+                                  .format(point, point_eval))
 
                 # Construct the hypercube around the point
                 distance = self.distance_min(point)
                 hypercube = self.hypercube(point, distance)
 
                 # Global search of the point within the hypercube
-                first_extremum = differential_evolution(self.func, hypercube, args=(sign,))
+                first_extremum = differential_evolution(self.func,
+                                                        hypercube,
+                                                        args=(sign,))
                 first_extremum.fun *= sign
-                self.logger.debug("Optimization first extremum: {} -> {}".format(first_extremum.x, first_extremum.fun))
-                second_extremum = differential_evolution(self.func, hypercube, args=(-sign,))
+                self.logger.debug("Optimization first extremum: {} -> {}"
+                                  .format(first_extremum.x,
+                                          first_extremum.fun))
+                second_extremum = differential_evolution(self.func,
+                                                         hypercube,
+                                                         args=(-sign,))
                 second_extremum.fun *= - sign
-                self.logger.debug("Optimization second extremum: {} -> {}".format(second_extremum.x, second_extremum.fun))
+                self.logger.debug("Optimization second extremum: {} -> {}"
+                                  .format(second_extremum.x,
+                                          second_extremum.fun))
                 
                 # Check for new extrema, compare with the sample point
                 if sign * first_extremum.fun < sign * point_eval:
                     # Nelder-Mead expansion
-                    first_extremum = np.array([first_extremum.x + (first_extremum.x - point)])
+                    first_extremum = np.array([first_extremum.x +
+                                              (first_extremum.x - point)])
                     # Constrain to the hypercube
-                    first_extremum = np.maximum(first_extremum, hypercube[:, 0])
-                    first_extremum = np.minimum(first_extremum, hypercube[:, 1])
+                    first_extremum = np.maximum(first_extremum,
+                                                hypercube[:, 0])
+                    first_extremum = np.minimum(first_extremum,
+                                                hypercube[:, 1])
                     new_points.append(first_extremum[0].tolist())
-                    self.logger.debug("Extremum-max: {}".format(first_extremum[0]))
+                    self.logger.debug("Extremum-max: {}"
+                                      .format(first_extremum[0]))
                     if sign * second_extremum.fun > sign * point_eval:
-                        second_extremum = np.array([second_extremum.x + (second_extremum.x - point)])
-                        second_extremum = np.maximum(second_extremum, hypercube[:, 0])
-                        second_extremum = np.minimum(second_extremum, hypercube[:, 1])
+                        second_extremum = np.array([second_extremum.x +
+                                                   (second_extremum.x - point)])
+                        second_extremum = np.maximum(second_extremum,
+                                                     hypercube[:, 0])
+                        second_extremum = np.minimum(second_extremum,
+                                                     hypercube[:, 1])
                         new_points.append(second_extremum[0].tolist())
-                        self.logger.debug("Extremum-min: {}".format(second_extremum[0]))
+                        self.logger.debug("Extremum-min: {}"
+                                          .format(second_extremum[0]))
                 else:
                     point = None
 
@@ -303,7 +326,8 @@ class Refiner():
             self.logger.debug('Strategy: {}'.format(self.settings.pod['strategy_full'])) 
         except KeyError:
             self.settings.pod['strategy_full'] = self.settings.pod['strategy']
-            self.logger.info('Strategy: {}'.format(self.settings.pod['strategy_full']))
+            self.logger.info('Strategy: {}'
+                             .format(self.settings.pod['strategy_full']))
 
         self.settings.pod['strategy'] = OrderedDict(self.settings.pod['strategy'])
         strategies = self.settings.pod['strategy']
