@@ -106,9 +106,7 @@ setup(
                       'rpyc',
                       'mpi4py',
                       'h5py',
-                      'scikit-learn>=0.18.dev0'],
-    dependency_links=['https://github.com/scikit-learn/scikit-learn\
-                    /archive/master.zip#egg=scikit-learn-0.18.dev0'],
+                      'scikit-learn>=0.18'],
     cmdclass=cmdclasses,
     # metadata
     maintainer="Pamphile ROY",

@@ -50,12 +50,20 @@ To download it::
 
 Then to install::
 
-    cd kernel
+    cd JPOD
     python setup.py build_fortran
     python setup.py install
     python setup.py build_sphinx
 
-The latter is optionnal as it just build the documentation in case of a change.
+The latter is optionnal as it just build the documentation in case of a change. 
+
+.. note:: If you don't have install priviledge, add ``--user`` option.
+
+If JPOD has been correctly installed, you should be able to call it simply::
+
+    jpod -h
+
+.. note:: Depending on your configuration, you might have to export your local python path.
 
 Getting started
 ---------------
