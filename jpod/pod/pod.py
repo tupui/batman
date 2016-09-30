@@ -123,7 +123,7 @@ class Pod(Core):
         """Quality estimator.
 
         Estimate the quality of the pod by the leave-one-out method.
-        
+
         :return: Q2
         :rtype: float
         """
@@ -138,7 +138,7 @@ class Pod(Core):
         logging.getLogger().addHandler(console)
 
         quality, point = super(Pod, self).estimate_quality(self.points)
-        
+
         logging.getLogger().removeHandler('console')
         console.setLevel(level_init)
         logging.getLogger().addHandler(console)

@@ -9,7 +9,7 @@ What is it?
 The *Proper Orthogonal Decomposition* (POD) is a technique used to decompose a matrix and characterize it by its principal components which are called modes [AnindyaChatterjee2000]_. To approximate a function :math:`z(x,t)`, only a finite sum of terms is required:
 
 .. math::
-   z(x,t) &\simeq \sum_{k=1}^{m} a_k(t) \phi_k(x).
+   z(x,t) \simeq \sum_{k=1}^{m} a_k(t) \phi_k(x).
 
 The function :math:`\phi_{k}(x)` have an infinite representation. It can be chosen as a Fourier series or Chebyshev polynomials, etc. For a chosen basis of function, a set of unique time-functions :math:`a_k(t)` arise. In case of the POD, the basis function are orthonormal. Meaning that:
 

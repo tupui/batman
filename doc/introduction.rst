@@ -74,6 +74,20 @@ An ``output`` directory is created and it contains the results of the computatio
 Content of ``test_cases``
 .........................
 
+This folder contains ready to launch examples: 
+
+* ``Basic_function`` is a simple *1-input_parameter* function,
+* ``Michalewicz`` is a *2-input_parameters* non-linear function,
+* ``Ishigami`` is a *3-input_parameters*,
+* ``Channel_Flow`` is a *2-input_parameters* with a functionnal output,
+* ``RAE2822`` is a *2-input_parameters* that launches an *elsA* case,
+* ``Flamme_1D`` is a *2-input_parameters* that launches an *AVBP* case.
+
+In every case, there is ``README.md`` file that summarize and explain it.
+
+References
+----------
+
 .. [Rasmussen2006] CE. Rasmussen and C. Williams: Gaussian processes for machine learning. MIT Press. 2006. ISBN: 026218253X
 .. [Gunes2006] H. Gunes, S. Sirisup and GE. Karniadakis: “Gappydata:ToKrigornottoKrig?”. Journal of Com putational Physics. 2006. DOI: 10. 1016/j.jcp.2005.06.023
 .. [Draper1995] D. Draper: “Assessmentand Propagation ofModelUncertainty”. Journal of the Royal Statistical Society. 1995.
