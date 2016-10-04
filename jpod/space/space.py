@@ -198,7 +198,7 @@ class Space(SpaceBase):
         self.logger.debug("Points are: \n {}".format(samples))
         return self
 
-    def refine(self, pod):
+    def refine(self, pod, point_loo):
         """Refine the sample, update space points and return the new point(s).
 
         :param pod: POD
@@ -211,13 +211,13 @@ class Space(SpaceBase):
         if method == 'MSE':
             new_point = refiner.mse()
         elif method == 'loo_mse':
-            new_point = refiner.leave_one_out_mse()
+            new_point = refiner.leave_one_out_mse(point_loo)
         elif method == 'loo_sobol':
-            new_point = refiner.leave_one_out_sobol()
+            new_point = refiner.leave_one_out_sobol(point_loo)
         elif method == 'extrema':
             new_point, self.refined_pod_points = refiner.extrema(self.refined_pod_points)
         elif method == 'hybrid':
-            new_point, self.refined_pod_points = refiner.hybrid(self.refined_pod_points)
+            new_point, self.refined_pod_points = refiner.hybrid(self.refined_pod_points, point_loo)
 
         try:
             point = [Point(point) for point in [new_point]]

@@ -166,7 +166,7 @@ class Refiner():
 
         return result.x
 
-    def leave_one_out_mse(self):
+    def leave_one_out_mse(self, point_loo):
         """Mixture of Leave-one-out and MSE.
 
         Estimate the quality of the POD by *leave-one-out cross validation*
@@ -175,14 +175,14 @@ class Refiner():
         The size of the hypercube is equal to the distance with
         the nearest point.
 
+        :param tuple point_loo: leave-one-out point
         :return: The coordinate of the point to add
         :rtype: lst(float)
 
         """
         self.logger.info("Leave-one-out + MSE strategy")
         # Get the point of max error by LOOCV
-        _, point = self.pod.estimate_quality()
-        point = np.array(point)
+        point = np.array(point_loo)
 
         # Construct the hypercube around the point
         distance = self.distance_min(point)
@@ -193,21 +193,21 @@ class Refiner():
 
         return point
 
-    def leave_one_out_sobol(self):
+    def leave_one_out_sobol(self, point_loo):
         """Mixture of Leave-one-out and Sobol' indices.
 
         Same as function :func:`leave_one_out_mse` but change the shape
         of the hypercube. Using Sobol' indices, the corners are shrinked
         by the corresponding percentage of the total indices.
 
+        :param tuple point_loo: leave-one-out point
         :return: The coordinate of the point to add
         :rtype: lst(float)
 
         """
         self.logger.info("Leave-one-out + Sobol strategy")
         # Get the point of max error by LOOCV
-        _, point = self.pod.estimate_quality()
-        point = np.array(point)
+        point = np.array(point_loo)
 
         # Get Sobol' indices
         analyse = UQ(self.pod, self.settings)
@@ -276,7 +276,7 @@ class Refiner():
                 self.logger.debug("Optimization second extremum: {} -> {}"
                                   .format(second_extremum.x,
                                           second_extremum.fun))
-                
+
                 # Check for new extrema, compare with the sample point
                 if sign * first_extremum.fun < sign * point_eval:
                     # Nelder-Mead expansion
@@ -310,7 +310,7 @@ class Refiner():
 
         return new_points, refined_pod_points
 
-    def hybrid(self, refined_pod_points):
+    def hybrid(self, refined_pod_points, point_loo):
         """Composite resampling strategy.
 
         Uses all methods one after another to add new points.
@@ -331,22 +331,22 @@ class Refiner():
 
         self.settings.pod['strategy'] = OrderedDict(self.settings.pod['strategy'])
         strategies = self.settings.pod['strategy']
-        
+
         if sum(strategies.values()) == 0:
             self.settings.pod['strategy'] = OrderedDict(self.settings.pod['strategy_full'])
             strategies = self.settings.pod['strategy']
-        
+
         new_point = []
         for method in strategies:
-            if strategies[method] > 0: 
+            if strategies[method] > 0:
                 if method == 'MSE':
                     new_point = self.mse()
                     break
                 elif method == 'loo_mse':
-                    new_point = self.leave_one_out_mse()
+                    new_point = self.leave_one_out_mse(point_loo)
                     break
                 elif method == 'loo_sobol':
-                    new_point = self.leave_one_out_sobol()
+                    new_point = self.leave_one_out_sobol(point_loo)
                     break
                 elif method == 'extrema':
                     new_point, refined_pod_points = self.extrema(refined_pod_points)
@@ -354,8 +354,7 @@ class Refiner():
                 else:
                     self.logger.exception("Resampling method does't exits")
                     raise SystemExit
-        
-        self.settings.pod['strategy'][method] -= 1
-            
-        return new_point, refined_pod_points
 
+        self.settings.pod['strategy'][method] -= 1
+
+        return new_point, refined_pod_points

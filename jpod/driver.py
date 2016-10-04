@@ -236,7 +236,9 @@ class Driver():
         else:
             # directly instantiate the pod,
             # the snapshot class is initialized as a by product
-            self.pod = Pod(self.settings.pod['tolerance'], self.settings.pod['dim_max'], self.settings.space['corners'])
+            self.pod = Pod(self.settings.pod['tolerance'],
+                           self.settings.pod['dim_max'],
+                           self.settings.space['corners'])
 
     def sampling_pod(self, update):
         """docstring for static_pod."""
@@ -247,7 +249,7 @@ class Driver():
 
     def resampling_pod(self):
         """Resampling of the POD.
-        
+
         Generate new samples if quality and number of sample are not satisfied.
         From a new sample, it re-generates the POD.
 
@@ -257,12 +259,12 @@ class Driver():
                 "driver's pod has not been initialized, call init_pod first.")
 
         while len(self.pod.points) < self.settings.space['size_max']:
-            quality, _ = self.pod.estimate_quality()
+            quality, point_loo = self.pod.estimate_quality()
             if quality >= self.settings.pod['quality']:
                 break
 
             try:
-                new_point = self.space.refine(self.pod)
+                new_point = self.space.refine(self.pod, point_loo)
             except FullSpaceError:
                 break
 
@@ -284,7 +286,8 @@ class Driver():
         else:
             output = None
 
-        self.pod.predict(self.settings.prediction['method'], self.settings.prediction['points'], output)
+        self.pod.predict(self.settings.prediction['method'],
+                         self.settings.prediction['points'], output)
 
     def prediction_without_computation(self, write=False):
         if self.external_pod is not None \
