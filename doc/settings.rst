@@ -8,16 +8,17 @@ Introduction
 ^^^^^^^^^^^^
 
 
-| A detailed analysis about ``settings_template.py`` - the most important file in the directory ``scripts`` - will be presented in this document
-
-| In this file, there are five blocks with different functions:
+The file ``settings.py`` contains the configuration of JPOD. It can is devided into 5 blocks.
 
 
-Block 1 - Parameters space
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Block 1 - Space of Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+First of all, we define the space of parameters using an hypercube. Taking the minimal and the maximal value along all coordinates allow to describe it.
 
-| In this block, we create the coordinate with the sampling points and chose the method to generate these points.
+.. figure:: fig/hypercube.pdf
+
+   3-dimentionnal hypercube
 
 .. code-block:: python
 
@@ -29,29 +30,22 @@ Block 1 - Parameters space
                               }
               }
 
-+ | ``corners``: Define a portion of space.
-+ | ``delta_space``: Make an additional exterior space with the selected space for taking sample points in the borders.
-+ | ``size_max``: Maximum number of point for POD automatic resampling.
-+ | ``method``: One of method in OpenTURNS such as: *uniform*, *halton*, *sobol*, *lhcc* (Latin Hypercube Centered) or *lhcr* (Latin Hypercube Random).
-+ | ``size``: Number of samples to be generated.
++ ``corners``: define the space using corners of the hypercube,
++ ``delta_space``: extend the space defined by corners,
++ ``size_max``: maximum number of point to be calculated,
++ ``method``: method to create the DoE: *uniform*, *faure*, *halton*, *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling) or *lhsc* (Latin Hypercube  Sampling Centered),
++ ``size``: initial size of the DoE.
 
+Extention of the space can improve predictions as some points, *delta_space* of them, would be located outside. Indeed, the surrogate models are interpolant methods, not extrapolant methods. Thus, they perform well if there are points surrounding the prediction point.
 
-Some useful information
-"""""""""""""""""""""""
+The method used to create the DoE is paramount. It ensure that that the physics will be captured correclty all over the domain of interest, see :ref:`space`. All *faure*, *halton* and *sobol* methods are low discrepancy sequences with good filling properties. ``halton`` is favoured.
 
-+ | In *probability theory and statistics*, a **probability density function (PDF)** is used to represent a probability in the form of integrals.
-+ | **Uniform distribution**: Depending on the nature of the PDF, this distribution can be *continuous* or *discrete*. In the case of *Continuous uniform distribution*, according to the probability distribution, all of the intervals with the same length have the same probability. Due to the shape of the PDF, it also known as *Rectangular distribution*.
-+ | **Halton distribution**: It is constructed according to a *deterministic method* that uses coprime numbers as its bases.
-+ | **Sobol distribution**: It is an example of *quasi-random* (or *low-discrepancy*) sequence in the range from 0 to 1.
-+ | **Latin Hypercube distribution**: It is a statistical method for generating a near-random sample of parameter values from a multidimensional distribution. In particular, the sampling in each grid is *centered* or *random* corresponding to *LHCC* or *LHCR*.
-
-|
 
 Block 2 - Snapshot provider
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-| It could be *a python function*, *a python list of directories* or *a python dictionary* with settings for using *an external program* like submitting *elsA* jobs.
+It could be *a python function*, *a python list of directories* or *a python dictionary* with settings for using *an external program* like submitting *elsA* jobs.
 
 .. code-block:: python
 

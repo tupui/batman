@@ -112,8 +112,8 @@ def main():
 
     # Positionnal arguments
     parser.add_argument(
-        'task',
-        help='path to the task to run')
+        'settings',
+        help='path to settings file')
 
     # Optionnal arguments
     parser.add_argument(
@@ -170,10 +170,10 @@ def main():
     # parse command line
     options = parser.parse_args()
 
-    settings = import_file(options.task)
+    settings = import_file(options.settings)
 
     # store settings absolute file path
-    options.script = os.path.abspath(options.task)
+    options.script = os.path.abspath(options.settings)
 
     run(settings, options)
 
