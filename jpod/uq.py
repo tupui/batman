@@ -103,25 +103,22 @@ class UQ:
         self.pod = jpod
         self.p_lst = settings['snapshot']['io']['parameter_names']
         self.p_len = len(self.p_lst)
-        try:
-            self.method_sobol = settings['uq']['method']
-            self.type_indices = settings['uq']['type']
-            self.points_sample = settings['uq']['sample']
-            pdf = settings['uq']['pdf']
-        except KeyError:
-            self.logger.exception("Need to configure method, type, sample and PDF")
-            raise SystemExit
-
+        self.method_sobol = settings['uq']['method']
+        self.type_indices = settings['uq']['type']
+        self.points_sample = settings['uq']['sample']
+        pdf = settings['uq']['pdf']
         input_pdf = "ot." + pdf[0]
         for i in range(self.p_len - 1):
             input_pdf = input_pdf + ", ot." + pdf[i + 1]
-        self.distribution = eval("ot.ComposedDistribution([" \
-            + input_pdf + "], ot.IndependentCopula(self.p_len))")
+        self.distribution = eval("ot.ComposedDistribution(["
+                                 + input_pdf
+                                 + "], ot.IndependentCopula(self.p_len))")
         # self.experiment = ot.MonteCarloExperiment(self.distribution, self.points_sample)
         self.experiment = ot.LHSExperiment(self.distribution,
                                            self.points_sample)
         self.sample = self.experiment.generate()
-        self.logger.info("Created {} samples with an LHS experiment".format(self.points_sample))
+        self.logger.info("Created {} samples with an LHS experiment"
+                         .format(self.points_sample))
 
         self.method_pod = settings['prediction']['method']
         self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]

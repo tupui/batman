@@ -278,7 +278,6 @@
     "space",
     "pod",
     "snapshot",
-    "prediction",
-    "uq"
+    "prediction"
   ]
 }

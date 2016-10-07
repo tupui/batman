@@ -33,6 +33,7 @@ with open(path + '/misc/logging.json', 'r') as file:
 
 dictConfig(logging_config)
 
+
 def run(settings, options):
     """Run the driver along."""
     if options.verbose:
@@ -102,20 +103,21 @@ def abs_path(value):
 
 
 def import_config(path_config, path_schema):
-    '''Import a configuration file.'''
+    """Import a configuration file."""
     logger = logging.getLogger('Settings Validation')
 
     with open(path_config, 'r') as file:
         settings = json.load(file)
-    
+
     with open(path_schema, 'r') as file:
         schema = json.load(file)
-    
+
     error = False
     try:
         validator = jsonschema.Draft4Validator(schema)
         for error in sorted(validator.iter_errors(settings), key=str):
-            logger.exception(error.message, error.path)
+            logger.error("Error: {}\n\tOrigin: {}"
+                         .format(error.message, error.path))
             error = True
     except jsonschema.ValidationError as e:
         logger.exception(e.message)
@@ -123,7 +125,7 @@ def import_config(path_config, path_schema):
     if not error:
         logger.info("Settings successfully imported and checked")
     else:
-        logger.exception("Error were found in configuration file")
+        logger.error("Error were found in configuration file")
         raise SystemExit
 
     return settings
@@ -207,7 +209,7 @@ def main():
     schema = path + "/misc/schema.json"
     settings = import_config(options.settings, schema)
 
-    if options.check:    
+    if options.check:
         raise SystemExit
 
     # store settings absolute file path
