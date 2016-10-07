@@ -102,6 +102,7 @@ setup(
     entry_points={'console_scripts': ['jpod=jpod.ui:main']},
     # Package requirements
     install_requires=['sphinx_rtd_theme',
+                      'jsonschema',
                       'futures',
                       'rpyc',
                       'mpi4py',

@@ -56,9 +56,9 @@ class Refiner():
         """
         self.pod = pod
         self.points = copy.deepcopy(pod.points)
-        self.kind = settings.prediction['method']
+        self.kind = settings['prediction']['method']
         self.settings = settings
-        self.corners = np.array(settings.space['corners']).T
+        self.corners = np.array(settings['space']['corners']).T
 
     def func(self, coords, sign):
         r"""Get the prediction for a given point.
@@ -323,18 +323,18 @@ class Refiner():
         self.logger.info(">>---Hybrid strategy---<<")
 
         try:
-            self.logger.debug('Strategy: {}'.format(self.settings.pod['strategy_full'])) 
+            self.logger.debug('Strategy: {}'.format(self.settings['pod']['strategy_full'])) 
         except KeyError:
-            self.settings.pod['strategy_full'] = self.settings.pod['strategy']
+            self.settings['pod']['strategy_full'] = self.settings['pod']['strategy']
             self.logger.info('Strategy: {}'
-                             .format(self.settings.pod['strategy_full']))
+                             .format(self.settings['pod']['strategy_full']))
 
-        self.settings.pod['strategy'] = OrderedDict(self.settings.pod['strategy'])
-        strategies = self.settings.pod['strategy']
+        self.settings['pod']['strategy'] = OrderedDict(self.settings['pod']['strategy'])
+        strategies = self.settings['pod']['strategy']
 
         if sum(strategies.values()) == 0:
-            self.settings.pod['strategy'] = OrderedDict(self.settings.pod['strategy_full'])
-            strategies = self.settings.pod['strategy']
+            self.settings['pod']['strategy'] = OrderedDict(self.settings['pod']['strategy_full'])
+            strategies = self.settings['pod']['strategy']
 
         new_point = []
         for method in strategies:
@@ -355,6 +355,6 @@ class Refiner():
                     self.logger.exception("Resampling method does't exits")
                     raise SystemExit
 
-        self.settings.pod['strategy'][method] -= 1
+        self.settings['pod']['strategy'][method] -= 1
 
         return new_point, refined_pod_points

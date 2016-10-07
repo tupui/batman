@@ -97,9 +97,9 @@ class Space(SpaceBase):
         super(Space, self).__init__()
 
         self.settings = settings
-        corners_user = settings.space['corners']
-        delta_space = settings.space['delta_space']
-        self.max_points_nb = int(settings.space['size_max'])
+        corners_user = settings['space']['corners']
+        delta_space = settings['space']['delta_space']
+        self.max_points_nb = int(settings['space']['size_max'])
 
         # Extension of space
         c1 = []
@@ -188,7 +188,7 @@ class Space(SpaceBase):
         """
         refiner = Refiner(pod, self.settings)
         # Refinement strategy
-        method = self.settings.pod['resample']
+        method = self.settings['pod']['resample']
         if method == 'MSE':
             new_point = refiner.mse()
         elif method == 'loo_mse':

@@ -100,15 +100,15 @@ class Driver():
 
     def _init_snapshot(self):
         """docstring for _init_snapshot"""
-        Snapshot.initialize(self.settings.snapshot['io'])
+        Snapshot.initialize(self.settings['snapshot']['io'])
 
         # snapshot generation
-        self.provider = SnapshotProvider(self.settings.snapshot['provider'])
+        self.provider = SnapshotProvider(self.settings['snapshot']['provider'])
 
         if self.provider.is_job:
             # compute relative path to snapshot files
             data_files = []
-            for files in self.settings.snapshot['io']['filenames'].values():
+            for files in self.settings['snapshot']['io']['filenames'].values():
                 for f in files:
                     data_files += [
                         os.path.join(
@@ -125,7 +125,7 @@ class Driver():
 
             # snapshots generation manager
             self.snapshooter = futures.ThreadPoolExecutor(
-                max_workers=self.settings.snapshot['max_workers'])
+                max_workers=self.settings['snapshot']['max_workers'])
 
     def _init_space(self):
         # space
@@ -152,7 +152,7 @@ class Driver():
                     self.initial_points[point] = path
 
         else:
-            space_provider = self.settings.space['provider']
+            space_provider = self.settings['space']['provider']
             if isinstance(space_provider, list):
                 # a list of points is provided
                 self.logger.info('Reading list of points from the settings.')
@@ -218,27 +218,27 @@ class Driver():
             self.pod.decompose(snapshots)
 
     def init_pod(self, script):
-        if self.settings.pod['server'] is not None:
+        if self.settings['pod']['server'] is not None:
             if mpi.size > 1:
                 raise Exception(
                     'When using the external pod, the driver must be sequential.')
 
             self.logger.info('Using external pod.')
             # get the pod server running and connect to its through its proxy
-            self.external_pod = PodServerTask(self.settings.pod['server']['port'],
-                                              self.settings.pod['server']['python'],
+            self.external_pod = PodServerTask(self.settings['pod']['server']['port'],
+                                              self.settings['pod']['server']['python'],
                                               script, self.output)
             self.external_pod.run()
             # self.external_pod._after_run()
-            self.pod = self.external_pod.proxy.Pod(self.settings.pod['tolerance'],
-                                                   self.settings.pod['dim_max'],
-                                                   self.settings.snapshot['io'])
+            self.pod = self.external_pod.proxy.Pod(self.settings['pod']['tolerance'],
+                                                   self.settings['pod']['dim_max'],
+                                                   self.settings['snapshot']['io'])
         else:
             # directly instantiate the pod,
             # the snapshot class is initialized as a by product
-            self.pod = Pod(self.settings.pod['tolerance'],
-                           self.settings.pod['dim_max'],
-                           self.settings.space['corners'])
+            self.pod = Pod(self.settings['pod']['tolerance'],
+                           self.settings['pod']['dim_max'],
+                           self.settings['space']['corners'])
 
     def sampling_pod(self, update):
         """docstring for static_pod."""
@@ -258,9 +258,9 @@ class Driver():
             raise Exception(
                 "driver's pod has not been initialized, call init_pod first.")
 
-        while len(self.pod.points) < self.settings.space['size_max']:
+        while len(self.pod.points) < self.settings['space']['size_max']:
             quality, point_loo = self.pod.estimate_quality()
-            if quality >= self.settings.pod['quality']:
+            if quality >= self.settings['pod']['quality']:
                 break
 
             try:
@@ -286,8 +286,8 @@ class Driver():
         else:
             output = None
 
-        self.pod.predict(self.settings.prediction['method'],
-                         self.settings.prediction['points'], output)
+        self.pod.predict(self.settings['prediction']['method'],
+                         self.settings['prediction']['points'], output)
 
     def prediction_without_computation(self, write=False):
         if self.external_pod is not None \
@@ -297,7 +297,7 @@ class Driver():
             output = None
         model = self.read_model()
         self.pod.predict_without_computation(
-            model, self.settings.prediction['points'], output)
+            model, self.settings['prediction']['points'], output)
 
     def write_model(self):
         """docstring for static_pod."""

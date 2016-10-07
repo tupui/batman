@@ -92,7 +92,7 @@ class UQ:
         """
         self.logger.info("UQ module")
         try:
-            self.test = settings.uq['test']
+            self.test = settings['uq']['test']
         except:
             self.test = None
         self.output_folder = output
@@ -101,13 +101,13 @@ class UQ:
         except:
             self.logger.debug("Output folder already exists.")
         self.pod = jpod
-        self.p_lst = settings.snapshot['io']['parameter_names']
+        self.p_lst = settings['snapshot']['io']['parameter_names']
         self.p_len = len(self.p_lst)
         try:
-            self.method_sobol = settings.uq['method']
-            self.type_indices = settings.uq['type']
-            self.points_sample = settings.uq['sample']
-            pdf = settings.uq['pdf']
+            self.method_sobol = settings['uq']['method']
+            self.type_indices = settings['uq']['type']
+            self.points_sample = settings['uq']['sample']
+            pdf = settings['uq']['pdf']
         except KeyError:
             self.logger.exception("Need to configure method, type, sample and PDF")
             raise SystemExit
@@ -123,12 +123,12 @@ class UQ:
         self.sample = self.experiment.generate()
         self.logger.info("Created {} samples with an LHS experiment".format(self.points_sample))
 
-        self.method_pod = settings.prediction['method']
-        self.output_len = settings.snapshot['io']['shapes'][0][0][0]
+        self.method_pod = settings['prediction']['method']
+        self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]
         self.f_input = None
         self.model = ot.PythonFunction(self.p_len, self.output_len, self.func)
         self.int_model = ot.PythonFunction(self.p_len, 1, self.int_func)
-        self.snapshot = settings.space['size_max']
+        self.snapshot = settings['space']['size_max']
 
     def __repr__(self):
         """Information about object."""

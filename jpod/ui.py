@@ -5,9 +5,9 @@ from logging.config import dictConfig
 import argparse
 import os
 import json
+import jsonschema
 
 from jpod import __version__, __branch__, __commit__
-from jpod import import_file
 from jpod import Driver
 from jpod import mpi
 
@@ -15,26 +15,26 @@ description_message = '''
 JPOD creates a surrogate model using POD+Kriging and perform UQ.
 '''
 
-jpod_banner = r"""
-    _____  _______    ______   _______
-   |     \|       \  /      \ |       \
-    \$$$$$| $$$$$$$\|  $$$$$$\| $$$$$$$\
-      | $$| $$__/ $$| $$  | $$| $$  | $$
- __   | $$| $$    $$| $$  | $$| $$  | $$
-|  \  | $$| $$$$$$$ | $$  | $$| $$  | $$
-| $$__| $$| $$      | $$__/ $$| $$__/ $$
- \$$    $$| $$       \$$    $$| $$    $$
-  \$$$$$$  \$$        \$$$$$$  \$$$$$$$
+banner = r"""
+ /$$$$$$$   /$$$$$$  /$$$$$$$$ /$$      /$$  /$$$$$$  /$$   /$$
+| $$__  $$ /$$__  $$|__  $$__/| $$$    /$$$ /$$__  $$| $$$ | $$
+| $$  \ $$| $$  \ $$   | $$   | $$$$  /$$$$| $$  \ $$| $$$$| $$
+| $$$$$$$ | $$$$$$$$   | $$   | $$ $$/$$ $$| $$$$$$$$| $$ $$ $$
+| $$__  $$| $$__  $$   | $$   | $$  $$$| $$| $$__  $$| $$  $$$$
+| $$  \ $$| $$  | $$   | $$   | $$\  $ | $$| $$  | $$| $$\  $$$
+| $$$$$$$/| $$  | $$   | $$   | $$ \/  | $$| $$  | $$| $$ \  $$
+|_______/ |__/  |__/   |__/   |__/     |__/|__/  |__/|__/  \__/
+BAyesian Tool for Modelling and uncertainty ANalysis
 """
 
-path = os.path.dirname(os.path.realpath(__file__)) + '/misc/logging.json'
-with open(path, 'r') as file:
+path = os.path.dirname(os.path.realpath(__file__))
+with open(path + '/misc/logging.json', 'r') as file:
     logging_config = json.load(file)
 
+dictConfig(logging_config)
 
 def run(settings, options):
     """Run the driver along."""
-    dictConfig(logging_config)
     if options.verbose:
         console = logging.getLogger().handlers[0]
         console.setLevel(logging.DEBUG)
@@ -43,7 +43,7 @@ def run(settings, options):
 
     logger = logging.getLogger('JPOD main')
 
-    logger.info(jpod_banner)
+    logger.info(banner)
     logger.info("Branch: {}\n\
         Last commit: {}".format(__branch__, __commit__))
 
@@ -55,7 +55,7 @@ def run(settings, options):
 
     driver = Driver(settings, options.script, options.output)
 
-    update = settings.pod['type'] != 'static'
+    update = settings['pod']['type'] != 'static'
 
     if not options.no_pod and not options.pred:
         # the pod will be computed
@@ -65,7 +65,7 @@ def run(settings, options):
 
         driver.sampling_pod(update)
 
-        if settings.pod['resample'] is not None:
+        if settings['pod']['resample'] is not None:
             driver.resampling_pod()
 
         driver.write_pod()
@@ -101,6 +101,34 @@ def abs_path(value):
     return os.path.abspath(value)
 
 
+def import_config(path_config, path_schema):
+    '''Import a configuration file.'''
+    logger = logging.getLogger('Settings Validation')
+
+    with open(path_config, 'r') as file:
+        settings = json.load(file)
+    
+    with open(path_schema, 'r') as file:
+        schema = json.load(file)
+    
+    error = False
+    try:
+        validator = jsonschema.Draft4Validator(schema)
+        for error in sorted(validator.iter_errors(settings), key=str):
+            logger.exception(error.message, error.path)
+            error = True
+    except jsonschema.ValidationError as e:
+        logger.exception(e.message)
+
+    if not error:
+        logger.info("Settings successfully imported and checked")
+    else:
+        logger.exception("Error were found in configuration file")
+        raise SystemExit
+
+    return settings
+
+
 def main():
     """Parse and check options, and then call run()."""
     # parser
@@ -121,6 +149,12 @@ def main():
         action='store_true',
         default=False,
         help='set verbosity from WARNING to DEBUG, [default: %(default)s]')
+
+    parser.add_argument(
+        '-c', '--check',
+        action='store_true',
+        default=False,
+        help='check settings, [default: %(default)s]')
 
     parser.add_argument(
         '-s', '--save-snapshots',
@@ -170,7 +204,11 @@ def main():
     # parse command line
     options = parser.parse_args()
 
-    settings = import_file(options.settings)
+    schema = path + "/misc/schema.json"
+    settings = import_config(options.settings, schema)
+
+    if options.check:    
+        raise SystemExit
 
     # store settings absolute file path
     options.script = os.path.abspath(options.settings)
