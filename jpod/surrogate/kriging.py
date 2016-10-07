@@ -35,6 +35,7 @@ except ImportError:
     raise NotImplementedError('No Kriging available, without scikits.learn module.')
 import numpy as np
 import logging
+from scipy.optimize import differential_evolution
 
 
 class Kriging():
@@ -67,11 +68,23 @@ class Kriging():
         # Create a predictor per output
         for column in output.T:
             gp = GaussianProcessRegressor(kernel=self.kernel,
-                                          n_restarts_optimizer=100)
+                                          n_restarts_optimizer=1,
+                                          optimizer=self.optim_evolution)
             self.data += [gp.fit(input, column)]
             self.hyperparameter += [np.exp(gp.kernel_.theta)]
 
         self.logger.debug("Hyperparameters: {}".format(self.hyperparameter))
+
+    def optim_evolution(self, obj_func, initial_theta, bounds):
+
+        def func(args):
+            return obj_func(args)[0]
+
+        results = differential_evolution(func, bounds)
+        theta_opt = results.x
+        func_min = results.fun
+
+        return theta_opt, func_min
 
     def evaluate(self, point):
         """Make a prediction.

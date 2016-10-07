@@ -1,6 +1,6 @@
 import logging
 import os
-import pickle
+import dill as pickle
 import copy
 
 from .core import Core
@@ -248,6 +248,7 @@ class Pod(Core):
 
     def write_model(self, path):
             """Save model to disk.
+
             Write a file containing information on the model
 
             :param str path: path to a directory.
@@ -262,6 +263,7 @@ class Pod(Core):
     @staticmethod
     def read_model(path):
         """Read the model from disk.
+
         :param str path: path to a output/pod directory.
         """
         file_name = os.path.join(path, 'model')
@@ -269,4 +271,3 @@ class Pod(Core):
             mon_depickler = pickle.Unpickler(fichier)
             model_recupere = mon_depickler.load()
         return model_recupere
-
