@@ -78,7 +78,8 @@ class SpaceBase(list):
 
     def empty(self):
         """Remove all points."""
-        [self.pop() for i in self]
+        for i in range(len(self)):
+            self.pop()
 
 
 class Space(SpaceBase):
@@ -99,7 +100,7 @@ class Space(SpaceBase):
         self.settings = settings
         corners_user = settings['space']['corners']
         delta_space = settings['space']['delta_space']
-        self.max_points_nb = int(settings['space']['size_max'])
+        self.max_points_nb = settings['space']['size_max']
 
         # Extension of space
         c1 = []

@@ -326,7 +326,9 @@ class Driver():
         processed_points = self.pod.points
         self.snapshot_counter = len(processed_points)
 
-        if set(processed_points).issubset(self.initial_points):
+        # print processed_points, self.initial_points.size
+        # if set(processed_points).issubset(self.initial_points):
+        if len(processed_points) < self.initial_points.size:
                 # static or dynamic pod is not finished, the remaining points have
                 # to be processed
             self.initial_points = [p for p in self.initial_points
