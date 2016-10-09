@@ -128,6 +128,10 @@ def run(settings, options):
                 use_output = check_yes_no(prompt, default='yes')
                 root = os.path.join(options.output, 'snapshots')
 
+                if not os.path.isdir(root):
+                    logger.warning("No folder named snapshots in output folder")
+                    raise SystemExit
+
                 def key(arg):
                     return int(os.path.basename(
                         os.path.dirname(os.path.normpath(arg))))
