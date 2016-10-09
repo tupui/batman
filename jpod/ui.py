@@ -34,6 +34,69 @@ with open(path + '/misc/logging.json', 'r') as file:
 dictConfig(logging_config)
 
 
+def check_del():
+    """Ask user for delete confirmation."""
+    logger = logging.getLogger('User checking')
+    while True:
+        prompt = "Output folder exists, sure you want to delete it? [Y/n] > "
+        try:
+            try:
+                value = raw_input(prompt)
+            except NameError:
+                value = input(prompt)
+        except ValueError:
+            logger.error("Sorry, I didn't understand that.")
+            continue
+
+        value = value.lower()
+        if not all(x in "yesno " for x in value.lower()):
+            logger.error("Sorry, your response must be yes, or no.")
+            continue
+        elif value is '':
+            value = 'yes'
+            break
+        else:
+            break
+
+    answer = True if value.strip()[0] is 'y' else False
+
+    return answer
+
+
+def abs_path(value):
+    """Get absolute path."""
+    return os.path.abspath(value)
+
+
+def import_config(path_config, path_schema):
+    """Import a configuration file."""
+    logger = logging.getLogger('Settings Validation')
+
+    with open(path_config, 'r') as file:
+        settings = json.load(file)
+
+    with open(path_schema, 'r') as file:
+        schema = json.load(file)
+
+    error = False
+    try:
+        validator = jsonschema.Draft4Validator(schema)
+        for error in sorted(validator.iter_errors(settings), key=str):
+            logger.error("Error: {}\n\tOrigin: {}"
+                         .format(error.message, error.path))
+            error = True
+    except jsonschema.ValidationError as e:
+        logger.exception(e.message)
+
+    if not error:
+        logger.info("Settings successfully imported and checked")
+    else:
+        logger.error("Error were found in configuration file")
+        raise SystemExit
+
+    return settings
+
+
 def run(settings, options):
     """Run the driver along."""
     if options.verbose:
@@ -50,6 +113,13 @@ def run(settings, options):
 
     # clean up output directory
     if not options.restart and not options.no_pod and not options.pred:
+        # check if output is empty and ask for confirmation
+        if os.path.isdir(options.output):
+            delete = check_del()
+        if not delete:
+            logger.warning('Stopped to prevent deletion. Change options')
+            raise SystemExit
+
         mpi.clean_makedirs(options.output)
         # tell that the output directory has previously been clean
         logger.debug('cleaning : {}'.format(options.output))
@@ -95,40 +165,6 @@ def run(settings, options):
 
     if options.uq:
         driver.uq()
-
-
-def abs_path(value):
-    """Get absolute path."""
-    return os.path.abspath(value)
-
-
-def import_config(path_config, path_schema):
-    """Import a configuration file."""
-    logger = logging.getLogger('Settings Validation')
-
-    with open(path_config, 'r') as file:
-        settings = json.load(file)
-
-    with open(path_schema, 'r') as file:
-        schema = json.load(file)
-
-    error = False
-    try:
-        validator = jsonschema.Draft4Validator(schema)
-        for error in sorted(validator.iter_errors(settings), key=str):
-            logger.error("Error: {}\n\tOrigin: {}"
-                         .format(error.message, error.path))
-            error = True
-    except jsonschema.ValidationError as e:
-        logger.exception(e.message)
-
-    if not error:
-        logger.info("Settings successfully imported and checked")
-    else:
-        logger.error("Error were found in configuration file")
-        raise SystemExit
-
-    return settings
 
 
 def main():

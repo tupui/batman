@@ -78,8 +78,7 @@ class SpaceBase(list):
 
     def empty(self):
         """Remove all points."""
-        for i in range(len(self)):
-            self.pop()
+        del self[:]
 
 
 class Space(SpaceBase):
