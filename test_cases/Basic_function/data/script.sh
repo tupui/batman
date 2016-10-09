@@ -6,9 +6,6 @@
 #SBATCH --mail-user=jouhaud@cerfacs.fr
 #SBATCH --share
 
-module load python
-
 mkdir cfd-output-data
-cd $SLURM_SUBMIT_DIR
 
 python function.py > function.out

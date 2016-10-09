@@ -2,12 +2,12 @@
 space = {
 # Lower and upper end points (corners) that define a portion of space.
 # format : 2-tuple of tuples with end points coordinates.
-   'corners'         : ((1., 1.),
-                        (3.1415, 3.1415),),
+   'corners'         : ((-3.1415, -3.1415, -3.1415),
+                        (3.1415, 3.1415, 3.1415),),
    'delta_space'     : 0.01,                         
 # Maximum number of point, used for pod automatic resampling
 # format : integer
-    'size_max'  : 21,
+    'size_max' : 7 ,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
     'provider' : {
@@ -16,7 +16,7 @@ space = {
         'method' : 'halton',
     # Number of samples to be generated
     # format : integer
-        'size'   : 20,
+        'size' : 6 ,
     }
 }
 
@@ -24,16 +24,13 @@ space = {
 
 snapshot = {
 # Snapshot provider
-# Could be a python function, a python list of directories or a python dictionary with settings for using an external program like submitting elsA jobs (see snapshot_provider for examples).
-#    'provider' : functions.partial(functions.f1, 5),
 # Maximum number of simultaneous running snapshot provider
-# format : integer > 0
     'max_workers' : 50,
 # Input output settings
     'io' : {
     # Names of the parameters
     # format : list of strings
-        'parameter_names': ['x1','x2'],
+        'parameter_names': ['x1','x2', 'x3'],
     # File format
     # format : one of 'fmt_tp', 'numpy'
         'format' : 'fmt_tp',
@@ -65,21 +62,21 @@ pod = {
 # format : integer
     'dim_max'   : 100,
 # Type of pod to perform.
-# format : one of 'static', 'dynamic', 'auto'
+# format : one of 'static', 'dynamic'
     'type'      : 'static',
 # Resampling strategy: None, 'MSE', 'loo_mse', 'loo_sobol', 'extrema', 'hybrid'
-    'resample'  : 'extrema',
+    'resample'  : 'MSE',
     'strategy' : (('MSE', 2), ('loo_sobol', 0), ('extrema', 1)),
-# Stopping criterion for automatic resampling
+# Stopping criterion for resampling
 # format : float
-    'quality'   : 0.8,
+    'quality'   : 0.80,            
 # Server settings
 # None means no server, the pod processing is run from the main python interpreter
     'server' : None,
 # Otherwise the pod processing is run in another process or on another computer, the settings is a dictionary with the following parameters.
     # 'server' : {
     #     # Server hostname with port
-    #         'port'   : 8000,
+    #         'port'   : 800199,
     #     # Python executable that runs the server
     #         'python' : 'python',
     #     },
@@ -91,30 +88,28 @@ prediction = {
     'method' : 'kriging',
 # Set of points at which the predictions are made
 # format : list of tuples of floats
-    'points' : [ ],
+    'points' : [],
 }
 
 uq = {
 # Type of Sobol analysis: 'sobol', 'FAST' (if FAST, no second-order indices)
     'method' : 'sobol',
-    # Type of indices we want: 'aggregated', 'block'
+# Type of indices we want: 'aggregated', 'block'
     'type' : 'aggregated',
-    # Use a test method: 'Ishigami'
-    'sample' : 5000 ,
-    # Uncertainty propagation. Enter the PDF of the inputs. x1: Normal(mu, sigma), x2: Uniform(inf, sup)
-    'pdf' : ['Uniform(-2.048, 2.048)', 'Uniform(-2.048, 2.048)']
+# Use a test method: 'Ishigami'
+    'test' : 'Ishigami',
+    'sample' : 1000 ,
+# Uncertainty propagation. Enter the PDF of the inputs. x1: Normal(mu, sigma), x2: Uniform(inf, sup)
+    'pdf' : ['Uniform(-3.1415, 3.1415)', 'Uniform(-3.1415, 3.1415)', 'Uniform(-3.1415, 3.1415)']
 }
 
-
-
-import numpy as N
-num = 25 
-x = N.linspace(space['corners'][0][0], space['corners'][1][0], num=num)
-y = N.linspace(space['corners'][0][1], space['corners'][1][1], num=num)
-xy = []
-for i in x:
-    for j in y:
-        xy += [(float(i),float(j))]
-        prediction['points'] = xy
-
-
+import numpy as np
+import itertools
+num = 25
+x = np.linspace(space['corners'][0][0], space['corners'][1][0], num=num)
+y = np.linspace(space['corners'][0][1], space['corners'][1][1], num=num)
+z = np.linspace(space['corners'][0][1], space['corners'][1][1], num=num)
+xyz = []
+for i, j, k in itertools.product(x, y, z):
+    xyz += [(float(i), float(j), float(k))]
+    prediction['points'] = xyz

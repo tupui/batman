@@ -4,11 +4,11 @@
             [1.0, 1.0],
             [3.1415, 3.1415]
         ],
-        "size_max": 10,
+        "size_max": 15,
         "delta_space": 0.01,
         "provider": {
-            "method": "lhs",
-            "size": 10
+            "method": "halton",
+            "size": 15
         }
     },
     "pod": {
@@ -42,8 +42,8 @@
         "provider": {
             "command": "bash",
             "timeout": 3600,
-            "context": "data/generator_llsubmit",
-            "script": "data/generator_llsubmit/script.sh",
+            "context": "data",
+            "script": "data/script.sh",
             "clean": false,
             "private-directory": "jpod-data",
             "data-directory": "cfd-output-data",
