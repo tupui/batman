@@ -34,11 +34,16 @@ with open(path + '/misc/logging.json', 'r') as file:
 dictConfig(logging_config)
 
 
-def check_del():
-    """Ask user for delete confirmation."""
+def check_yes_no(prompt, default):
+    """Ask user for delete confirmation.
+
+    :param str prompt: yes-no question
+    :param str default: default value
+    :returns: true if yes
+    :rtype: boolean
+    """
     logger = logging.getLogger('User checking')
     while True:
-        prompt = "Output folder exists, sure you want to delete it? [Y/n] > "
         try:
             try:
                 value = raw_input(prompt)
@@ -53,7 +58,7 @@ def check_del():
             logger.error("Sorry, your response must be yes, or no.")
             continue
         elif value is '':
-            value = 'yes'
+            value = default
             break
         else:
             break
@@ -111,18 +116,36 @@ def run(settings, options):
     logger.info("Branch: {}\n\
         Last commit: {}".format(__branch__, __commit__))
 
-    # clean up output directory
+    # clean up output directory or re-use it
     if not options.restart and not options.no_pod and not options.pred:
+        delete = True
         # check if output is empty and ask for confirmation
         if os.path.isdir(options.output):
-            delete = check_del()
-        if not delete:
-            logger.warning('Stopped to prevent deletion. Change options')
-            raise SystemExit
+            prompt = "Output folder exists, delete it? [y/N] > "
+            delete = check_yes_no(prompt, default='no')
+            if not delete:
+                prompt = "Re-use output results? [Y/n] > "
+                use_output = check_yes_no(prompt, default='yes')
+                root = os.path.join(options.output, 'snapshots')
 
-        mpi.clean_makedirs(options.output)
-        # tell that the output directory has previously been clean
-        logger.debug('cleaning : {}'.format(options.output))
+                def key(arg):
+                    return int(os.path.basename(
+                        os.path.dirname(os.path.normpath(arg))))
+                settings['snapshot']['provider'] = sorted([os.path.join(
+                    root, d, 'jpod-data')
+                    for d in os.listdir(root)],
+                    key=key)
+                settings['snapshot']['io']['template_directory'] = \
+                    os.path.join(root, '0', 'jpod-data')
+                settings['snapshot']['io']['shapes'] = None
+
+                if not use_output:
+                    logger.warning(
+                        'Stopped to prevent deletion. Change options')
+                    raise SystemExit
+        if delete:
+            mpi.clean_makedirs(options.output)
+            logger.debug('cleaning : {}'.format(options.output))
 
     driver = Driver(settings, options.script, options.output)
 
