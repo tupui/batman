@@ -76,7 +76,7 @@ class Kriging():
         self.logger.debug("Hyperparameters: {}".format(self.hyperparameter))
 
     def optim_evolution(self, obj_func, initial_theta, bounds):
-
+        """Genetic optimization of the hyperparameters."""
         def func(args):
             return obj_func(args)[0]
 

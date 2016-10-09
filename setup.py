@@ -16,7 +16,6 @@ Usage
 
 from setuptools import (setup, find_packages, Command)
 import re
-import io
 import os
 import subprocess
 
@@ -72,6 +71,7 @@ except ImportError:
 
 
 def find_version(*file_paths):
+    """Find version number, commit and branch."""
     with open(os.path.join(os.path.dirname(__file__), *file_paths),
               'r') as f:
         version_file = f.read()

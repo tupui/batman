@@ -5,11 +5,11 @@ from logging.config import dictConfig
 import argparse
 import os
 import json
-import jsonschema
 
 from jpod import __version__, __branch__, __commit__
 from jpod import Driver
 from jpod import mpi
+from jpod import misc
 
 description_message = '''
 JPOD creates a surrogate model using POD+Kriging and perform UQ.
@@ -34,74 +34,6 @@ with open(path + '/misc/logging.json', 'r') as file:
 dictConfig(logging_config)
 
 
-def check_yes_no(prompt, default):
-    """Ask user for delete confirmation.
-
-    :param str prompt: yes-no question
-    :param str default: default value
-    :returns: true if yes
-    :rtype: boolean
-    """
-    logger = logging.getLogger('User checking')
-    while True:
-        try:
-            try:
-                value = raw_input(prompt)
-            except NameError:
-                value = input(prompt)
-        except ValueError:
-            logger.error("Sorry, I didn't understand that.")
-            continue
-
-        value = value.lower()
-        if not all(x in "yesno " for x in value.lower()):
-            logger.error("Sorry, your response must be yes, or no.")
-            continue
-        elif value is '':
-            value = default
-            break
-        else:
-            break
-
-    answer = True if value.strip()[0] is 'y' else False
-
-    return answer
-
-
-def abs_path(value):
-    """Get absolute path."""
-    return os.path.abspath(value)
-
-
-def import_config(path_config, path_schema):
-    """Import a configuration file."""
-    logger = logging.getLogger('Settings Validation')
-
-    with open(path_config, 'r') as file:
-        settings = json.load(file)
-
-    with open(path_schema, 'r') as file:
-        schema = json.load(file)
-
-    error = False
-    try:
-        validator = jsonschema.Draft4Validator(schema)
-        for error in sorted(validator.iter_errors(settings), key=str):
-            logger.error("Error: {}\n\tOrigin: {}"
-                         .format(error.message, error.path))
-            error = True
-    except jsonschema.ValidationError as e:
-        logger.exception(e.message)
-
-    if not error:
-        logger.info("Settings successfully imported and checked")
-    else:
-        logger.error("Error were found in configuration file")
-        raise SystemExit
-
-    return settings
-
-
 def run(settings, options):
     """Run the driver along."""
     if options.verbose:
@@ -122,14 +54,14 @@ def run(settings, options):
         # check if output is empty and ask for confirmation
         if os.path.isdir(options.output):
             prompt = "Output folder exists, delete it? [y/N] > "
-            delete = check_yes_no(prompt, default='no')
+            delete = misc.check_yes_no(prompt, default='no')
             if not delete:
                 prompt = "Re-use output results? [Y/n] > "
-                use_output = check_yes_no(prompt, default='yes')
+                use_output = misc.check_yes_no(prompt, default='yes')
                 root = os.path.join(options.output, 'snapshots')
 
                 if not os.path.isdir(root):
-                    logger.warning("No folder named snapshots in output folder")
+                    logger.warning("No folder snapshots in output folder")
                     raise SystemExit
 
                 def key(arg):
@@ -230,7 +162,7 @@ def main():
 
     parser.add_argument(
         '-o', '--output',
-        type=abs_path,
+        type=misc.abs_path,
         default='./output',
         help='path to output directory, [default: %(default)s]')
 
@@ -270,7 +202,7 @@ def main():
     options = parser.parse_args()
 
     schema = path + "/misc/schema.json"
-    settings = import_config(options.settings, schema)
+    settings = misc.import_config(options.settings, schema)
 
     if options.check:
         raise SystemExit

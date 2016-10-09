@@ -35,7 +35,9 @@ def makedirs(path):
 
 def clean_makedirs(path):
     if myid == 0:
-        if os.path.isdir(path):
+        try:
             shutil.rmtree(path)
+        except OSError:
+            pass
         os.makedirs(path)
     barrier()

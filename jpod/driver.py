@@ -71,19 +71,19 @@ class Driver():
         self.external_pod = None
         '''External pod task handle.'''
 
-        #self.pod = None
+        # self.pod = None
         '''POD processing, either local or external.'''
 
-        #self.snapshooter = None
+        # self.snapshooter = None
         '''Snapshots generation manager.'''
 
-        #self.provider = None
+        # self.provider = None
         '''Snapshot provider, it generates a snapshot.'''
 
-        #self.space = None
+        # self.space = None
         '''Parameter space.'''
 
-        #self.initial_points = None
+        # self.initial_points = None
         '''Points in the parameter space for the static pod.'''
 
         self.snapshot_counter = 0
@@ -99,7 +99,7 @@ class Driver():
         self.init_pod(script)
 
     def _init_snapshot(self):
-        """docstring for _init_snapshot"""
+        """docstring for _init_snapshot."""
         Snapshot.initialize(self.settings['snapshot']['io'])
 
         # snapshot generation
@@ -319,6 +319,8 @@ class Driver():
         analyse.error_propagation()
 
     def restart(self):
+        """Restart process."""
+        # POD has already been computed previously
         self.logger.info('Restarting pod.')
         # read the pod data
         self.pod.read(os.path.join(self.output, self.output_tree['pod']))
@@ -326,17 +328,14 @@ class Driver():
         processed_points = self.pod.points
         self.snapshot_counter = len(processed_points)
 
-        # print processed_points, self.initial_points.size
-        # if set(processed_points).issubset(self.initial_points):
         if len(processed_points) < self.initial_points.size:
-                # static or dynamic pod is not finished, the remaining points have
-                # to be processed
+            # static or dynamic pod is finished,
+            # we add new points to be processed
             self.initial_points = [p for p in self.initial_points
                                    if p not in processed_points]
         else:
-            # static or dynamic pod is done,
-            # the eventual automatic resampling has to continue from the processed points
-            # FIXME: space needs the refiner structure!
+            # automatic resampling has to continue from
+            # the processed points
             self.initial_points = []
             self.space.empty()
             self.space.add(processed_points)
