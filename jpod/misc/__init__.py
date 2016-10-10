@@ -1,8 +1,8 @@
-from .module_import import import_file
-import os
+"""
+Misc module
+***********
+"""
 
-def clean_path(path):
-    """Return an absolute and normalized path."""
-    return os.path.abspath(os.path.normpath(path))
+from .misc import *
 
-__all__ = ['import_file', 'clean_path']
+__all__ = ['clean_path', 'check_yes_no', 'abs_path', 'import_config']

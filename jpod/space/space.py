@@ -1,6 +1,6 @@
+# -*- coding: utf-8 -*-
 import logging
-import pickle
-import numpy as N
+import numpy as np
 import sampling
 from .point import Point
 from .refiner import Refiner
@@ -69,37 +69,37 @@ class SpaceBase(list):
 
     def write(self, path):
         """Write space in the file `path`."""
-        pickle.dump(self, open(path, 'wb'))
+        np.savetxt(path, self)
 
     def read(self, path):
         """Read space from the file `path`."""
         self.empty()
-        self += pickle.load(open(path, 'rb'))
+        self += np.loadtxt(path)
 
     def empty(self):
         """Remove all points."""
-        [self.pop() for i in self]
+        del self[:]
 
 
 class Space(SpaceBase):
+
     """Manages the space of parameters."""
 
     logger = logging.getLogger(__name__)
 
     def __init__(self, settings):
         """Generate a Space.
-        
+
         Dilate the space using the delta space.
 
         :param dict settings: JPOD settings
-
         """
         super(Space, self).__init__()
 
         self.settings = settings
-        corners_user = settings.space['corners']
-        delta_space = settings.space['delta_space']
-        self.max_points_nb = int(settings.space['size_max'])
+        corners_user = settings['space']['corners']
+        delta_space = settings['space']['delta_space']
+        self.max_points_nb = settings['space']['size_max']
 
         # Extension of space
         c1 = []
@@ -137,9 +137,6 @@ class Space(SpaceBase):
         s += super(Space, self).__str__()
         return s
 
-    def __del__(self):
-        pass
-
     def is_full(self):
         """Return whether the maximum number of points is reached."""
         return len(self) >= self.max_points_nb
@@ -170,26 +167,10 @@ class Space(SpaceBase):
         :return: List of points
         :rtype: self
         """
-        if kind == 'halton':
-            sampler = sampling.halton
-        elif kind == 'lhcc':
-            sampler = sampling.clhc
-        elif kind == 'lhcr':
-            sampler = sampling.rlhc
-        elif kind == 'sobol':
-            sampler = sampling.sobol
-        elif kind == 'sobolscramble':
-            sampler = sampling.sobol_scramble
-        elif kind == 'faure':
-            sampler = sampling.faure
-        elif kind == 'uniform':
-            sampler = sampling.uniform
-            n = [n] * len(self.corners[1])
-        else:
-            raise ValueError('Bad sampling method: ' + kind)
 
-        bounds = N.array(self.corners)
-        samples = sampler(bounds.shape[1], n, bounds)
+        bounds = np.array(self.corners)
+        samples = sampling.doe(bounds.shape[1], n, bounds, kind)
+
         self.empty()
         self.add([s.tolist() for s in samples])
 
@@ -198,7 +179,7 @@ class Space(SpaceBase):
         self.logger.debug("Points are: \n {}".format(samples))
         return self
 
-    def refine(self, pod):
+    def refine(self, pod, point_loo):
         """Refine the sample, update space points and return the new point(s).
 
         :param pod: POD
@@ -207,17 +188,19 @@ class Space(SpaceBase):
         """
         refiner = Refiner(pod, self.settings)
         # Refinement strategy
-        method = self.settings.pod['resample']
+        method = self.settings['pod']['resample']
         if method == 'MSE':
             new_point = refiner.mse()
         elif method == 'loo_mse':
-            new_point = refiner.leave_one_out_mse()
+            new_point = refiner.leave_one_out_mse(point_loo)
         elif method == 'loo_sobol':
-            new_point = refiner.leave_one_out_sobol()
+            new_point = refiner.leave_one_out_sobol(point_loo)
         elif method == 'extrema':
-            new_point, self.refined_pod_points = refiner.extrema(self.refined_pod_points)
+            new_point, self.refined_pod_points = \
+                refiner.extrema(self.refined_pod_points)
         elif method == 'hybrid':
-            new_point, self.refined_pod_points = refiner.hybrid(self.refined_pod_points)
+            new_point, self.refined_pod_points = \
+                refiner.hybrid(self.refined_pod_points, point_loo)
 
         try:
             point = [Point(point) for point in [new_point]]
@@ -226,6 +209,7 @@ class Space(SpaceBase):
 
         self.add(point)
 
-        self.logger.info('Refined sampling with new point: {}'.format(str(point)))
+        self.logger.info('Refined sampling with new point: {}'
+                         .format(str(point)))
 
         return point

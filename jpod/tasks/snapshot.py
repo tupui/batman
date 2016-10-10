@@ -92,42 +92,18 @@ class SnapshotTask(Task):
         else:
             cls.context = clean_path(context)
 
-        if not isinstance(private_directory, str):
-            raise ValueError('private_directory must be a string.')
-        else:
-            cls.private_directory = private_directory
+        cls.private_directory = private_directory
 
-        if not isinstance(command, str):
-            raise ValueError('command must be a string.')
-        else:
-            cls.command = command
+        cls.command = command
 
         if not os.path.isfile(script):
             raise ValueError('cannot find script file.')
         else:
             cls.script = clean_path(script)
 
-        try:
-            timeout = float(timeout)
-            if timeout <= 0:
-                raise TypeError
-        except TypeError:
-            raise ValueError('period must be a positive number')
-        else:
-            cls.timeout = timeout
+        cls.timeout = timeout
 
-        bad = False
-        if not isinstance(data_files, list):
-            bad = True
-        else:
-            for f in data_files:
-                if not isinstance(f, str):
-                    bad = True
-                    break
-        if bad:
-            raise ValueError('data files must be a list of strings.')
-        else:
-            cls.data_files = data_files
+        cls.data_files = data_files
 
         cls.clean_working_directory = clean_working_directory
 

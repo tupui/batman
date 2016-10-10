@@ -4,9 +4,11 @@ JPOD package
 """
 
 from .driver import Driver
-from misc import import_file
 import mpi
+import misc
 
-__all__ = ['Driver', 'import_file', 'mpi']
+__all__ = ['Driver', 'mpi', 'misc']
 
-__version__ = '1.3.0'
+__version__ = '1.4'
+__branch__ = 'heads/develop'
+__commit__ = '1.3-37-g06f7a94'

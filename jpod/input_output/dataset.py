@@ -61,17 +61,11 @@ class DatasetInfo(object):
 
 
     def set_names(self, names):
-        if not self._check_type(str, names):
-            raise NameError('bad names :'+str(names))
-        else:
-            self.names = tuple(names)
+        self.names = tuple(names)
 
 
     def set_shape(self, shape):
-        if not self._check_type(int, shape):
-            raise ShapeError('bad shape : '+str(shape))
-        else:
-            self.shape = tuple(shape)
+        self.shape = tuple(shape)
 
 
     def _check_type(self, type_, sequence):

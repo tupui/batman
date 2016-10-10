@@ -60,12 +60,6 @@ class Snapshot(object):
 
         # parameter names
         parameter_names = settings['parameter_names']
-        if not parameter_names:
-            raise ValueError('empty parameter names')
-        else:
-            for n in parameter_names:
-                if not isinstance(n, str):
-                    raise TypeError('parameter names must be strings : %i'%n)
         cls.parameter_names = tuple(parameter_names)
 
         # filenames
@@ -96,8 +90,6 @@ class Snapshot(object):
                 shapes = []
                 for v in settings['shapes'].values():
                     shapes += v
-
-            # shapes = settings['shapes'][mpi.myid]
 
             if len(shapes) != len(cls.filenames):
                 msg = 'shapes number and filenames number mismatch : %i != %i'

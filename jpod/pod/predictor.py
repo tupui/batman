@@ -6,17 +6,26 @@ from .snapshot import Snapshot
 
 
 class Predictor(object):
+
     """Manages snapshot prediction."""
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, kind, points, data):
+    def __init__(self, kind, points, data, corners):
+        """Init Predictor.
+
+        :param str kind: name of prediction method, rbf or kriging
+        :param np.array points: list of points coordinate
+        :param np.array data: output data at each point
         """
-        kind   : name of prediction method, rbf or kriging
-        points : numpy array of points, one per row
-        data   : numpy array of data at each point, one per row
-        """
+        # adimentionalize corners
+        bounds = np.array(corners)
+        axis = len(bounds.shape)-1
+        self.bounds_min = np.array((np.amin(bounds, axis=axis).reshape(2, -1)[0, :]))
+        self.bounds_max = np.array((np.amax(bounds, axis=axis).reshape(2, -1)[1, :]))
         points = np.array(points)
+        points = np.divide(np.subtract(points, self.bounds_min),
+                           self.bounds_max - self.bounds_min)
 
         # predictor object
         if kind == 'rbf':
@@ -31,24 +40,28 @@ class Predictor(object):
     def __call__(self, point):
         """Compute a prediction.
 
-        point: point at which prediction will be done
-
-        Returns a numpy array with result.
+        :param tuple(float) point: point at which prediction will be done
+        :return: Result and standard deviation
+        :rtype: np.arrays
         """
+        point = np.divide(np.subtract(point, self.bounds_min),
+                          self.bounds_max - self.bounds_min)
         result, sigma = self.predictor.evaluate(point)
-        #self.logger.debug('Computed prediction at point %s', point)
+
         return result, sigma
 
 
 class PodPredictor(Predictor):
+
     """Manages snapshot prediction."""
 
     logger = logging.getLogger(__name__)
 
     def __init__(self, kind, pod):
-        """
-        pod  : a pod
-        kind : name of prediction method, rbf or kriging
+        """Init POD predictor.
+
+        :param :class:`jpod.Pod` pod: a pod
+        :param str kind : name of prediction method, rbf or kriging
         """
         self.kind = kind
 
@@ -63,7 +76,8 @@ class PodPredictor(Predictor):
             self).__init__(
             self.kind,
             self.pod.points,
-            self.pod.VS())
+            self.pod.VS(),
+            self.pod.corners)
         self.pod.register_observer(self)
 
     def notify(self):
@@ -74,20 +88,27 @@ class PodPredictor(Predictor):
     def __call__(self, points):
         """Compute predictions.
 
-        points: list of points in the parameter space
-
-        Returns a list of snapshots.
+        :param points: list of points in the parameter space
+        :return: Result
+        :rtype: lst(:class:`pod.snapshot.Snapshot`)
+        :return: Standard deviation
+        :rtype: lst(np.array)
         """
         if self.update:
-        # pod has changed : update predictor
-            super(PodPredictor, self).__init__(self.kind, self.pod.points, self.pod.VS())
+            # pod has changed : update predictor
+            super(PodPredictor, self).__init__(
+                self.kind,
+                self.pod.points,
+                self.pod.VS(),
+                self.pod.corners)
             self.update = False
 
         results = []
-        sigma = []
+        sigmas = []
         for p in points:
             v, sigma = super(PodPredictor, self).__call__(p)
             result = self.pod.mean_snapshot + np.dot(self.pod.U, v)
             results += [Snapshot(p, result)]
+            sigmas += [sigma]
 
-        return results, sigma
+        return results, sigmas

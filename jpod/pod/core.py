@@ -69,7 +69,7 @@ class Core(object):
             raise NotImplemented("use dynamic pod in parallel")
 
         # TODO: play with svd optional arguments
-        self.U, self.S, self.V = np.linalg.svd(snapshots, full_matrices=True)
+        self.U, self.S, self.V = np.linalg.svd(snapshots, full_matrices=False)
         self.V = self.V.T
         self.U, self.S, self.V = svd.filtering(self.U, self.S, self.V,
                                                self.tolerance, self.dim_max)
@@ -99,7 +99,7 @@ class Core(object):
         points_nb = len(points)
         error = np.empty(points_nb)
         model_pod = []
-        mean = np.zeros(len(self.S))
+        mean = np.zeros(self.mean_snapshot.shape[0])
 
         for i in range(points_nb):
             V_1 = np.delete(self.V, i, 0)
@@ -110,18 +110,18 @@ class Core(object):
             points_1 = points[:]
             points_1.pop(i)
 
-            predictor = Predictor(self.leave_one_out_predictor, points_1, V_1 * S_1)
+            predictor = Predictor(self.leave_one_out_predictor, points_1, V_1 * S_1, self.corners)
             prediction, _ = predictor(points[i])
 
             error[i] = np.sum((np.dot(Urot, prediction) - float(points_nb) / float(points_nb - 1) * self.V[i] * self.S) ** 2)
 
-            mean = np.dot(self.U, self.V[i] * self.S)
+            mean += np.dot(self.U, self.V[i] * self.S)
         
         mean = mean / points_nb
         var = 0.
         for i in range(points_nb):
             var = var + np.sum((mean - np.dot(self.U, self.V[i] * self.S)) ** 2)
-        
+       
         # Compute Q2
         err_q2 = 1 - np.sum(error) / var
 
@@ -130,7 +130,7 @@ class Core(object):
 
         if True:  # orignal jpod 1 strategy
             error_max = 0.
-            for i in range(len(error)):  # TODO: enumerate
+            for i, _ in enumerate(error):
                 if i not in self.refined_points:
                     if error[i] > error_max:
                         index = i

@@ -1,0 +1,64 @@
+{
+    "space": {
+        "corners": [
+            [2500.0, 15.0],
+            [6000.0, 60.0]
+        ],
+        "size_max": 50,
+        "delta_space": 0.01,
+        "provider": {
+            "method": "halton",
+            "size": 50
+        }
+    },
+    "pod": {
+        "dim_max": 100,
+        "quality": 0.8,
+        "tolerance": 0.99,
+        "strategy": [
+            ["MSE", 4]
+        ],
+        "resample": "MSE",
+        "server": null,
+        "type": "static"
+    },
+    "snapshot": {
+        "max_workers": 10,
+        "io": {
+            "shapes": {
+                "0": [
+                    [400]
+                ]
+            },
+            "format": "fmt_tp",
+            "variables": ["X", "F"],
+            "point_filename": "header.py",
+            "filenames": {
+                "0": ["function.dat"]
+            },
+            "template_directory": null,
+            "parameter_names": ["x1", "x2"]
+        },
+        "provider": {
+            "command": "bash",
+            "timeout": 3600,
+            "context": "data",
+            "script": "data/script.sh",
+            "clean": false,
+            "private-directory": "jpod-data",
+            "data-directory": "cfd-output-data",
+            "restart": "False"
+        }
+    },
+    "prediction": {
+        "points": [],
+        "method": "kriging"
+    },
+    "uq": {
+        "sample": 1000,
+        "test": "Channel_Flow",
+        "pdf": ["Normal(4035., 400.)", "Uniform(15., 60.)"],
+        "type": "aggregated",
+        "method": "sobol"
+    }
+}

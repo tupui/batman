@@ -8,290 +8,290 @@ Tutorial
 Introduction
 ------------
 
-
-| After installing ``JPOD`` tool, you can create the working directory anywhere on your PC. In fact, you can find the examples in the ``test-cases`` subdirectory of ``JPOD`` installer directory (see the directory tree below).
+Examples can be found in JPOD's installer subrepository ``test-cases``. To create a new study, you have to keep the same structure as this example on the *Michalewicz* function:
 
 .. code::
 
-     JPOD
-     |
-     ├── kernel
-     |   |
-     |   ├── jpod
-     |       |
-     |       ├── ui.py
-     |
-     ├── test-cases
-         |
-         ├── Michalewicz
-         |   |
-         |   ├── data
-         |   |   |
-         |   |   ├── function.py
-         |   |
-         |   ├── scripts
-         |       |
-         |       ├── settings_template.py
-         |       |
-         |       ├── task.py       
-         |
-         ├── RAE2822
-         |   |
-         |   ├── data
-         |   |
-         |   ├── scripts
-         |
-         ├── etc.
+    Michalewicz
+    |
+    ├__ data
+    |   |__ script.sh
+    |   ├__ function.py
+    |
+    ├__ settings.json
 
-| Generally, each working directory consists of two main parts:
 
-+ Directory ``data``: this directory contains files describing the code of *CFD calculation* (AVBP, elsA, etc.) or the code of *optimization test functions*, for example.
+The working directory consists in two parts: 
 
-+ Directory ``scripts``: this directory contains python script files which filled by users for setting the JPOD configuration.
++ ``data``: contains all the simulation files necessary to perform a new simulation. It can be a simple python script to a complex *AVBP* case. The content of this directory will be copied for each snapshot. In all cases, ``script.sh`` launches the simulation.
 
-|
++ ``settings.json``: contains the case setup.
+
+.. seealso:: Find more details on every keywords in :ref:`settings` section.
+
+Finally, the folder ``Post-treatment`` contains example scripts that perform some post treatment.
+
+.. note:: The following section is a step-by-step tutorial that can be applied to any case.
+
 
 JPOD step-by-step
 -----------------
 
 
-Step 1: Building directory ``data``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Step 1: Simulation directory
+............................
+
+Michalewicz function
+""""""""""""""""""""
+
+For this tutorial, the `Michalewicz function <http://www.sfu.ca/~ssurjano/michal.html>`_ was choosen. It is a multimodal *d*-dimensional function which has :math:`d!` local minima - for this *test-case*: 
+
+.. math:: f(x)=-\sum_{i=1}^d \sin(x_i)\sin^{2m}\left(\frac{ix_i^2}{\pi}\right),
+
+where *m* defines the steepness of the valleys and ridges.
 
 
-Step 1a: Selecting test configuration
-"""""""""""""""""""""""""""""""""""""
+.. note:: + It is to difficult to search a global minimum when :math:`m` reaches large value. Therefore, it is recommended to have :math:`m < 10`.
+          + In this case we used the two-dimensional form, i.e. :math:`d = 2`. 
 
 
-| We chose the `Michalewicz function <http://www.sfu.ca/~ssurjano/michal.html>`_ - a multimodal d-dimensional function which has :math:`d!` local minima - for this *test-case*: 
+To summarize, we have the Michalewicz 2*D* function as follows:
 
-| :math:`f(x)=-\sum_{i=1}^d sin(x_i)sin^{2m}\left(\frac{ix_i^2}{\pi}\right)`
+.. math:: f(x)=-\sin(x_1)\sin^{20}\left(\frac{x_1^2}{\pi}\right)-\sin(x_2)\sin^{20}\left(\frac{2x_2^2}{\pi}\right).
 
-| where *m*: steepness of the valleys and ridges.
+.. image:: fig/response_Michalewicz_true_2D.png
+
+.. image:: fig/response_Michalewicz_true_3D.png
+
+.. seealso:: For other *optimization functions*, read more at `this website <http://www.sfu.ca/~ssurjano/optimization.html>`_.
+
+Create the case for JPOD
+""""""""""""""""""""""""
+
+For each snapshot, JPOD will copy the content of ``data`` and add a new folder ``jpod-data`` which contains a single file ``header.py``. The content of this file is updated per snapshot and it only contains the input parameters to change for the current simulation. Hence, to use Michalewicz's function with JPOD, we need to have this file read to gather input parameters.
+
+Aside from the simulation code and this headers, there is a ``data/script.sh``. It is this script that is launched by JPOD. Once it is completed, the computation is considered as finished. Thus, this script manages an AVBP launch, calls a python script, etc.
+
+In the end, the quantity of interest has to be written in tecplot format within the repository ``cfd-output-data``.
+
+.. note:: These directories' name and path are fully configurables.
 
 
-.. note:: + It is so difficult to search a global minimum when :math:`m` reaches large value. Therefore, it is recommended that his value is :math:`m = 10`.
-          + The function's form is two-dimensional, i.e., :math:`d = 2`. 
+Step 2: Setting up the case
+...........................
 
+JPOD's settings are managed via a python file located in ``scripts``. An example template can be found within all examples directory. This file consists in five blocks with different functions:
 
-| In summary, we have the Michalewicz 2D function as follows:
-
-| :math:`f(x)=-sin(x_1)sin^20\left(\frac{x_1^2}{\pi}\right)-sin(x_2)sin^20\left(\frac{2x_2^2}{\pi}\right)`
-
-|
-
-
-Step 1b: Creating script file 
+Block 1 - Space of Parameters
 """""""""""""""""""""""""""""
 
-
-| After selecting the test-case, a script file must be created. So we take the ``function.py`` in the directory ``data`` as an example to describe the information of *optimization test function*.
-
-.. code-block:: python
-
-    F = -1.0-math.sin(X1)*(math.pow(math.sin(X1*X1/math.pi),20.))-math.sin(X2)*(math.pow(math.sin(2*X2*X2/math.pi),20.))
-
-Read more
-*********
-
-| For other *optimization functions*, read more in the `website of Derek Bingham <http://www.sfu.ca/~ssurjano/optimization.html>`_ (please contact the author via email: dbingham@stat.sfu.ca).
-
-|
-
-Step 2: Building directory ``scripts``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-| In fact, ``settings_template.py`` which is the most important file in the directory ``scripts`` is built for the test-case *Michalewicz function* . In this file, there are five blocks with different functions:
-
-|
-
-Block 1 - Parameters space
-""""""""""""""""""""""""""
-
-
-| In this block, we create the coordinate with the sampling points and chose the method to generate these points.
+The space of parameters is created using the two extrem points of the domain here we have :math:`x_1, x_2 \in [1, \pi]^2`. Also we want to make 50 snapshots using a halton sequence.
 
 .. code-block:: python
 
-    space = {'corners'     : ((1., 1.), (3.1415, 3.1415),),
-              'delta_space' : 0.01,                         
-              'size_max'    : 21,
-              'provider'    : {'method' : 'halton',
-                               'size'   : 20,
-                              }
-            }
-
+    "space": {
+        "corners": [
+            [1.0, 1.0],
+            [3.1415, 3.1415]
+        ],
+        "size_max": 50,
+        "delta_space": 0.01,
+        "provider": {
+            "method": "halton",
+            "size": 50
+        }
+    }
 
 Block 2 - Snapshot provider
 """""""""""""""""""""""""""
 
-
-| It could be *a python function*, *a python list of directories* or *a python dictionary* with settings for using *an external program* like submitting *elsA* jobs.
+Then, we configure the snapshot itself. We define the name of the header and output file as well as the dimension of the output. Here JPOD will look at the variable ``F``, which is a scalar value, within the file ``function.dat``.
 
 .. code-block:: python
 
-     snapshot = {'max_workers' : 50,
-                 'io'          : {'parameter_names'    : ['x1','x2'],
-                                  'format'             : 'fmt_tp',
-                                  'filenames'          : {0: ['function.dat']},
-                                  'point_filename'     : 'header.py',
-                                  'template_directory' : None,
-                                  'variables'          : ['F'],
-                                  'shapes'             : {0: [(1,)]},
-                                 },
-                }
-
+    "snapshot": {
+        "max_workers": 10,
+        "io": {
+            "shapes": {
+                "0": [
+                    [1]
+                ]
+            },
+            "format": "fmt_tp",
+            "variables": ["F"],
+            "point_filename": "header.py",
+            "filenames": {
+                "0": ["function.dat"]
+            },
+            "template_directory": null,
+            "parameter_names": ["x1", "x2"]
+        },
+        "provider": {
+            "command": "bash",
+            "timeout": 3600,
+            "context": "data",
+            "script": "data/script.sh",
+            "clean": false,
+            "private-directory": "jpod-data",
+            "data-directory": "cfd-output-data",
+            "restart": "False"
+        }
+    }
 
 Block 3 - POD
 """""""""""""
 
-
-POD (or Proper Orthogonal Decomposition) is a approach to help reduce amount of data.
+After that, we can control the quality of the resulting POD, chose a re-sampling strategy, etc.
 
 .. code-block:: python
 
-     pod = {'tolerance' : 0.99,
-            'dim_max'   : 100,
-            'type'      : 'static',
-            'resample'  : 'extrema',
-            'strategy'  : (('MSE', 2), ('loo_sobol', 0),
-                           ('extrema', 1)),
-            'quality'   : 0.8,
-            'server'    : None,
-           }
-
+    "pod": {
+        "dim_max": 100,
+        "quality": 0.8,
+        "tolerance": 0.99,
+        "strategy": [
+            ["MSE", 4]
+        ],
+        "resample": "None",
+        "server": null,
+        "type": "static"
+    }
 
 Block 4 - Prediction
 """"""""""""""""""""
 
-We can built the prediction function with different methods.
+A model is build on POD's matrices to approximate a new snapshot. The Kriging method is selected. To construct a response surface, we need to make predictions.
 
 .. code-block:: python
 
     prediction = {'method' : 'kriging',
-                  'points' : [ ],
+                  'points' : [],
                  }
 
-.. note:: We can fill *directly* the number of points into the brackets or *indirectly* via the script.
+To fill in easily ``points``, use the script ``prediction.py``.
 
 
 Block 5 - UQ
 """"""""""""
 
-
-UQ (or *Uncertainty Quantification*) is used as a method to evaluate the results.
+Once the model has been created, it can be used to perform a statistical analysis. Here, Sobol' indices are computed using Sobol's method using 50000 samples. 
 
 .. code-block:: python
 
-    uq = {'method' : 'sobol',
-          'type'   : 'aggregated',
-          'sample' : 5000 ,
-          'pdf'    : ['Uniform(-2.048, 2.048)',
-                      'Uniform(-2.048, 2.048)']
-         }
+    "uq": {
+        "sample": 50000,
+        "pdf": ["Uniform(1., 3.1415)", "Uniform(1., 3.1415)"],
+        "type": "aggregated",
+        "method": "sobol"
+    }
 
-
-Read more
-*********
-
-.. seealso:: find some more information in :ref:`settings` file.
-
-.. note:: + Similarly, you change **only** the *function formula* in the script file and *coordinate* for other optimization test functions.
-          + Another way, you can create the script files for the *CFD calculation* cases.
-
-|
 
 Step 3: Running JPOD
-^^^^^^^^^^^^^^^^^^^^
+....................
 
+To launch JPOD, simply call it with::
 
-| It is executed when we run two python files: ``ui.py`` and ``task.py`` (see the directory tree below).
+    jpod settings.json -qsu
 
-.. code::
-
-     JPOD
-     |
-     ├── kernel
-     |   |
-     |   ├── jpod
-     |       |
-     |       ├── ui.py
-     |
-     ├── test-cases
-         |
-         ├── Michalewicz
-         |   |
-         |   ├── data
-         |   |   |
-         |   |   ├── function.py
-         |   |
-         |   ├── scripts
-         |       |
-         |       ├── settings_template.py
-         |       |
-         |       ├── task.py       
-         |
-         ├── RAE2822
-         |   |
-         |   ├── data
-         |   |
-         |   ├── scripts
-         |
-         ├── etc.
-
-| Finally, you receive the result of JPOD calculation in the ``JPOD.log`` file: 
-
-.. code-block:: bash
+JPOD's log are found within ``JPOD.log``. Here is an extract:: 
 
     JPOD main ::
         POD summary:
         modes filtering tolerance    : 0.99
         dimension of parameter space : 2
-        number of snapshots          : 20
+        number of snapshots          : 50
         number of data per snapshot  : 1
         maximum number of modes      : 100
         number of modes              : 1
-        modes                        : [ 1.69972346]
+        modes                        : [ 2.69091785]
+    jpod.pod.pod ::
+        pod quality = 0.45977, max error location = (3.0263943749999997, 1.5448927777777777)
 
-|
+    ----- Sobol' indices -----
+    jpod.uq ::
+        Second order: [array([[ 0.        ,  0.06490131],
+           [ 0.06490131,  0.        ]])]
+    jpod.uq ::
+        First order: [array([ 0.43424729,  0.49512012])]
+    jpod.uq ::
+        Total: [array([ 0.51371718,  0.56966205])]
 
-Step 4: Post-treatment
-^^^^^^^^^^^^^^^^^^^^^^
+In this example, the quality of the model is estimated around :math:`Q_2\sim 0.46` which means that the model is able to represents around 46% of the variability of the quantity of interest. Also, from Sobol' indices, both parameters appears to be as important.
 
+Post-treatment
+..............
 
-| All of result files located in 3 directories: ``pod``, ``predictions`` and ``snapshots`` of the directory ``output`` (see the directory tree below).
+Result files are separated in 4 directories under ``output``::
 
-.. code::
-
-     JPOD
+     Case
      |
-     ├── kernel
+     |__ data
      |
-     ├── test-cases
+     |__ settings.json
      |
-     ├── output
+     |__ output
          |
-         ├── pod
+         |__ pod
          |
-         ├── predictions
+         |__ predictions
          |
-         ├── snapshots
+         |__ snapshots
+         |
+         |__ uq
 
-| You can use these files for post-treatment with some available softwares such as: *paraview*, *tecplot*, etc.
+``snapshots`` contains all snapshots computations, ``predictions`` contains all predictions and ``uq`` contains the statistical analysis. Using predictions we can plot the response surface of the function as calculated using the model:
 
-| In this example, here are the images that we obtain with a visual data analysis tool *Tecplot 360*:
+.. image:: fig/response_Michalewicz_model_2D.png
 
-|
+It can be noted that using 50 snapshots on this case is not enought to capture all the non-linearities of the function.
 
-.. image:: fig/post_2D_1.png
+.. note:: Physical phenomena usualy are smoother. Thus, less points are needed for a 2 parameters problem when dealing with real physics.
 
-.. image:: fig/post_2D_2.png
+Refinement strategies
+.....................
 
-|
+In this case, the error was fairly high using 50 snapshots. A computation with 50 snapshots using 20 refinement points have been tried. To use this functionnality, the POD block has been changed in order to use a resampling strategy:
 
-| A white subfigure at the bottom right describes a *sampling technique*.
+.. code-block:: python
 
-| Two subfigures at the bottom left correspond a *Maximum error* :math:`L_max` and a *Coefficient of determination* :math:`R^2` with a trend-line. As close to a linear trend-line, the points get more precision.
+    "pod": {
+        "dim_max": 100,
+        "quality": 0.8,
+        "tolerance": 0.99,
+        "strategy": [
+            ["MSE", 4]
+        ],
+        "resample": "loo_mse",
+        "server": null,
+        "type": "static"
+    }
 
-| Meanwhile, two subfigures at the top in both cases, from left to right, correspond the *reference* and *prediction functions*. We noticed that the results look quite similar, i.e. the distributions get good solutions.
+The first block has to be modified also: 
+
+.. code-block:: python
+
+    "space": {
+        "corners": [
+            [1.0, 1.0],
+            [3.1415, 3.1415]
+        ],
+        "size_max": 70,
+        "delta_space": 0.01,
+        "provider": {
+            "method": "halton",
+            "size": 50
+        }
+    }
+
+This block tells JPOD to compute a maximum of 20 resampling snapshots in case the quality has not reach 0.8. This ``loo_mse`` strategy uses the information of the model error provided by the gaussian process regression. This leads to an improvement in the error with :math:`Q_2 \sim 0.71`.
+
+.. figure:: fig/response_Michalewicz_model_2D_loo-mse.png
+   
+   Response surface interpolation using 50 snapshots and 20 refined points,
+   represented by the red triangles.
+
+Using a basic ``MSE`` technique with again 20 new snapshots, the error is :math:`Q_2 \sim 0.60`.
+
+.. image:: fig/response_Michalewicz_model_2D_mse.png
+
+In this case, ``loo_mse`` method performed better but this is highly case dependent. 
