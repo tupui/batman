@@ -39,14 +39,15 @@ Content of the package
 
 The JPOD package includes 2 repository:
 
-* ``kernel`` contains the JPOD package and its implementation,
+* ``doc`` contains the documentation,
+* ``jpod`` contains the module implementation,
 * ``test_cases`` contains some example.
 
 
 General functionment
 ....................
 
-The package is composed of several python modules which are self contained within the directory ``kernel/jpod``.
+The package is composed of several python modules which are self contained within the directory ``jpod``.
 Following is a quick reference:
 
 * :py:mod:`ui`: command line interface,
@@ -56,14 +57,13 @@ Following is a quick reference:
 * :py:mod:`space`: defines the (re)sampling space,
 * :py:mod:`pod`: constructs the POD,
 * :py:mod:`tasks`: defines the context to compute each snapshot from,
-* :py:mod:`misc`: defines the logging configuration.
+* :py:mod:`misc`: defines the logging configuration and the settings schema.
 
-After JPOD has been installed, ``jpod`` is available as a command and it can be imported in python. 
-It is a link to :py:mod:`ui`. The module imports the package and use the function defined in :py:mod:`driver`.
+After JPOD has been installed, ``jpod`` is available as a command and it can be imported in python. It is a link to :py:mod:`ui`. The module imports the package and use the function defined in :py:mod:`driver`.
 
 Thus JPOD is launched using::
 
-    python jpod task.py
+    jpod settings.json
 
 An ``output`` directory is created and it contains the results of the computations of all the *snapshots*, the *pod* and the *predictions*.
 

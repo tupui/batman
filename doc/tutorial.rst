@@ -15,25 +15,24 @@ Examples can be found in JPOD's installer subrepository ``test-cases``. To creat
     Michalewicz
     |
     ├__ data
-    |   |
+    |   |__ script.sh
     |   ├__ function.py
     |
-    ├__ scripts
-        |
-        ├__ settings_template.py
-        |
-        ├__ task.py
+    ├__ settings.json
 
 
-The working directory consists of two directories: 
+The working directory consists in two parts: 
 
-+ ``data``: contains all the simulation files necessary to perform a new simulation. It can be a simple python script to a complex *AVBP* case. The content of this directory will be copied for each snapshot.
++ ``data``: contains all the simulation files necessary to perform a new simulation. It can be a simple python script to a complex *AVBP* case. The content of this directory will be copied for each snapshot. In all cases, ``script.sh`` launches the simulation.
 
-+ ``scripts``: contains the python setup files.
-
-.. note:: The following section is a step-by-step tutorial that can be applied to any case. All compulsory keywords are here.
++ ``settings.json``: contains the case setup.
 
 .. seealso:: Find more details on every keywords in :ref:`settings` section.
+
+Finally, the folder ``Post-treatment`` contains example scripts that perform some post treatment.
+
+.. note:: The following section is a step-by-step tutorial that can be applied to any case.
+
 
 JPOD step-by-step
 -----------------
@@ -86,17 +85,22 @@ JPOD's settings are managed via a python file located in ``scripts``. An example
 Block 1 - Space of Parameters
 """""""""""""""""""""""""""""
 
-The space of parameters is created using the two extrem points of the domain here we have :math:`x_1, x_2 \in [1, \pi]^2`. Also we want to make 20 snapshots using a halton sequence.
+The space of parameters is created using the two extrem points of the domain here we have :math:`x_1, x_2 \in [1, \pi]^2`. Also we want to make 50 snapshots using a halton sequence.
 
 .. code-block:: python
 
-    space = {'corners'     : ((1., 1.), (3.1415, 3.1415),),
-             'delta_space' : 0.01,                         
-             'size_max'    : 50,
-             'provider'    : {'method' : 'halton',
-                              'size'   : 50,
-                             }
-            }
+    "space": {
+        "corners": [
+            [1.0, 1.0],
+            [3.1415, 3.1415]
+        ],
+        "size_max": 50,
+        "delta_space": 0.01,
+        "provider": {
+            "method": "halton",
+            "size": 50
+        }
+    }
 
 Block 2 - Snapshot provider
 """""""""""""""""""""""""""
@@ -105,17 +109,34 @@ Then, we configure the snapshot itself. We define the name of the header and out
 
 .. code-block:: python
 
-     snapshot = {'max_workers' : 2,
-                 'io'          : {
-                    'parameter_names'    : ['x1','x2'],
-                    'format'             : 'fmt_tp',
-                    'filenames'          : {0: ['function.dat']},
-                    'point_filename'     : 'header.py',
-                    'template_directory' : None,
-                    'variables'          : ['F'],
-                    'shapes'             : {0: [(1,)]},
-                                 },
-                }
+    "snapshot": {
+        "max_workers": 10,
+        "io": {
+            "shapes": {
+                "0": [
+                    [1]
+                ]
+            },
+            "format": "fmt_tp",
+            "variables": ["F"],
+            "point_filename": "header.py",
+            "filenames": {
+                "0": ["function.dat"]
+            },
+            "template_directory": null,
+            "parameter_names": ["x1", "x2"]
+        },
+        "provider": {
+            "command": "bash",
+            "timeout": 3600,
+            "context": "data",
+            "script": "data/script.sh",
+            "clean": false,
+            "private-directory": "jpod-data",
+            "data-directory": "cfd-output-data",
+            "restart": "False"
+        }
+    }
 
 Block 3 - POD
 """""""""""""
@@ -124,19 +145,22 @@ After that, we can control the quality of the resulting POD, chose a re-sampling
 
 .. code-block:: python
 
-     pod = {'tolerance' : 0.99,
-            'dim_max'   : 100,
-            'type'      : 'static',
-            'resample'  : None,
-            'strategy'  : (('MSE', 4),),
-            'quality'   : 0.8,
-            'server'    : None,
-           }
+    "pod": {
+        "dim_max": 100,
+        "quality": 0.8,
+        "tolerance": 0.99,
+        "strategy": [
+            ["MSE", 4]
+        ],
+        "resample": "None",
+        "server": null,
+        "type": "static"
+    }
 
 Block 4 - Prediction
 """"""""""""""""""""
 
-A model is build on POD's matrices to approximate a new snapshot. The Kriging method is selected. To construct a response surface, we need to make predictions. Here a 25x25 snapshots grid will be predicted.
+A model is build on POD's matrices to approximate a new snapshot. The Kriging method is selected. To construct a response surface, we need to make predictions.
 
 .. code-block:: python
 
@@ -144,13 +168,8 @@ A model is build on POD's matrices to approximate a new snapshot. The Kriging me
                   'points' : [],
                  }
 
-    import numpy as np
-    import itertools
-    num = 25
-    x = np.linspace(space['corners'][0][0], space['corners'][1][0], num=num)
-    y = np.linspace(space['corners'][0][1], space['corners'][1][1], num=num)
-    for i, j in itertools.product(x, y):
-        prediction['points'] += [(float(i),float(j))]
+To fill in easily ``points``, use the script ``prediction.py``.
+
 
 Block 5 - UQ
 """"""""""""
@@ -159,12 +178,12 @@ Once the model has been created, it can be used to perform a statistical analysi
 
 .. code-block:: python
 
-    uq = {'method' : 'sobol',
-          'type'   : 'aggregated',
-          'sample' : 50000,
-          'pdf'    : ['Uniform(1., 3.1415)',
-                      'Uniform(1., 3.1415)']
-         }
+    "uq": {
+        "sample": 50000,
+        "pdf": ["Uniform(1., 3.1415)", "Uniform(1., 3.1415)"],
+        "type": "aggregated",
+        "method": "sobol"
+    }
 
 
 Step 3: Running JPOD
@@ -172,7 +191,7 @@ Step 3: Running JPOD
 
 To launch JPOD, simply call it with::
 
-    jpod scripts/tasks.py -qsu
+    jpod settings.json -qsu
 
 JPOD's log are found within ``JPOD.log``. Here is an extract:: 
 
@@ -208,7 +227,7 @@ Result files are separated in 4 directories under ``output``::
      |
      |__ data
      |
-     |__ scripts
+     |__ settings.json
      |
      |__ output
          |
@@ -231,32 +250,40 @@ It can be noted that using 50 snapshots on this case is not enought to capture a
 Refinement strategies
 .....................
 
-In this case, the error was fairly high using 50 snapshots. A computation with 40 snapshots using 10 refinement points have been compared to the initial sampling. To use this functionnality, the POD block has been changed in order to use a mean square strategy:
+In this case, the error was fairly high using 50 snapshots. A computation with 50 snapshots using 20 refinement points have been tried. To use this functionnality, the POD block has been changed in order to use a resampling strategy:
 
 .. code-block:: python
 
-     pod = {'tolerance' : 0.99,
-            'dim_max'   : 100,
-            'type'      : 'static',
-            'resample'  : 'loo_mse',
-            'strategy'  : (('MSE', 4),),
-            'quality'   : 0.8,
-            'server'    : None,
-           }
+    "pod": {
+        "dim_max": 100,
+        "quality": 0.8,
+        "tolerance": 0.99,
+        "strategy": [
+            ["MSE", 4]
+        ],
+        "resample": "loo_mse",
+        "server": null,
+        "type": "static"
+    }
 
 The first block has to be modified also: 
 
 .. code-block:: python
 
-    space = {'corners'     : ((1., 1.), (3.1415, 3.1415),),
-             'delta_space' : 0.01,                         
-             'size_max'    : 70,
-             'provider'    : {'method' : 'halton',
-                              'size'   : 50,
-                             }
-            }
+    "space": {
+        "corners": [
+            [1.0, 1.0],
+            [3.1415, 3.1415]
+        ],
+        "size_max": 70,
+        "delta_space": 0.01,
+        "provider": {
+            "method": "halton",
+            "size": 50
+        }
+    }
 
-This block tells JPOD to compute a maximum of 10 resampling snapshots in case the quality has not reach 0.8. This ``loo_mse`` strategy uses the information of the model error provided by the gaussian process regression. This leads to an improvement in the error with :math:`Q_2 \sim 0.71`.
+This block tells JPOD to compute a maximum of 20 resampling snapshots in case the quality has not reach 0.8. This ``loo_mse`` strategy uses the information of the model error provided by the gaussian process regression. This leads to an improvement in the error with :math:`Q_2 \sim 0.71`.
 
 .. figure:: fig/response_Michalewicz_model_2D_loo-mse.png
    
@@ -267,4 +294,4 @@ Using a basic ``MSE`` technique with again 20 new snapshots, the error is :math:
 
 .. image:: fig/response_Michalewicz_model_2D_mse.png
 
-In this case, the first method performed better but this is highly case dependent. 
+In this case, ``loo_mse`` method performed better but this is highly case dependent. 

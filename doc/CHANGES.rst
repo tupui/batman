@@ -4,6 +4,39 @@
 Release history
 ===============
 
+Version 1.4
+===========
+
+New features
+------------
+
+    - Enhance :class:`surrogate.kriging`: adimentionize input parameters,
+      use anisotropic kernel and use genetic algorithm for parameters optimization
+    - Settings are now written in JSON and checked using a schema
+    - Ask for confirmation of output if exists: if no, ask for restarting from files
+    - Add post-treatment example scripts in ``test_cases/Post-treatment``
+    
+
+Enhancements
+------------
+
+    - Save points of the DOE as human readable file
+    - Add branch and commit information to log
+    - Add doc for tutorial, space, surrogate and pod
+    - Change Scikit-Learn to stable 0.18
+    - Restart option ``-r`` now working properly
+    - Create a :mod:`misc` which contains logging and json schema
+
+Bug fixes
+---------
+
+    - Refiner navigator loops correctly
+    - LOOCV working for multimodes
+    - Revert Q2 variance to use ``eval_ref``
+    - Avoid extra POD quality when using LOOCV strategies
+    - Popping space was not working properly
+
+
 Version 1.3
 ===========
 

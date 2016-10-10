@@ -11,7 +11,7 @@ README
     Melanie Rochoux,
     Sophie Ricci.
 
-:Version: 1.3   20/07/2016
+:Version: 1.4   10/10/2016
 
 
 What is JPOD? 
@@ -30,13 +30,13 @@ Aside from that, an uncertainty quantification (UQ) module allows to make sensit
 Dependencies
 ------------
 
-The required dependencies are:
+The required dependencies are: 
 
 - Python >= 2.7 or >= 3.3
 - `scikit-learn <http://scikit-learn.org>`_ >= 0.18
 - `OpenTURNS <http://www.openturns.org>`_ == 1.7
 
-.. note:: OpenTURNS is installed on *NEMO* only for Python 2.7  other dependencies are satisfied by JPOD's installer.
+.. note:: OpenTURNS is installed on *NEMO* only for Python 2.7  other dependencies are satisfied by the installer.
 
 How to get JPOD
 ---------------
@@ -63,12 +63,12 @@ If JPOD has been correctly installed, you should be able to call it simply::
 
     jpod -h
 
-.. note:: Depending on your configuration, you might have to export your local python path.
+.. note:: Depending on your configuration, you might have to export your local python path: ``export PATH=$PATH:.../Python/2.7/bin``.
 
 Getting started
 ---------------
 
-All changes can be found in the :ref:`changes`. ``JPOD`` folder contrains two subfolders: ``kernel`` and ``test_cases``. The latter contains examples that you can adapt to you needs. You can find more information about the cases within the respectives ``README.rst`` file. A detailled example can be found in :ref:`tutorial`. Shoud you be interested by JPOD's implementation, consider reeding :ref:`introduction`.
+All changes can be found in the :ref:`changes`. ``JPOD`` folder contrains three subfolders: ``doc`` ``jpod`` and ``test_cases``. The latter contains examples that you can adapt to you needs. You can find more information about the cases within the respectives ``README.rst`` file. A detailled example can be found in :ref:`tutorial`. Shoud you be interested by JPOD's implementation, consider reeding :ref:`introduction`.
 
 Development Model
 -----------------
@@ -76,8 +76,7 @@ Development Model
 Python
 ......
 
-All developers must follow guidelines from the Python Software Foundation.
-As a quick reference:
+All developers must follow guidelines from the Python Software Foundation. As a quick reference:
 
 * For text: `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_
 * For documentation: `PEP 257 <https://www.python.org/dev/peps/pep-0257/>`_
@@ -89,7 +88,7 @@ GIT
 ...
 
 You can find the development model at http://nvie.com/posts/a-successful-git-branching-model/
-Please read this page and stick to it.
+Please **read** this page and **stick** to it.
 The master and develop branches are dedicated to the manager only.
-Release and hotfix branches are strongly encouraged. They must be sent to the manager only in a **finished** state.
+Release and hotfix branches are mandatory. They must be sent to the manager only in a **finished** state.
 
