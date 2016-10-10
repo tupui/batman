@@ -9,6 +9,6 @@ import misc
 
 __all__ = ['Driver', 'mpi', 'misc']
 
-__version__ = '1.3'
-__branch__ = 'heads/dev'
-__commit__ = 'c3ee344'
+__version__ = '1.4'
+__branch__ = 'heads/develop'
+__commit__ = '1.3-37-g06f7a94'
