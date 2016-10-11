@@ -71,19 +71,19 @@ class Driver():
         self.external_pod = None
         '''External pod task handle.'''
 
-        # self.pod = None
+        self.pod = None
         '''POD processing, either local or external.'''
 
-        # self.snapshooter = None
+        self.snapshooter = None
         '''Snapshots generation manager.'''
 
-        # self.provider = None
+        self.provider = None
         '''Snapshot provider, it generates a snapshot.'''
 
-        # self.space = None
+        self.space = None
         '''Parameter space.'''
 
-        # self.initial_points = None
+        self.initial_points = None
         '''Points in the parameter space for the static pod.'''
 
         self.snapshot_counter = 0
@@ -96,10 +96,10 @@ class Driver():
         self._init_space()
 
         # Init pod
-        self.init_pod(script)
+        self._init_pod(script)
 
     def _init_snapshot(self):
-        """docstring for _init_snapshot."""
+        """Initialize snapshots  :class:`SnapshotTask`."""
         Snapshot.initialize(self.settings['snapshot']['io'])
 
         # snapshot generation
@@ -121,6 +121,7 @@ class Driver():
                 max_workers=self.settings['snapshot']['max_workers'])
 
     def _init_space(self):
+        """Initialize space by creating the DOE."""
         # space
         self.space = Space(self.settings)
 
@@ -138,9 +139,7 @@ class Driver():
                     self.space.add([point])
                 except AlienPointError:
                     self.logger.info(
-                        'Ignoring snapshot\n\t%s\n\tbecause its point %s is outside the space.',
-                        path,
-                        point)
+                        'Ignoring snapshot\n\t{}\n\tbecause its point {} is outside the space.'.format(path,point))
                 else:
                     self.initial_points[point] = path
 
@@ -156,18 +155,65 @@ class Driver():
                 self.initial_points = self.space.sampling(space_provider['method'],
                                                           space_provider['size'])
             else:
-                raise TypeError('Bad space provider.')
+                self.logger.error('Bad space provider.')
+                raise SystemError
 
-    def __del__(self):
-        """docstring for __del__."""
-        # terminate pending tasks
-        if mpi.myid == 0 \
-           and self.external_pod is not None:
-            self.logger.info('Terminating the external pod.')
-            self.external_pod.terminate()
+    def _init_pod(self, script):
+        """POD initialization."""
+        if self.settings['pod']['server'] is not None:
+            if mpi.size > 1:
+                raise Exception(
+                    'When using the external pod, the driver must be sequential.')
+
+            self.logger.info('Using external pod.')
+            # get the pod server running and connect to its through its proxy
+            self.external_pod = PodServerTask(self.settings['pod']['server']['port'],
+                                              self.settings['pod']['server']['python'],
+                                              script, self.output)
+            self.external_pod.run()
+            # self.external_pod._after_run()
+            self.pod = self.external_pod.proxy.Pod(self.settings['pod']['tolerance'],
+                                                   self.settings['pod']['dim_max'],
+                                                   self.settings['snapshot']['io'])
+        else:
+            # directly instantiate the pod,
+            # the snapshot class is initialized as a by product
+            self.pod = Pod(self.settings['pod']['tolerance'],
+                           self.settings['pod']['dim_max'],
+                           self.settings['space']['corners'])
+
+    def sampling_pod(self, update):
+        """Call private method _pod_processing."""
+        self._pod_processing(self.initial_points, update)
+
+    def resampling_pod(self):
+        """Resampling of the POD.
+
+        Generate new samples if quality and number of sample are not satisfied.
+        From a new sample, it re-generates the POD.
+
+        """
+        while len(self.pod.points) < self.settings['space']['size_max']:
+            quality, point_loo = self.pod.estimate_quality()
+            if quality >= self.settings['pod']['quality']:
+                break
+
+            try:
+                new_point = self.space.refine(self.pod, point_loo)
+            except FullSpaceError:
+                break
+
+            self._pod_processing(new_point, True)
 
     def _pod_processing(self, points, update):
-        """docstring for fname."""
+        """POD processing.
+
+        Generates or retrieve the snapshots and then perform the POD.        
+
+        :param :class:`SpaceBase` points: points to perform the POD from
+        :param bool update: perform dynamic or static computation
+
+        """
         # snapshots generation
         snapshots = []
         for p in points:
@@ -210,106 +256,14 @@ class Driver():
                 snapshots = _snapshots
             self.pod.decompose(snapshots)
 
-    def init_pod(self, script):
-        if self.settings['pod']['server'] is not None:
-            if mpi.size > 1:
-                raise Exception(
-                    'When using the external pod, the driver must be sequential.')
-
-            self.logger.info('Using external pod.')
-            # get the pod server running and connect to its through its proxy
-            self.external_pod = PodServerTask(self.settings['pod']['server']['port'],
-                                              self.settings['pod']['server']['python'],
-                                              script, self.output)
-            self.external_pod.run()
-            # self.external_pod._after_run()
-            self.pod = self.external_pod.proxy.Pod(self.settings['pod']['tolerance'],
-                                                   self.settings['pod']['dim_max'],
-                                                   self.settings['snapshot']['io'])
-        else:
-            # directly instantiate the pod,
-            # the snapshot class is initialized as a by product
-            self.pod = Pod(self.settings['pod']['tolerance'],
-                           self.settings['pod']['dim_max'],
-                           self.settings['space']['corners'])
-
-    def sampling_pod(self, update):
-        """docstring for static_pod."""
-        if self.pod is None:
-            raise Exception(
-                "driver's pod has not been initialized, call init_pod first.")
-        self._pod_processing(self.initial_points, update)
-
-    def resampling_pod(self):
-        """Resampling of the POD.
-
-        Generate new samples if quality and number of sample are not satisfied.
-        From a new sample, it re-generates the POD.
-
-        """
-        if self.pod is None:
-            raise Exception(
-                "driver's pod has not been initialized, call init_pod first.")
-
-        while len(self.pod.points) < self.settings['space']['size_max']:
-            quality, point_loo = self.pod.estimate_quality()
-            if quality >= self.settings['pod']['quality']:
-                break
-
-            try:
-                new_point = self.space.refine(self.pod, point_loo)
-            except FullSpaceError:
-                break
-
-            self._pod_processing(new_point, True)
-
     def write_pod(self):
-        """docstring for static_pod."""
+        """Write POD to file."""
         self.pod.write(os.path.join(self.output, self.output_tree['pod']))
 
     def read_pod(self, path=None):
-        """docstring for static_pod."""
+        """Read POD from file."""
         path = path or os.path.join(self.output, self.output_tree['pod'])
         self.pod.read(path)
-
-    def prediction(self, write=False):
-        if self.external_pod is not None \
-           or write:
-            output = os.path.join(self.output, self.output_tree['predictions'])
-        else:
-            output = None
-
-        self.pod.predict(self.settings['prediction']['method'],
-                         self.settings['prediction']['points'], output)
-
-    def prediction_without_computation(self, write=False):
-        if self.external_pod is not None \
-           or write:
-            output = os.path.join(self.output, self.output_tree['predictions'])
-        else:
-            output = None
-        model = self.read_model()
-        self.pod.predict_without_computation(
-            model, self.settings['prediction']['points'], output)
-
-    def write_model(self):
-        """docstring for static_pod."""
-        self.pod.write_model(
-            os.path.join(
-                self.output,
-                self.output_tree['pod']))
-
-    def read_model(self, path=None):
-        """docstring for static_pod."""
-        path = path or os.path.join(self.output, self.output_tree['pod'])
-        return self.pod.read_model(path)
-
-    def uq(self):
-        """Perform UQ analysis."""
-        output = os.path.join(self.output, self.output_tree['uq'])
-        analyse = UQ(self.pod, self.settings, output)
-        analyse.sobol()
-        analyse.error_propagation()
 
     def restart(self):
         """Restart process."""
@@ -332,3 +286,50 @@ class Driver():
             self.initial_points = []
             self.space.empty()
             self.space.add(processed_points)
+
+    def prediction(self, write=False):
+        """Perform a prediction."""
+        if self.external_pod is not None or write:
+            output = os.path.join(self.output, self.output_tree['predictions'])
+        else:
+            output = None
+
+        self.pod.predict(self.settings['prediction']['method'],
+                         self.settings['prediction']['points'], output)
+
+    def prediction_without_computation(self, write=False):
+        """Perform a prediction using an existing model read from file."""
+        if self.external_pod is not None or write:
+            output = os.path.join(self.output, self.output_tree['predictions'])
+        else:
+            output = None
+        model = self.read_model()
+        self.pod.predict_without_computation(
+            model, self.settings['prediction']['points'], output)
+
+    def write_model(self):
+        """Write model to file."""
+        self.pod.write_model(
+            os.path.join(
+                self.output,
+                self.output_tree['pod']))
+
+    def read_model(self, path=None):
+        """Read model from file."""
+        path = path or os.path.join(self.output, self.output_tree['pod'])
+        return self.pod.read_model(path)
+
+    def uq(self):
+        """Perform UQ analysis."""
+        output = os.path.join(self.output, self.output_tree['uq'])
+        analyse = UQ(self.pod, self.settings, output)
+        analyse.sobol()
+        analyse.error_propagation()
+
+
+    def __del__(self):
+        """docstring for __del__."""
+        # terminate pending tasks
+        if mpi.myid == 0 and self.external_pod is not None:
+            self.logger.info('Terminating the external pod.')
+            self.external_pod.terminate()

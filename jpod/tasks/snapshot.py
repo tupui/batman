@@ -1,3 +1,22 @@
+# -*- coding: utf-8 -*-
+"""
+SnapshotTask Class
+==================
+
+An object of this class corresponds to a snapshot.
+The initialize classmethod is used to define common characteristics.
+It is only after that a :class:`SnapshotTask` object can be created.
+
+:Example:
+
+::
+
+    >> from tasks import SnapshotTask
+    >> SnapshotTask.initialize(provider, data_files)
+    >> task = SnapshotTask(point, path)
+    >> task.run()
+
+"""
 import os
 import re
 import time
@@ -5,13 +24,15 @@ import logging
 import shutil
 from ..misc import clean_path
 import subprocess
-from ..space import Point
 from ..pod import Snapshot
 
 opj = os.path.join
 
+
 class SnapshotTask():
-    """docstring for SnapshotTask"""
+
+    """SnapshotTask class."""
+
     logger = logging.getLogger(__name__)
 
     # these attributes should be independent of external settings
@@ -74,13 +95,15 @@ class SnapshotTask():
     def initialize(cls, provider, data_files):
         """Initialize the settings common to all objects."""
         if not os.path.isdir(provider['context']):
-            cls.logger.error('Cannot find the context directory: {}'.format(provider['context']))
+            cls.logger.error(
+                'Cannot find the context directory: {}'.format(provider['context']))
             raise SystemError
         else:
             cls.context = clean_path(provider['context'])
 
         if not os.path.isfile(provider['script']):
-            cls.logger.error('Cannot find script file: {}'.format(provider['script']))
+            cls.logger.error(
+                'Cannot find script file: {}'.format(provider['script']))
             raise SystemError
         else:
             cls.script = clean_path(provider['script'])
@@ -90,7 +113,6 @@ class SnapshotTask():
         cls.timeout = provider['timeout']
         cls.data_files = data_files
         cls.clean_working_directory = provider['clean']
-
 
     def __init__(self, point, working_directory):
         """Create a task the will produce a snapshot.
@@ -150,7 +172,8 @@ class SnapshotTask():
         else:
             # there must be no working directory
             if os.path.isdir(self.working_directory):
-                cls.logger.error('Working directory already exists:\n{}'.format(self))
+                cls.logger.error(
+                    'Working directory already exists:\n{}'.format(self))
                 raise SystemError
 
             # prepare the working directory
