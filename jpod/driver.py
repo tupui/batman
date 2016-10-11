@@ -114,14 +114,7 @@ class Driver():
                         os.path.join(
                             self.provider['data-directory'],
                             f)]
-            SnapshotTask.initialize(
-                self.provider['context'],
-                self.provider['command'],
-                self.provider['script'],
-                self.provider['timeout'],
-                data_files,
-                self.provider['private-directory'],
-                self.provider['clean'])
+            SnapshotTask.initialize(self.provider, data_files)
 
             # snapshots generation manager
             self.snapshooter = futures.ThreadPoolExecutor(

@@ -4,28 +4,18 @@ import time
 import logging
 import shutil
 from ..misc import clean_path
-from .task import Task
+import subprocess
 from ..space import Point
 from ..pod import Snapshot
 
 opj = os.path.join
 
-
-class TaskTimeoutError(Exception):
-    pass
-
-
-class TaskFailed(Exception):
-    pass
-
-
-
-
-class SnapshotTask(Task):
+class SnapshotTask():
     """docstring for SnapshotTask"""
+    logger = logging.getLogger(__name__)
 
     # these attributes should be independent of external settings
-    started_file  = 'job-started'
+    started_file = 'job-started'
     '''Name of the empty file which indicates that the task script has been started.'''
 
     finished_file = 'job-finished'
@@ -37,8 +27,7 @@ class SnapshotTask(Task):
     dummy_line = '^(\s*#|\n)'
     '''Regular expression used that match a non executable statement in a shell script.'''
 
-    info_lines = ['# start jpod state file insertion <<<<<<<<<<<<<<<<<<<<<<<<<\n',
-                  '# end jpod state file insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<\n']
+    info_line = '# State file insertion <<<<<<<<<<<<<<<<<<<<<<<<<\n'
     '''Commented lines to be inserted in the script before and after state file creation statements.'''
 
     period = 1
@@ -46,7 +35,6 @@ class SnapshotTask(Task):
 
     initialized = False
     '''Switch to check that the class has been initialized.'''
-
 
     # these attributes are settings common to all objects
     context = None
@@ -74,86 +62,78 @@ class SnapshotTask(Task):
     def _reset(cls):
         """Reset class attributes settings, for unit testing purposes."""
         cls.private_directory = None
-        cls.context    = None
-        cls.command    = None
-        cls.script     = None
-        cls.timeout    = None
+        cls.context = None
+        cls.command = None
+        cls.script = None
+        cls.timeout = None
         cls.data_files = None
         cls.initialized = False
         cls.clean_working_directory = False
 
-
     @classmethod
-    def initialize(cls, context, command, script, timeout, data_files,
-                   private_directory, clean_working_directory):
+    def initialize(cls, provider, data_files):
         """Initialize the settings common to all objects."""
-        if not os.path.isdir(context):
-            raise ValueError('cannot find the context directory \'%s\'.'%(context))
+        if not os.path.isdir(provider['context']):
+            cls.logger.error('Cannot find the context directory: {}'.format(provider['context']))
+            raise SystemError
         else:
-            cls.context = clean_path(context)
+            cls.context = clean_path(provider['context'])
 
-        cls.private_directory = private_directory
-
-        cls.command = command
-
-        if not os.path.isfile(script):
-            raise ValueError('cannot find script file.')
+        if not os.path.isfile(provider['script']):
+            cls.logger.error('Cannot find script file: {}'.format(provider['script']))
+            raise SystemError
         else:
-            cls.script = clean_path(script)
+            cls.script = clean_path(provider['script'])
 
-        cls.timeout = timeout
-
+        cls.private_directory = provider['private-directory']
+        cls.command = provider['command']
+        cls.timeout = provider['timeout']
         cls.data_files = data_files
-
-        cls.clean_working_directory = clean_working_directory
-
-        cls.initialized = True
+        cls.clean_working_directory = provider['clean']
 
 
     def __init__(self, point, working_directory):
         """Create a task the will produce a snapshot.
 
-        :param point: a point object.
+        :param point: a point object
         :param working_directory: path to the directory in which the task will be run.
         """
         cls = self.__class__
 
-        # check the class has been initialized
-        if not cls.initialized:
-            raise Exception(cls.__name__ + ' class has not been initialized.')
-
-        # check the Snapshot class has been initialized as we need its
-        # point_filename attribute for writing a point to disk
-        if not Snapshot.initialized:
-            raise Exception('Snapshot class has not been initialized.')
-
-        if not isinstance(working_directory, str):
-            raise TypeError('working_directory must be a string')
-        else:
-            self.working_directory = clean_path(working_directory)
-
-        if not isinstance(point, Point):
-            raise TypeError('point must be a Point object.')
-        else:
-            self.point = point
-
+        self.working_directory = clean_path(working_directory)
+        self.point = point
         self.private_directory = opj(self.working_directory,
                                      cls.private_directory)
-        self.started_file      = opj(self.private_directory, cls.started_file)
-        self.finished_file     = opj(self.private_directory, cls.finished_file)
-        self.script            = opj(self.private_directory, 
-                                     os.path.basename(cls.script))
+        self.started_file = opj(self.private_directory, cls.started_file)
+        self.finished_file = opj(self.private_directory, cls.finished_file)
+        self.script = opj(self.private_directory,
+                          os.path.basename(cls.script))
 
-        # the task must be run from the working directory
-        super(SnapshotTask, self).__init__(cls.command.split() + [self.script],
-                                           cwd=self.working_directory)
+    def run(self):
+        """Return the result of the task.
 
+        If the task has already been completed, just return its result, otherwise try to run it first.
+        """
+        cls = self.__class__
+        result = self._before_run()
+
+        command = cls.command.split() + [self.script]
+        wkdir = self.working_directory
+        # check if the task has already been run
+        if result is None:
+            self.handle = subprocess.Popen(command, cwd=wkdir)
+            cls.logger.info('Launched : %s', ' '.join(command))
+            result = self._after_run()
+        else:
+            cls.logger.info('Task is up to date and was not run.')
+
+        return result
 
     def _before_run(self):
         """Prepare the run.
 
         The `working_directory` is created as a replica of the `context` directory tree with symbolic links. This is where the snapshot producer will be run, by issuing the command line generated with `command` and `script`. In addition to the files located in the directory `context`, the snapshot producer needs the parameters or the coordinates of the point in the parameters space bound to the snapshot to be created, this file is created here. In order to be informed about the state of the snapshot computation, without relying on querying a third party tool, the producer script is modified in order to create dummy state files in `working_directory`. A file which indicates that the script is starting (see `started_file`) is created right before any executable statements of the script and similarly right after all executable statements (see `finished_file`).
-"""
+        """
         cls = self.__class__
 
         # check whether the task needs to be run
@@ -170,9 +150,8 @@ class SnapshotTask(Task):
         else:
             # there must be no working directory
             if os.path.isdir(self.working_directory):
-                msg  = str(self) + '\n'
-                msg += 'working directory already exists'
-                raise TaskFailed(msg)
+                cls.logger.error('Working directory already exists:\n{}'.format(self))
+                raise SystemError
 
             # prepare the working directory
             self._copytree_with_symlinks(cls.context, self.working_directory)
@@ -187,7 +166,6 @@ class SnapshotTask(Task):
             self._state_files_hook()
 
             return None
-
 
     def _wait_for_completion(self):
         """Check if the task is completed."""
@@ -205,12 +183,12 @@ class SnapshotTask(Task):
             elif time.time() - start_time > cls.timeout:
                 # the task is taking too long
                 # first see if it has started at all
-                msg = str(self) + '\n'
                 if os.path.isfile(self.started_file):
-                    msg += 'the job started but did not finish.'
+                    msg = 'The job started but did not finish'
                 else:
-                    msg += 'the job has not started.'
-                raise TaskTimeoutError(msg)
+                    msg = 'The job has not started'
+                cls.logger.error('{}:\n{}'.format(msg, self))
+                raise SystemError
 
             # elif os.path.isfile(self.started_file):
             #     start_time = os.path.getctime(self.started_file)
@@ -222,7 +200,6 @@ class SnapshotTask(Task):
             else:
                 time.sleep(cls.period)
 
-
     def _after_run(self):
         """Wait for the job completion and return the snapshot directory."""
         cls = self.__class__
@@ -233,7 +210,8 @@ class SnapshotTask(Task):
         for f in cls.data_files:
             f_original = opj(self.working_directory, f)
             if not os.path.isfile(f_original):
-                raise TaskFailed('missing data file : %s'%f)
+                cls.logger.error('Missing data file: {}'.format(f))
+                raise SystemError
             else:
                 f_moved = opj(self.private_directory, os.path.basename(f))
                 os.rename(f_original, f_moved)
@@ -243,50 +221,47 @@ class SnapshotTask(Task):
             for f in os.listdir(self.working_directory):
                 f = opj(self.working_directory, f)
                 if f != self.private_directory:
-                    if os.path.isdir(f):
+                    try:
                         shutil.rmtree(f)
-                    else:
+                    except OSError:
                         os.remove(f)
 
         return self.private_directory
 
-
     def __str__(self):
-        s  = super(SnapshotTask, self).__str__() + '\n'
+        s = 'command line : ' + cls.command + '\n'
+        s += 'run form : ' + str(os.getcwd()) + '\n'
         s += 'point : ' + str(self.point) + '\n'
-        s += 'context : ' + self.__class__.context + '\n'
+        s += 'context : ' + self.kwargs.get('cwd', os.getcwd()) + '\n'
         s += 'working directory : ' + self.working_directory
         return s
-
 
     def _state_files_hook(self):
         """Modify the script to create the state files."""
         cls = self.__class__
 
         # file creation command lines
-        touch_started  = cls.touch + ' ' + self.started_file + '\n'
+        touch_started = cls.touch + ' ' + self.started_file + '\n'
         touch_finished = cls.touch + ' ' + self.finished_file + '\n'
 
         # wrap with info strings
-        touch_started  = cls.info_lines[0] + touch_started  + cls.info_lines[1]
-        touch_finished = cls.info_lines[0] + touch_finished + cls.info_lines[1]
+        touch_started = cls.info_line + touch_started + cls.info_line
+        touch_finished = cls.info_line + touch_finished + cls.info_line
 
         # insert started state file creation
-        lines = open(cls.script).readlines()
-        for i, line in enumerate(lines):
-            if not re.match(cls.dummy_line, line):
-                lines.insert(i, touch_started)
-                break
+        with open(cls.script, 'r') as f:
+            script = f.readlines()
+            for i, line in enumerate(script):
+                if not re.match(cls.dummy_line, line):
+                    script.insert(i, touch_started)
+                    break
 
         # append finished state file creation
-        lines.append(touch_finished)
+        script.append(touch_finished)
 
         # create the hooked script
-        f = open(self.script, 'w')
-        for l in lines:
-            f.write(l)
-        f.close()
-
+        with open(self.script, 'w') as f:
+            f.writelines(script)
 
     def _copytree_with_symlinks(self, original, copy):
         """Make a copy of a directory tree with symbolic links.
