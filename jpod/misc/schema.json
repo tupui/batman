@@ -21,7 +21,6 @@
           "minimum": 0
         },
         "provider": {
-          "type": "object",
           "properties": {
             "method": {
               "type": "string",
@@ -34,11 +33,7 @@
               "minimum": 0,
               "exclusiveMinimum": true
             }
-          },
-          "required": [
-            "method",
-            "size"
-          ]
+          }
         }
       },
       "required": [
