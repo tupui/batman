@@ -31,7 +31,7 @@ with $V$ diagonalizes :math:`A^TA`, :math:`U` diagonalizes :math:`AA^T` and :mat
 .. math::
    A = \sum_{i=1}^{r} \sigma_i u_i v_i^T,
 
-:math:`r being the rank of the matrix. If taken :math:`k < r`, an approximation of the initial matrix can be constructed. This allows to compress the data as only an extract of :math:`u` and :math:`v` need to be stored.
+:math:`r` being the rank of the matrix. If taken :math:`k < r`, an approximation of the initial matrix can be constructed. This allows to compress the data as only an extract of :math:`u` and :math:`v` need to be stored.
 
 References
 ..........

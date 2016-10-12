@@ -1,3 +1,22 @@
+"""
+Driver Class
+============
+
+Defines all methods used to interact with other classes.
+
+:Example:
+
+::
+
+    >> from jpod import Driver
+    >> driver = Driver(settings, script_path, output_path)
+    >> driver.sampling_pod(update=False)
+    >> driver.write_pod()
+    >> driver.prediction(write=True)
+    >> driver.write_model()
+    >> driver.uq()
+
+"""
 import logging
 import os
 import subprocess
@@ -6,7 +25,6 @@ from concurrent import futures
 
 from collections import OrderedDict
 import mpi
-import numpy as N
 from pod import Snapshot, Pod
 from space import Space, FullSpaceError, AlienPointError
 from tasks import PodServerTask, SnapshotTask
@@ -14,12 +32,11 @@ from uq import UQ
 
 subprocess.Popen.terminate
 
-# force numpy to raise an exception on floating-point errors
-N.seterr(all='raise', under='warn')
-
 
 class SnapshotProvider():
+
     """Utility class to make the code more readable.
+
     This is how the provider type is figured out.
     """
 
@@ -47,10 +64,9 @@ class SnapshotProvider():
 
 class Driver():
 
-    """docstring for Driver."""
+    """Driver class."""
 
     output_tree = {
-        # 'snapshot-template' : 'snapshot-template',
         'snapshots': 'snapshots',
         'pod': 'pod',
         'predictions': 'predictions',
@@ -59,6 +75,15 @@ class Driver():
     '''Structure of the output directory.'''
 
     def __init__(self, settings, script, output):
+        """Initialize Driver.
+
+        From settings, init snapshot, space and POD.
+
+        :param dict settings: settings
+        :param str script: settings path
+        :param str output: output path
+
+        """
         self.settings = settings
         '''JPOD settings'''
 
@@ -121,7 +146,7 @@ class Driver():
                 max_workers=self.settings['snapshot']['max_workers'])
 
     def _init_space(self):
-        """Initialize space by creating the DOE."""
+        """Initialize :class:`Space` by creating the DOE."""
         # space
         self.space = Space(self.settings)
 
@@ -159,7 +184,7 @@ class Driver():
                 raise SystemError
 
     def _init_pod(self, script):
-        """POD initialization."""
+        """Initialize :class:`Pod`."""
         if self.settings['pod']['server'] is not None:
             if mpi.size > 1:
                 raise Exception(
@@ -208,7 +233,7 @@ class Driver():
     def _pod_processing(self, points, update):
         """POD processing.
 
-        Generates or retrieve the snapshots and then perform the POD.        
+        Generates or retrieve the snapshots and then perform the POD.
 
         :param :class:`SpaceBase` points: points to perform the POD from
         :param bool update: perform dynamic or static computation
@@ -326,9 +351,8 @@ class Driver():
         analyse.sobol()
         analyse.error_propagation()
 
-
     def __del__(self):
-        """docstring for __del__."""
+        """Driver destructor."""
         # terminate pending tasks
         if mpi.myid == 0 and self.external_pod is not None:
             self.logger.info('Terminating the external pod.')
