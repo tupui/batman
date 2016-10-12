@@ -5,10 +5,12 @@ Implements functions:
 - :func:`misc.clean_path`,
 - :func:`misc.check_yes_no`,
 - :func:`misc.abs_path`,
-- :func:`misc.import_config`.
+- :func:`misc.import_config`,
+- :func:`misc.progress_bar`
 
 """
 import os
+import sys
 import logging
 import json
 import jsonschema
@@ -85,3 +87,13 @@ def import_config(path_config, path_schema):
         raise SystemExit
 
     return settings
+
+
+def progress_bar(iteration, total):
+    """Print progress bar in console."""
+    sys.stdout.write("\rProgress [" +
+                     "=" * iteration + " " * (total - iteration) +
+                     "]" + str(iteration / float(total) * 100.) + "% ")
+    if iteration == total:
+        sys.stdout.write('\n')
+    sys.stdout.flush()

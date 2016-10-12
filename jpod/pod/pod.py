@@ -1,3 +1,20 @@
+"""
+POD Class
+=========
+
+This class wraps the core of POD computations and manages high level IO.
+
+:Example:
+
+::
+
+    >> from pod import Pod
+    >> pod = Pod(tol, max, coners)
+    >> pod.decompose(snapshots)
+    >> pod.write(path)
+    >> pod.estimate_quality()
+
+"""
 import logging
 import os
 import dill as pickle
@@ -12,7 +29,8 @@ from jpod.space import SpaceBase
 
 
 class Pod(Core):
-    """This class wraps the core of pod computations and manages high level IO."""
+
+    """POD class."""
 
     logger = logging.getLogger(__name__)
 
@@ -47,7 +65,6 @@ class Pod(Core):
         '''A space to record the points.'''
 
         # for external pod
-        # TODO: find a better alternative
         if snapshot_io is not None:
             Snapshot.initialize(snapshot_io)
 
@@ -67,18 +84,18 @@ class Pod(Core):
         return '\n\t'.join(s)
 
     def register_observer(self, obj):
-        """Register an observer for pod decomposition update."""
+        """Register an observer for POD decomposition update."""
         self.observers += [obj]
 
     def _notify_observers(self):
-        """Notify observers that depend on pod decomposition update."""
+        """Notify observers that depend on POD decomposition update."""
         for o in self.observers:
             o.notify()
 
     def decompose(self, snapshots):
         """Create a pod from a set of snapshots.
 
-        snapshots : list of snapshots
+        :param lst(array) snapshots: snapshots matrix
         """
         if len(snapshots) == 0:
             self.logger.info(
