@@ -51,7 +51,7 @@ class SnapshotTask():
     info_line = '# State file insertion <<<<<<<<<<<<<<<<<<<<<<<<<\n'
     '''Commented lines to be inserted in the script before and after state file creation statements.'''
 
-    period = 1
+    period = None
     '''Period of time in seconds between state files existence checking.'''
 
     initialized = False
@@ -111,6 +111,7 @@ class SnapshotTask():
         cls.private_directory = provider['private-directory']
         cls.command = provider['command']
         cls.timeout = provider['timeout']
+        cls.period = cls.timeout / 100.
         cls.data_files = data_files
         cls.clean_working_directory = provider['clean']
 
@@ -252,10 +253,11 @@ class SnapshotTask():
         return self.private_directory
 
     def __str__(self):
+        cls = self.__class__
         s = 'command line : ' + cls.command + '\n'
         s += 'run form : ' + str(os.getcwd()) + '\n'
         s += 'point : ' + str(self.point) + '\n'
-        s += 'context : ' + self.kwargs.get('cwd', os.getcwd()) + '\n'
+        s += 'context : ' + self.context + '\n'
         s += 'working directory : ' + self.working_directory
         return s
 
