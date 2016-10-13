@@ -13,7 +13,7 @@ M. Brand: Fast low-rank modifications of the thin singular value decomposition. 
 import numpy as np
 from .predictor import Predictor
 from .. import mpi
-from ..misc import progress_bar
+from ..misc import ProgressBar
 
 
 class Core(object):
@@ -197,9 +197,8 @@ class Core(object):
         error = np.empty(points_nb)
         mean = np.zeros(self.mean_snapshot.shape[0])
 
+        progress = ProgressBar(points_nb)
         for i in range(points_nb):
-            progress_bar(i, points_nb)
-
             # Remove point from matrix
             V_1 = np.delete(self.V, i, 0)
 
@@ -224,6 +223,8 @@ class Core(object):
                               ** 2)
 
             mean += np.dot(self.U, self.V[i] * self.S)
+
+            progress()
 
         mean = mean / points_nb
         var = 0.

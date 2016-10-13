@@ -14,6 +14,8 @@ import sys
 import logging
 import json
 import jsonschema
+import numpy as np
+import time
 
 
 def clean_path(path):
@@ -89,11 +91,68 @@ def import_config(path_config, path_schema):
     return settings
 
 
-def progress_bar(iteration, total):
+class ProgressBar():
+
     """Print progress bar in console."""
-    sys.stdout.write("\rProgress [" +
-                     "=" * iteration + " " * (total - iteration) +
-                     "]" + str(iteration / float(total) * 100.) + "% ")
-    if iteration == total:
-        sys.stdout.write('\n')
-    sys.stdout.flush()
+
+    def __init__(self, total):
+        """Create a bar.
+
+        :param int total: number of iterations
+        """
+        self.total = total
+        self.calls = 1
+        self.progress = 0.
+
+        sys.stdout.write("Progress | " +
+                         " " * 50 +
+                         " |" + "0.0% ")
+
+        self.init_time = time.time()
+
+    def __call__(self):
+        """Update bar."""
+        self.progress = (self.calls) / float(self.total) * 100
+
+        eta, vel = self.compute_eta()
+        self.show_progress(eta, vel)
+
+        self.calls += 1
+
+    def compute_eta(self):
+        """Compute ETA.
+
+        Compare current time with init_time.
+
+        :return: eta, vel
+        :rtype: str
+        """
+        end_time = time.time()
+        iter_time = (end_time - self.init_time) / self.calls
+
+        eta = (self.total - self.calls) * iter_time
+        eta = time.strftime("%H:%M:%S", time.gmtime(eta))
+
+        vel = str(1. / iter_time)
+
+        return eta, vel
+
+    def show_progress(self, eta=None, vel=None):
+        """Print bar and ETA if relevant.
+
+        :param str eta: ETA in H:M:S
+        :param str vel: iteration/second
+        """
+        bar = int(np.floor(self.progress / 2))
+        sys.stdout.write("\rProgress | " +
+                         u"\u2588" * (bar - 1) + u"\u2589" +
+                         " " * (50 - bar - 1) +
+                         " |" + str(self.progress) + "% ")
+
+        if self.progress == 100:
+            sys.stdout.write('\n')
+            del self
+        elif (eta and vel):
+            sys.stdout.write("| ETA: " + eta + " (at " + vel + " it/s) ")
+
+        sys.stdout.flush()
