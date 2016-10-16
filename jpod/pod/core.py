@@ -14,6 +14,7 @@ import numpy as np
 from .predictor import Predictor
 from .. import mpi
 from ..misc import ProgressBar
+from pathos.multiprocessing import ProcessingPool
 
 
 class Core(object):
@@ -181,6 +182,9 @@ class Core(object):
         V = np.dot(Q, V.T)
         return (Urot, S, V)
 
+
+
+
     def estimate_quality(self, points):
         """Quality estimation of the model.
 
@@ -197,8 +201,8 @@ class Core(object):
         error = np.empty(points_nb)
         mean = np.zeros(self.mean_snapshot.shape[0])
 
-        progress = ProgressBar(points_nb)
-        for i in range(points_nb):
+        def quality(i):
+            # points = self.points
             # Remove point from matrix
             V_1 = np.delete(self.V, i, 0)
 
@@ -218,13 +222,21 @@ class Core(object):
             prediction, _ = predictor(points[i])
 
             # MSE on the missing point
-            error[i] = np.sum((np.dot(Urot, prediction) - float(points_nb)
+            error = np.sum((np.dot(Urot, prediction) - float(points_nb)
                               / float(points_nb - 1) * self.V[i] * self.S)
                               ** 2)
 
-            mean += np.dot(self.U, self.V[i] * self.S)
+            mean = np.dot(self.U, self.V[i] * self.S)
 
             progress()
+
+            return (mean, error)
+
+        pool = ProcessingPool()
+        progress = ProgressBar(points_nb)
+        results = pool.map(quality, range(points_nb))
+        print results
+
 
         mean = mean / points_nb
         var = 0.
