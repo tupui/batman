@@ -14,6 +14,7 @@ import numpy as np
 from .predictor import Predictor
 from .. import mpi
 from ..misc import ProgressBar
+from pathos.multiprocessing import ProcessingPool, cpu_count
 
 
 class Core(object):
@@ -181,10 +182,15 @@ class Core(object):
         V = np.dot(Q, V.T)
         return (Urot, S, V)
 
+
+
+
     def estimate_quality(self, points):
         """Quality estimation of the model.
 
         The quality estimation is done using the leave-one-out method.
+        A parallel computation is performed by iterating over the
+        points of the DOE.
         Q2 is computed and the point with max MSE is looked up.
 
         :param lst points: Points in the parameter space
@@ -195,10 +201,15 @@ class Core(object):
         """
         points_nb = len(points)
         error = np.empty(points_nb)
-        mean = np.zeros(self.mean_snapshot.shape[0])
+        mean = np.empty(points_nb)
 
-        progress = ProgressBar(points_nb)
-        for i in range(points_nb):
+        def quality(i):
+            """Error at a point.
+
+            :param int i: point iterator
+            :return: mean, error
+            :rtype: np.array, float
+            """
             # Remove point from matrix
             V_1 = np.delete(self.V, i, 0)
 
@@ -218,13 +229,23 @@ class Core(object):
             prediction, _ = predictor(points[i])
 
             # MSE on the missing point
-            error[i] = np.sum((np.dot(Urot, prediction) - float(points_nb)
+            error = np.sum((np.dot(Urot, prediction) - float(points_nb)
                               / float(points_nb - 1) * self.V[i] * self.S)
                               ** 2)
 
-            mean += np.dot(self.U, self.V[i] * self.S)
+            mean = np.dot(self.U, self.V[i] * self.S)
 
+            return mean, error
+
+        pool = ProcessingPool(cpu_count())
+        progress = ProgressBar(points_nb)
+        results = pool.imap(quality, range(points_nb))
+
+        for i in range(points_nb):
+            mean[i], error[i] = results.next()
             progress()
+
+        mean = np.sum(mean)
 
         mean = mean / points_nb
         var = 0.
