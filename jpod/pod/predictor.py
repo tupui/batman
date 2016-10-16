@@ -1,5 +1,4 @@
 import logging
-
 from ..surrogate import RBFnet, Kriging
 import numpy as np
 from .snapshot import Snapshot

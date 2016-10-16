@@ -14,7 +14,7 @@ import numpy as np
 from .predictor import Predictor
 from .. import mpi
 from ..misc import ProgressBar
-from pathos.multiprocessing import ProcessingPool
+from pathos.multiprocessing import ProcessingPool, cpu_count
 
 
 class Core(object):
@@ -189,6 +189,8 @@ class Core(object):
         """Quality estimation of the model.
 
         The quality estimation is done using the leave-one-out method.
+        A parallel computation is performed by iterating over the
+        points of the DOE.
         Q2 is computed and the point with max MSE is looked up.
 
         :param lst points: Points in the parameter space
@@ -200,10 +202,14 @@ class Core(object):
         points_nb = len(points)
         error = np.empty(points_nb)
         mean = np.empty(points_nb)
-        # mean = np.zeros(self.mean_snapshot.shape[0])
 
         def quality(i):
-            # points = self.points
+            """Error at a point.
+
+            :param int i: point iterator
+            :return: mean, error
+            :rtype: np.array, float
+            """
             # Remove point from matrix
             V_1 = np.delete(self.V, i, 0)
 
@@ -229,16 +235,15 @@ class Core(object):
 
             mean = np.dot(self.U, self.V[i] * self.S)
 
-            progress()
-
             return mean, error
 
-        pool = ProcessingPool()
+        pool = ProcessingPool(cpu_count())
         progress = ProgressBar(points_nb)
         results = pool.imap(quality, range(points_nb))
 
         for i in range(points_nb):
             mean[i], error[i] = results.next()
+            progress()
 
         mean = np.sum(mean)
 

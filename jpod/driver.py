@@ -19,7 +19,6 @@ Defines all methods used to interact with other classes.
 """
 import logging
 import os
-import subprocess
 
 from concurrent import futures
 
@@ -29,8 +28,6 @@ from pod import Snapshot, Pod
 from space import Space, FullSpaceError, AlienPointError
 from tasks import PodServerTask, SnapshotTask
 from uq import UQ
-
-subprocess.Popen.terminate
 
 
 class SnapshotProvider():
