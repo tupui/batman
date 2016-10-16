@@ -199,7 +199,8 @@ class Core(object):
         """
         points_nb = len(points)
         error = np.empty(points_nb)
-        mean = np.zeros(self.mean_snapshot.shape[0])
+        mean = np.empty(points_nb)
+        # mean = np.zeros(self.mean_snapshot.shape[0])
 
         def quality(i):
             # points = self.points
@@ -230,13 +231,16 @@ class Core(object):
 
             progress()
 
-            return (mean, error)
+            return mean, error
 
         pool = ProcessingPool()
         progress = ProgressBar(points_nb)
-        results = pool.map(quality, range(points_nb))
-        print results
+        results = pool.imap(quality, range(points_nb))
 
+        for i in range(points_nb):
+            mean[i], error[i] = results.next()
+
+        mean = np.sum(mean)
 
         mean = mean / points_nb
         var = 0.
