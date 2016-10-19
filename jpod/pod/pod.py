@@ -23,7 +23,7 @@ import copy
 from .core import Core
 from .. import mpi
 import numpy as N
-from .predictor import PodPredictor
+from .predictor import Predictor
 from .snapshot import Snapshot
 from jpod.space import SpaceBase
 
@@ -172,7 +172,7 @@ class Pod(Core):
         :param str path: if not set, will return a list of predicted snapshots instances, otherwise write them to disk.
         """
         if self.predictor is None:
-            self.predictor = PodPredictor(method, self)
+            self.predictor = Predictor(method, self)
 
         snapshots, sigma = self.predictor(points)
 
