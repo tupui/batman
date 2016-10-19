@@ -1,13 +1,13 @@
 import os
 import re
 import logging
-from .task import Task
+from .snapshot import SnapshotTask
 import rpyc
 import socket
 import numpy as N
 
 
-class PodServerTask(Task):
+class PodServerTask(SnapshotTask):
     """Task subclass to manage the pod server."""
 
 
