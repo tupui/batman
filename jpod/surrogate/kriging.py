@@ -36,6 +36,7 @@ except ImportError:
 import numpy as np
 import logging
 from scipy.optimize import differential_evolution
+from pathos.multiprocessing import ProcessingPool, cpu_count
 
 
 class Kriging():
@@ -62,16 +63,26 @@ class Kriging():
         scale_bounds = [(1e-03, 1000.0)] * input_len
         self.kernel = 1.0 * RBF(length_scale=l_scale,
                                 length_scale_bounds=scale_bounds)
-        self.data = []
-        self.hyperparameter = []
+        model_len = len(output.T)
 
-        # Create a predictor per output
-        for column in output.T:
+        def model_fitting(column):
             gp = GaussianProcessRegressor(kernel=self.kernel,
                                           n_restarts_optimizer=1,
                                           optimizer=self.optim_evolution)
-            self.data += [gp.fit(input, column)]
-            self.hyperparameter += [np.exp(gp.kernel_.theta)]
+            data = [gp.fit(input, column)]
+            hyperparameter = [np.exp(gp.kernel_.theta)]
+
+            return data, hyperparameter
+
+        # Create a predictor per output
+        if model_len > 1:
+            pool = ProcessingPool(cpu_count())
+            results = pool.imap(model_fitting, output.T)
+        else:
+            results = [model_fitting(output.T[0])]
+
+        results = list(results)
+        self.data, self.hyperparameter = results[0]
 
         self.logger.debug("Hyperparameters: {}".format(self.hyperparameter))
 
