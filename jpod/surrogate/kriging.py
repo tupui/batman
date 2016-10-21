@@ -28,11 +28,8 @@ F. Pedregosa et al.: Scikit-learn: Machine Learning in Python. Journal of Machin
 # Authors: Pamphile ROY <roy.pamphile@gmail.fr>
 # Copyright: CERFACS
 
-try:
-    from sklearn.gaussian_process import GaussianProcessRegressor
-    from sklearn.gaussian_process.kernels import RBF
-except ImportError:
-    raise NotImplementedError('No Kriging available, without scikits.learn module.')
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF
 import numpy as np
 import logging
 from scipy.optimize import differential_evolution
@@ -49,10 +46,11 @@ class Kriging():
         """Create the predictor.
 
         Uses input and output to construct a predictor using Gaussian Process.
-        Input is to be normalized before and depending on the number of parameters,
-        the kernel is adapted to be anisotropic.
+        Input is to be normalized before and depending on the number of
+        parameters, the kernel is adapted to be anisotropic.
 
-        `self.data` contains the predictors as a list(array) of the size of the `ouput`.
+        `self.data` contains the predictors as a list(array) of the size
+        of the `ouput`.
 
         :param ndarray input: The input used to generate the output.
         :param ndarray output: The observed data.
@@ -74,7 +72,7 @@ class Kriging():
 
             return data, hyperparameter
 
-        # Create a predictor per output
+        # Create a predictor per output, parallelize if several output
         if model_len > 1:
             pool = ProcessingPool(cpu_count())
             results = pool.imap(model_fitting, output.T)

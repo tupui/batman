@@ -1,3 +1,23 @@
+# -*- coding: utf-8 -*-
+"""
+Predictor Class
+===============
+
+This class manages snapshot prediction.
+It allows the creation of a surrogate model and making predictions.
+
+:Example:
+
+::
+
+    >> from predictor import Predictor
+    >> method = "kriging"
+    >> predictor = Predictor(method, pod)
+    >> point = [(12.5, 56.8)]
+    >> prediction = predictor(point)
+
+"""
+
 import logging
 from ..surrogate import RBFnet, Kriging
 import numpy as np
@@ -6,7 +26,7 @@ from .snapshot import Snapshot
 
 class Predictor():
 
-    """Manages snapshot prediction."""
+    """Predictor."""
 
     logger = logging.getLogger(__name__)
 
@@ -34,9 +54,11 @@ class Predictor():
 
         # adimentionalize corners
         bounds = np.array(self.pod.corners)
-        axis = len(bounds.shape)-1
-        self.bounds_min = np.array((np.amin(bounds, axis=axis).reshape(2, -1)[0, :]))
-        self.bounds_max = np.array((np.amax(bounds, axis=axis).reshape(2, -1)[1, :]))
+        axis = len(bounds.shape) - 1
+        self.bounds_min = np.array(
+            (np.amin(bounds, axis=axis).reshape(2, -1)[0, :]))
+        self.bounds_max = np.array(
+            (np.amax(bounds, axis=axis).reshape(2, -1)[1, :]))
         points = np.array(points)
         points = np.divide(np.subtract(points, self.bounds_min),
                            self.bounds_max - self.bounds_min)
@@ -51,7 +73,6 @@ class Predictor():
             raise ValueError('kind must be either "rbf" or "kriging"')
 
         self.logger.info('Predictor created')
-
 
     def notify(self):
         """Notify the predictor that it requires an update."""
