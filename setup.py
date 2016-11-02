@@ -102,12 +102,16 @@ setup(
     entry_points={'console_scripts': ['jpod=jpod.ui:main']},
     # Package requirements
     install_requires=['sphinx_rtd_theme',
+                      'sphinx',
                       'jsonschema',
                       'futures',
+                      'pathos',
+                      'otwrapy==0.6',
                       'rpyc',
                       'mpi4py',
                       'h5py',
                       'scikit-learn>=0.18'],
+    dependency_links=['https://github.com/felipeam86/otwrapy/tarball/master#egg=otwrapy-0.6'],
     cmdclass=cmdclasses,
     # metadata
     maintainer="Pamphile ROY",

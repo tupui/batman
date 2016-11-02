@@ -64,7 +64,7 @@ class Core(object):
         decomposed using SVD from numpy.
 
         :param array snapshots: Snapshot matrix (nb of data per snapshot,
-        nb of samples)
+            nb of samples)
         """
         # compute mean snapshot
         self.mean_snapshot = np.average(snapshots, 1)
