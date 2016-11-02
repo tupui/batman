@@ -12,6 +12,7 @@ Defines an interface between the models and OpenTURNS.
     >> model = otw.Parallelizer(Wrapper(pod, p_len, output_len), backend='pathos', n_cpus=3)
 """
 import openturns as ot
+import numpy as np
 
 class Wrapper(ot.OpenTURNSPythonFunction):
     def __init__(self, pod, p_len, output_len, block=False):
