@@ -284,7 +284,7 @@ class UQ:
         if self.method_sobol == 'sobol':
             self.logger.info("\n----- Sobol' indices -----")
 
-            if float(ot.__version__) < 1.8:
+            if float(ot.__version__[:3]) < 1.8:
                 experiment = ot.LHSExperiment(self.distribution, self.points_sample)
                 sample2 = experiment.generate()
                 sobol = ot.SensitivityAnalysis(self.sample, sample2, sobol_model)
@@ -362,11 +362,17 @@ class UQ:
             output_var = output.computeVariance()
             sum_var_indices = [np.zeros((self.p_len, self.p_len)), np.zeros((self.p_len)), np.zeros((self.p_len))]
             for i, j in itertools.product(range(self.output_len), range(3)):
-                indices[:][j][i] = np.nan_to_num(indices[:][j][i])
-                sum_var_indices[j] += float(output_var[i]) * indices[:][j][i]
+                try:
+                    indices[:][j][i] = np.nan_to_num(indices[:][j][i])
+                    sum_var_indices[j] += float(output_var[i]) * indices[:][j][i]
+                except IndexError:
+                    pass
             sum_var = np.sum(output_var)
             for i in range(3):
-                indices[i] = sum_var_indices[i] / sum_var
+                try:
+                    indices[i] = sum_var_indices[i] / sum_var
+                except IndentationError:
+                    pass
             self.logger.info("Aggregated_indices: {}".format(indices))
 
             try:
