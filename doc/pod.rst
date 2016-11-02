@@ -57,7 +57,3 @@ Pod module
 .. automodule:: jpod.pod.snapshot
    :members:
    :undoc-members:
-
-.. automodule:: jpod.pod.svd
-   :members:
-   :undoc-members:

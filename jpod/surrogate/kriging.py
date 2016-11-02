@@ -67,8 +67,8 @@ class Kriging():
             gp = GaussianProcessRegressor(kernel=self.kernel,
                                           n_restarts_optimizer=1,
                                           optimizer=self.optim_evolution)
-            data = [gp.fit(input, column)]
-            hyperparameter = [np.exp(gp.kernel_.theta)]
+            data = gp.fit(input, column)
+            hyperparameter = np.exp(gp.kernel_.theta)
 
             return data, hyperparameter
 
@@ -80,7 +80,11 @@ class Kriging():
             results = [model_fitting(output.T[0])]
 
         results = list(results)
-        self.data, self.hyperparameter = results[0]
+
+        self.data = [None] * model_len
+        self.hyperparameter = [None] * model_len
+        for i in range(model_len):
+            self.data[i], self.hyperparameter[i] = results[i]
 
         self.logger.debug("Hyperparameters: {}".format(self.hyperparameter))
 
