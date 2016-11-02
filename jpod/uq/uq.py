@@ -61,9 +61,12 @@ M. Baudin, A. Dutfoy, B. Iooss, A. Popelin: OpenTURNS: An industrial software fo
 import logging
 import numpy as np
 import openturns as ot
+import otwrapy as otw
+from multiprocessing import cpu_count
 # from openturns.viewer import View
 from os import mkdir
 import itertools
+from .wrapper import Wrapper
 
 
 class UQ:
@@ -113,63 +116,32 @@ class UQ:
         self.distribution = eval("ot.ComposedDistribution(["
                                  + input_pdf
                                  + "], ot.IndependentCopula(self.p_len))")
-        # self.experiment = ot.MonteCarloExperiment(self.distribution, self.points_sample)
-        self.experiment = ot.LHSExperiment(self.distribution,
-                                           self.points_sample)
-        self.sample = self.experiment.generate()
+        experiment = ot.LHSExperiment(self.distribution,
+                                      self.points_sample)
+        self.sample = experiment.generate()
         self.logger.info("Created {} samples with an LHS experiment"
                          .format(self.points_sample))
 
         self.method_pod = settings['prediction']['method']
         self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]
         self.f_input = None
-        self.model = ot.PythonFunction(self.p_len, self.output_len, self.func)
-        self.int_model = ot.PythonFunction(self.p_len, 1, self.int_func)
+
+        self.model = otw.Parallelizer(Wrapper(self.pod,
+                                              self.p_len,
+                                              self.output_len),
+                                      backend='pathos')
+        self.int_model = otw.Parallelizer(Wrapper(self.pod,
+                                                  self.p_len,
+                                                  1,
+                                                  block=True),
+                                          backend='pathos')
+        self.n_cpus = cpu_count() - 1
+
         self.snapshot = settings['space']['size_max']
 
     def __repr__(self):
         """Information about object."""
         return "UQ object: Method({}), Input({}), Distribution({})".format(self.method_sobol, self.p_lst, self.distribution)
-
-    def func(self, coords):
-        """Evaluate the POD at a given point.
-
-        This function calls the :func:`predict` function to compute a prediction.
-        If the prediction returns a vector, it create `self.f_input` which contains the discretisation information.
-
-        :param lst coords: The parameters set to calculate the solution from.
-        :return: The fonction evaluation.
-        :rtype: float
-
-        """
-        f_eval, _ = self.pod.predictor([coords])
-        try:
-            f_input, f_eval = np.split(f_eval[0].data, 2)
-            if self.f_input is None:
-                self.f_input = f_input
-        except:
-            f_eval = f_eval[0].data
-        return f_eval
-
-    def int_func(self, coords):
-        """Evaluate the POD at a given point and return the integral.
-
-        Same as :func:`func` but compute the integral using the trapezoidale rule.
-        It simply returns the prediction in case of a scalar output.
-
-        :param lst coords: The parameters set to calculate the solution from.
-        :return: The integral of the function.
-        :rtype: float
-
-        """
-        f_eval, _ = self.pod.predictor([coords])
-        try:
-            f_input, f_eval = np.split(f_eval[0].data, 2)
-            int_f_eval = np.trapz(f_eval, f_input)
-        except:
-            f_eval = f_eval[0].data
-            int_f_eval = f_eval
-        return [int_f_eval.item()]
 
     def error_pod(self, indices, function):
         r"""Compute the error between the POD and the analytic function.
@@ -315,17 +287,28 @@ class UQ:
 
         if self.method_sobol == 'sobol':
             self.logger.info("\n----- Sobol' indices -----")
-            sample1 = self.sample
-            experiment = ot.LHSExperiment(self.distribution, self.points_sample)
-            sample2 = experiment.generate()
-            sobol = ot.SensitivityAnalysis(sample1, sample2, sobol_model)
-            sobol.setBlockSize(int(ot.ResourceMap.Get("parallel-threads")))
+
+            if float(ot.__version__) < 1.8:
+                sample1 = self.sample
+                experiment = ot.LHSExperiment(self.distribution, self.points_sample)
+                sample2 = experiment.generate()
+                sobol = ot.SensitivityAnalysis(sample1, sample2, sobol_model)
+                sobol.setBlockSize(self.points_sample // self.n_cpus)
+            else:
+                input_design = ot.SobolIndicesAlgorithmImplementation.Generate(
+                    self.distribution, self.points_sample, True)
+                output_design = sobol_model(input_design)
+                sobol = ot.SaltelliSensitivityAlgorithm(input_design, output_design, self.points_sample)
+
             for i in range(sobol_len):
                 indices[0].append(np.array(sobol.getSecondOrderIndices(i)))
             self.logger.debug("Second order: {}".format(indices[0]))
+
         elif self.method_sobol == 'FAST':
             self.logger.info("\n----- FAST indices -----")
             sobol = ot.FAST(sobol_model, self.distribution, self.points_sample)
+            sobol.setBlockSize(self.points_sample // self.n_cpus)
+
         else:
             self.logger.error("The method {} doesn't exist".format(self.method_sobol))
             return
