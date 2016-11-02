@@ -111,7 +111,7 @@ setup(
                       'mpi4py',
                       'h5py',
                       'scikit-learn>=0.18'],
-    dependency_links=['https://github.com/tupui/otwrapy/tarball/pathos-support#egg=otwrapy-0.6'],
+    dependency_links=['https://github.com/felipeam86/otwrapy/tarball/master#egg=otwrapy-0.6'],
     cmdclass=cmdclasses,
     # metadata
     maintainer="Pamphile ROY",
