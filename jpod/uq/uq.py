@@ -126,15 +126,9 @@ class UQ:
         self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]
         self.f_input = None
 
-        self.model = otw.Parallelizer(Wrapper(self.pod,
-                                              self.p_len,
-                                              self.output_len),
-                                      backend='pathos')
-        self.int_model = otw.Parallelizer(Wrapper(self.pod,
-                                                  self.p_len,
-                                                  1,
-                                                  block=True),
-                                          backend='pathos')
+        self.wrapper = Wrapper(self.pod, self.p_len, self.output_len)
+        self.model = otw.Parallelizer(self.wrapper, backend='pathos')
+
         self.n_cpus = cpu_count() - 1
 
         self.snapshot = settings['space']['size_max']
@@ -279,7 +273,9 @@ class UQ:
         indices = [[], [], []]
 
         if self.type_indices == 'block':
-            sobol_model = self.int_model
+            self.wrapper = Wrapper(self.pod, self.p_len, 1, block=True)
+            int_model = otw.Parallelizer(self.wrapper, backend='pathos')
+            sobol_model = int_model
             sobol_len = 1
         else:
             sobol_model = self.model
@@ -289,10 +285,9 @@ class UQ:
             self.logger.info("\n----- Sobol' indices -----")
 
             if float(ot.__version__) < 1.8:
-                sample1 = self.sample
                 experiment = ot.LHSExperiment(self.distribution, self.points_sample)
                 sample2 = experiment.generate()
-                sobol = ot.SensitivityAnalysis(sample1, sample2, sobol_model)
+                sobol = ot.SensitivityAnalysis(self.sample, sample2, sobol_model)
                 sobol.setBlockSize(self.points_sample // self.n_cpus)
             else:
                 input_design = ot.SobolIndicesAlgorithmImplementation.Generate(
@@ -319,6 +314,8 @@ class UQ:
 
         self.logger.debug("First order: {}".format(indices[1]))
         self.logger.debug("Total: {}".format(indices[2]))
+
+        self.f_input = self.wrapper.f_input
 
         # TODO ANCOVA
         # ancova = ot.ANCOVA(results, sample)
