@@ -63,11 +63,28 @@ class CompileSources(Command):
 cmdclasses['build_sphinx'] = BuildSphinx
 cmdclasses['build_fortran'] = CompileSources
 
+# Check some import before starting build process.
 try:
     import scipy
 except ImportError:
     import pip
     pip.main(['install', 'scipy'])
+
+try:
+    import mpi4py
+except ImportError:
+    try:
+        import pip
+        pip.main(['install', 'mpi4py'])
+    except:
+        print('You need to have a proper MPI installation')
+        raise SystemExit
+
+try:
+    import openturns
+except:
+    print('You need to install OpenTURNS')
+    raise SystemExit
 
 
 def find_version(*file_paths):
@@ -108,7 +125,6 @@ setup(
                       'pathos',
                       'otwrapy==0.6',
                       'rpyc',
-                      'mpi4py',
                       'h5py',
                       'scikit-learn>=0.18'],
     dependency_links=['https://github.com/felipeam86/otwrapy/tarball/master#egg=otwrapy-0.6'],

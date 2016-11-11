@@ -163,8 +163,10 @@
           ]
         },
         "provider": {
-          "type": "object",
-          "properties": {
+          "anyOf":[
+          {
+            "type": "object",
+            "properties": {
             "command": {
               "type": "string",
               "default": "bash"
@@ -198,8 +200,8 @@
               "type": "string",
               "default": "False"
             }
-          },
-          "required": [
+            },
+            "required": [
             "command",
             "timeout",
             "context",
@@ -208,6 +210,11 @@
             "private-directory",
             "data-directory",
             "restart"
+            ]
+          },
+          {
+            "type": "string"
+          }
           ]
         }
       },
