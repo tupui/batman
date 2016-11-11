@@ -11,6 +11,7 @@ M. Brand: Fast low-rank modifications of the thin singular value decomposition. 
 
 """
 import numpy as np
+import copy
 from .predictor import Predictor
 from .. import mpi
 from ..misc import ProgressBar
@@ -221,12 +222,16 @@ class Core(object):
             points_1 = points[:]
             points_1.pop(i)
 
+            new_pod = copy.deepcopy(self)
+            new_pod.points = points_1
+            new_pod.V = V_1
+            new_pod.S = S_1
+
             # New prediction with points_nb - 1
             predictor = Predictor(self.leave_one_out_predictor,
-                                  points_1,
-                                  V_1 * S_1,
-                                  self.corners)
-            prediction, _ = predictor(points[i])
+                                  new_pod)
+
+            prediction, _ = predictor.predict(points[i])
 
             # MSE on the missing point
             error = np.sum((np.dot(Urot, prediction) - float(points_nb)
