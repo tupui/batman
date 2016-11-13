@@ -131,7 +131,8 @@ class UQ:
 
         self.n_cpus = cpu_count() - 1
 
-        self.snapshot = settings['space']['size_max']
+        self.snapshots = settings['space']['provider']['size']
+        self.max_snapshots = settings['space']['size_max']
 
     def __repr__(self):
         """Information about object."""
@@ -158,16 +159,24 @@ class UQ:
 
         """
         if function == 'Ishigami':
-            formula = ['sin(X1)+7*sin(X2)*sin(X2)+0.1*((X3)*(X3)*(X3)*(X3))*sin(X1)']
-            model_ref = ot.NumericalMathFunction(['X1', 'X2', 'X3'], ['Y'], formula)
+            formula = [
+                'sin(X1)+7*sin(X2)*sin(X2)+0.1*((X3)*(X3)*(X3)*(X3))*sin(X1)']
+            model_ref = ot.NumericalMathFunction(
+                ['X1', 'X2', 'X3'], ['Y'], formula)
             s_first_th = np.array([0.3139, 0.4424, 0.])
-            s_second_th = np.array([[0., 0., 0.2], [0., 0., 0.], [0.2, 0., 0.]])
+            s_second_th = np.array(
+                [[0., 0., 0.2], [0., 0., 0.], [0.2, 0., 0.]])
             s_total_th = np.array([0.558, 0.442, 0.244])
         elif function == 'Rosenbrock':
-            formula = ['100*(X2-X1*X1)*(X2-X1*X1) + (X1-1)*(X1-1) + 100*(X3-X2*X2)*(X3-X2*X2) + (X2-1)*(X2-1)']
-            model_ref = ot.NumericalMathFunction(['X1', 'X2', 'X3'], ['Y'], formula)
+            formula = [
+                '100*(X2-X1*X1)*(X2-X1*X1) + (X1-1)*(X1-1)'
+                '+ 100*(X3-X2*X2)*(X3-X2*X2) + (X2-1)*(X2-1)']
+            model_ref = ot.NumericalMathFunction(
+                ['X1', 'X2', 'X3'], ['Y'], formula)
             s_first_th = np.array([0.229983, 0.4855, 0.130659])
-            s_second_th = np.array([[0., 0.0920076, 0.00228908], [0.0920076, 0., 0.0935536], [0.00228908, 0.0935536, 0.]])
+            s_second_th = np.array([[0., 0.0920076, 0.00228908],
+                                    [0.0920076, 0., 0.0935536],
+                                    [0.00228908, 0.0935536, 0.]])
             s_total_th = np.array([0.324003, 0.64479, 0.205122])
         elif function == 'Channel_Flow':
             def channel_flow(x):
@@ -184,7 +193,8 @@ class UQ:
                 hinit = 10.
                 hh = hinit * np.ones(Long)
                 for i in range(2, Long + 1):
-                    hh[Long - i] = hh[Long - i + 1] - dx * I * ((1 - np.power(hh[Long - i + 1] / hn, -10. / 3.)) / (1 - np.power(hh[Long - i + 1] / hc, -3.)))
+                    hh[Long - i] = hh[Long - i + 1] - dx * I * ((1 - np.power(
+                        hh[Long - i + 1] / hn, -10. / 3.)) / (1 - np.power(hh[Long - i + 1] / hc, -3.)))
                 h = hh
 
                 X = np.arange(dx, longueur + 1, dx)
@@ -196,22 +206,25 @@ class UQ:
             s_second_th = np.array([[0., 0.1], [0.1, 0.]])
             s_total_th = np.array([0.1, 0.9])
         else:
-            self.logger.error("Wrong analytical function, options are: Ishigami, Rosenbrock and Channel_Flow")
+            self.logger.error(
+                "Wrong analytical function, options are: "
+                "Ishigami, Rosenbrock and Channel_Flow")
             return
         try:
-            s_err_l2_second = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
+            s_l2_2nd = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
         except:
             self.logger.warn("No Second order indices with FAST")
-            s_err_l2_second = 0.
+            s_l2_2nd = 0.
 
-        s_err_l2_first = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
-        s_err_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
+        s_l2_1st = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
+        s_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
 
         eval_mean = np.zeros(self.output_len)
         eval_ref = []
         err_max = 0.
         err_l2 = 0.
 
+        # Q2 computation
         for i, j in enumerate(self.sample):
             eval_ref.append(np.array(model_ref(j)))
             eval_pod = np.array(self.model(j))
@@ -225,12 +238,21 @@ class UQ:
         err_q2 = 1 - err_l2 / eval_var
 
         self.logger.info("\n----- POD error -----")
-        self.logger.info("\nL_inf(error): {}\nQ2(error): {}\nL2(sobol first, second and total order indices error): {}, {}, {}".format(err_max, err_q2, s_err_l2_first, s_err_l2_second, s_err_l2_total))
+        self.logger.info("\nL_inf(error): {}\nQ2(error): {}"
+                         "\nL2(sobol 1st, 2nd and total order indices error): "
+                         "{}, {}, {}".format(err_max, err_q2,
+                                             s_l2_1st, s_l2_2nd, s_l2_total))
 
         # Write error to file pod_err.dat
         try:
             with open(self.output_folder + '/pod_err.dat', 'w') as f:
-                f.writelines(str(self.snapshot) + ' ' + str(err_q2) + ' ' + str(self.points_sample) + ' ' + str(s_err_l2_first) + ' ' + str(s_err_l2_second) + ' ' + str(s_err_l2_total))
+                f.writelines(str(self.snapshots) + ' '
+                             + str(self.max_snapshots) + ' '
+                             + str(err_q2) + ' '
+                             + str(self.points_sample) + ' '
+                             + str(s_l2_1st) + ' '
+                             + str(s_l2_2nd) + ' '
+                             + str(s_l2_total))
 
             # Write a QQplot in case of a scalar output
             if self.output_len == 1:
@@ -240,7 +262,8 @@ class UQ:
                 # View(qq_plot).show()
                 qq_plot.draw(self.output_folder + '/qq_plot.png')
             else:
-                self.logger.debug("Cannot draw QQplot with output dimension > 1")
+                self.logger.debug(
+                    "Cannot draw QQplot with output dimension > 1")
         except:
             self.logger.debug("No output folder to write errors in")
 
@@ -285,15 +308,19 @@ class UQ:
             self.logger.info("\n----- Sobol' indices -----")
 
             if float(ot.__version__[:3]) < 1.8:
-                experiment = ot.LHSExperiment(self.distribution, self.points_sample)
+                experiment = ot.LHSExperiment(self.distribution,
+                                              self.points_sample)
                 sample2 = experiment.generate()
-                sobol = ot.SensitivityAnalysis(self.sample, sample2, sobol_model)
+                sobol = ot.SensitivityAnalysis(self.sample, sample2,
+                                               sobol_model)
                 sobol.setBlockSize(self.points_sample // self.n_cpus)
             else:
                 input_design = ot.SobolIndicesAlgorithmImplementation.Generate(
                     self.distribution, self.points_sample, True)
                 output_design = sobol_model(input_design)
-                sobol = ot.SaltelliSensitivityAlgorithm(input_design, output_design, self.points_sample)
+                sobol = ot.SaltelliSensitivityAlgorithm(input_design,
+                                                        output_design,
+                                                        self.points_sample)
 
             for i in range(sobol_len):
                 indices[0].append(np.array(sobol.getSecondOrderIndices(i)))
@@ -305,7 +332,8 @@ class UQ:
             sobol.setBlockSize(self.points_sample // self.n_cpus)
 
         else:
-            self.logger.error("The method {} doesn't exist".format(self.method_sobol))
+            self.logger.error("The method {} doesn't exist"
+                              .format(self.method_sobol))
             return
 
         for i in range(sobol_len):
@@ -316,12 +344,6 @@ class UQ:
         self.logger.debug("Total: {}".format(indices[2]))
 
         self.f_input = self.wrapper.f_input
-
-        # TODO ANCOVA
-        # ancova = ot.ANCOVA(results, sample)
-        # indices = ancova.getIndices()
-        # uncorrelated = ancova.getUncorrelatedIndices()
-        # correlated = indices - uncorrelated
 
         # Write Sobol' indices to file: block or map
         try:
@@ -334,14 +356,17 @@ class UQ:
                 if (self.output_len == 1) or (self.type_indices == 'block'):
                     variables = 'VARIABLES =' + var
                     f.writelines(variables)
-                    f.writelines('ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
+                    f.writelines(
+                        'ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
                 else:
                     variables = 'VARIABLES = \"x\"' + var
                     f.writelines(variables)
-                    f.writelines('ZONE T = \"Sensitivity \" , I=' + str(self.output_len) + ', F=BLOCK  \n')
+                    f.writelines('ZONE T = \"Sensitivity \" , I=' +
+                                 str(self.output_len) + ', F=BLOCK  \n')
                     # X
                     for i in range(self.output_len):
-                        f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
+                        f.writelines("{:.7E}".format(
+                            float(self.f_input[i])) + "\t ")
                         if i % 1000:
                             f.writelines('\n')
                     f.writelines('\n')
@@ -360,11 +385,13 @@ class UQ:
             self.logger.info("\n----- Aggregated Sensitivity Indices -----")
             output = self.model(self.sample)
             output_var = output.computeVariance()
-            sum_var_indices = [np.zeros((self.p_len, self.p_len)), np.zeros((self.p_len)), np.zeros((self.p_len))]
+            sum_var_indices = [np.zeros((self.p_len, self.p_len)),
+                               np.zeros((self.p_len)), np.zeros((self.p_len))]
             for i, j in itertools.product(range(self.output_len), range(3)):
                 try:
                     indices[:][j][i] = np.nan_to_num(indices[:][j][i])
-                    sum_var_indices[j] += float(output_var[i]) * indices[:][j][i]
+                    sum_var_indices[
+                        j] += float(output_var[i]) * indices[:][j][i]
                 except IndexError:
                     pass
             sum_var = np.sum(output_var)
@@ -380,7 +407,8 @@ class UQ:
                     f.writelines('TITLE = \" Sobol indices \" \n')
                     variables = 'VARIABLES =' + var
                     f.writelines(variables)
-                    f.writelines('ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
+                    f.writelines(
+                        'ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
                     w_lst = [indices[1], indices[2]]
                     for j, w in itertools.product(range(self.p_len), w_lst):
                         f.writelines("{:.7E}".format(float(w[j])) + "\t ")
@@ -388,7 +416,8 @@ class UQ:
                             f.writelines('\n')
                     f.writelines('\n')
             except:
-                self.logger.debug("No output folder to write aggregated indices in")
+                self.logger.debug(
+                    "No output folder to write aggregated indices in")
 
         # Compute error of the POD with a known function
         if (self.type_indices in ['aggregated', 'block']) and (self.test is not None):
@@ -433,12 +462,15 @@ class UQ:
         with open(self.output_folder + '/moment.dat', 'w') as f:
             f.writelines('TITLE = \" Moment evaluation \" \n')
             if self.output_len == 1:
-                f.writelines('VARIABLES = \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
+                f.writelines(
+                    'VARIABLES = \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
                 w_lst = [min, sd_min, mean, sd_max, max]
             else:
-                f.writelines('VARIABLES = \"x\" \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
+                f.writelines(
+                    'VARIABLES = \"x\" \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
                 w_lst = [self.f_input, min, sd_min, mean, sd_max, max]
-            f.writelines('ZONE T = \"Moments \" , I=' + str(self.output_len) + ', F=BLOCK  \n')
+            f.writelines('ZONE T = \"Moments \" , I=' +
+                         str(self.output_len) + ', F=BLOCK  \n')
             for w, i in itertools.product(w_lst, range(self.output_len)):
                 f.writelines("{:.7E}".format(float(w[i])) + "\t ")
                 if i % 1000:
@@ -450,19 +482,23 @@ class UQ:
             f.writelines('TITLE = \" Probability Density Functions \" \n')
             if self.output_len == 1:
                 f.writelines('VARIABLES =  \"output\" \"PDF\" \n')
-                f.writelines('ZONE T = \"PDF \" , I=' + str(self.output_len) + ', J=' + str(d_PDF) + ',  F=BLOCK  \n')
+                f.writelines('ZONE T = \"PDF \" , I=' + str(self.output_len) +
+                             ', J=' + str(d_PDF) + ',  F=BLOCK  \n')
             else:
                 f.writelines('VARIABLES =  \"x\" \"output\" \"PDF\" \n')
-                f.writelines('ZONE T = \"PDF \" , I=' + str(self.output_len) + ', J=' + str(d_PDF) + ',  F=BLOCK  \n')
+                f.writelines('ZONE T = \"PDF \" , I=' + str(self.output_len) +
+                             ', J=' + str(d_PDF) + ',  F=BLOCK  \n')
                 # X
                 for j, i in itertools.product(range(d_PDF), range(self.output_len)):
-                    f.writelines("{:.7E}".format(float(self.f_input[i])) + "\t ")
+                    f.writelines("{:.7E}".format(
+                        float(self.f_input[i])) + "\t ")
                     if (i % 1000) or (j % 1000):
                         f.writelines('\n')
                 f.writelines('\n')
             # Output
             for j, i in itertools.product(range(d_PDF), range(self.output_len)):
-                f.writelines("{:.7E}".format(float(output_extract[j][i])) + "\t ")
+                f.writelines("{:.7E}".format(
+                    float(output_extract[j][i])) + "\t ")
                 if (i % 1000) or (j % 1000):
                     f.writelines('\n')
             f.writelines('\n')
