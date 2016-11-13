@@ -56,16 +56,17 @@ class Kriging():
         :param ndarray output: The observed data.
 
         """
+        self.n_cpu = cpu_count() - 1
         input_len = input.shape[1]
         l_scale = ((1.0),) * input_len
         scale_bounds = [(1e-03, 1000.0)] * input_len
         self.kernel = 1.0 * RBF(length_scale=l_scale,
                                 length_scale_bounds=scale_bounds)
-        model_len = len(output.T)
+        self.model_len = len(output.T)
 
         def model_fitting(column):
             gp = GaussianProcessRegressor(kernel=self.kernel,
-                                          n_restarts_optimizer=1,
+                                          n_restarts_optimizer=0,
                                           optimizer=self.optim_evolution)
             data = gp.fit(input, column)
             hyperparameter = np.exp(gp.kernel_.theta)
@@ -73,29 +74,77 @@ class Kriging():
             return data, hyperparameter
 
         # Create a predictor per output, parallelize if several output
-        if model_len > 1:
-            pool = ProcessingPool(cpu_count())
+        if self.model_len > 1:
+            pool = ProcessingPool(self.n_cpu)
             results = pool.imap(model_fitting, output.T)
         else:
             results = [model_fitting(output.T[0])]
 
+        # Gather results
         results = list(results)
-
-        self.data = [None] * model_len
-        self.hyperparameter = [None] * model_len
-        for i in range(model_len):
+        self.data = [None] * self.model_len
+        self.hyperparameter = [None] * self.model_len
+        for i in range(self.model_len):
             self.data[i], self.hyperparameter[i] = results[i]
 
         self.logger.debug("Hyperparameters: {}".format(self.hyperparameter))
 
-    def optim_evolution(self, obj_func, initial_theta, bounds):
-        """Genetic optimization of the hyperparameters."""
+    def optim_evolution_sequential(self, obj_func, initial_theta, bounds):
+        """Same as :func:`optim_evolution` without restart."""
         def func(args):
             return obj_func(args)[0]
 
-        results = differential_evolution(func, bounds)
+        results = differential_evolution_(func, bounds, tol=0.001, popsize=20)
         theta_opt = results.x
         func_min = results.fun
+
+        return theta_opt, func_min
+
+    def optim_evolution(self, obj_func, initial_theta, bounds):
+        """Genetic optimization of the hyperparameters.
+
+        Use DE strategy to optimize theta. The process
+        is done several times using multiprocessing.
+        The best results are returned.
+    
+        :param callable obj_func: function to optimize
+        :param lst(float) initial_theta: initial guess
+        :param lst(lst(float)) bounds: bounds
+        :return: theta_opt and func_min
+        :rtype: lst(float), float
+        """
+        def func(args):
+            return obj_func(args)[0]
+
+        def fork_optimizer(i):
+            results = differential_evolution(func, bounds, tol=0.001, popsize=15+i)
+            theta_opt = results.x
+            func_min = results.fun
+            return theta_opt, func_min
+
+        n_restart = 3
+
+        # Check if there is enough process availlable
+        if n_restart > self.n_cpu / self.model_len:
+            pool_size = self.n_cpu / self.model_len
+        else:
+            pool_size = n_restart
+
+        pool = ProcessingPool(pool_size)
+        results = pool.imap(fork_optimizer, range(n_restart))
+
+        # Gather results
+        results = list(results)
+        theta_opt = [None] * n_restart
+        func_min = [None] * n_restart
+
+        for i in range(n_restart):
+            theta_opt[i], func_min[i] = results[i]
+
+        # Find best results
+        min_idx = np.argmin(func_min)
+        func_min = func_min[min_idx]
+        theta_opt = theta_opt[min_idx]
 
         return theta_opt, func_min
 

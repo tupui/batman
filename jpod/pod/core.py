@@ -183,9 +183,6 @@ class Core(object):
         V = np.dot(Q, V.T)
         return (Urot, S, V)
 
-
-
-
     def estimate_quality(self, points):
         """Quality estimation of the model.
 
@@ -235,14 +232,14 @@ class Core(object):
 
             # MSE on the missing point
             error = np.sum((np.dot(Urot, prediction) - float(points_nb)
-                              / float(points_nb - 1) * self.V[i] * self.S)
-                              ** 2)
+                            / float(points_nb - 1) * self.V[i] * self.S)
+                            ** 2)
 
             mean = np.dot(self.U, self.V[i] * self.S)
 
             return mean, error
 
-        pool = ProcessingPool(cpu_count())
+        pool = ProcessingPool(cpu_count() - 1)
         progress = ProgressBar(points_nb)
         results = pool.imap(quality, range(points_nb))
 
