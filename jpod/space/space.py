@@ -97,18 +97,8 @@ class Space(SpaceBase):
         super(Space, self).__init__()
 
         self.settings = settings
-        corners_user = settings['space']['corners']
-        delta_space = settings['space']['delta_space']
+        corners = settings['space']['corners']
         self.max_points_nb = settings['space']['size_max']
-
-        # Extension of space
-        c1 = []
-        c2 = []
-        for i in range(len(corners_user[0])):
-            c1.append(corners_user[0][i] - delta_space * (corners_user[1][i]-corners_user[0][i]))
-            c2.append(corners_user[1][i] + delta_space * (corners_user[1][i]-corners_user[0][i]))
-
-        corners = (tuple(c1), tuple(c2),)
 
         # corner points
         try:

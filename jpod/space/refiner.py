@@ -58,7 +58,17 @@ class Refiner():
         self.points = copy.deepcopy(pod.points)
         self.kind = settings['prediction']['method']
         self.settings = settings
-        self.corners = np.array(settings['space']['corners']).T
+        corners = settings['space']['corners']
+        delta_space = settings['space']['delta_space']
+
+        # Inner delta space contraction
+        c1 = []
+        c2 = []
+        for i, _ in enumerate(corners[0]):
+            c1.append(corners[0][i] + delta_space * (corners[1][i]-corners[0][i]))
+            c2.append(corners[1][i] - delta_space * (corners[1][i]-corners[0][i]))
+
+        self.corners = np.array([c1, c2]).T
 
     def func(self, coords, sign):
         r"""Get the prediction for a given point.
