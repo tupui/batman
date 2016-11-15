@@ -85,7 +85,7 @@ def run(settings, options):
 
     driver = Driver(settings, options.script, options.output)
 
-    update = settings['pod']['type'] != 'static'
+    update = True if settings['pod']['type'] != 'static' else False
 
     if not options.no_pod and not options.pred:
         # the pod will be computed
