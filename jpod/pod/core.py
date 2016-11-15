@@ -239,7 +239,10 @@ class Core(object):
 
             return mean, error
 
-        pool = ThreadingPool(cpu_count())
+        n_cpu = cpu_count() / len(self.S)
+        if n_cpu < 1:
+            n_cpu = 1
+        pool = ThreadingPool(n_cpu)
         progress = ProgressBar(points_nb)
         results = pool.imap(quality, range(points_nb))
 

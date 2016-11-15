@@ -33,7 +33,8 @@ from sklearn.gaussian_process.kernels import RBF
 import numpy as np
 import logging
 from scipy.optimize import differential_evolution
-from pathos.multiprocessing import ThreadingPool, ProcessingPool
+from pathos.multiprocessing import ThreadingPool, ProcessingPool, cpu_count
+import os
 
 
 class Kriging():
@@ -62,6 +63,14 @@ class Kriging():
         self.kernel = 1.0 * RBF(length_scale=l_scale,
                                 length_scale_bounds=scale_bounds)
         self.model_len = len(output.T)
+        self.n_restart = 3
+        try:
+            n_cpu = cpu_count()
+        except NotImplementedError:
+            n_cpu = os.sysconf('SC_NPROCESSORS_ONLN')
+        self.n_cpu = n_cpu / (self.n_restart * self.model_len)
+        if self.n_cpu < 1:
+            self.n_cpu = 1
 
         def model_fitting(column):
             gp = GaussianProcessRegressor(kernel=self.kernel,
@@ -74,7 +83,7 @@ class Kriging():
 
         # Create a predictor per output, parallelize if several output
         if self.model_len > 1:
-            pool = ThreadingPool(4)
+            pool = ThreadingPool(self.n_cpu)
             results = pool.imap(model_fitting, output.T)
         else:
             results = [model_fitting(output.T[0])]
@@ -105,7 +114,7 @@ class Kriging():
         Use DE strategy to optimize theta. The process
         is done several times using multiprocessing.
         The best results are returned.
-    
+
         :param callable obj_func: function to optimize
         :param lst(float) initial_theta: initial guess
         :param lst(lst(float)) bounds: bounds
@@ -122,17 +131,15 @@ class Kriging():
             func_min = results.fun
             return theta_opt, func_min
 
-        n_restart = 3
-
-        pool = ProcessingPool(n_restart)
-        results = pool.imap(fork_optimizer, range(n_restart))
+        pool = ProcessingPool(self.n_restart)
+        results = pool.imap(fork_optimizer, range(self.n_restart))
 
         # Gather results
         results = list(results)
-        theta_opt = [None] * n_restart
-        func_min = [None] * n_restart
+        theta_opt = [None] * self.n_restart
+        func_min = [None] * self.n_restart
 
-        for i in range(n_restart):
+        for i in range(self.n_restart):
             theta_opt[i], func_min[i] = results[i]
 
         # Find best results
