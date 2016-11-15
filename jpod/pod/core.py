@@ -15,7 +15,7 @@ import copy
 from .predictor import Predictor
 from .. import mpi
 from ..misc import ProgressBar
-from pathos.multiprocessing import ProcessingPool, cpu_count
+from pathos.multiprocessing import ThreadingPool, cpu_count
 
 
 class Core(object):
@@ -232,14 +232,14 @@ class Core(object):
 
             # MSE on the missing point
             error = np.sum((np.dot(Urot, prediction) - float(points_nb)
-                            / float(points_nb - 1) * self.V[i] * self.S)
-                            ** 2)
+                           / float(points_nb - 1) * self.V[i] * self.S)
+                           ** 2)
 
             mean = np.dot(self.U, self.V[i] * self.S)
 
             return mean, error
 
-        pool = ProcessingPool(cpu_count() - 1)
+        pool = ThreadingPool(cpu_count())
         progress = ProgressBar(points_nb)
         results = pool.imap(quality, range(points_nb))
 

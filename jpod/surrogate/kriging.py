@@ -33,7 +33,7 @@ from sklearn.gaussian_process.kernels import RBF
 import numpy as np
 import logging
 from scipy.optimize import differential_evolution
-from pathos.multiprocessing import ProcessingPool, cpu_count
+from pathos.multiprocessing import ThreadingPool, ProcessingPool
 
 
 class Kriging():
@@ -56,7 +56,6 @@ class Kriging():
         :param ndarray output: The observed data.
 
         """
-        self.n_cpu = cpu_count() - 1
         input_len = input.shape[1]
         l_scale = ((1.0),) * input_len
         scale_bounds = [(1e-03, 1000.0)] * input_len
@@ -75,7 +74,7 @@ class Kriging():
 
         # Create a predictor per output, parallelize if several output
         if self.model_len > 1:
-            pool = ProcessingPool(self.n_cpu)
+            pool = ThreadingPool(4)
             results = pool.imap(model_fitting, output.T)
         else:
             results = [model_fitting(output.T[0])]
@@ -94,7 +93,7 @@ class Kriging():
         def func(args):
             return obj_func(args)[0]
 
-        results = differential_evolution_(func, bounds, tol=0.001, popsize=20)
+        results = differential_evolution(func, bounds, tol=0.001, popsize=20)
         theta_opt = results.x
         func_min = results.fun
 
@@ -117,20 +116,15 @@ class Kriging():
             return obj_func(args)[0]
 
         def fork_optimizer(i):
-            results = differential_evolution(func, bounds, tol=0.001, popsize=15+i)
+            results = differential_evolution(func, bounds,
+                                             tol=0.001, popsize=15+i)
             theta_opt = results.x
             func_min = results.fun
             return theta_opt, func_min
 
         n_restart = 3
 
-        # Check if there is enough process availlable
-        if n_restart > self.n_cpu / self.model_len:
-            pool_size = self.n_cpu / self.model_len
-        else:
-            pool_size = n_restart
-
-        pool = ProcessingPool(pool_size)
+        pool = ProcessingPool(n_restart)
         results = pool.imap(fork_optimizer, range(n_restart))
 
         # Gather results
