@@ -1,4 +1,4 @@
-recursive-include . *.rst
+include README.rst
 recursive-include doc *
-recursive-include jpod/input_output *.so
-recursive-include . *.json
+recursive-include test_cases *.rst *.json
+recursive-include jpod/misc *.json
