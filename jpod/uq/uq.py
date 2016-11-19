@@ -126,10 +126,10 @@ class UQ:
         self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]
         self.f_input = None
 
+        self.n_cpus = cpu_count() / 2
         self.wrapper = Wrapper(self.pod, self.p_len, self.output_len)
-        self.model = otw.Parallelizer(self.wrapper, backend='pathos')
-
-        self.n_cpus = cpu_count() - 1
+        self.model = otw.Parallelizer(self.wrapper,
+                                      backend='pathos', n_cpus=self.n_cpus)
 
         self.snapshots = settings['space']['provider']['size']
         self.max_snapshots = settings['space']['size_max']
