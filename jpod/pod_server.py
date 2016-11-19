@@ -1,3 +1,4 @@
+# coding: utf8
 """A command line interface to pod server."""
 import sys
 import os
