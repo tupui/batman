@@ -151,6 +151,7 @@ setup(
                  'Topic :: Scientific/Engineering',
                  ],
     include_package_data=True,
+    zip_safe= False,
     license="CERFACS",
     url="https://inle.cerfacs.fr/projects/jpod",
 )

@@ -130,6 +130,7 @@ class Refiner():
         """
         distances = np.array([np.linalg.norm(pod_point - point)
                               for _, pod_point in enumerate(self.points)])
+        # Do not get itself
         distances = distances[np.nonzero(distances)]
         distance = min(distances)  # * 3 / 2
         self.logger.debug("Distance min: {}".format(distance))
