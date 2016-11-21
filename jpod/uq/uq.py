@@ -126,7 +126,7 @@ class UQ:
         self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]
         self.f_input = None
 
-        self.n_cpus = cpu_count() / 2
+        self.n_cpus = cpu_count() // 2
         self.wrapper = Wrapper(self.pod, self.p_len, self.output_len)
         self.model = otw.Parallelizer(self.wrapper,
                                       backend='pathos', n_cpus=self.n_cpus)
@@ -297,7 +297,8 @@ class UQ:
 
         if self.type_indices == 'block':
             self.wrapper = Wrapper(self.pod, self.p_len, 1, block=True)
-            int_model = otw.Parallelizer(self.wrapper, backend='pathos')
+            int_model = otw.Parallelizer(self.wrapper,
+                                         backend='pathos', n_cpus=self.n_cpus)
             sobol_model = int_model
             sobol_len = 1
         else:
