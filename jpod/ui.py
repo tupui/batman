@@ -95,11 +95,11 @@ def run(settings, options):
             update = True
 
         driver.sampling_pod(update)
+        driver.write_pod()
 
         if settings['pod']['resample'] is not None:
             driver.resampling_pod()
-
-        driver.write_pod()
+            driver.write_pod()
 
     elif options.no_pod or options.pred:
         # just read the existing pod
