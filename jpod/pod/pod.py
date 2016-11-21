@@ -285,7 +285,7 @@ class Pod(Core):
         :param str path: path to a output/pod directory.
         """
         file_name = os.path.join(path, 'model')
-        with open(file_name, 'r') as fichier:
+        with open(file_name, 'rb') as fichier:
             mon_depickler = pickle.Unpickler(fichier)
             model_recupere = mon_depickler.load()
         return model_recupere

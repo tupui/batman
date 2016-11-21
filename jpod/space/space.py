@@ -1,7 +1,7 @@
 # coding: utf8
 import logging
 import numpy as np
-import sampling
+from . import sampling
 from .point import Point
 from .refiner import Refiner
 

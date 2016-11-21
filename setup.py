@@ -98,14 +98,15 @@ def find_version(*file_paths):
     branch = subprocess.check_output("git describe --all",
                                      shell=True).rstrip()
     version_file = re.sub('(__commit__ = )(.*)',
-                          r'\g<1>' + "'" + commit + "'",
+                          r'\g<1>' + "'" + commit.decode('utf8') + "'",
                           version_file)
     version_file = re.sub('(__branch__ = )(.*)',
-                          r'\g<1>' + "'" + branch + "'",
+                          r'\g<1>' + "'" + branch.decode('utf8') + "'",
                           version_file)
+
     with open(os.path.join(os.path.dirname(__file__), *file_paths),
-              'w') as f:
-        f.write(version_file)
+              'wb') as f:
+        f.write(version_file.encode('utf8'))
     version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
                               version_file, re.M)
     if version_match:
@@ -116,7 +117,7 @@ def find_version(*file_paths):
 setup(
     name='jpod',
     version=find_version("jpod", "__init__.py"),
-    packages=find_packages(),
+    packages=find_packages(exclude=['test_cases', 'doc']),
     entry_points={'console_scripts': ['jpod=jpod.ui:main']},
     # Package requirements
     install_requires=['sphinx_rtd_theme',

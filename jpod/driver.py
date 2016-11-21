@@ -24,11 +24,11 @@ import os
 from concurrent import futures
 
 from collections import OrderedDict
-import mpi
-from pod import Snapshot, Pod
-from space import Space, FullSpaceError, AlienPointError
-from tasks import PodServerTask, SnapshotTask
-from uq import UQ
+from . import mpi
+from .pod import (Snapshot, Pod)
+from .space import (Space, FullSpaceError, AlienPointError)
+from .tasks import (PodServerTask, SnapshotTask)
+from .uq import UQ
 
 
 class SnapshotProvider():

@@ -41,7 +41,7 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 3600,
+            "timeout": 10,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
