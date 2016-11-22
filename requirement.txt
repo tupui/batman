@@ -12,7 +12,7 @@ MarkupSafe==0.23
 mpi4py==2.0.0
 multiprocess==0.70.4
 numpy==1.11.2
-otwrapy
+otwrapy==0.6
 pathos==0.2.0
 plumbum==1.6.2
 pox==0.2.2

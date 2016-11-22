@@ -34,9 +34,10 @@ The required dependencies are:
 
 - Python >= 2.7 or >= 3.3
 - `scikit-learn <http://scikit-learn.org>`_ >= 0.18
-- `OpenTURNS <http://www.openturns.org>`_ == 1.7
+- `OpenTURNS <http://www.openturns.org>`_ >= 1.7
+- `scipy <http://scipy.org>`_ >= 0.15
 
-.. note:: OpenTURNS is installed on *NEMO* only for Python 2.7  other dependencies are satisfied by the installer.
+.. note:: OpenTURNS 1.7 is installed on *NEMO* only for Python 2.7  other dependencies are satisfied by the installer.
 
 How to get JPOD
 ---------------

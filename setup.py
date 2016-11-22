@@ -122,9 +122,10 @@ setup(
     # Package requirements
     install_requires=['sphinx_rtd_theme',
                       'sphinx',
+                      'scipy>=0.15'
                       'jsonschema',
                       'futures',
-                      'pathos',
+                      'pathos>=0.2',
                       'otwrapy==0.6',
                       'rpyc',
                       'h5py',
