@@ -192,6 +192,11 @@ class Core(object):
         points of the DOE.
         Q2 is computed and the point with max MSE is looked up.
 
+        A multithreading strategy is used:
+
+        1. Create a N threads with :math:`N=\frac{n_{cpu}}{n_{restart} \times n_{modes}}`,
+        2. If :math:`N > n_{cpu}` restrict the threads to 1.
+
         :param lst points: Points in the parameter space
         :return: Q2 error
         :rtype: float
@@ -240,7 +245,9 @@ class Core(object):
 
             return mean, error
 
-        n_cpu = cpu_count() / len(self.S)
+        # Multi-threading strategy
+        n_cpu_system = cpu_count()
+        n_cpu = n_cpu_system // (len(self.S) * 3)
         if n_cpu < 1:
             n_cpu = 1
         pool = ThreadingPool(n_cpu)

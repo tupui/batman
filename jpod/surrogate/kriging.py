@@ -44,7 +44,7 @@ class Kriging():
     logger = logging.getLogger(__name__)
 
     def __init__(self, input, output):
-        """Create the predictor.
+        r"""Create the predictor.
 
         Uses input and output to construct a predictor using Gaussian Process.
         Input is to be normalized before and depending on the number of
@@ -52,6 +52,14 @@ class Kriging():
 
         `self.data` contains the predictors as a list(array) of the size
         of the `ouput`.
+
+        A multiprocessing strategy is used:
+
+        1. Create a thread per mode, do not create if only one,
+        2. Create `n_restart` (3 by default) processes by thread.
+
+        In the end, there is :math:`N=n_{restart} \times n_{modes})` processes.
+        If there is not enought CPU, :math:`N=\frac{n_{cpu}}{n_restart}`.
 
         :param ndarray input: The input used to generate the output.
         :param ndarray output: The observed data.
@@ -64,13 +72,14 @@ class Kriging():
                                 length_scale_bounds=scale_bounds)
         self.model_len = len(output.T)
         self.n_restart = 3
+        # Define the CPU multi-threading/processing strategy
         try:
-            n_cpu = cpu_count()
+            n_cpu_system = cpu_count()
         except NotImplementedError:
-            n_cpu = os.sysconf('SC_NPROCESSORS_ONLN')
-        self.n_cpu = n_cpu / (self.n_restart * self.model_len)
-        if self.n_cpu < 1:
-            self.n_cpu = 1
+            n_cpu_system = os.sysconf('SC_NPROCESSORS_ONLN')
+        self.n_cpu = self.model_len
+        if n_cpu_system // (self.n_restart * self.model_len) < 1:
+            self.n_cpu = n_cpu_system // self.n_restart
 
         def model_fitting(column):
             gp = GaussianProcessRegressor(kernel=self.kernel,
