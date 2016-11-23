@@ -39,9 +39,10 @@ import numpy as np
 import copy
 from collections import OrderedDict
 from ..uq import UQ
+import jpod.pod
 
 
-class Refiner():
+class Refiner(object):
 
     """Resampling the space of parameters."""
 
@@ -54,9 +55,12 @@ class Refiner():
         :param settings: JPOD parameters
         :param tuple(tuple(float)) corners: Boundaries to add a point within
         """
-        self.pod = pod
         self.points = copy.deepcopy(pod.points)
-        self.kind = settings['prediction']['method']
+        self.pod = pod
+        kind = settings['prediction']['method']
+        if self.pod.predictor is None:
+            self.pod.predictor = jpod.pod.Predictor(kind, self.pod)
+
         self.settings = settings
         corners = settings['space']['corners']
         delta_space = settings['space']['delta_space']
@@ -87,7 +91,7 @@ class Refiner():
         :rtype: float
 
         """
-        f, _ = self.pod.predict(self.kind, [coords])
+        f, _ = self.pod.predictor([coords])
         try:
             _, f = np.split(f[0].data, 2)
         except:
@@ -112,7 +116,7 @@ class Refiner():
         :rtype: float
 
         """
-        _, sigma = self.pod.predict(self.kind, [coords])
+        _, sigma = self.pod.predictor([coords])
         sum_sigma = np.sum(self.pod.S ** 2 * sigma)
 
         return - sum_sigma

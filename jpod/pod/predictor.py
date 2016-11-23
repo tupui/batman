@@ -24,7 +24,7 @@ import numpy as np
 from .snapshot import Snapshot
 
 
-class Predictor():
+class Predictor(object):
 
     """Predictor."""
 
