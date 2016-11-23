@@ -223,10 +223,8 @@ class Pod(Core):
 
         # basis
         path_pattern = os.path.join(path, self.directories['modes'])
-        i = 0
-        for u in self.U.T:
+        for i, u in enumerate(self.U.T):
             Snapshot.write_data(u, path_pattern % i)
-            i += 1
 
         if mpi.myid == 0:
             points = N.vstack(tuple(self.points))
