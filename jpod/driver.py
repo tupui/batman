@@ -222,9 +222,7 @@ class Driver():
 
         """
         while len(self.pod.points) < self.settings['space']['size_max']:
-            # quality, point_loo = self.pod.estimate_quality()
-            quality = 0.
-            point_loo = []
+            quality, point_loo = self.pod.estimate_quality()
             if quality >= self.settings['pod']['quality']:
                 break
 
