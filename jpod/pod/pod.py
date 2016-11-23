@@ -172,10 +172,11 @@ class Pod(Core):
         :param str method: method used to compute the model
         :param str path: if not set, will return a list of predicted snapshots instances, otherwise write them to disk.
         """
-        if self.predictor is None:
+        try:
+            snapshots, sigma = self.predictor(points)
+        except TypeError:
             self.predictor = Predictor(method, self)
-
-        snapshots, sigma = self.predictor(points)
+            snapshots, sigma = self.predictor(points)
 
         if path is not None:
             s_list = []

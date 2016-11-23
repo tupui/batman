@@ -104,6 +104,7 @@ class UQ:
         except:
             self.logger.debug("Output folder already exists.")
         self.pod = jpod
+        self.kind = settings['prediction']['method']
         self.p_lst = settings['snapshot']['io']['parameter_names']
         self.p_len = len(self.p_lst)
         self.method_sobol = settings['uq']['method']
@@ -127,7 +128,8 @@ class UQ:
         self.f_input = None
 
         self.n_cpus = cpu_count()
-        self.wrapper = Wrapper(self.pod, self.p_len, self.output_len)
+        self.wrapper = Wrapper(self.pod, self.kind,
+                               self.p_len, self.output_len)
         self.model = otw.Parallelizer(self.wrapper,
                                       backend='pathos', n_cpus=self.n_cpus)
 
@@ -296,7 +298,8 @@ class UQ:
         indices = [[], [], []]
 
         if self.type_indices == 'block':
-            self.wrapper = Wrapper(self.pod, self.p_len, 1, block=True)
+            self.wrapper = Wrapper(self.pod, self.kind,
+                                   self.p_len, 1, block=True)
             int_model = otw.Parallelizer(self.wrapper,
                                          backend='pathos', n_cpus=self.n_cpus)
             sobol_model = int_model
