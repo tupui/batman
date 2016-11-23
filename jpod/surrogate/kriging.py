@@ -140,7 +140,12 @@ class Kriging():
             func_min = results.fun
             return theta_opt, func_min
 
-        pool = ProcessingPool(self.n_restart)
+        # In case of a daemonic process, subprocesses of subprocess not allowed
+        try:
+            pool = ProcessingPool(self.n_restart)
+        except AssertionError:
+            pool = ThreadingPool(self.n_restart)
+
         results = pool.imap(fork_optimizer, range(self.n_restart))
 
         # Gather results
