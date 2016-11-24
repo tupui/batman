@@ -250,6 +250,8 @@ class Core(object):
         n_cpu = n_cpu_system // (len(self.S) * 3)
         if n_cpu < 1:
             n_cpu = 1
+        elif n_cpu > points_nb:
+            n_cpu = points_nb
         pool = ThreadingPool(n_cpu)
         progress = ProgressBar(points_nb)
         results = pool.imap(quality, range(points_nb))
