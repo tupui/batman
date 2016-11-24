@@ -101,14 +101,17 @@ class UQ:
         self.output_folder = output
         try:
             mkdir(output)
-        except:
+        except OSError:
             self.logger.debug("Output folder already exists.")
         self.pod = jpod
-        self.kind = settings['prediction']['method']
+        self.surrogate = settings['prediction']['method']
         self.p_lst = settings['snapshot']['io']['parameter_names']
         self.p_len = len(self.p_lst)
+        self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]
         self.method_sobol = settings['uq']['method']
         self.type_indices = settings['uq']['type']
+
+        # Generate samples
         self.points_sample = settings['uq']['sample']
         pdf = settings['uq']['pdf']
         input_pdf = "ot." + pdf[0]
@@ -123,12 +126,16 @@ class UQ:
         self.logger.info("Created {} samples with an LHS experiment"
                          .format(self.points_sample))
 
-        self.method_pod = settings['prediction']['method']
-        self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]
-        self.f_input = None
+        # Get discretization if functionnal output
+        try:
+            f_eval, _ = self.pod.predict(self.surrogate, [self.sample[0]])
+            self.f_input, _ = np.split(f_eval[0].data, 2)
+        except:
+            self.f_input = None
 
+        # Wrapper for parallelism
         self.n_cpus = cpu_count()
-        self.wrapper = Wrapper(self.pod, self.kind,
+        self.wrapper = Wrapper(self.pod, self.surrogate,
                                self.p_len, self.output_len)
         self.model = otw.Parallelizer(self.wrapper,
                                       backend='pathos', n_cpus=self.n_cpus)
@@ -298,7 +305,7 @@ class UQ:
         indices = [[], [], []]
 
         if self.type_indices == 'block':
-            self.wrapper = Wrapper(self.pod, self.kind,
+            self.wrapper = Wrapper(self.pod, self.surrogate,
                                    self.p_len, 1, block=True)
             int_model = otw.Parallelizer(self.wrapper,
                                          backend='pathos', n_cpus=self.n_cpus)
@@ -346,8 +353,6 @@ class UQ:
 
         self.logger.debug("First order: {}".format(indices[1]))
         self.logger.debug("Total: {}".format(indices[2]))
-
-        self.f_input = self.wrapper.f_input
 
         # Write Sobol' indices to file: block or map
         try:
