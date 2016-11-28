@@ -93,12 +93,18 @@ class Kriging():
         # Create a predictor per output, parallelize if several output
         if self.model_len > 1:
             pool = ThreadingPool(self.n_cpu)
-            results = pool.imap(model_fitting, output.T)
+            try:
+                pool.restart()
+            except AssertionError:
+                pass
+            results = pool.amap(model_fitting, output.T)
+            results = results.get()
+            pool.terminate()
+            pool.join()
         else:
             results = [model_fitting(output.T[0])]
 
         # Gather results
-        results = list(results)
         self.data = [None] * self.model_len
         self.hyperparameter = [None] * self.model_len
         for i in range(self.model_len):
@@ -146,10 +152,18 @@ class Kriging():
         except AssertionError:
             pool = ThreadingPool(self.n_restart)
 
-        results = pool.imap(fork_optimizer, range(self.n_restart))
+        try:
+            pool.restart()
+        except AssertionError:
+            pass
+
+        results = pool.amap(fork_optimizer, range(self.n_restart))
 
         # Gather results
-        results = list(results)
+        results = results.get()
+        pool.terminate()
+        pool.join()
+
         theta_opt = [None] * self.n_restart
         func_min = [None] * self.n_restart
 

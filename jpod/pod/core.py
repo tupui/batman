@@ -260,8 +260,10 @@ class Core(object):
             mean[i], error[i] = results.next()
             progress()
 
-        mean = np.sum(mean)
+        pool.terminate()
+        pool.close()
 
+        mean = np.sum(mean)
         mean = mean / points_nb
         var = 0.
         for i in range(points_nb):
