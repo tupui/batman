@@ -7,7 +7,7 @@ Implements functions:
 - :func:`misc.check_yes_no`,
 - :func:`misc.abs_path`,
 - :func:`misc.import_config`,
-- :func:`misc.progress_bar`
+- :class:`misc.ProgressBar`
 
 """
 import os
