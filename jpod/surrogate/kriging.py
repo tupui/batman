@@ -94,8 +94,8 @@ class Kriging():
         # Create a predictor per output, parallelize if several output
         if self.model_len > 1:
             pool = NestedPool(self.n_cpu)
-            results = pool.amap(model_fitting, output.T)
-            results = results.get()
+            results = pool.imap(model_fitting, output.T)
+            results = list(results)
         else:
             results = [model_fitting(output.T[0])]
 
