@@ -34,6 +34,7 @@ import numpy as np
 import logging
 from scipy.optimize import differential_evolution
 from pathos.multiprocessing import ThreadingPool, ProcessingPool, cpu_count
+from ..misc import NestedPool
 import os
 
 
@@ -92,15 +93,9 @@ class Kriging():
 
         # Create a predictor per output, parallelize if several output
         if self.model_len > 1:
-            pool = ThreadingPool(self.n_cpu)
-            try:
-                pool.restart()
-            except AssertionError:
-                pass
-            results = pool.amap(model_fitting, output.T)
-            results = results.get()
-            pool.terminate()
-            pool.join()
+            pool = NestedPool(self.n_cpu)
+            results = pool.imap(model_fitting, output.T)
+            results = list(results)
         else:
             results = [model_fitting(output.T[0])]
 
@@ -146,23 +141,12 @@ class Kriging():
             func_min = results.fun
             return theta_opt, func_min
 
-        # In case of a daemonic process, subprocesses of subprocess not allowed
-        try:
-            pool = ProcessingPool(self.n_restart)
-        except AssertionError:
-            pool = ThreadingPool(self.n_restart)
-
-        try:
-            pool.restart()
-        except AssertionError:
-            pass
+        pool = ProcessingPool(self.n_restart)
 
         results = pool.amap(fork_optimizer, range(self.n_restart))
 
         # Gather results
         results = results.get()
-        pool.terminate()
-        pool.join()
 
         theta_opt = [None] * self.n_restart
         func_min = [None] * self.n_restart

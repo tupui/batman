@@ -15,7 +15,7 @@ import numpy as np
 import copy
 from .predictor import Predictor
 from .. import mpi
-from ..misc import ProgressBar
+from ..misc import ProgressBar, NestedPool
 from pathos.multiprocessing import ThreadingPool, cpu_count
 
 
@@ -252,7 +252,8 @@ class Core(object):
             n_cpu = 1
         elif n_cpu > points_nb:
             n_cpu = points_nb
-        pool = ThreadingPool(n_cpu)
+
+        pool = NestedPool(n_cpu)
         progress = ProgressBar(points_nb)
         results = pool.imap(quality, range(points_nb))
 
