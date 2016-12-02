@@ -33,7 +33,7 @@ from sklearn.gaussian_process.kernels import RBF
 import numpy as np
 import logging
 from scipy.optimize import differential_evolution
-from pathos.multiprocessing import ThreadingPool, ProcessingPool, cpu_count
+from pathos.multiprocessing import cpu_count
 from ..misc import NestedPool
 import os
 
@@ -96,6 +96,7 @@ class Kriging():
             pool = NestedPool(self.n_cpu)
             results = pool.imap(model_fitting, output.T)
             results = list(results)
+            pool.terminate()
         else:
             results = [model_fitting(output.T[0])]
 
@@ -141,12 +142,12 @@ class Kriging():
             func_min = results.fun
             return theta_opt, func_min
 
-        pool = ProcessingPool(self.n_restart)
-
-        results = pool.amap(fork_optimizer, range(self.n_restart))
+        pool = NestedPool(self.n_restart)
+        results = pool.imap(fork_optimizer, range(self.n_restart))
 
         # Gather results
-        results = results.get()
+        results = list(results)
+        pool.terminate()
 
         theta_opt = [None] * self.n_restart
         func_min = [None] * self.n_restart

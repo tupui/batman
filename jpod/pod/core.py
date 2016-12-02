@@ -263,7 +263,6 @@ class Core(object):
             progress()
 
         pool.terminate()
-        pool.close()
 
         mean = np.sum(mean)
         mean = mean / points_nb
