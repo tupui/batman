@@ -103,6 +103,8 @@ class UQ:
             mkdir(output)
         except OSError:
             self.logger.debug("Output folder already exists.")
+        except TypeError:
+            self.logger.debug("Not using output folder.")
         self.pod = jpod
         self.surrogate = settings['prediction']['method']
         self.p_lst = settings['snapshot']['io']['parameter_names']
