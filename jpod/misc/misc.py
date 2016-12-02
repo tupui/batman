@@ -146,7 +146,7 @@ class ProgressBar():
         """
         bar = int(np.floor(self.progress / 2))
         sys.stdout.write("\rProgress | " +
-                         u"\u2588" * (bar - 1) + u"\u2589" +
+                         "-" * (bar - 1) + "~" +
                          " " * (50 - bar - 1) +
                          " |" + str(self.progress) + "% ")
 
