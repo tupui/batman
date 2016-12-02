@@ -204,8 +204,9 @@ class Core(object):
         :rtype: lst(float)
         """
         points_nb = len(points)
-        error = np.empty(points_nb)
-        mean = np.empty(points_nb)
+        data_len = self.U.shape[0]
+        error = np.empty((points_nb, data_len))
+        mean = np.empty((points_nb, data_len))
 
         def quality(i):
             """Error at a point.
@@ -272,6 +273,10 @@ class Core(object):
 
         # Compute Q2
         err_q2 = 1 - np.sum(error) / var
+
+        # If spatially/temporally distributed: mean
+        err_q2 = np.sum(err_q2) / data_len
+        error = np.sum(error) / data_len
 
         error = error.reshape(-1)
         index = error.argmax()
