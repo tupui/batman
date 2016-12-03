@@ -163,11 +163,11 @@ class Driver():
                 except AlienPointError:
                     self.logger.info(
                         'Ignoring snapshot\n\t{}\n\tbecause its point {}'
-                        ' is outside the space.'.format(path,point))
+                        ' is outside the space.'.format(path, point))
                 except UnicityError:
                     self.logger.info(
                         'Ignoring snapshot\n\t{}\n\tbecause its point {}'
-                        ' is already in the space.'.format(path,point))
+                        ' is already in the space.'.format(path, point))
                 else:
                     self.initial_points[point] = path
 
@@ -223,6 +223,8 @@ class Driver():
         """
         while len(self.pod.points) < self.settings['space']['size_max']:
             quality, point_loo = self.pod.estimate_quality()
+            # quality = 0.
+            # point_loo = []
             if quality >= self.settings['pod']['quality']:
                 break
 
