@@ -251,7 +251,7 @@
         },
         "test": {
           "type": "string",
-          "enum": ["Ishigami", "Channel_Flow", "Rosenbrock"]
+          "enum": ["Ishigami", "Michalewicz", "Channel_Flow", "Rosenbrock"]
         },
         "pdf": {
           "type": "array",

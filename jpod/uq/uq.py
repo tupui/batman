@@ -178,6 +178,17 @@ class UQ:
             s_second_th = np.array(
                 [[0., 0., 0.2], [0., 0., 0.], [0.2, 0., 0.]])
             s_total_th = np.array([0.558, 0.442, 0.244])
+        elif function == 'Michalewicz':
+            def michalewicz(x, d=2, m=10):
+                f = 0.
+                for i in range(d):
+                    f += np.sin(x[i]) * np.sin((i + 1) * x[i]
+                                               ** 2 / np.pi) ** (2 * m)
+                return [-f]
+            model_ref = ot.PythonFunction(2, 1, michalewicz)
+            s_first_th = np.array([0.4540, 0.5678])
+            s_second_th = np.array([[0., 0.008], [0.008, 0.]])
+            s_total_th = np.array([0.4606, 0.5464])
         elif function == 'Rosenbrock':
             formula = [
                 '100*(X2-X1*X1)*(X2-X1*X1) + (X1-1)*(X1-1)'
@@ -219,7 +230,7 @@ class UQ:
         else:
             self.logger.error(
                 "Wrong analytical function, options are: "
-                "Ishigami, Rosenbrock and Channel_Flow")
+                "Ishigami, Rosenbrock, Michalewicz and Channel_Flow")
             return
         try:
             s_l2_2nd = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
@@ -326,7 +337,7 @@ class UQ:
                 sample2 = experiment.generate()
                 sobol = ot.SensitivityAnalysis(self.sample, sample2,
                                                sobol_model)
-                sobol.setBlockSize(self.points_sample // self.n_cpus)
+                sobol.setBlockSize(self.n_cpus)
             else:
                 input_design = ot.SobolIndicesAlgorithmImplementation.Generate(
                     self.distribution, self.points_sample, True)
@@ -342,7 +353,7 @@ class UQ:
         elif self.method_sobol == 'FAST':
             self.logger.info("\n----- FAST indices -----")
             sobol = ot.FAST(sobol_model, self.distribution, self.points_sample)
-            sobol.setBlockSize(self.points_sample // self.n_cpus)
+            sobol.setBlockSize(self.n_cpus)
 
         else:
             self.logger.error("The method {} doesn't exist"
@@ -426,7 +437,7 @@ class UQ:
                         if i % 1000:
                             f.writelines('\n')
                     f.writelines('\n')
-            except:
+            except (OSError, TypeError):
                 self.logger.debug(
                     "No output folder to write aggregated indices in")
 
@@ -439,7 +450,7 @@ class UQ:
     def error_propagation(self):
         """Compute the moments.
 
-        All 4 order moments are computed for every output of the function.
+        1st and 2nd order moments are computed for every output of the function.
         It also compute the PDF for these outputs as a 2D cartesian plot.
 
         The file `moment.dat` contains the moments and the file `pdf.dat` contains the PDFs.
@@ -454,9 +465,11 @@ class UQ:
         sd_max = mean + sd
         min = output.getMin()
         max = output.getMax()
-        kernel = ot.KernelSmoothing()
+        correlation_matrix = output.computePearsonCorrelation()
+        covariance_matrix = output.computeCovariance()
 
         # Create the PDFs
+        kernel = ot.KernelSmoothing()
         pdf_pts = [None] * self.output_len
         d_PDF = 100
         sample = self.distribution.getSample(d_PDF)
