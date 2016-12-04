@@ -13,6 +13,7 @@ Implements functions:
 import os
 import sys
 import logging
+import re
 import json
 import jsonschema
 import numpy as np
@@ -67,11 +68,40 @@ def import_config(path_config, path_schema):
     """Import a configuration file."""
     logger = logging.getLogger('Settings Validation')
 
+    def minify_comments(file, **kwargs):
+        """Minify comments in JSON file.
+
+        Deserialize `file` to a Python object using `commentjson <https://pypi.python.org/pypi/commentjson>`_ package.
+
+        :param file: serialized JSON string with or without comments.
+        :param kwargs: all the arguments that `json.loads <http://docs.python.org/
+                       2/library/json.html#json.loads>`_ accepts.
+        :raises: Parsing Exception from ``json.loads``.
+        :returns: dict or list.
+        """
+        file = file.read()
+        regex = r'\s*(#|\/{2}).*$'
+        regex_inline = r'(:?(?:\s)*([A-Za-z\d\.{}]*)|((?<=\").*\"),?)(?:\s)*(((#|(\/{2})).*)|)$'
+        lines = file.split('\n')
+
+        for index, line in enumerate(lines):
+            if re.search(regex, line):
+                if re.search(r'^' + regex, line, re.IGNORECASE):
+                    lines[index] = ""
+                elif re.search(regex_inline, line):
+                    lines[index] = re.sub(regex_inline, r'\1', line)
+
+        try:
+            return json.loads('\n'.join(lines), **kwargs)
+        except:
+            logger.exception("Connot load configuration file: json error")
+            raise SystemExit
+
     with open(path_config, 'r') as file:
-        settings = json.load(file)
+        settings = minify_comments(file)
 
     with open(path_schema, 'r') as file:
-        schema = json.load(file)
+        schema = minify_comments(file)
 
     error = False
     try:
