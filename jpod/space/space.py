@@ -74,7 +74,9 @@ class SpaceBase(list):
     def read(self, path):
         """Read space from the file `path`."""
         self.empty()
-        self += np.loadtxt(path)
+        space = np.loadtxt(path)
+        for p in space:
+            self.add(p.flatten().tolist())
 
     def empty(self):
         """Remove all points."""
@@ -162,7 +164,7 @@ class Space(SpaceBase):
         samples = sampling.doe(bounds.shape[1], n, bounds, kind)
 
         self.empty()
-        self.add([s.tolist() for s in samples])
+        self.add(samples)
 
         self.logger.info('Created %d samples with the %s method', len(self),
                          kind)
