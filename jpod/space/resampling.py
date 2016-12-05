@@ -8,8 +8,17 @@
 ##  ==========================================================================
 
 import numpy as N
-from sampling import mat_yy
 
+def mat_yy(dim):
+    n = 2 ** dim
+    yy = np.zeros([n, dim])
+    for j in range(dim):
+        k = 2 ** (j + 1)
+        nk = n / k
+        for i in range(k):
+            yy[i * nk:(i + 1) * nk, j:j + 1] = (-1) ** (i + 1) * \
+                np.ones([nk, 1])
+    return yy
 
 def splitelement(S, S0, DS):
     mm = S.shape[1]

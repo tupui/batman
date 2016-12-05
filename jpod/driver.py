@@ -160,14 +160,8 @@ class Driver():
                 point = Snapshot.read_point(path)
                 try:
                     self.space.add([point])
-                except AlienPointError:
-                    self.logger.info(
-                        'Ignoring snapshot\n\t{}\n\tbecause its point {}'
-                        ' is outside the space.'.format(path, point))
-                except UnicityError:
-                    self.logger.info(
-                        'Ignoring snapshot\n\t{}\n\tbecause its point {}'
-                        ' is already in the space.'.format(path, point))
+                except (AlienPointError, UnicityError, FullSpaceError) as tb:
+                    self.logger.warning("Ignoring: {}".format(tb))
                 else:
                     self.initial_points[point] = path
 

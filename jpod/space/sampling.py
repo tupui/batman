@@ -1,33 +1,18 @@
-# -*- coding: utf-8 -*-
+# coding: utf8
 from scipy import stats
 import numpy as np
 import openturns as ot
 
-
-def mat_yy(dim):
-    n = 2 ** dim
-    yy = np.zeros([n, dim])
-    for j in range(dim):
-        k = 2 ** (j + 1)
-        nk = n / k
-        for i in range(k):
-            yy[i * nk:(i + 1) * nk, j:j + 1] = (-1) ** (i + 1) * \
-                np.ones([nk, 1])
-    return yy
-
-# Return a DOE of size [0,1]^d with d he dimension of the space
-
-
-def doe(dim, n_sample, bounds, kind):
+def doe(n_sample, bounds, kind):
     """Design of Experiment.
 
-    :param int dim: number of input parameters
     :param int n_sample: number of samples
     :param np.array bounds: Space's corners
     :param str kind: Sampling Method
     :return: Sampling
     :rtype: lst(array)
     """
+    dim = bounds.shape[1]
     r = np.zeros([n_sample, dim])
     if kind == 'halton':
         sequence_type = ot.LowDiscrepancySequence(ot.HaltonSequence(dim))

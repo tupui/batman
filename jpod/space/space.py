@@ -27,13 +27,6 @@ class FullSpaceError(Exception):
     pass
 
 
-class DimensionError(Exception):
-
-    """Exception for bad data dimension."""
-
-    pass
-
-
 class Space(list):
 
     """Manages the space of parameters."""
@@ -68,16 +61,17 @@ class Space(list):
                 raise ValueError('%dth corners coordinate are equal' % (i+1))
 
     def __str__(self):
-        s = 'end points           : '
-        s += ' '.join([str(c) for c in self.corners]) + '\n'
-        s += 'number of points     : ' + str(self.size) + '\n'
-        s += 'max number of points : ' + str(self.max_points_nb)
+        s = ("Hypercube points: {}\n"
+             "Number of points: {}\n"
+             "Max number of points: {}").format([str(c) for c in self.corners],
+                                                str(self.size),
+                                                str(self.max_points_nb))
         return s
 
     def __repr__(self):
-        s = str(self) + '\n'
-        s += 'points :' + '\n'
-        s += super(Space, self).__str__()
+        s = ("{}\n"
+             "Points:\n"
+             "{}").format(str(self), super(Space, self).__str__())
         return s
 
     def is_full(self):
@@ -111,11 +105,11 @@ class Space(list):
 
     def add(self, points):
         """Add `points` to the space.
+
         Raise if point already exists or if space is over full.
 
-        :param lst(float): point to add to space
+        :param lst(float) or lst(lst(float)): point(s) to add to space
         """
-
         # determine if adding one or multiple points
         try:
             points[0][0]
@@ -123,28 +117,33 @@ class Space(list):
             points = [points]
 
         for point in points:
+            # set dimension when adding the first point
+            if not self.dimension:
+                self.dimension = len(point)
+            elif len(point) != self.dimension:
+                self.logger.exception("Coordinates dimensions mismatch, should be {}"
+                                      .format(self.dimension))
+                raise SystemExit
+
+            # check space is full
+            if self.is_full():
+                raise FullSpaceError("Space if full"
+                                     .format(point))
+
             point = Point(point)
+
             # verify point is inside
             for i, _ in enumerate(self.corners[0]):
                 if not self.corners[0][i] <= point[i] <= self.corners[1][i]:
-                    raise AlienPointError('point %s is outside the space' % str(point))
+                    raise AlienPointError("Point {} is out of space"
+                                        .format(str(point)))
 
             # verify point is not already in space
             if point not in self:
                 self += [point]
             else:
-                raise UnicityError('point %s already exists in the space' % str(point))
-
-            if not self.dimension:
-                # set dimension when adding the first point
-                self.dimension = len(point)
-            elif len(point) != self.dimension:
-                msg = 'coordinates dimensions mismatch, should be %i' % self.dimension
-                raise DimensionError(msg)
-
-            # check space is full
-            if len(self) > self.max_points_nb:
-                raise FullSpaceError('Maximum number of points reached: %d points' % self.max_points_nb)
+                raise UnicityError("Point {} already exists in the space"
+                                    .format(point))
 
     def sampling(self, kind, n):
         """Create point samples in the parameter space.
@@ -158,9 +157,8 @@ class Space(list):
         :return: List of points
         :rtype: self
         """
-
         bounds = np.array(self.corners)
-        samples = sampling.doe(bounds.shape[1], n, bounds, kind)
+        samples = sampling.doe(n, bounds, kind)
 
         self.empty()
         self.add(samples)
