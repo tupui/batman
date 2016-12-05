@@ -200,15 +200,12 @@ class Driver():
                                               script, self.output)
             self.external_pod.run()
             # self.external_pod._after_run()
-            self.pod = self.external_pod.proxy.Pod(self.settings['pod']['tolerance'],
-                                                   self.settings['pod']['dim_max'],
+            self.pod = self.external_pod.proxy.Pod(self.settings,
                                                    self.settings['snapshot']['io'])
         else:
             # directly instantiate the pod,
             # the snapshot class is initialized as a by product
-            self.pod = Pod(self.settings['pod']['tolerance'],
-                           self.settings['pod']['dim_max'],
-                           self.settings['space']['corners'])
+            self.pod = Pod(self.settings)
 
     def sampling_pod(self, update):
         """Call private method _pod_processing."""
@@ -240,7 +237,7 @@ class Driver():
 
         Generates or retrieve the snapshots and then perform the POD.
 
-        :param :class:`SpaceBase` points: points to perform the POD from
+        :param :class:`Space` points: points to perform the POD from
         :param bool update: perform dynamic or static computation
 
         """

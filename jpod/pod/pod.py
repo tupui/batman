@@ -26,7 +26,7 @@ from .. import mpi
 import numpy as N
 from .predictor import Predictor
 from .snapshot import Snapshot
-from jpod.space import SpaceBase
+from jpod.space import Space
 
 
 class Pod(Core):
@@ -48,28 +48,30 @@ class Pod(Core):
     points_file_name = 'points.dat'
     '''File name for storing the points.'''
 
-    def __init__(self, tolerance, dim_max, corners, snapshot_io=None):
+    def __init__(self, settings, snapshot_io=None):
+        """Init POD with settings."""
         self.quality = None
         '''Quality of the pod, used to know when it needs to be recomputed.'''
 
+        # TODO: refactor observers?
         self.observers = []
         '''Objects to update on new pod decomposition.'''
 
-        # TODO: refactor observers?
         self.predictor = None
         '''Snapshot predictor.'''
 
-        self.corners = corners
+        self.corners = settings['space']['corners']
         '''Space corners.'''
 
-        self.points = SpaceBase()
+        self.points = Space(settings)
         '''A space to record the points.'''
 
         # for external pod
         if snapshot_io is not None:
             Snapshot.initialize(snapshot_io)
 
-        super(Pod, self).__init__(tolerance, dim_max)
+        super(Pod, self).__init__(settings['pod']['tolerance'],
+                                  settings['pod']['dim_max'])
 
     def __str__(self):
         format = '%-28s : %s'

@@ -34,56 +34,7 @@ class DimensionError(Exception):
     pass
 
 
-class SpaceBase(list):
-
-    """Base class to manage a list of points."""
-
-    def __init__(self):
-        self.dimension = None
-
-    def add(self, point):
-        """Add a points to the space, raise if it already exists."""
-        # the following test uses Point class approximative comparison
-        # if point is a Point instance
-        if point not in self:
-            self += [point]
-        else:
-            raise UnicityError('point %s already exists in the space' % str(point))
-
-        if not self.dimension:
-            # set dimension when adding the first point
-            self.dimension = len(point)
-        elif len(point) != self.dimension:
-            msg = 'coordinates dimensions mismatch, should be %i' % self.dimension
-            raise DimensionError(msg)
-
-    @property
-    def size(self):
-        """Return the number of points in space."""
-        return len(self)
-
-    @property
-    def dim(self):
-        """Return the dimension of the space."""
-        return len(self[0])
-
-    def write(self, path):
-        """Write space in the file `path`."""
-        np.savetxt(path, self)
-
-    def read(self, path):
-        """Read space from the file `path`."""
-        self.empty()
-        space = np.loadtxt(path)
-        for p in space:
-            self.add(p.flatten().tolist())
-
-    def empty(self):
-        """Remove all points."""
-        del self[:]
-
-
-class Space(SpaceBase):
+class Space(list):
 
     """Manages the space of parameters."""
 
@@ -96,7 +47,7 @@ class Space(SpaceBase):
 
         :param dict settings: JPOD settings
         """
-        super(Space, self).__init__()
+        self.dimension = None
 
         self.settings = settings
         corners = settings['space']['corners']
@@ -133,15 +84,63 @@ class Space(SpaceBase):
         """Return whether the maximum number of points is reached."""
         return len(self) >= self.max_points_nb
 
+    @property
+    def size(self):
+        """Return the number of points in space."""
+        return len(self)
+
+    @property
+    def dim(self):
+        """Return the dimension of the space."""
+        return len(self[0])
+
+    def write(self, path):
+        """Write space in the file `path`."""
+        np.savetxt(path, self)
+
+    def read(self, path):
+        """Read space from the file `path`."""
+        self.empty()
+        space = np.loadtxt(path)
+        for p in space:
+            self.add(p.flatten().tolist())
+
+    def empty(self):
+        """Remove all points."""
+        del self[:]
+
     def add(self, points):
-        """Add `points` to the space, raise if space is over full."""
+        """Add `points` to the space.
+        Raise if point already exists or if space is over full.
+
+        :param lst(float): point to add to space
+        """
+
+        # determine if adding one or multiple points
+        try:
+            points[0][0]
+        except TypeError:
+            points = [points]
+
         for point in points:
-            # check point is inside
-            for i in range(len(self.corners[0])):
+            point = Point(point)
+            # verify point is inside
+            for i, _ in enumerate(self.corners[0]):
                 if not self.corners[0][i] <= point[i] <= self.corners[1][i]:
                     raise AlienPointError('point %s is outside the space' % str(point))
 
-            super(Space, self).add(Point(point))
+            # verify point is not already in space
+            if point not in self:
+                self += [point]
+            else:
+                raise UnicityError('point %s already exists in the space' % str(point))
+
+            if not self.dimension:
+                # set dimension when adding the first point
+                self.dimension = len(point)
+            elif len(point) != self.dimension:
+                msg = 'coordinates dimensions mismatch, should be %i' % self.dimension
+                raise DimensionError(msg)
 
             # check space is full
             if len(self) > self.max_points_nb:
