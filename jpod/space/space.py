@@ -1,4 +1,23 @@
 # coding: utf8
+"""
+Space class
+===========
+
+Derives from :class:`list` and constitutes a groupment for points.
+The space can be filled using low discrepancy sequences from :package:`openturns`,
+it can be resampled or points can be added manually.
+
+:Example:
+
+::
+
+    >> from jpod.space import Space
+    >> from jpod.point import Point
+    >> space = Space(settings)
+    >> point = Point([12.3, 18.0])
+    >> space.add(point)
+
+"""
 import logging
 import numpy as np
 from . import sampling
