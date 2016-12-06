@@ -1,7 +1,5 @@
 import os
 import re
-import logging
-import sys
 from ._tecplot import ascii
 from .base import *
 
@@ -15,7 +13,7 @@ class TecplotAscii(IOBase):
     In addition to the attributes of the base class :class:`IOBase`, the `data_format` attribute is used to defined the format used for writing data in fortran.
     """
 
-    format      = 'fmt_tp'
+    format      = 'fmt_tp_fortran'
     extension   = '.dat'
 
     data_format = '(6e15.7)'
