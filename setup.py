@@ -130,6 +130,7 @@ setup(
                       'rpyc',
                       'h5py',
                       'scikit-learn>=0.18'],
+    extras_requires={'Antares': ["antares"]},
     dependency_links=['https://github.com/felipeam86/otwrapy/tarball/master#egg=otwrapy-0.6'],
     cmdclass=cmdclasses,
     # metadata
