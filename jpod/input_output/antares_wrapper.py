@@ -1,22 +1,26 @@
-import logging
-import numpy as np
+
 import antares
 from .base import IOBase
 
 
 class AntaresWrapper(IOBase):
+
     """Manages IO with :module:`Antares`.
 
     See Antares documentation for details.
     """
 
-    format    = 'fmt_tp'
+    format    = []
     extension = '.dat'
 
+    def __init__(self):
+        super(AntaresWrapper, self).__init__()
+        self.reader = antares.Reader(self.format)
+        self.writer = antares.Writer(self.format)
+
     def read(self, path, names=None):
-        r = antares.Reader(self.format)
-        r['filename'] = path
-        base = r.read()
+        self.reader['filename'] = path
+        base = self.reader.read()
 
         def iteritems(base):
             for zone in base:
@@ -34,8 +38,7 @@ class AntaresWrapper(IOBase):
         return super(AntaresWrapper, self)._read(iteritems(base), names)
 
     def write(self, path, dataset):
-        w = antares.Writer(self.format)
-        w['filename'] = path
+        self.writer['filename'] = path
         
         base = antares.Base()
         base["0"] = antares.Zone()
@@ -44,10 +47,9 @@ class AntaresWrapper(IOBase):
         for i, n in enumerate(dataset.names):
             base[0][0][n] = dataset.data[i]
 
-        w['base'] = base
-        w.dump()
+        self.writer['base'] = base
+        self.writer.dump()
 
     def meta_data(self, path):
-        # TODO: make this more subtle
         d = self.read(path)
         self.info.set_shape(d.shape)
