@@ -14,6 +14,15 @@ TecplotAscii,
 Npz
 ]
 
+try:
+    from .antares_wrapper import AntaresWrapper
+    io_types.append(AntaresWrapper)
+    import os
+    os.environ["ANTARES_VERBOSE"] = "0"
+except ImportError:
+    logger = logging.getLogger(__name__)
+    logger.info("Antares not installed")
+
 
 class FileFormatError(Exception):
     pass
