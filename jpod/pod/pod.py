@@ -26,7 +26,7 @@ from .. import mpi
 import numpy as N
 from .predictor import Predictor
 from .snapshot import Snapshot
-from jpod.space import Space
+from ..space import Space
 
 
 class Pod(Core):

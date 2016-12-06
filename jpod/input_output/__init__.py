@@ -1,6 +1,9 @@
-"""Input output management entry point.
+"""
+IO module
+*********
 
-An input-output, or io, is used to deal with the permanent storage of a dataset.
+Input output management entry point.
+An input-output (io) is used to deal with the permanent storage of a dataset.
 """
 
 from .base import FormatError
@@ -11,11 +14,11 @@ import logging
 
 
 class IOFormatSelector(object):
-    
+
     """Return an instance of io manager corresponding to a file `format`."""
 
     logger = logging.getLogger(__name__)
-    
+
     # list of all supported io classes
     io_types = [
             TecplotAscii,
@@ -29,10 +32,10 @@ class IOFormatSelector(object):
         check_antares = True
     except ImportError:
         check_antares = False
-        self.logger.info("Antares not installed")
+        logger.info("Antares not installed")
 
     def __init__(self, format):
-        """Select the io class to use"""
+        """Select the io class to use."""
         self.format = format
 
         if self.check_antares is True:
@@ -48,7 +51,7 @@ class IOFormatSelector(object):
                 except KeyError as bt:
                     self.logger.info("Not available in Antares: {}".format(bt))
                     pass
-                    
+
                 self.read = io.read
                 self.write = io.write
                 self.meta_data = io.meta_data
