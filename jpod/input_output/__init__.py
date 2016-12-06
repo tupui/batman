@@ -59,5 +59,5 @@ class IOFormatSelector(object):
                 return
 
         if check_format_init is False:
-            raise FormatError("File format {} doesn't exist: {}"
+            raise FormatError("File format {} doesn't exist"
                               .format(self.format))
