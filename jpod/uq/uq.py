@@ -386,7 +386,7 @@ class UQ:
             dataset = Dataset(names=names,
                               shape=[self.output_len, 1, 1],
                               data=data)
-            self.io.write(self.output_folder + '/sensitivity2.dat', dataset)
+            self.io.write(self.output_folder + '/sensitivity.dat', dataset)
         else:
             self.logger.debug("No output folder to write indices in")
 
@@ -412,20 +412,17 @@ class UQ:
                     pass
             self.logger.info("Aggregated_indices: {}".format(indices))
 
-            try:
-                with open(self.output_folder + '/sensitivity_aggregated.dat', 'w') as f:
-                    f.writelines('TITLE = \" Sobol indices \" \n')
-                    variables = 'VARIABLES =' + var
-                    f.writelines(variables)
-                    f.writelines(
-                        'ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
-                    w_lst = [indices[1], indices[2]]
-                    for j, w in itertools.product(range(self.p_len), w_lst):
-                        f.writelines("{:.7E}".format(float(w[j])) + "\t ")
-                        if i % 1000:
-                            f.writelines('\n')
-                    f.writelines('\n')
-            except (OSError, TypeError):
+            # Write aggregated indices to file
+            if self.output_folder is not None:
+                i1 = np.array(indices[1]).flatten('F')
+                i2 = np.array(indices[2]).flatten('F')
+                data = np.append(i1, i2)
+                dataset = Dataset(names=names[1:],
+                                  shape=[1, 1, 1],
+                                  data=data)
+                self.io.write(self.output_folder + '/sensitivity_aggregated.dat',
+                              dataset)
+            else:
                 self.logger.debug(
                     "No output folder to write aggregated indices in")
 
