@@ -67,6 +67,7 @@ from multiprocessing import cpu_count
 from os import mkdir
 import itertools
 from .wrapper import Wrapper
+from ..input_output import IOFormatSelector, Dataset
 
 
 class UQ:
@@ -90,7 +91,7 @@ class UQ:
         Also, it creates the `model` and `int_model` as `ot.PythonFunction()`.
 
         :param jpod.pod.pod jpod: The POD,
-        :param dict settings: The settings_template file.
+        :param dict settings: The settings file.
 
         """
         self.logger.info("UQ module")
@@ -106,6 +107,7 @@ class UQ:
         except TypeError:
             self.logger.debug("Not using output folder.")
         self.pod = jpod
+        self.io = IOFormatSelector(settings['snapshot']['io']['format'])
         self.surrogate = settings['prediction']['method']
         self.p_lst = settings['snapshot']['io']['parameter_names']
         self.p_len = len(self.p_lst)
@@ -368,38 +370,24 @@ class UQ:
         self.logger.debug("Total: {}".format(indices[2]))
 
         # Write Sobol' indices to file: block or map
-        try:
-            with open(self.output_folder + '/sensitivity.dat', 'w') as f:
-                f.writelines('TITLE = \" Sobol indices \" \n')
-                var = ''
-                for p in self.p_lst:
-                    var += ' \"S_' + str(p) + '\" \"S_T_' + str(p) + '\"'
-                var += '\n'
-                if (self.output_len == 1) or (self.type_indices == 'block'):
-                    variables = 'VARIABLES =' + var
-                    f.writelines(variables)
-                    f.writelines(
-                        'ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
-                else:
-                    variables = 'VARIABLES = \"x\"' + var
-                    f.writelines(variables)
-                    f.writelines('ZONE T = \"Sensitivity \" , I=' +
-                                 str(self.output_len) + ', F=BLOCK  \n')
-                    # X
-                    for i in range(self.output_len):
-                        f.writelines("{:.7E}".format(
-                            float(self.f_input[i])) + "\t ")
-                        if i % 1000:
-                            f.writelines('\n')
-                    f.writelines('\n')
-                # Indices
-                w_lst = [indices[1], indices[2]]
-                for j, w, i in itertools.product(range(self.p_len), w_lst, range(sobol_len)):
-                    f.writelines("{:.7E}".format(float(w[i][j])) + "\t ")
-                    if i % 1000:
-                        f.writelines('\n')
-                f.writelines('\n')
-        except:
+        if self.output_folder is not None:
+            i1 = np.array(indices[1]).flatten('F')
+            i2 = np.array(indices[2]).flatten('F')
+            data = np.append(i1, i2)
+            names = []
+            for p in self.p_lst:
+                names += ['S_' + str(p)]
+            for p in self.p_lst:
+                names += ['S_T_' + str(p)]
+            if (self.output_len != 1) and (self.type_indices != 'block'):
+                names = ['x'] + names
+                data = np.append(self.f_input, data)
+
+            dataset = Dataset(names=names,
+                              shape=[self.output_len, 1, 1],
+                              data=data)
+            self.io.write(self.output_folder + '/sensitivity2.dat', dataset)
+        else:
             self.logger.debug("No output folder to write indices in")
 
         # Aggregated Indices
