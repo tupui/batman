@@ -11,4 +11,4 @@ __all__ = ['Driver', 'mpi', 'misc']
 
 __version__ = '1.4'
 __branch__ = 'heads/develop'
-__commit__ = '1.4-38-gdf39aa8'
+__commit__ = '1.4-83-gd05106b'

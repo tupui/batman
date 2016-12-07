@@ -37,7 +37,11 @@ The required dependencies are:
 - `OpenTURNS <http://www.openturns.org>`_ >= 1.7
 - `scipy <http://scipy.org>`_ >= 0.15
 
-.. note:: OpenTURNS 1.7 is installed on *NEMO* only for Python 2.7  other dependencies are satisfied by the installer.
+Optionnal dependencies are: 
+
+- `Antares <http://www.cerfacs.fr/antares>`_
+  
+Appart from OpenTURNS and Antares, dependencies are satisfied by the installer.
 
 How to get JPOD
 ---------------
@@ -46,7 +50,6 @@ You must belong to the ``uqs`` Unix group.
 
 To download it::
 
-    git clone /home/jpod_home/jpod/JPOD
     git clone ssh://dogon.cerfacs.fr/home/jpod_home/jpod/JPOD
 
 Then to install::
@@ -64,7 +67,28 @@ If JPOD has been correctly installed, you should be able to call it simply::
 
     jpod -h
 
-.. note:: Depending on your configuration, you might have to export your local python path: ``export PATH=$PATH:.../Python/2.7/bin``.
+.. note:: Depending on your configuration, you might have to export your local python path: 
+ ``export PATH=$PATH:.../Python/2.7/bin``.
+
+.. note:: OpenTURNS 1.7 is installed on *NEMO* for Python 2.7::
+
+        module load python/2.7
+        module load python/2.7-shared
+        module load application/openturns/1.7
+
+    The last version of OpenTURNS can be loaded using::
+
+        module load python/miniconda2.7
+
+    .. warning:: You cannot load both versions at the same time.
+
+    Otherwize you can create your ``conda`` environment::
+
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+        bash Miniconda3-latest-Linux-x86_64.sh
+        conda create -n jpod_env -c conda-forge openturns
+
+    Then you can install all packages without ``root`` access.
 
 Getting started
 ---------------
