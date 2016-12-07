@@ -1,8 +1,5 @@
-import logging
 import numpy as N
 from .base import *
-
-__docformat__ = "reStructuredText"
 
 
 class Npz(IOBase):

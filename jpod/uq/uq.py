@@ -67,6 +67,7 @@ from multiprocessing import cpu_count
 from os import mkdir
 import itertools
 from .wrapper import Wrapper
+from ..input_output import IOFormatSelector, Dataset
 
 
 class UQ:
@@ -90,7 +91,7 @@ class UQ:
         Also, it creates the `model` and `int_model` as `ot.PythonFunction()`.
 
         :param jpod.pod.pod jpod: The POD,
-        :param dict settings: The settings_template file.
+        :param dict settings: The settings file.
 
         """
         self.logger.info("UQ module")
@@ -106,6 +107,7 @@ class UQ:
         except TypeError:
             self.logger.debug("Not using output folder.")
         self.pod = jpod
+        self.io = IOFormatSelector(settings['snapshot']['io']['format'])
         self.surrogate = settings['prediction']['method']
         self.p_lst = settings['snapshot']['io']['parameter_names']
         self.p_len = len(self.p_lst)
@@ -368,38 +370,23 @@ class UQ:
         self.logger.debug("Total: {}".format(indices[2]))
 
         # Write Sobol' indices to file: block or map
-        try:
-            with open(self.output_folder + '/sensitivity.dat', 'w') as f:
-                f.writelines('TITLE = \" Sobol indices \" \n')
-                var = ''
-                for p in self.p_lst:
-                    var += ' \"S_' + str(p) + '\" \"S_T_' + str(p) + '\"'
-                var += '\n'
-                if (self.output_len == 1) or (self.type_indices == 'block'):
-                    variables = 'VARIABLES =' + var
-                    f.writelines(variables)
-                    f.writelines(
-                        'ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
-                else:
-                    variables = 'VARIABLES = \"x\"' + var
-                    f.writelines(variables)
-                    f.writelines('ZONE T = \"Sensitivity \" , I=' +
-                                 str(self.output_len) + ', F=BLOCK  \n')
-                    # X
-                    for i in range(self.output_len):
-                        f.writelines("{:.7E}".format(
-                            float(self.f_input[i])) + "\t ")
-                        if i % 1000:
-                            f.writelines('\n')
-                    f.writelines('\n')
-                # Indices
-                w_lst = [indices[1], indices[2]]
-                for j, w, i in itertools.product(range(self.p_len), w_lst, range(sobol_len)):
-                    f.writelines("{:.7E}".format(float(w[i][j])) + "\t ")
-                    if i % 1000:
-                        f.writelines('\n')
-                f.writelines('\n')
-        except:
+        if self.output_folder is not None:
+            i1 = np.array(indices[1]).flatten('F')
+            i2 = np.array(indices[2]).flatten('F')
+            data = np.append(i1, i2)
+            names = []
+            for p in self.p_lst:
+                names += ['S_' + str(p)]
+            for p in self.p_lst:
+                names += ['S_T_' + str(p)]
+            if (self.output_len != 1) and (self.type_indices != 'block'):
+                names = ['x'] + names
+                data = np.append(self.f_input, data)
+
+            dataset = Dataset(names=names, shape=[self.output_len, 1, 1],
+                              data=data)
+            self.io.write(self.output_folder + '/sensitivity.dat', dataset)
+        else:
             self.logger.debug("No output folder to write indices in")
 
         # Aggregated Indices
@@ -424,20 +411,17 @@ class UQ:
                     pass
             self.logger.info("Aggregated_indices: {}".format(indices))
 
-            try:
-                with open(self.output_folder + '/sensitivity_aggregated.dat', 'w') as f:
-                    f.writelines('TITLE = \" Sobol indices \" \n')
-                    variables = 'VARIABLES =' + var
-                    f.writelines(variables)
-                    f.writelines(
-                        'ZONE T = \"Sensitivity \" , I=1, F=BLOCK  \n')
-                    w_lst = [indices[1], indices[2]]
-                    for j, w in itertools.product(range(self.p_len), w_lst):
-                        f.writelines("{:.7E}".format(float(w[j])) + "\t ")
-                        if i % 1000:
-                            f.writelines('\n')
-                    f.writelines('\n')
-            except (OSError, TypeError):
+            # Write aggregated indices to file
+            if self.output_folder is not None:
+                i1 = np.array(indices[1]).flatten('F')
+                i2 = np.array(indices[2]).flatten('F')
+                data = np.append(i1, i2)
+                dataset = Dataset(names=names[1:],
+                                  shape=[1, 1, 1],
+                                  data=data)
+                self.io.write(self.output_folder + '/sensitivity_aggregated.dat',
+                              dataset)
+            else:
                 self.logger.debug(
                     "No output folder to write aggregated indices in")
 
@@ -471,7 +455,7 @@ class UQ:
         # Create the PDFs
         kernel = ot.KernelSmoothing()
         pdf_pts = [None] * self.output_len
-        d_PDF = 100
+        d_PDF = 200
         sample = self.distribution.getSample(d_PDF)
         output_extract = self.model(sample)
         for i in range(self.output_len):
@@ -483,52 +467,28 @@ class UQ:
             pdf_pts[i] = np.nan_to_num(pdf_pts[i])
 
         # Write moments to file
-        with open(self.output_folder + '/moment.dat', 'w') as f:
-            f.writelines('TITLE = \" Moment evaluation \" \n')
-            if self.output_len == 1:
-                f.writelines(
-                    'VARIABLES = \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
-                w_lst = [min, sd_min, mean, sd_max, max]
-            else:
-                f.writelines(
-                    'VARIABLES = \"x\" \"Min\" \"SD_min\" \"Mean\" \"SD_max\" \"Max\" \n')
-                w_lst = [self.f_input, min, sd_min, mean, sd_max, max]
-            f.writelines('ZONE T = \"Moments \" , I=' +
-                         str(self.output_len) + ', F=BLOCK  \n')
-            for w, i in itertools.product(w_lst, range(self.output_len)):
-                f.writelines("{:.7E}".format(float(w[i])) + "\t ")
-                if i % 1000:
-                    f.writelines('\n')
-            f.writelines('\n')
+        data = np.append([min], [sd_min, mean, sd_max, max])
+        names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
+        if (self.output_len != 1) and (self.type_indices != 'block'):
+            names = ['x'] + names
+            data = np.append(self.f_input, data)
+
+        dataset = Dataset(names=names, shape=[self.output_len, 1, 1],
+                          data=data)
+        self.io.write(self.output_folder + '/moment.dat', dataset)
 
         # Write PDF to file
-        with open(self.output_folder + '/pdf.dat', 'w') as f:
-            f.writelines('TITLE = \" Probability Density Functions \" \n')
-            if self.output_len == 1:
-                f.writelines('VARIABLES =  \"output\" \"PDF\" \n')
-                f.writelines('ZONE T = \"PDF \" , I=' + str(self.output_len) +
-                             ', J=' + str(d_PDF) + ',  F=BLOCK  \n')
-            else:
-                f.writelines('VARIABLES =  \"x\" \"output\" \"PDF\" \n')
-                f.writelines('ZONE T = \"PDF \" , I=' + str(self.output_len) +
-                             ', J=' + str(d_PDF) + ',  F=BLOCK  \n')
-                # X
-                for j, i in itertools.product(range(d_PDF), range(self.output_len)):
-                    f.writelines("{:.7E}".format(
-                        float(self.f_input[i])) + "\t ")
-                    if (i % 1000) or (j % 1000):
-                        f.writelines('\n')
-                f.writelines('\n')
-            # Output
+        data = np.append(output_extract, pdf_pts)
+        names = ["output", "PDF"]
+        if (self.output_len != 1) and (self.type_indices != 'block'):
+            names = ['x'] + names
+            f_input_2d = []
+            append = f_input_2d.append
             for j, i in itertools.product(range(d_PDF), range(self.output_len)):
-                f.writelines("{:.7E}".format(
-                    float(output_extract[j][i])) + "\t ")
-                if (i % 1000) or (j % 1000):
-                    f.writelines('\n')
-            f.writelines('\n')
-            # PDF
-            for j, i in itertools.product(range(d_PDF), range(self.output_len)):
-                f.writelines("{:.7E}".format(float(pdf_pts[i][j])) + "\t ")
-                if (i % 1000) or (j % 1000):
-                    f.writelines('\n')
-            f.writelines('\n')
+                append(self.f_input[i])
+            f_input2d = np.array([f_input_2d]).flatten()
+            data = np.append(f_input2d, data)
+
+        dataset = Dataset(names=names, shape=[self.output_len, d_PDF, 1],
+                          data=data)
+        self.io.write(self.output_folder + '/pdf.dat', dataset)

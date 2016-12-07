@@ -1,7 +1,5 @@
 import os
 import re
-import logging
-import sys
 from ._tecplot import ascii
 from .base import *
 
@@ -15,21 +13,22 @@ class TecplotAscii(IOBase):
     In addition to the attributes of the base class :class:`IOBase`, the `data_format` attribute is used to defined the format used for writing data in fortran.
     """
 
-    format      = 'fmt_tp'
-    extension   = '.dat'
+    format = 'fmt_tp_fortran'
+    extension = '.dat'
 
     data_format = '(6e15.7)'
     '''Fortran format used for writing data.'''
-
 
     @use_base_class_docstring
     def read(self, path, names=None):
         # process header
         self.meta_data(path)
 
-        # provides an iterator with lazy evaluation over the quantities stored in the file.
+        # provides an iterator with lazy evaluation over the quantities stored
+        # in the file.
         def generator(path):
-            # TODO: check what's done with the fortran unit when the loop is broken
+            # TODO: check what's done with the fortran unit when the loop is
+            # broken
             unit = ascii.open_file(path, 'formatted', 'read', 'rewind')
             ascii.skip_header(unit)
             for v in self.info.names:
@@ -37,7 +36,6 @@ class TecplotAscii(IOBase):
             ascii.close_file(unit)
 
         return super(TecplotAscii, self)._read(generator(path), names)
-
 
     @use_base_class_docstring
     def write(self, path, dataset):
@@ -53,7 +51,6 @@ class TecplotAscii(IOBase):
             ascii.write_array(unit, self.data_format, v)
         ascii.close_file(unit)
 
-
     def header(self, dataset):
         """Returns a header from dataset info, as a list of strings."""
         header = []
@@ -67,23 +64,22 @@ class TecplotAscii(IOBase):
         # else:
         # otherwise create a dummy one
 
-        header += ['TITLE = ""'] # elsA_IO will barf otherwise
-        header += ['VARIABLES = "'+'" "'.join(dataset.names)+'"']
-        indices = ('I','J','K')
+        header += ['TITLE = ""']  # elsA_IO will barf otherwise
+        header += ['VARIABLES = "' + '" "'.join(dataset.names) + '"']
+        indices = ('I', 'J', 'K')
         s = ''
         for i, idx in enumerate(dataset.shape):
-            s += '%s=%d, '%(indices[i],idx)
-        header += ['ZONE '+s+' F=BLOCK']
-        header = [i+'\n' for i in header]
+            s += '%s=%d, ' % (indices[i], idx)
+        header += ['ZONE ' + s + ' F=BLOCK']
+        header = [i + '\n' for i in header]
 
         return header
-
 
     def meta_data(self, path):
         """Parse meta-data from `path`."""
         # check file here as io_fortran will not barf
         if not os.path.isfile(path):
-            raise IOError('No such file: %s'%path)
+            raise IOError('No such file: %s' % path)
 
         # process names
         names = None
@@ -93,7 +89,7 @@ class TecplotAscii(IOBase):
                 break
 
         if names is None:
-            raise NameError('cannot find "names" field in the file %s'%path)
+            raise NameError('cannot find "names" field in the file %s' % path)
         else:
             self.info.set_names(names)
 
@@ -106,23 +102,25 @@ class TecplotAscii(IOBase):
                 if re.match('.*=\s*POINT.*', line, flags=re.IGNORECASE):
                     raise FormatError('data not in block format.')
 
-                ids = re.findall('(I|J|K)\s*=\s*(\d+)', line, flags=re.IGNORECASE)
+                ids = re.findall('(I|J|K)\s*=\s*(\d+)',
+                                 line, flags=re.IGNORECASE)
                 for i in ids:
                     try:
-                        if shape_map is None: shape_map = {}
+                        if shape_map is None:
+                            shape_map = {}
                         shape_map[i[0].lower()] = int(i[1])
                     except:
                         msg = 'cannot read shape from the line "%s" in the file %s' \
-                              %(line,path)
+                              % (line, path)
                         raise ShapeError(msg)
                 break
 
         if shape_map is None:
-            raise ShapeError('cannot find "zone" field in the file %s'%path)
+            raise ShapeError('cannot find "zone" field in the file %s' % path)
         else:
             # get the values in order
-            shape = [1,1,1]
-            for i,key in enumerate(sorted(shape_map.keys())):
+            shape = [1, 1, 1]
+            for i, key in enumerate(sorted(shape_map.keys())):
                 shape[i] = shape_map[key]
 
             self.info.set_shape(shape)
