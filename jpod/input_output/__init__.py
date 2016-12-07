@@ -27,8 +27,6 @@ class IOFormatSelector(object):
     try:
         from .antares_wrapper import AntaresWrapper
         io_types.append(AntaresWrapper)
-        import os
-        os.environ["ANTARES_VERBOSE"] = "0"
         check_antares = True
     except ImportError:
         check_antares = False

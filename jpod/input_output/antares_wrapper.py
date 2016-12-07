@@ -7,6 +7,8 @@ Manages IO with :module:`Antares`.
 
 See Antares documentation for details.
 """
+import os
+os.environ["ANTARES_VERBOSE"] = "0"
 import antares
 from .base import IOBase
 
