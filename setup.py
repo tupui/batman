@@ -18,6 +18,7 @@ Usage
 from setuptools import (setup, find_packages, Command)
 import re
 import os
+import sys
 import subprocess
 
 cmdclasses = dict()
@@ -38,8 +39,10 @@ class BuildSphinx(Command):
 
     def run(self):
         import sphinx
-        sphinx.build_main(['setup.py', '-b', 'html', './doc', './doc/_build/html'])
-        sphinx.build_main(['setup.py', '-b', 'man', './doc', './doc/_build/man'])
+        sphinx.build_main(
+            ['setup.py', '-b', 'html', './doc', './doc/_build/html'])
+        sphinx.build_main(
+            ['setup.py', '-b', 'man', './doc', './doc/_build/man'])
 
 
 class CompileSources(Command):
@@ -87,6 +90,19 @@ except:
     print('You need to install OpenTURNS')
     raise SystemExit
 
+install_requires = ['sphinx_rtd_theme',
+                    'sphinx',
+                    'scipy>=0.15'
+                    'jsonschema',
+                    'pathos>=0.2',
+                    'otwrapy==0.6',
+                    'rpyc',
+                    'h5py',
+                    'scikit-learn>=0.18']
+
+if sys.version_info <= (3, 3):
+    install_requires.append('futures')
+
 
 def find_version(*file_paths):
     """Find version number, commit and branch."""
@@ -119,19 +135,12 @@ setup(
     version=find_version("jpod", "__init__.py"),
     packages=find_packages(exclude=['test_cases', 'doc']),
     entry_points={'console_scripts': ['jpod=jpod.ui:main']},
+    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
     # Package requirements
-    install_requires=['sphinx_rtd_theme',
-                      'sphinx',
-                      'scipy>=0.15'
-                      'jsonschema',
-                      'futures',
-                      'pathos>=0.2',
-                      'otwrapy==0.6',
-                      'rpyc',
-                      'h5py',
-                      'scikit-learn>=0.18'],
+    install_requires=install_requires,
     extras_require={'Antares': ["antares"]},
-    dependency_links=['https://github.com/felipeam86/otwrapy/tarball/master#egg=otwrapy-0.6'],
+    dependency_links=['https://github.com/felipeam86/otwrapy/tarball/master#egg=otwrapy-0.6',
+                      'git+ssh://dogon:/home/cfd2/aerodyn/TOOLS/ANTARES/Antares_v1.git#egg=Antares-1.8.2'],
     cmdclass=cmdclasses,
     # metadata
     maintainer="Pamphile ROY",
@@ -153,7 +162,7 @@ setup(
                  'Topic :: Scientific/Engineering',
                  ],
     include_package_data=True,
-    zip_safe= False,
+    zip_safe=False,
     license="CERFACS",
     url="https://inle.cerfacs.fr/projects/jpod",
 )
