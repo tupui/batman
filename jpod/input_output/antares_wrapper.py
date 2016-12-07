@@ -5,7 +5,7 @@ AntaresWrapper class
 
 Manages IO with :module:`Antares`.
 
-See Antares documentation for details.
+See `Antares <http://www.cerfacs.fr/antares>`_ documentation for details.
 """
 import os
 os.environ["ANTARES_VERBOSE"] = "0"
