@@ -6,24 +6,26 @@ It modify the ``daemon` attribute to allow this subprocessing.
 
 """
 import pathos
-import multiprocessing
+import multiprocess
 
 
-class NoDaemonProcess(multiprocessing.Process):
-    
+class NoDaemonProcess(multiprocess.Process):
+
     """NoDaemonProcess class.
 
     Inherit from :class:`multiprocessing.Process`.
     ``daemon`` attribute always returns False.
 
     """
-    
+
     def _get_daemon(self):
         return False
+
     def _set_daemon(self, value):
         pass
-    
+
     daemon = property(_get_daemon, _set_daemon)
+
 
 class NestedPool(pathos.multiprocessing.Pool):
 
