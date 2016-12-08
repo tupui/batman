@@ -193,15 +193,13 @@ class UQ:
             s_total_th = np.array([0.4606, 0.5464])
         elif function == 'Rosenbrock':
             formula = [
-                '100*(X2-X1*X1)*(X2-X1*X1) + (X1-1)*(X1-1)'
-                '+ 100*(X3-X2*X2)*(X3-X2*X2) + (X2-1)*(X2-1)']
+                '100*(X2-X1*X1)*(X2-X1*X1) + (1-X1)*(1-X1)']
             model_ref = ot.NumericalMathFunction(
                 ['X1', 'X2', 'X3'], ['Y'], formula)
-            s_first_th = np.array([0.229983, 0.4855, 0.130659])
+            s_first_th = np.array([0.229983, 0.4855])
             s_second_th = np.array([[0., 0.0920076, 0.00228908],
-                                    [0.0920076, 0., 0.0935536],
                                     [0.00228908, 0.0935536, 0.]])
-            s_total_th = np.array([0.324003, 0.64479, 0.205122])
+            s_total_th = np.array([0.324003, 0.64479])
         elif function == 'Channel_Flow':
             def channel_flow(x):
                 Q = x[0]
@@ -380,10 +378,12 @@ class UQ:
             for p in self.p_lst:
                 names += ['S_T_' + str(p)]
             if (self.output_len != 1) and (self.type_indices != 'block'):
-                names = ['x'] + names
+                full_names = ['x'] + names
                 data = np.append(self.f_input, data)
+            else:
+                full_names = names
 
-            dataset = Dataset(names=names, shape=[self.output_len, 1, 1],
+            dataset = Dataset(names=full_names, shape=[self.output_len, 1, 1],
                               data=data)
             self.io.write(self.output_folder + '/sensitivity.dat', dataset)
         else:
@@ -416,7 +416,7 @@ class UQ:
                 i1 = np.array(indices[1]).flatten('F')
                 i2 = np.array(indices[2]).flatten('F')
                 data = np.append(i1, i2)
-                dataset = Dataset(names=names[1:],
+                dataset = Dataset(names=names,
                                   shape=[1, 1, 1],
                                   data=data)
                 self.io.write(self.output_folder + '/sensitivity_aggregated.dat',
@@ -443,6 +443,8 @@ class UQ:
         self.logger.info("\n----- Moment evaluation -----")
         output = self.model(self.sample)
         output = output.sort()
+
+        # Compute statistics
         mean = output.computeMean()
         sd = output.computeStandardDeviationPerComponent()
         sd_min = mean - sd
@@ -451,6 +453,25 @@ class UQ:
         max = output.getMax()
         correlation_matrix = output.computePearsonCorrelation()
         covariance_matrix = output.computeCovariance()
+
+        print(correlation_matrix)
+        print(covariance_matrix)
+
+        data = np.append(correlation_matrix, covariance_matrix)
+        names = ["Correlation", "Covariance"]
+        if (self.output_len != 1) and (self.type_indices != 'block'):
+            names = ['x'] + names
+            f_input_2d = []
+            append = f_input_2d.append
+            for j, i in itertools.product(range(self.output_len), range(self.output_len)):
+                append(self.f_input[i])
+            f_input2d = np.array([f_input_2d]).flatten()
+            data = np.append(f_input2d, data)
+
+        dataset = Dataset(names=names, shape=[self.output_len, self.output_len, 1],
+                          data=data)
+        self.io.write(self.output_folder + '/correlation_covariance.dat', dataset)
+
 
         # Create the PDFs
         kernel = ot.KernelSmoothing()
