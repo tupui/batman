@@ -226,11 +226,12 @@ class Refiner(object):
 
         # Get Sobol' indices
         analyse = UQ(self.pod, self.settings)
-        indices = analyse.sobol()
+        indices = analyse.sobol()[2]
+        indices = indices * (indices > 0)
 
         # Modify min distance with Sobol' indices
         distance = self.distance_min(point)
-        distance = distance * abs(indices[2])
+        distance = distance * (1 + indices)
         self.logger.debug("Post Distance min: {}".format(distance))
 
         # Construct the hypercube around the point
