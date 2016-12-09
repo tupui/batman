@@ -6,18 +6,18 @@
 # Lower and upper end points (corners) that define a portion of space.
 # format : 2-tuple of tuples with end points coordinates.
         "corners": [[1.0, 1.0],[3.1415, 3.1415]],
-# Maximum number of point, used for pod automatic resampling
+# Maximum number of point used : initial sampling + resampling
 # format : integer
         "size_max": 15,
-# Inners space 
+# Innerspace defined by corners for resampling 
         "delta_space": 0.01,
 # Points provider
 # Could be a list of points or a dictionary with sampling parameters
         "provider": {
 # Method used to generate the points
-# format : one of 'uniform', 'halton', 'sobol', 'lhsc', 'lhsr'
+# format : one of 'uniform', 'halton', 'sobol', 'lhsc', 'lhsr', "sobolscramble", "faure" 
         "method": "halton",
-# Number of samples to be generated
+# Number of points for initial sampling 
 # format : integer
         "size": 15
         }
