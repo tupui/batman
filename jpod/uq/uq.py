@@ -451,32 +451,46 @@ class UQ:
         sd_max = mean + sd
         min = output.getMin()
         max = output.getMax()
-        correlation_matrix = output.computePearsonCorrelation()
-        covariance_matrix = output.computeCovariance()
-
-        print(correlation_matrix)
-        print(covariance_matrix)
-
-        data = np.append(correlation_matrix, covariance_matrix)
-        names = ["Correlation", "Covariance"]
+        
+        # Write moments to file
+        data = np.append([min], [sd_min, mean, sd_max, max])
+        names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
         if (self.output_len != 1) and (self.type_indices != 'block'):
             names = ['x'] + names
-            f_input_2d = []
-            append = f_input_2d.append
+            data = np.append(self.f_input, data)
+
+        dataset = Dataset(names=names, shape=[self.output_len, 1, 1], data=data)
+        self.io.write(self.output_folder + '/moment.dat', dataset)
+        
+        # Covariance and correlation matrices        
+        if (self.output_len != 1) and (self.type_indices != 'block'):
+            correlation_matrix = output.computePearsonCorrelation()
+            covariance_matrix = output.computeCovariance()
+
+            x_input_2d = []
+            append = x_input_2d.append
             for j, i in itertools.product(range(self.output_len), range(self.output_len)):
-                append(self.f_input[i])
-            f_input2d = np.array([f_input_2d]).flatten()
-            data = np.append(f_input2d, data)
+                append(self.f_input[j])
+            y_input_2d = []
+            append = y_input_2d.append
+            for j, i in itertools.product(range(self.output_len), range(self.output_len)):
+                append(self.f_input[j])
+            x_input_2d = np.array([x_input_2d]).flatten()
+            y_input_2d = np.array([y_input_2d]).flatten()
 
-        dataset = Dataset(names=names, shape=[self.output_len, self.output_len, 1],
-                          data=data)
-        self.io.write(self.output_folder + '/correlation_covariance.dat', dataset)
-
+            names = ["x", "y", "Correlation", "Covariance"]
+            data_coord = np.append(x_input_2d, y_input_2d)
+            data_matrices = np.append(correlation_matrix, covariance_matrix)
+            data = np.append(data_coord, data_matrices)
+            dataset = Dataset(names=names,
+                              shape=[self.output_len, self.output_len, 1],
+                              data=data)
+            self.io.write(self.output_folder + '/correlation_covariance.dat', dataset)
 
         # Create the PDFs
         kernel = ot.KernelSmoothing()
         pdf_pts = [None] * self.output_len
-        d_PDF = 200
+        d_PDF = 5
         sample = self.distribution.getSample(d_PDF)
         output_extract = self.model(sample)
         for i in range(self.output_len):
@@ -487,29 +501,16 @@ class UQ:
             pdf_pts[i] = np.array(pdf.computePDF(output_extract[:, i]))
             pdf_pts[i] = np.nan_to_num(pdf_pts[i])
 
-        # Write moments to file
-        data = np.append([min], [sd_min, mean, sd_max, max])
-        names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
-        if (self.output_len != 1) and (self.type_indices != 'block'):
-            names = ['x'] + names
-            data = np.append(self.f_input, data)
-
-        dataset = Dataset(names=names, shape=[self.output_len, 1, 1],
-                          data=data)
-        self.io.write(self.output_folder + '/moment.dat', dataset)
-
         # Write PDF to file
-        data = np.append(output_extract, pdf_pts)
+        output_extract = np.array(output_extract).flatten('C')
+        pdf_pts = np.array(pdf_pts).flatten('F')
         names = ["output", "PDF"]
         if (self.output_len != 1) and (self.type_indices != 'block'):
             names = ['x'] + names
-            f_input_2d = []
-            append = f_input_2d.append
-            for j, i in itertools.product(range(d_PDF), range(self.output_len)):
-                append(self.f_input[i])
-            f_input2d = np.array([f_input_2d]).flatten()
-            data = np.append(f_input2d, data)
+            f_input_2d = np.tile(self.f_input, d_PDF)
+            data = np.array([f_input_2d, output_extract, pdf_pts])
+        else:
+            data = np.array([output_extract, pdf_pts])            
 
-        dataset = Dataset(names=names, shape=[self.output_len, d_PDF, 1],
-                          data=data)
+        dataset = Dataset(names=names, data=data)
         self.io.write(self.output_folder + '/pdf.dat', dataset)
