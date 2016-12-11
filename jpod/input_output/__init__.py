@@ -46,15 +46,14 @@ class IOFormatSelector(object):
                 try:
                     io = io()
                     check_format_init = True
+                    self.read = io.read
+                    self.write = io.write
+                    self.meta_data = io.meta_data
+                    self.info = io.info
+                    return
                 except KeyError as bt:
                     self.logger.info("Not available in Antares: {}".format(bt))
                     pass
-
-                self.read = io.read
-                self.write = io.write
-                self.meta_data = io.meta_data
-                self.info = io.info
-                return
 
         if check_format_init is False:
             raise FormatError("File format {} doesn't exist"

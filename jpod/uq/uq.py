@@ -62,6 +62,7 @@ import logging
 import numpy as np
 import openturns as ot
 import otwrapy as otw
+from sklearn.metrics import r2_score
 from multiprocessing import cpu_count
 # from openturns.viewer import View
 from os import mkdir
@@ -241,40 +242,27 @@ class UQ:
         s_l2_1st = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
         s_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
 
-        eval_mean = np.zeros(self.output_len)
-        eval_ref = []
-        err_max = 0.
-        err_l2 = 0.
-
         # Q2 computation
-        for i, j in enumerate(self.sample):
-            eval_ref.append(np.array(model_ref(j)))
-            eval_pod = np.array(self.model(j))
-            eval_mean = eval_mean + eval_ref[i]
-            err_max = max(err_max, max(abs(eval_pod - eval_ref[i])))
-            err_l2 = err_l2 + np.sum((eval_pod - eval_ref[i]) ** 2)
-        eval_mean = eval_mean / self.points_sample
-        eval_var = 0.
-        for i, _ in enumerate(self.sample):
-            eval_var = eval_var + np.sum((eval_mean - eval_ref[i]) ** 2)
-        err_q2 = 1 - err_l2 / eval_var
+        y_ref = np.array(model_ref(self.sample))
+        y_pred = np.array(self.model(self.sample))
+        err_q2 = r2_score(y_ref, y_pred, multioutput='uniform_average')
 
         self.logger.info("\n----- POD error -----")
-        self.logger.info("\nL_inf(error): {}\nQ2(error): {}"
+        self.logger.info("\nQ2(error): {}"
                          "\nL2(sobol 1st, 2nd and total order indices error): "
-                         "{}, {}, {}".format(err_max, err_q2,
+                         "{}, {}, {}".format(err_q2,
                                              s_l2_1st, s_l2_2nd, s_l2_total))
 
         # Write error to file pod_err.dat
         try:
             with open(self.output_folder + '/pod_err.dat', 'w') as f:
-                f.writelines(str(self.snapshots) + ' '
-                             + str(self.max_snapshots) + ' '
-                             + str(err_q2) + ' '
-                             + str(self.points_sample) + ' '
-                             + str(s_l2_1st) + ' '
-                             + str(s_l2_2nd) + ' '
-                             + str(s_l2_total))
+                f.writelines("{} {} {} {} {} {} {}".format(self.snapshots,
+                                                           self.max_snapshots,
+                                                           err_q2,
+                                                           self.points_sample,
+                                                           s_l2_1st,
+                                                           s_l2_2nd,
+                                                           s_l2_total))
 
             # Write a QQplot in case of a scalar output
             if self.output_len == 1:
@@ -461,7 +449,7 @@ class UQ:
 
         dataset = Dataset(names=names, shape=[self.output_len, 1, 1], data=data)
         self.io.write(self.output_folder + '/moment.dat', dataset)
-        
+
         # Covariance and correlation matrices        
         if (self.output_len != 1) and (self.type_indices != 'block'):
             correlation_matrix = output.computePearsonCorrelation()

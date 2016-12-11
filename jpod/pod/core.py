@@ -185,7 +185,7 @@ class Core(object):
         return (Urot, S, V)
 
     def estimate_quality(self, points):
-        """Quality estimation of the model.
+        r"""Quality estimation of the model.
 
         The quality estimation is done using the leave-one-out method.
         A parallel computation is performed by iterating over the
@@ -205,7 +205,7 @@ class Core(object):
         """
         points_nb = len(points)
         data_len = self.U.shape[0]
-        error = np.empty((points_nb, data_len))
+        error = np.empty(points_nb)
         mean = np.empty((points_nb, data_len))
 
         def quality(i):
@@ -273,11 +273,6 @@ class Core(object):
         # Compute Q2
         err_q2 = 1 - np.sum(error) / var
 
-        # If spatially/temporally distributed: mean
-        err_q2 = np.sum(err_q2) / data_len
-        error = np.sum(error) / data_len
-
-        error = error.reshape(-1)
         index = error.argmax()
 
         return err_q2, points[index]

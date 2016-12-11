@@ -75,7 +75,7 @@ except ImportError:
     pip.main(['install', 'scipy'])
 
 try:
-    import mpi4py
+    from mpi4py import MPI
 except ImportError:
     try:
         import pip
@@ -91,11 +91,11 @@ except:
     raise SystemExit
 
 install_requires = ['sphinx_rtd_theme',
-                    'sphinx',
+                    'sphinx>=1.4',
                     'scipy>=0.15'
                     'jsonschema',
                     'pathos>=0.2',
-                    'otwrapy==0.6',
+                    'otwrapy>=0.6',
                     'rpyc',
                     'h5py',
                     'scikit-learn>=0.18']

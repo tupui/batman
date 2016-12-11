@@ -226,12 +226,12 @@ if __name__ == '__main__':
             S[k, 0] = float(j)
             k = k + 1
     p = init_space_part(S)
-    print p
+    print (p)
     n = int(raw_input(' n'))
     (NewS, NewS0, NewDS) = splitelement(p[n:n + 1, 0:dim], p[n:n + 1, dim:2
                                         * dim], p[n:n + 1, 2 * dim:3 * dim])
     (nn, mm) = N.shape(NewS)
-    print N.shape(NewS), N.shape(NewS0), N.shape(NewDS)
+    print (N.shape(NewS), N.shape(NewS0), N.shape(NewDS))
     for i in range(nn):
-        print 'newparam(%d):%s %s %s' % (i + 1, NewS[i, :], NewS0[i, :],
-                NewDS[i, :])
+        print ('newparam(%d):%s %s %s' % (i + 1, NewS[i, :], NewS0[i, :],
+                        NewDS[i, :]))
