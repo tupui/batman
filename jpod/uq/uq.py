@@ -455,14 +455,7 @@ class UQ:
             correlation_matrix = output.computePearsonCorrelation()
             covariance_matrix = output.computeCovariance()
 
-            x_input_2d = []
-            append = x_input_2d.append
-            for j, i in itertools.product(range(self.output_len), range(self.output_len)):
-                append(self.f_input[j])
-            y_input_2d = []
-            append = y_input_2d.append
-            for j, i in itertools.product(range(self.output_len), range(self.output_len)):
-                append(self.f_input[j])
+            x_input_2d, y_input_2d = np.meshgrid(self.f_input, self.f_input)
             x_input_2d = np.array([x_input_2d]).flatten()
             y_input_2d = np.array([y_input_2d]).flatten()
 
@@ -478,7 +471,7 @@ class UQ:
         # Create the PDFs
         kernel = ot.KernelSmoothing()
         pdf_pts = [None] * self.output_len
-        d_PDF = 5
+        d_PDF = 200
         sample = self.distribution.getSample(d_PDF)
         output_extract = self.model(sample)
         for i in range(self.output_len):
