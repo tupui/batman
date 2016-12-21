@@ -162,6 +162,47 @@ class Refiner(object):
 
         return hypercube
 
+    def hypercube_badass(self, point, distance):
+        """Get the hypercube to add a point in.
+
+        Propagate the distance around the anchor.
+        Ensure that new values are bounded by corners.
+
+        :param np.array point: Anchor point
+        :param float distance: The distance of influence
+        :return: The hypercube around the point
+        :rtype: np.array
+
+        """
+        hypercube = np.array([point, point]).T
+        self.logger.debug("Prior Hypercube:\n{}".format(hypercube))
+
+        def max_norm(hypercube):
+            # hypercube = np.array([])
+            n = np.linalg.norm(hypercube)
+
+            print(n, hypercube)
+            gen = [x for i, x in enumerate(self.points) if x!=point]
+            for p in gen:
+                # verify there is no point inside
+                for i, _ in enumerate(hypercube[0]):
+                    if hypercube[0][i] <= p[i] <= hypercube[1][i]:
+                        n = 0.
+            return n
+
+        bounds = np.array([hypercube, self.corners]).flatten()
+        print(bounds)
+        results = differential_evolution(max_norm, bounds)#, polish=False)
+        hypercube = results.x
+        self.logger.debug("Optimization Hypercube:\n{}".format(hypercube))
+
+        # self.logger.debug("Corners:\n{}".format(self.corners))
+        # hypercube[:, 0] = np.maximum(hypercube[:, 0], self.corners[:, 0])
+        # hypercube[:, 1] = np.minimum(hypercube[:, 1], self.corners[:, 1])
+        # self.logger.debug("Post Hypercube:\n{}".format(hypercube))
+
+        return hypercube
+
     def mse(self, hypercube=None):
         """Find the point at max MSE.
 
@@ -201,7 +242,7 @@ class Refiner(object):
 
         # Construct the hypercube around the point
         distance = self.distance_min(point)
-        hypercube = self.hypercube(point, distance)
+        hypercube = self.hypercube_badass(point, distance)
 
         # Global search of the point within the hypercube
         point = self.mse(hypercube)
