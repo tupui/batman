@@ -36,6 +36,7 @@ C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptat
 import logging
 from scipy.optimize import differential_evolution
 import numpy as np
+import itertools
 import copy
 from collections import OrderedDict
 from ..uq import UQ
@@ -174,32 +175,41 @@ class Refiner(object):
         :rtype: np.array
 
         """
-        hypercube = np.array([point, point]).T
-        self.logger.debug("Prior Hypercube:\n{}".format(hypercube))
+        dim = len(point)
 
         def max_norm(hypercube):
-            # hypercube = np.array([])
-            n = np.linalg.norm(hypercube)
+            hypercube = hypercube.reshape(dim, dim)
 
-            print(n, hypercube)
+            for i in range(dim):
+                hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
+            
+            n = - np.linalg.norm(hypercube[0] - hypercube[1])
+
+            # Verify that LOO point is inside -> change
+            for i in range(dim):
+                if not hypercube[0][i] <= point[i] <= hypercube[1][i]:
+                    return 1.
+
+            # Verify that no other point is inside
             gen = [x for i, x in enumerate(self.points) if x!=point]
-            for p in gen:
-                # verify there is no point inside
-                for i, _ in enumerate(hypercube[0]):
-                    if hypercube[0][i] <= p[i] <= hypercube[1][i]:
-                        n = 0.
+            for p, i in itertools.product(gen, range(dim)):
+                if hypercube[0][i] <= p[i] <= hypercube[1][i]:
+                    return 1.
+
             return n
 
-        bounds = np.array([hypercube, self.corners]).flatten()
-        print(bounds)
-        results = differential_evolution(max_norm, bounds)#, polish=False)
-        hypercube = results.x
-        self.logger.debug("Optimization Hypercube:\n{}".format(hypercube))
+        
+        bounds = np.reshape([self.corners] * 2, (dim * 2, dim))
 
-        # self.logger.debug("Corners:\n{}".format(self.corners))
-        # hypercube[:, 0] = np.maximum(hypercube[:, 0], self.corners[:, 0])
-        # hypercube[:, 1] = np.minimum(hypercube[:, 1], self.corners[:, 1])
-        # self.logger.debug("Post Hypercube:\n{}".format(hypercube))
+        print(bounds)
+        results = differential_evolution(max_norm, bounds, popsize=30)
+        hypercube = results.x.reshape(dim, dim)
+        for i in range(dim):
+                hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
+        hypercube = hypercube.T
+
+        self.logger.debug("Corners:\n{}".format(self.corners))
+        self.logger.debug("Optimization Hypercube:\n{}".format(hypercube))
 
         return hypercube
 
