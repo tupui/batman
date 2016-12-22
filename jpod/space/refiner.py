@@ -186,24 +186,21 @@ class Refiner(object):
             hypercube = hypercube.reshape(dim, dim)
             hypercube = min_max_scaler.transform(hypercube)
 
+            # Sort coordinates
             for i in range(dim):
                 hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
 
             n = - np.linalg.norm(hypercube[0] - hypercube[1])
 
             # Verify that LOO point is inside
-            for i in range(dim):
-                if not hypercube[0][i] <= point[i] <= hypercube[1][i]:
-                    return 1
+            insiders = (hypercube[0] <= point).all() & (point <= hypercube[1]).all()
+            if not insiders:
+                return 1
 
             # Verify that no other point is inside
-            # for p, i in itertools.product(gen, range(dim)):
             for p in gen:
-                count = 0
-                for i in range(dim):
-                    if hypercube[0][i] <= p[i] <= hypercube[1][i]:
-                        count += 1
-                if count == dim:
+                insiders = (hypercube[0] <= p).all() & (p <= hypercube[1]).all()
+                if insiders:
                     return 1
 
             return n
