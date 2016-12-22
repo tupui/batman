@@ -36,7 +36,7 @@ C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptat
 import logging
 from scipy.optimize import differential_evolution
 import numpy as np
-import itertools
+from sklearn import preprocessing
 import copy
 from collections import OrderedDict
 from ..uq import UQ
@@ -142,7 +142,7 @@ class Refiner(object):
 
         return distance
 
-    def hypercube(self, point, distance):
+    def hypercube_distance(self, point, distance):
         """Get the hypercube to add a point in.
 
         Propagate the distance around the anchor.
@@ -163,7 +163,7 @@ class Refiner(object):
 
         return hypercube
 
-    def hypercube_badass(self, point, distance):
+    def hypercube_optim(self, point, distance):
         """Get the hypercube to add a point in.
 
         Propagate the distance around the anchor.
@@ -176,33 +176,40 @@ class Refiner(object):
 
         """
         dim = len(point)
+        min_max_scaler = preprocessing.MinMaxScaler()
+        min_max_scaler.fit_transform(self.corners)
+        points = min_max_scaler.transform(self.points)
+        point = min_max_scaler.transform(point.reshape(1, -1))[0]
+        gen = [p for p in points if not np.allclose(p, point)]
 
-        def max_norm(hypercube):
+        def min_norm(hypercube):
             hypercube = hypercube.reshape(dim, dim)
+            hypercube = min_max_scaler.transform(hypercube)
 
             for i in range(dim):
                 hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
-            
+
             n = - np.linalg.norm(hypercube[0] - hypercube[1])
 
-            # Verify that LOO point is inside -> change
+            # Verify that LOO point is inside
             for i in range(dim):
                 if not hypercube[0][i] <= point[i] <= hypercube[1][i]:
-                    return 1.
+                    return 1
 
             # Verify that no other point is inside
-            gen = [x for i, x in enumerate(self.points) if x!=point]
-            for p, i in itertools.product(gen, range(dim)):
-                if hypercube[0][i] <= p[i] <= hypercube[1][i]:
-                    return 1.
+            # for p, i in itertools.product(gen, range(dim)):
+            for p in gen:
+                count = 0
+                for i in range(dim):
+                    if hypercube[0][i] <= p[i] <= hypercube[1][i]:
+                        count += 1
+                if count == dim:
+                    return 1
 
             return n
 
-        
         bounds = np.reshape([self.corners] * 2, (dim * 2, dim))
-
-        print(bounds)
-        results = differential_evolution(max_norm, bounds, popsize=30)
+        results = differential_evolution(min_norm, bounds)
         hypercube = results.x.reshape(dim, dim)
         for i in range(dim):
                 hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
@@ -252,7 +259,7 @@ class Refiner(object):
 
         # Construct the hypercube around the point
         distance = self.distance_min(point)
-        hypercube = self.hypercube_badass(point, distance)
+        hypercube = self.hypercube_optim(point, distance)
 
         # Global search of the point within the hypercube
         point = self.mse(hypercube)
@@ -286,7 +293,7 @@ class Refiner(object):
         self.logger.debug("Post Distance min: {}".format(distance))
 
         # Construct the hypercube around the point
-        hypercube = self.hypercube(point, distance)
+        hypercube = self.hypercube_distance(point, distance)
 
         # Global search of the point within the hypercube
         point = self.mse(hypercube)
@@ -326,7 +333,7 @@ class Refiner(object):
 
                 # Construct the hypercube around the point
                 distance = self.distance_min(point)
-                hypercube = self.hypercube(point, distance)
+                hypercube = self.hypercube_distance(point, distance)
 
                 # Global search of the point within the hypercube
                 first_extremum = differential_evolution(self.func,
