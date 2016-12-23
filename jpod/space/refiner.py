@@ -296,14 +296,17 @@ class Refiner(object):
         analyse = UQ(self.pod, self.settings)
         indices = analyse.sobol()[2]
         indices = indices * (indices > 0)
-
-        # Modify min distance with Sobol' indices
-        distance = self.distance_min(point)
-        distance = distance * (1 + indices)
-        self.logger.debug("Post Distance min: {}".format(distance))
+        indices = preprocessing.normalize(indices.reshape(1, -1), norm='max')
 
         # Construct the hypercube around the point
-        hypercube = self.hypercube_distance(point, distance)
+        hypercube = self.hypercube_optim(point)
+
+        # Modify the hypercube with Sobol' indices
+        hypercube = hypercube.T * indices[0]
+        hypercube = hypercube.T
+        hypercube[:, 0] = np.maximum(hypercube[:, 0], self.corners[:, 0])
+        hypercube[:, 1] = np.minimum(hypercube[:, 1], self.corners[:, 1])
+        self.logger.debug("Post Hypercube:\n{}".format(hypercube))
 
         # Global search of the point within the hypercube
         point = self.mse(hypercube)
