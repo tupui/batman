@@ -51,6 +51,9 @@ class Refiner(object):
 
     def __init__(self, pod, settings):
         """Initialize the refiner with the POD and space corners.
+        
+        Points data are scaled between ``[0, 1]`` based on the size of the 
+        corners taking into account a ``delta_space`` factor.
 
         :param pod: POD
         :param settings: JPOD parameters
@@ -74,6 +77,12 @@ class Refiner(object):
             c2.append(corners[1][i] - delta_space * (corners[1][i]-corners[0][i]))
 
         self.corners = np.array([c1, c2]).T
+
+        # Data scaling
+        self.min_max_scaler = preprocessing.MinMaxScaler()
+
+        self.min_max_scaler.fit(self.corners)
+        self.points = self.min_max_scaler.transform(self.points)
 
     def func(self, coords, sign):
         r"""Get the prediction for a given point.
@@ -127,17 +136,19 @@ class Refiner(object):
 
         Compute the distance, L2 norm between the anchor point and
         every sampling points. It returns the minimal distance.
+        ``point`` is scaled by ``self.corners`` so the distance is also scaled.
 
         :param np.array point: Anchor point
         :return: The distance to the nearest point
         :rtype: float
 
         """
+        point = self.min_max_scaler.transform(point.reshape(1, -1))[0]
         distances = np.array([np.linalg.norm(pod_point - point)
                               for _, pod_point in enumerate(self.points)])
         # Do not get itself
         distances = distances[np.nonzero(distances)]
-        distance = min(distances)  # * 3 / 2
+        distance = min(distances)
         self.logger.debug("Distance min: {}".format(distance))
 
         return distance
@@ -146,6 +157,7 @@ class Refiner(object):
         """Get the hypercube to add a point in.
 
         Propagate the distance around the anchor.
+        ``point`` is scaled by ``self.corners`` and input distance has to be.
         Ensure that new values are bounded by corners.
 
         :param np.array point: Anchor point
@@ -154,7 +166,10 @@ class Refiner(object):
         :rtype: np.array
 
         """
-        hypercube = np.array([point - distance, point + distance]).T
+        point = self.min_max_scaler.transform(point.reshape(1, -1))[0]
+        hypercube = np.array([point - distance, point + distance])
+        hypercube = self.min_max_scaler.inverse_transform(hypercube)
+        hypercube = hypercube.T
         self.logger.debug("Prior Hypercube:\n{}".format(hypercube))
         self.logger.debug("Corners:\n{}".format(self.corners))
         hypercube[:, 0] = np.maximum(hypercube[:, 0], self.corners[:, 0])
@@ -163,28 +178,25 @@ class Refiner(object):
 
         return hypercube
 
-    def hypercube_optim(self, point, distance):
+    def hypercube_optim(self, point):
         """Get the hypercube to add a point in.
 
-        Propagate the distance around the anchor.
+        Compute the largest hypercube around the point based on the `L2-norm`.
+        Ensure that only the `leave-one-out` point lies within it.
         Ensure that new values are bounded by corners.
 
         :param np.array point: Anchor point
-        :param float distance: The distance of influence
         :return: The hypercube around the point
         :rtype: np.array
 
         """
         dim = len(point)
-        min_max_scaler = preprocessing.MinMaxScaler()
-        min_max_scaler.fit_transform(self.corners)
-        points = min_max_scaler.transform(self.points)
-        point = min_max_scaler.transform(point.reshape(1, -1))[0]
-        gen = [p for p in points if not np.allclose(p, point)]
+        point = self.min_max_scaler.transform(point.reshape(1, -1))[0]
+        gen = [p for p in self.points if not np.allclose(p, point)]
 
         def min_norm(hypercube):
             hypercube = hypercube.reshape(dim, dim)
-            hypercube = min_max_scaler.transform(hypercube)
+            hypercube = self.min_max_scaler.transform(hypercube)
 
             # Sort coordinates
             for i in range(dim):
@@ -256,7 +268,8 @@ class Refiner(object):
 
         # Construct the hypercube around the point
         distance = self.distance_min(point)
-        hypercube = self.hypercube_optim(point, distance)
+        hypercube = self.hypercube_distance(point, distance)
+        # hypercube = self.hypercube_optim(point)
 
         # Global search of the point within the hypercube
         point = self.mse(hypercube)
