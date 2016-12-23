@@ -66,22 +66,19 @@ class Refiner(object):
             self.pod.predictor = jpod.pod.Predictor(kind, self.pod)
 
         self.settings = settings
-        corners = settings['space']['corners']
+        self.corners = np.array(settings['space']['corners']).T
         delta_space = settings['space']['delta_space']
+        self.dim = self.corners.shape[0]
 
-        self.dim = len(corners[0])
-        # Inner delta space contraction
-        c1 = []
-        c2 = []
+        # Inner delta space contraction: delta_space * 2 factor
         for i in range(self.dim):
-            c1.append(corners[0][i] + delta_space * (corners[1][i]-corners[0][i]))
-            c2.append(corners[1][i] - delta_space * (corners[1][i]-corners[0][i]))
-
-        self.corners = np.array([c1, c2]).T
+            self.corners[i, 0] = self.corners[i, 0] + delta_space\
+                * (self.corners[i, 1]-self.corners[i, 0])
+            self.corners[i, 1] = self.corners[i, 1] - delta_space\
+                * (self.corners[i, 1]-self.corners[i, 0])
 
         # Data scaling
         self.min_max_scaler = preprocessing.MinMaxScaler()
-
         self.min_max_scaler.fit(self.corners.T)
         self.points = self.min_max_scaler.transform(self.points)
 
@@ -310,9 +307,9 @@ class Refiner(object):
         # Modify the hypercube with Sobol' indices
         for i in range(self.dim):
             hypercube[i, 0] = hypercube[i, 0] + (1 - indices[0, i])\
-                * (hypercube[i, 1]-hypercube[i, 0])
+                * (hypercube[i, 1]-hypercube[i, 0]) / 2
             hypercube[i, 1] = hypercube[i, 1] - (1 - indices[0, i])\
-                * (hypercube[i, 1]-hypercube[i, 0])
+                * (hypercube[i, 1]-hypercube[i, 0]) / 2
 
         self.logger.debug("Post Hypercube:\n{}".format(hypercube))
 
