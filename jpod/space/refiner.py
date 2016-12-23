@@ -205,6 +205,12 @@ class Refiner(object):
 
             n = - np.linalg.norm(hypercube[:, 0] - hypercube[:, 1])
 
+            # Check aspect ratio
+            aspect = hypercube[:, 1] - hypercube[:, 0]
+            aspect = np.prod(aspect) / np.power(np.mean(aspect), self.dim)
+            if not (0.8 <= aspect <= 1.2):
+                return np.inf
+
             # Verify that LOO point is inside
             insiders = (hypercube[:, 0] <= point).all() & (point <= hypercube[:, 1]).all()
             if not insiders:
@@ -219,7 +225,7 @@ class Refiner(object):
             return n
 
         bounds = np.reshape([self.corners] * 2, (self.dim * 2, 2))
-        results = differential_evolution(min_norm, bounds)
+        results = differential_evolution(min_norm, bounds, popsize=40)
         hypercube = results.x.reshape(2, self.dim)
         for i in range(self.dim):
                 hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
