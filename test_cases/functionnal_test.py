@@ -8,7 +8,7 @@ import os
 import sys
 
 path = os.path.dirname(os.path.realpath(__file__))
-
+schema = path + "/../jpod/misc/schema.json"
 
 def check_output():
     if not os.path.isdir('output/pod'):
@@ -28,17 +28,25 @@ def init_case(case, output=True):
     jpod.ui.main()
     check_output()
     if not output:
-        os.system('rm -rf output')
+        os.system('rm -rf output/pod')
 
 
+# Use Ishigami
 def test_init():
     init_case('/Ishigami')
+    check_output()
+
+
+def test_no_pod():
+    init_case('/Ishigami')
+    sys.argv = ['jpod', 'settings.json', '-n']
+    jpod.ui.main()
+    check_output()
 
 
 def test_checks():
-    """Check answers to questions if there is an output folder"""
-    init_case('/Ishigami')
-    os.system('rm -rf output/pod')
+    """Check answers to questions if there is an output folder."""
+    init_case('/Ishigami', output=False)
 
     # Restart from snapshots
     with mock.patch.object(jpod.misc, 'check_yes_no', lambda prompt, default: '\n'):
@@ -60,11 +68,11 @@ def test_checks():
 
 
 def test_restart_pod():
+    """Test all restart options."""
     # Restart POD from existing one and continue with resample
     init_case('/Ishigami')
     sys.argv = ['jpod', 'settings.json', '-r']
     options = jpod.ui.parse_options()
-    schema = path + "/../jpod/misc/schema.json"
     settings = jpod.misc.import_config(options.settings, schema)
     settings["space"]["size_max"] = 5
 
@@ -84,3 +92,21 @@ def test_restart_pod():
 
     if not os.path.isdir('output/snapshots/5'):
         assert False
+
+
+def test_resampling():
+    """Assess all resampling methods."""
+    sys.argv = ['jpod', 'settings.json']
+    options = jpod.ui.parse_options()
+    settings = jpod.misc.import_config(options.settings, schema)
+    settings["space"]["size_max"] = 6
+
+    for method in ["MSE", "loo_mse", "loo_sobol", "extrema"]:
+        os.system('rm -rf output')
+        settings["pod"]["resample"] = method
+        if method == ["extrema"]:
+            settings["space"]["size_max"] = 8
+        jpod.ui.run(settings, options)
+        check_output()
+        if not os.path.isdir('output/snapshots/5'):
+            assert False
