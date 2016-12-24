@@ -44,6 +44,22 @@ def test_no_pod():
     check_output()
 
 
+def test_quality():
+    os.system('rm -rf output')
+    sys.argv = ['jpod', 'settings.json', '-q']
+    jpod.ui.main()
+    check_output()
+
+
+def test_no_model_pred():
+    init_case('/Ishigami')
+    sys.argv = ['jpod', 'settings.json', '-ps']
+    jpod.ui.main()
+    check_output()
+    if not os.path.isdir('output/predictions'):
+        assert False
+
+
 def test_checks():
     """Check answers to questions if there is an output folder."""
     init_case('/Ishigami', output=False)
