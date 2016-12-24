@@ -146,7 +146,7 @@ class Space(list):
 
             # check space is full
             if self.is_full():
-                raise FullSpaceError("Space if full"
+                raise FullSpaceError("Space is full"
                                      .format(point))
 
             point = Point(point)
