@@ -21,18 +21,19 @@ def check_output():
         assert False
 
 
-def init_case(case, output=True):
+def init_case(case, output=True, run=True):
     os.chdir(path + case)
     os.system('rm -rf output')
     sys.argv = ['jpod', 'settings.json']
-    jpod.ui.main()
-    check_output()
+    if run:
+        jpod.ui.main()
+        check_output()
     if not output:
         os.system('rm -rf output/pod')
 
 
 # Use Ishigami
-def test_init():
+def test_init(init_case):
     init_case('/Ishigami')
     check_output()
 
@@ -112,6 +113,7 @@ def test_restart_pod():
 
 def test_resampling():
     """Assess all resampling methods."""
+    init_case('/Ishigami', run=False)
     sys.argv = ['jpod', 'settings.json']
     options = jpod.ui.parse_options()
     settings = jpod.misc.import_config(options.settings, schema)
@@ -120,7 +122,7 @@ def test_resampling():
     for method in ["MSE", "loo_mse", "loo_sobol", "extrema"]:
         os.system('rm -rf output')
         settings["pod"]["resample"] = method
-        if method == ["extrema"]:
+        if method == "extrema":
             settings["space"]["size_max"] = 8
         jpod.ui.run(settings, options)
         check_output()
