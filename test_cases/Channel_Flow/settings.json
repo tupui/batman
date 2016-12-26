@@ -4,16 +4,16 @@
             [2500.0, 15.0],
             [6000.0, 60.0]
         ],
-        "size_max": 50,
+        "size_max": 4,
         "delta_space": 0.01,
         "provider": {
             "method": "halton",
-            "size": 50
+            "size": 4
         }
     },
     "pod": {
         "dim_max": 100,
-        "quality": 0.8,
+        "quality": 0.9,
         "tolerance": 0.99,
         "strategy": [
             ["MSE", 4]
@@ -30,7 +30,7 @@
                     [400]
                 ]
             },
-            "format": "fmt_tp",
+            "format": "fmt_tp_fortran",
             "variables": ["X", "F"],
             "point_filename": "header.py",
             "filenames": {
@@ -41,7 +41,7 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 3600,
+            "timeout": 10,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
@@ -55,10 +55,10 @@
         "method": "kriging"
     },
     "uq": {
-        "sample": 1000,
+        "sample": 5000,
         "test": "Channel_Flow",
         "pdf": ["Normal(4035., 400.)", "Uniform(15., 60.)"],
         "type": "aggregated",
-        "method": "sobol"
+        "method": "FAST"
     }
 }

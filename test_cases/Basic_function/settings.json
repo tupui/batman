@@ -1,14 +1,14 @@
 {
     "space": {
         "corners": [
-            [0.0],
-            [2.0]
+            [-4.0],
+            [4.0]
         ],
-        "size_max": 20,
-        "delta_space": 0.01,
+        "size_max": 4,
+        "delta_space": 0.08,
         "provider": {
             "method": "halton",
-            "size": 20
+            "size": 4
         }
     },
     "pod": {
@@ -30,7 +30,7 @@
                     [1]
                 ]
             },
-            "format": "fmt_tp",
+            "format": "fmt_tp_fortran",
             "variables": ["F"],
             "point_filename": "header.py",
             "filenames": {
@@ -41,7 +41,7 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 3600,
+            "timeout": 10,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
@@ -56,7 +56,7 @@
     },
     "uq": {
         "sample": 1000,
-        "pdf": ["Uniform(0., 2.)"],
+        "pdf": ["Normal(0., 4.)"],
         "type": "aggregated",
         "method": "sobol"
     }

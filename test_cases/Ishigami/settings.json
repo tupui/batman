@@ -4,11 +4,11 @@
             [-3.1415, -3.1415, -3.1415],
             [3.1415, 3.1415, 3.1415]
         ],
-        "size_max": 50,
-        "delta_space": 0.01,
+        "size_max": 4,
+        "delta_space": 0.08,
         "provider": {
             "method": "halton",
-            "size": 50
+            "size": 4
         }
     },
     "pod": {
@@ -30,7 +30,7 @@
                     [1]
                 ]
             },
-            "format": "fmt_tp",
+            "format": "fmt_tp_fortran",
             "variables": ["F"],
             "point_filename": "header.py",
             "filenames": {
@@ -51,11 +51,12 @@
         }
     },
     "prediction": {
-        "points": [],
+        "points": [[1, 1, 1]],
         "method": "kriging"
     },
     "uq": {
-        "sample": 1000,
+        "sample": 2000,
+        "test": "Ishigami",
         "pdf": ["Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)"],
         "type": "aggregated",
         "method": "sobol"

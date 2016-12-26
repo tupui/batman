@@ -6,8 +6,8 @@ README
     Romain Dupuis,
     Jean-Christophe Jouhaud,
     Marc Montagnac,
-    Florent Duchaine,
     Jean-François Boussuge,
+    Florent Duchaine,
     Melanie Rochoux,
     Sophie Ricci.
 
@@ -34,8 +34,14 @@ The required dependencies are:
 
 - Python >= 2.7 or >= 3.3
 - `scikit-learn <http://scikit-learn.org>`_ >= 0.18
-- `OpenTURNS <http://www.openturns.org>`_ >= 1.7
 - `scipy <http://scipy.org>`_ >= 0.15
+- `OpenTURNS <http://www.openturns.org>`_ >= 1.7
+- `pathos <https://github.com/uqfoundation/pathos>`_ >= 0.2
+- `otwrapy <http://openturns.github.io/otwrapy/>`_ >= 0.6
+- `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_
+- h5py
+- mpi4py
+- `sphinx <http://www.sphinx-doc.org>`_ >= 1.4
 
 Optionnal dependencies are: 
 
@@ -57,11 +63,17 @@ Then to install::
     cd JPOD
     python setup.py build_fortran
     python setup.py install
+    python setup.py test
     python setup.py build_sphinx
 
-The latter is optionnal as it just build the documentation in case of a change. 
+The latter is optionnal as it just build the documentation in case of a change.
+The testing part is also optionnal but is recommanded. (<10mins).
 
 .. note:: If you don't have install priviledge, add ``--user`` option.
+
+Finally, to install the optionnal package ``Antares``::
+
+    pip install -e .[antares] --process-dependency-links
 
 If JPOD has been correctly installed, you should be able to call it simply::
 
@@ -116,4 +128,3 @@ You can find the development model at http://nvie.com/posts/a-successful-git-bra
 Please **read** this page and **stick** to it.
 The master and develop branches are dedicated to the manager only.
 Release and hotfix branches are mandatory. They must be sent to the manager only in a **finished** state.
-

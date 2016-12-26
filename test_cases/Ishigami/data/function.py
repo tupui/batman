@@ -1,17 +1,10 @@
 #!/usr/bin/env python
-#-*-coding:utf-8-*
+# coding:utf-8
 
 import re
-import os
 import numpy as np
 
-wkdir = os.getcwd()
-
-
-#------------------------------------------------------------------
-#                       INPUT
-#-----------------------------------------------------------------
-
+# Input from header.py
 with open('./jpod-data/header.py', 'r') as a:
     for line in a.readlines():
         A = re.match(r'x1 = (.*$)', line, re.M | re.I)
@@ -28,16 +21,11 @@ X1 = float(x1)
 X2 = float(x2)
 X3 = float(x3)
 
-#------------------------------------------------------------------
-#                       FUNCTION
-#-----------------------------------------------------------------
+# Function
 
 F = np.sin(X1) + 7 * np.sin(X2)**2 + 0.1 * (X3**4) * np.sin(X1)
 
-#------------------------------------------------------------------
-#                       Output
-#-----------------------------------------------------------------
-
+# Output
 with open('./cfd-output-data/function.dat', 'w') as f:
     f.writelines('TITLE = \"FUNCTION\" \n')
     f.writelines('VARIABLES =  \"F\"  \n')

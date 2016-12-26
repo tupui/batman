@@ -13,7 +13,7 @@ from jpod import mpi
 from jpod import misc
 
 description_message = '''
-JPOD creates a surrogate model using POD+Kriging and perform UQ.
+BATMAN creates a surrogate model using POD+Kriging and perform UQ.
 '''
 
 banner = r"""
@@ -43,7 +43,7 @@ def run(settings, options):
         logging.getLogger().removeHandler('console')
         logging.getLogger().addHandler(console)
 
-    logger = logging.getLogger('JPOD main')
+    logger = logging.getLogger('BATMAN main')
 
     logger.info(banner)
     logger.info("Branch: {}\n\
@@ -127,8 +127,8 @@ def run(settings, options):
         driver.uq()
 
 
-def main():
-    """Parse and check options, and then call run()."""
+def parse_options():
+    """Parse options."""
     # parser
     parser = argparse.ArgumentParser(prog="JPOD",
                                      description=description_message)
@@ -202,14 +202,20 @@ def main():
     # parse command line
     options = parser.parse_args()
 
-    schema = path + "/misc/schema.json"
-    settings = misc.import_config(options.settings, schema)
+    # store settings absolute file path
+    options.script = os.path.abspath(options.settings)
 
     if options.check:
         raise SystemExit
 
-    # store settings absolute file path
-    options.script = os.path.abspath(options.settings)
+    return options
+
+
+def main():
+    """Parse options, import and check settings then call run()"""
+    options = parse_options()
+    schema = path + "/misc/schema.json"
+    settings = misc.import_config(options.settings, schema)
 
     run(settings, options)
 
