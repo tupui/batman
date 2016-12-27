@@ -152,10 +152,11 @@ class Space(list):
             point = Point(point)
 
             # verify point is inside
-            for i, _ in enumerate(self.corners[0]):
-                if not self.corners[0][i] <= point[i] <= self.corners[1][i]:
-                    raise AlienPointError("Point {} is out of space"
-                                        .format(str(point)))
+            not_alien = (self.corners[0] <= np.array(point)).all()\
+                & (np.array(point) <= self.corners[1]).all()
+            if not not_alien:
+                raise AlienPointError("Point {} is out of space"
+                                      .format(str(point)))                    
 
             # verify point is not already in space
             if point not in self:
