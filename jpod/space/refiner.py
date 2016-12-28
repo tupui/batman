@@ -207,8 +207,10 @@ class Refiner(object):
 
             # Check aspect ratio
             aspect = hypercube[:, 1] - hypercube[:, 0]
-            aspect = np.prod(aspect) / np.power(np.mean(aspect), self.dim)
-            if not (0.8 <= aspect <= 1.2):
+            aspect = np.power(np.max(aspect), self.dim) / np.prod(aspect)
+            aspect = np.power(aspect, 1 / self.dim)
+            # aspect = np.prod(aspect) / np.power(np.mean(aspect), self.dim)
+            if not (aspect <= 1.5):
                 return np.inf
 
             # Verify that LOO point is inside
