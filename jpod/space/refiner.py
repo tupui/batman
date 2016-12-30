@@ -195,7 +195,10 @@ class Refiner(object):
 
         def min_norm(hypercube):
             hypercube = hypercube.reshape(2, self.dim)
-            hypercube = self.min_max_scaler.transform(hypercube)
+            try:
+                hypercube = self.min_max_scaler.transform(hypercube)
+            except ValueError:  # If the hypercube is nan
+                return np.inf
 
             # Sort coordinates
             for i in range(self.dim):
