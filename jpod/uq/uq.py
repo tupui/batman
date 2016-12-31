@@ -139,7 +139,7 @@ class UQ:
             self.f_input = None
 
         # Wrapper for parallelism
-        self.n_cpus = cpu_count()
+        self.n_cpus = 1#cpu_count()
         self.wrapper = Wrapper(self.pod, self.surrogate,
                                self.p_len, self.output_len)
         self.model = otw.Parallelizer(self.wrapper,
@@ -196,10 +196,10 @@ class UQ:
             formula = [
                 '100*(X2-X1*X1)*(X2-X1*X1) + (1-X1)*(1-X1)']
             model_ref = ot.NumericalMathFunction(
-                ['X1', 'X2', 'X3'], ['Y'], formula)
+                ['X1', 'X2'], ['Y'], formula)
             s_first_th = np.array([0.229983, 0.4855])
-            s_second_th = np.array([[0., 0.0920076, 0.00228908],
-                                    [0.00228908, 0.0935536, 0.]])
+            s_second_th = np.array([[0., 0.0920076],
+                                    [0.0935536, 0.]])
             s_total_th = np.array([0.324003, 0.64479])
         elif function == 'Channel_Flow':
             def channel_flow(x):
@@ -210,7 +210,7 @@ class UQ:
                 g = 9.8
                 dx = 100
                 longueur = 40000
-                Long = longueur / dx
+                Long = longueur // dx
                 hc = np.power((Q**2) / (g * L * L), 1. / 3.)
                 hn = np.power((Q**2) / (I * L * L * Ks * Ks), 3. / 10.)
                 hinit = 10.
@@ -246,6 +246,11 @@ class UQ:
         y_ref = np.array(model_ref(self.sample))
         y_pred = np.array(self.model(self.sample))
         err_q2 = r2_score(y_ref, y_pred, multioutput='uniform_average')
+
+        # MSE computation
+        if self.output_folder is not None:
+            mse = np.sum((y_pred - y_ref) ** 2, axis=0) / self.points_sample
+            np.savetxt(self.output_folder + '/mse.dat', mse)
 
         self.logger.info("\n----- POD error -----")
         self.logger.info("\nQ2(error): {}"
@@ -439,7 +444,7 @@ class UQ:
         sd_max = mean + sd
         min = output.getMin()
         max = output.getMax()
-        
+
         # Write moments to file
         data = np.append([min], [sd_min, mean, sd_max, max])
         names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
@@ -450,7 +455,7 @@ class UQ:
         dataset = Dataset(names=names, shape=[self.output_len, 1, 1], data=data)
         self.io.write(self.output_folder + '/moment.dat', dataset)
 
-        # Covariance and correlation matrices        
+        # Covariance and correlation matrices
         if (self.output_len != 1) and (self.type_indices != 'block'):
             correlation_matrix = output.computePearsonCorrelation()
             covariance_matrix = output.computeCovariance()
@@ -491,7 +496,7 @@ class UQ:
             f_input_2d = np.tile(self.f_input, d_PDF)
             data = np.array([f_input_2d, output_extract, pdf_pts])
         else:
-            data = np.array([output_extract, pdf_pts])            
+            data = np.array([output_extract, pdf_pts])
 
         dataset = Dataset(names=names, data=data)
         self.io.write(self.output_folder + '/pdf.dat', dataset)
