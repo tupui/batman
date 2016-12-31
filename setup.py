@@ -138,7 +138,7 @@ setup(
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
     # Package requirements
     setup_requires=['pytest-runner'],
-    tests_require=['pytest'],
+    tests_require=['pytest', 'mock'],
     install_requires=install_requires,
     extras_require={'Antares': ["antares"]},
     dependency_links=['https://github.com/felipeam86/otwrapy/tarball/master#egg=otwrapy-0.6',
