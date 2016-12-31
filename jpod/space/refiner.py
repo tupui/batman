@@ -341,7 +341,7 @@ class Refiner(object):
 
         """
         self.logger.info("Extrema strategy")
-        self.points = np.delete(self.points, refined_pod_points, 0)
+        points = np.delete(self.points, refined_pod_points, 0)
         point = None
         new_points = []
 
@@ -353,15 +353,20 @@ class Refiner(object):
             while point is None:
                 # Get min or max point
                 evaluations = np.array([self.func(pod_point, sign)
-                                        for _, pod_point in enumerate(self.points)])
-                min_idx = np.argmin(evaluations)
-                point = self.points[min_idx]
+                                        for _, pod_point in enumerate(points)])
+                try:
+                    min_idx = np.argmin(evaluations)
+                except ValueError:
+                    point = True
+                    break
+                point = points[min_idx]
                 point_eval = min(evaluations) * sign
                 self.logger.debug("Extremum located at sample point: {} -> {}"
                                   .format(point, point_eval))
 
                 # Construct the hypercube around the point
                 distance = self.distance_min(point)
+                point = self.min_max_scaler.transform(point.reshape(1, -1))[0]
                 hypercube = self.hypercube_distance(point, distance)
 
                 # Global search of the point within the hypercube
@@ -400,13 +405,17 @@ class Refiner(object):
                                                      hypercube[:, 0])
                         second_extremum = np.minimum(second_extremum,
                                                      hypercube[:, 1])
-                        new_points.append(second_extremum[0].tolist())
-                        self.logger.debug("Extremum-min: {}"
-                                          .format(second_extremum[0]))
+
+                        if (second_extremum != first_extremum).all():
+                            new_points.append(second_extremum[0].tolist())
+                            self.logger.debug("Extremum-min: {}"
+                                              .format(second_extremum[0]))
+                        else:
+                            self.logger.debug("Extremum-min egal: not added.")
                 else:
                     point = None
 
-                self.points = np.delete(self.points, min_idx, 0)
+                points = np.delete(points, min_idx, 0)
 
             point = None
             refined_pod_points.append(min_idx)
