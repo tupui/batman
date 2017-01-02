@@ -209,7 +209,7 @@ class Refiner(object):
             n = - np.linalg.norm(hypercube[:, 0] - hypercube[:, 1])
 
             # Check aspect ratio
-            aspect = hypercube[:, 1] - hypercube[:, 0]
+            aspect = abs(hypercube[:, 1] - hypercube[:, 0])
             aspect = np.power(np.max(aspect), self.dim) / np.prod(aspect)
             aspect = np.power(aspect, 1 / self.dim)
             # aspect = np.prod(aspect) / np.power(np.mean(aspect), self.dim)
