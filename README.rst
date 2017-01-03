@@ -40,7 +40,7 @@ The required dependencies are:
 - `otwrapy <http://openturns.github.io/otwrapy/>`_ >= 0.6
 - `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_
 - h5py
-- mpi4py
+- mpi4py with proper ``MPI`` installation
 - `sphinx <http://www.sphinx-doc.org>`_ >= 1.4
 
 Optionnal dependencies are: 
@@ -66,10 +66,15 @@ Then to install::
     python setup.py test
     python setup.py build_sphinx
 
-The latter is optionnal as it just build the documentation in case of a change.
+The latter is optionnal as it build the documentation.
 The testing part is also optionnal but is recommanded. (<10mins).
 
-.. note:: If you don't have install priviledge, add ``--user`` option.
+.. note:: If you don't have install priviledge, add ``--user`` option after install.
+    Also, if you plan to modify the sources, you can install it with::
+
+        python setup.py develop
+
+    Thus you won't have to re-install the package after you modified it.
 
 Finally, to install the optionnal package ``Antares``::
 
@@ -79,22 +84,24 @@ If JPOD has been correctly installed, you should be able to call it simply::
 
     jpod -h
 
-.. note:: Depending on your configuration, you might have to export your local python path: 
- ``export PATH=$PATH:.../Python/2.7/bin``.
+.. note:: Depending on your configuration, you might have to export your local path: 
+ ``export PATH=$PATH:~/.local/bin``.
 
-.. note:: OpenTURNS 1.7 is installed on *NEMO* for Python 2.7::
+.. note:: If using *NEMO* with Python 2.7::
 
         module load python/2.7
         module load python/2.7-shared
         module load application/openturns/1.7
 
-    The last version of OpenTURNS can be loaded using::
+    The last version of OpenTURNS can be loaded **after install** using instead::
 
+        module load python/2.7
+        module load python/2.7-shared
         module load python/miniconda2.7
 
     .. warning:: You cannot load both versions at the same time.
 
-    Otherwize you can create your ``conda`` environment::
+    Otherwize (if you want Python 3 for instance) you can create your ``conda`` environment::
 
         wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
         bash Miniconda3-latest-Linux-x86_64.sh

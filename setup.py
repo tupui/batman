@@ -69,30 +69,32 @@ cmdclasses['build_fortran'] = CompileSources
 
 # Check some import before starting build process.
 try:
-    import scipy
-except ImportError:
-    import pip
-    pip.main(['install', 'scipy'])
-
-try:
     from mpi4py import MPI
 except ImportError:
     try:
         import pip
-        pip.main(['install', 'mpi4py'])
-    except:
+        try:
+            pip.main(['install', 'mpi4py', '-U'])
+        except OSError:
+            pip.main(['install', 'mpi4py', '-U', '--user'])
+        from mpi4py import MPI
+    except ImportError:
         print('You need to have a proper MPI installation')
         raise SystemExit
 
 try:
     import openturns
-except:
-    print('You need to install OpenTURNS')
+    if float(openturns.__version__[0:3]) < 1.7:
+        raise ImportError
+except ImportError:
+    print('You need to install OpenTURNS >= 1.7')
     raise SystemExit
 
+setup_requires = ['pytest-runner']
+tests_require = ['pytest', 'mock']
 install_requires = ['sphinx_rtd_theme',
                     'sphinx>=1.4',
-                    'scipy>=0.15'
+                    'scipy>=0.15',
                     'jsonschema',
                     'pathos>=0.2',
                     'otwrapy>=0.6',
@@ -137,8 +139,8 @@ setup(
     entry_points={'console_scripts': ['jpod=jpod.ui:main']},
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
     # Package requirements
-    setup_requires=['pytest-runner'],
-    tests_require=['pytest', 'mock'],
+    setup_requires=setup_requires,
+    tests_require=tests_require,
     install_requires=install_requires,
     extras_require={'Antares': ["antares"]},
     dependency_links=['https://github.com/felipeam86/otwrapy/tarball/master#egg=otwrapy-0.6',
@@ -157,7 +159,7 @@ setup(
                  'Natural Language :: English',
                  'Operating System :: Unix',
                  'Programming Language :: Python :: 2.7',
-                 'Programming Language :: Python :: 3',
+                 'Programming Language :: Python :: 3.3',
                  'Topic :: Communications :: Email',
                  'Topic :: Documentation :: Sphinx',
                  'Topic :: Software Development',
