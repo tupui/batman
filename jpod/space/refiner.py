@@ -190,7 +190,7 @@ class Refiner(object):
         :rtype: np.array
 
         """
-        distance = self.distance_min(point) * 0.5
+        distance = self.distance_min(point) / 3
         x0 = self.hypercube_distance(point, distance).flatten('F')
         point = np.minimum(point, self.corners[:, 1])
         point = np.maximum(point, self.corners[:, 0])
@@ -240,11 +240,12 @@ class Refiner(object):
 
             return n
 
-        # bounds = np.reshape([self.corners] * 2, (self.dim * 2, 2))
-        # results = differential_evolution(min_norm, bounds, popsize=40)
+        bounds = np.reshape([self.corners] * 2, (self.dim * 2, 2))
+        # results = differential_evolution(min_norm, bounds, popsize=100)
         # results = minimize(min_norm, x0, method='L-BFGS-B', bounds=bounds)
         # results = minimize(min_norm, x0, method='SLSQP', bounds=bounds)
-        results = basinhopping(min_norm, x0)
+        minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
+        results = basinhopping(min_norm, x0, niter=1000, minimizer_kwargs=minimizer_kwargs)
         hypercube = results.x.reshape(2, self.dim)
         for i in range(self.dim):
                 hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
