@@ -34,7 +34,7 @@ C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptat
 # Copyright: CERFACS
 
 import logging
-from scipy.optimize import differential_evolution
+from scipy.optimize import (differential_evolution, minimize, basinhopping)
 import numpy as np
 from sklearn import preprocessing
 import copy
@@ -51,8 +51,8 @@ class Refiner(object):
 
     def __init__(self, pod, settings):
         """Initialize the refiner with the POD and space corners.
-        
-        Points data are scaled between ``[0, 1]`` based on the size of the 
+
+        Points data are scaled between ``[0, 1]`` based on the size of the
         corners taking into account a ``delta_space`` factor.
 
         :param pod: POD
@@ -78,9 +78,9 @@ class Refiner(object):
                 * (self.corners[i, 1]-self.corners[i, 0])
 
         # Data scaling
-        self.min_max_scaler = preprocessing.MinMaxScaler()
-        self.min_max_scaler.fit(self.corners.T)
-        self.points = self.min_max_scaler.transform(self.points)
+        self.scaler = preprocessing.MinMaxScaler()
+        self.scaler.fit(self.corners.T)
+        self.points = self.scaler.transform(self.points)
 
     def func(self, coords, sign):
         r"""Get the prediction for a given point.
@@ -141,7 +141,7 @@ class Refiner(object):
         :rtype: float
 
         """
-        point = self.min_max_scaler.transform(point.reshape(1, -1))[0]
+        point = self.scaler.transform(point.reshape(1, -1))[0]
         distances = np.array([np.linalg.norm(pod_point - point)
                               for _, pod_point in enumerate(self.points)])
         # Do not get itself
@@ -164,9 +164,9 @@ class Refiner(object):
         :rtype: np.array
 
         """
-        point = self.min_max_scaler.transform(point.reshape(1, -1))[0]
+        point = self.scaler.transform(point.reshape(1, -1))[0]
         hypercube = np.array([point - distance, point + distance])
-        hypercube = self.min_max_scaler.inverse_transform(hypercube)
+        hypercube = self.scaler.inverse_transform(hypercube)
         hypercube = hypercube.T
         self.logger.debug("Prior Hypercube:\n{}".format(hypercube))
         self.logger.debug("Corners:\n{}".format(self.corners))
@@ -190,13 +190,24 @@ class Refiner(object):
         :rtype: np.array
 
         """
-        point = self.min_max_scaler.transform(point.reshape(1, -1))[0]
+        distance = self.distance_min(point) * 0.5
+        x0 = self.hypercube_distance(point, distance).flatten('F')
+        point = np.minimum(point, self.corners[:, 1])
+        point = np.maximum(point, self.corners[:, 0])
+        point = self.scaler.transform(point.reshape(1, -1))[0]
+
         gen = [p for p in self.points if not np.allclose(p, point)]
 
         def min_norm(hypercube):
+            """Compute euclidean distance.
+
+            :param np.array hypercube: [x1, y1, x2, y2, ...]
+            :return: distance of between hypercube points
+            :rtype: float
+            """
             hypercube = hypercube.reshape(2, self.dim)
             try:
-                hypercube = self.min_max_scaler.transform(hypercube)
+                hypercube = self.scaler.transform(hypercube)
             except ValueError:  # If the hypercube is nan
                 return np.inf
 
@@ -206,7 +217,7 @@ class Refiner(object):
 
             hypercube = hypercube.T
 
-            n = - np.linalg.norm(hypercube[:, 0] - hypercube[:, 1])
+            n = - np.linalg.norm(hypercube[:, 1] - hypercube[:, 0])
 
             # Check aspect ratio
             aspect = abs(hypercube[:, 1] - hypercube[:, 0])
@@ -229,8 +240,11 @@ class Refiner(object):
 
             return n
 
-        bounds = np.reshape([self.corners] * 2, (self.dim * 2, 2))
-        results = differential_evolution(min_norm, bounds, popsize=40)
+        # bounds = np.reshape([self.corners] * 2, (self.dim * 2, 2))
+        # results = differential_evolution(min_norm, bounds, popsize=40)
+        # results = minimize(min_norm, x0, method='L-BFGS-B', bounds=bounds)
+        # results = minimize(min_norm, x0, method='SLSQP', bounds=bounds)
+        results = basinhopping(min_norm, x0)
         hypercube = results.x.reshape(2, self.dim)
         for i in range(self.dim):
                 hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
@@ -333,7 +347,8 @@ class Refiner(object):
         """Find the min or max point.
 
         Using an anchor point based on the extremum value at sample points,
-        search the hypercube around it. If a new extremum is found, it uses Nelder-Mead method to add a new point.
+        search the hypercube around it. If a new extremum is found,it uses
+        Nelder-Mead method to add a new point.
         The point is then bounded back by the hypercube.
 
         :return: The coordinate of the point to add
@@ -366,7 +381,7 @@ class Refiner(object):
 
                 # Construct the hypercube around the point
                 distance = self.distance_min(point)
-                point = self.min_max_scaler.transform(point.reshape(1, -1))[0]
+                point = self.scaler.transform(point.reshape(1, -1))[0]
                 hypercube = self.hypercube_distance(point, distance)
 
                 # Global search of the point within the hypercube
