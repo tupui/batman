@@ -51,7 +51,7 @@
         }
     },
     "prediction": {
-        "points": [],
+        "points": [[4000, 30]],
         "method": "kriging"
     },
     "uq": {

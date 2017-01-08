@@ -52,17 +52,18 @@ class Kriging():
         parameters, the kernel is adapted to be anisotropic.
 
         `self.data` contains the predictors as a list(array) of the size
-        of the `ouput`.
+        of the `ouput`. A predictor per line of `output` is created. This leads
+        to a line of predictors that predicts a new column of `output`.
 
         A multiprocessing strategy is used:
 
-        1. Create a thread per mode, do not create if only one,
-        2. Create `n_restart` (3 by default) processes by thread.
+        1. Create a process per mode, do not create if only one,
+        2. Create `n_restart` (3 by default) processes by process.
 
         In the end, there is :math:`N=n_{restart} \times n_{modes})` processes.
         If there is not enought CPU, :math:`N=\frac{n_{cpu}}{n_restart}`.
 
-        :param ndarray input: The input used to generate the output.
+        :param ndarray input: The input used to generate the output. (nb snapshots, nb parameters)
         :param ndarray output: The observed data.
 
         """
@@ -71,7 +72,7 @@ class Kriging():
         scale_bounds = [(1e-03, 1000.0)] * input_len
         self.kernel = 1.0 * RBF(length_scale=l_scale,
                                 length_scale_bounds=scale_bounds)
-        self.model_len = len(output.T)
+        self.model_len = len(output)
         self.n_restart = 3
         # Define the CPU multi-threading/processing strategy
         try:
@@ -94,11 +95,11 @@ class Kriging():
         # Create a predictor per output, parallelize if several output
         if self.model_len > 1:
             pool = NestedPool(self.n_cpu)
-            results = pool.imap(model_fitting, output.T)
+            results = pool.imap(model_fitting, output)
             results = list(results)
             pool.terminate()
         else:
-            results = [model_fitting(output.T[0])]
+            results = [model_fitting(output[0])]
 
         # Gather results
         self.data = [None] * self.model_len

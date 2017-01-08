@@ -16,7 +16,7 @@ import copy
 from .predictor import Predictor
 from .. import mpi
 from ..misc import ProgressBar, NestedPool
-from pathos.multiprocessing import ThreadingPool, cpu_count
+from pathos.multiprocessing import cpu_count
 
 
 class Core(object):
@@ -32,40 +32,44 @@ class Core(object):
     def __init__(self, tolerance, dim_max):
         """Initialize POD components.
 
-        :param float tolerance: filtering criteria
-        :param int dim_max: number of modes to keep
+        The decomposition of the snapshot matrix is stored as attributes
+
+        - U: Singular vectors matrix, ndarray(nb of data, nb of snapshots),
+        after filtering ndarray(nb of data, nb of modes),
+        - S: Singular values matrix, ndarray(nb of modes, nb of snapshots),
+        only the diagonal is stored, of length (nb of modes),
+        - V: ndarray(nb of snapshots, nb of snapshots),
+        after filtering (nb of snapshots, nb of modes).
+
+        :param float tolerance: basis modes filtering criteria
+        :param int dim_max: number of basis modes to keep
         """
         self.tolerance = tolerance
-        '''Tolerance for basis modes filtering'''
-
         self.dim_max = dim_max
-        '''Maximum number of basis modes.'''
 
         self.mean_snapshot = None
-        '''Mean snapshot.'''
 
         self.U = None
-        '''Singular vectors matrix, ndarray(nb of data, nb of modes).'''
-
         self.S = None
-        '''Singular values matrix, ndarray(nb of modes, nb of snapshots),
-        only the diagonal is stored, of length (nb of modes).'''
-
         self.V = None
-        '''Matrix V, ndarray(nb of snapshots, nb of snapshots),
-        after filtering (nb of snapshots, nb of modes)'''
 
     def VS(self):
-        """Compute V*S matrix product when S is diagonal stored as vector."""
+        """Compute V*S matrix product.
+
+        S is diagonal and stored as vector thus (V*S).T = SV.T
+        """
         return self.V * self.S
 
     def decompose(self, snapshots):
         """Perform the POD.
 
-        Snapshots are modified (zero averaged) and the matrix is
-        decomposed using SVD from numpy.
+        The snapshot matrix consists in snapshots arranged in column.
+        Snapshots are centered with the mean snapshot then the matrix is
+        decomposed using a reduce SVD from numpy.
 
-        :param array snapshots: Snapshot matrix (nb of data per snapshot,
+        `S` is not stored as the conjugate but as `S`.
+
+        :param np.array snapshots: Snapshot matrix (nb of data per snapshot,
             nb of samples)
         """
         # compute mean snapshot
@@ -83,10 +87,17 @@ class Core(object):
     def filtering(self, U, S, V, tolerance, dim_max):
         """Remove lowest modes in U, S and V.
 
-        U, V      : numpy 2D arrays
-        S         : numpy 1D array (represents a diagonal matrix)
-        tolerance : tolerance for filtering modes
-        dim_max   : maximum number of modes
+        :param np.array U: (nb of data, nb of snapshots)
+        :param np.array S: (nb of modes)
+        :param np.array V: (nb of snapshots, nb of snapshots)
+        :param float tolerance: basis modes filtering criteria
+        :param int dim_max: number of basis modes to keep
+        :return: U (nb of data, nb of modes)
+        :rtype: np.array
+        :return: S (nb of modes)
+        :rtype: np.array
+        :return: V (nb of snapshots, nb of modes)
+        :rtype: np.array
         """
         total_sum = np.sum(S)
         # if total_sum == 0. and S.size == 1:
@@ -242,6 +253,7 @@ class Core(object):
                            / float(points_nb - 1) * self.V[i] * self.S)
                            ** 2)
 
+            # Because V = V.T -> V[i] is a column so V[i]S = SV.T
             mean = np.dot(self.U, self.V[i] * self.S)
 
             return mean, error

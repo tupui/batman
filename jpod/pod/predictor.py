@@ -68,7 +68,7 @@ class Predictor(object):
         if kind == 'rbf':
             self.predictor = RBFnet(points, data)
         elif kind == 'kriging':
-            self.predictor = Kriging(points, data)
+            self.predictor = Kriging(points, data.T)
         else:
             raise ValueError('kind must be either "rbf" or "kriging"')
 
