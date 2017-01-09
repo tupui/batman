@@ -62,13 +62,13 @@ import logging
 import numpy as np
 import openturns as ot
 import otwrapy as otw
-from sklearn.metrics import r2_score
+from sklearn.metrics import (r2_score, mean_squared_error)
 from multiprocessing import cpu_count
 # from openturns.viewer import View
 from os import mkdir
 import itertools
 from .wrapper import Wrapper
-from ..input_output import IOFormatSelector, Dataset
+from ..input_output import (IOFormatSelector, Dataset)
 
 
 class UQ:
@@ -265,18 +265,17 @@ class UQ:
         err_q2 = r2_score(y_ref, y_pred, multioutput='uniform_average')
 
         # MSE computation
-        if self.output_folder is not None:
-            mse = np.sum((y_pred - y_ref) ** 2, axis=0) / self.points_sample
-            np.savetxt(self.output_folder + '/mse.dat', mse)
+        mse = mean_squared_error(y_ref, y_pred, multioutput='uniform_average')
 
-        self.logger.info("\n----- POD error -----")
-        self.logger.info("\nQ2(error): {}"
+        self.logger.info("\n----- Surrogate Model Error -----")
+        self.logger.info("\nQ2: {}"
+                         "\nMSE: {}"
                          "\nL2(sobol 1st, 2nd and total order indices error): "
-                         "{}, {}, {}".format(err_q2,
-                                             s_l2_1st, s_l2_2nd, s_l2_total))
+                         "{}, {}, {}"
+                         .format(err_q2, mse, s_l2_1st, s_l2_2nd, s_l2_total))
 
         # Write error to file pod_err.dat
-        try:
+        if self.output_folder is not None:
             with open(self.output_folder + '/pod_err.dat', 'w') as f:
                 f.writelines("{} {} {} {} {} {} {}".format(self.snapshots,
                                                            self.max_snapshots,
@@ -286,17 +285,17 @@ class UQ:
                                                            s_l2_2nd,
                                                            s_l2_total))
 
-            # Write a QQplot in case of a scalar output
-            if self.output_len == 1:
-                output_ref = model_ref(self.sample)
-                output = self.int_model(self.sample)
-                qq_plot = ot.VisualTest_DrawQQplot(output_ref, output)
+            # Visual tests
+            # if self.output_len == 1:
+                # cobweb = ot.VisualTest.DrawCobWeb(self.sample, y_pred, y_min, y_max, 'red', False)
+                # View(cobweb).show()
+                # qq_plot = ot.VisualTest_DrawQQplot(y_ref, y_pred)
+                # qq_plot.draw(self.output_folder + '/qq_plot.png')
                 # View(qq_plot).show()
-                qq_plot.draw(self.output_folder + '/qq_plot.png')
-            else:
-                self.logger.debug(
-                    "Cannot draw QQplot with output dimension > 1")
-        except:
+            # else:
+            #     self.logger.debug(
+            #         "Cannot draw QQplot with output dimension > 1")
+        else:
             self.logger.debug("No output folder to write errors in")
 
     def sobol(self):
