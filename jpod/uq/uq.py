@@ -77,7 +77,7 @@ class UQ:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, jpod, settings, output=None):
+    def __init__(self, pod, settings, output=None):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -91,7 +91,7 @@ class UQ:
 
         Also, it creates the `model` and `int_model` as `ot.PythonFunction()`.
 
-        :param jpod.pod.pod jpod: The POD,
+        :param jpod.pod.pod.Pod pod: a POD,
         :param dict settings: The settings file.
 
         """
@@ -107,7 +107,7 @@ class UQ:
             self.logger.debug("Output folder already exists.")
         except TypeError:
             self.logger.debug("Not using output folder.")
-        self.pod = jpod
+        self.pod = pod
         self.io = IOFormatSelector(settings['snapshot']['io']['format'])
         self.surrogate = settings['prediction']['method']
         self.p_lst = settings['snapshot']['io']['parameter_names']

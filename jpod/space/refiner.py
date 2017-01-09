@@ -55,8 +55,8 @@ class Refiner(object):
         Points data are scaled between ``[0, 1]`` based on the size of the
         corners taking into account a ``delta_space`` factor.
 
-        :param pod: POD
-        :param settings: JPOD parameters
+        :param jpod.pod.pod.Pod pod: POD
+        :param dict settings: JPOD parameters
         :param tuple(tuple(float)) corners: Boundaries to add a point within
         """
         self.points = copy.deepcopy(pod.points)
@@ -85,13 +85,9 @@ class Refiner(object):
     def func(self, coords, sign):
         r"""Get the prediction for a given point.
 
-        Retrieve Gaussian Process estimation of sigma: the mean square error.
-        A composite indicator is constructed using POD's modes.
-
-        .. math:: \sum S_i^2 \times f_i
-
-        The function returns plus or minus the function depending on the sign.
-        -1 if we want to find the max and 1 if we want the min.
+        Retrieve Gaussian Process estimation. The function returns plus or
+        minus the function depending on the sign.
+        `-1` if we want to find the max and `1` if we want the min.
 
         :param lst(float) coords: coordinate of the point
         :param float sign: -1. or 1.
@@ -112,12 +108,12 @@ class Refiner(object):
     def func_mse(self, coords):
         r"""Get the MSE for a given point.
 
-        Retrieve Gaussian Process estimation of sigma: the mean square error.
+        Retrieve Gaussian Process estimation of sigma.
         A composite indicator is constructed using POD's modes.
 
         .. math:: \sum S_i^2 \times \sigma_i
 
-        Function returns - sum_sigma in order to have a minimization problem.
+        Function returns `- sum_sigma` in order to have a minimization problem.
 
         :param lst(float) coords: coordinate of the point
         :return: - sum_sigma

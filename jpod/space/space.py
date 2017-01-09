@@ -4,7 +4,7 @@ Space class
 ===========
 
 Derives from :class:`list` and constitutes a groupment for points.
-The space can be filled using low discrepancy sequences from :package:`openturns`,
+The space can be filled using low discrepancy sequences from :class:`openturns.LowDiscrepancySequence`,
 it can be resampled or points can be added manually.
 
 :Example:
@@ -191,7 +191,7 @@ class Space(list):
     def refine(self, pod, point_loo):
         """Refine the sample, update space points and return the new point(s).
 
-        :param pod: POD
+        :param jpod.pod.pod.Pod pod: POD
         :return: List of points to add
         :rtype: space.point.Point -> lst(tuple(float))
         """

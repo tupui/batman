@@ -4,7 +4,7 @@ Wrapper Classes
 ===============
 
 Defines an interface between the models and OpenTURNS.
-This allows to surcharge the function with `_exec_sample`. This enable
+This allows to surcharge the function with ``_exec_sample``. This enable
 multiprocessing capabilities.
 
 :Example:
@@ -28,7 +28,7 @@ class Wrapper(ot.OpenTURNSPythonFunction):
     def __init__(self, pod, kind, p_len, output_len, block=False):
         """Initialize the wrapper.
 
-        :param :class:`jpod.Pod` pod: a POD
+        :param :class:`jpod.pod.pod` pod: a POD
         :param str kind: predictor type
         :param int p_len: input dimension
         :param int output_len: output dimension
@@ -47,7 +47,7 @@ class Wrapper(ot.OpenTURNSPythonFunction):
     def func(self, coords):
         """Evaluate the POD at a given point.
 
-        This function calls the :func:`predict` function to compute a prediction.
+        This function calls the :func:`jpod.pod.pod.Pod.predict` function to compute a prediction.
         If the prediction returns a vector, it create `self.f_input` which
         contains the discretisation information.
 
