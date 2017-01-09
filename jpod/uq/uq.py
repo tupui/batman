@@ -172,15 +172,15 @@ class UQ:
         :param str function: name of the analytic function.
 
         """
-        if function == 'Ishigami':
+        if function == 'Rosenbrock':
             formula = [
-                'sin(X1)+7*sin(X2)*sin(X2)+0.1*((X3)*(X3)*(X3)*(X3))*sin(X1)']
+                '100*(X2-X1*X1)*(X2-X1*X1) + (1-X1)*(1-X1)']
             model_ref = ot.NumericalMathFunction(
-                ['X1', 'X2', 'X3'], ['Y'], formula)
-            s_first_th = np.array([0.3139, 0.4424, 0.])
-            s_second_th = np.array(
-                [[0., 0., 0.2], [0., 0., 0.], [0.2, 0., 0.]])
-            s_total_th = np.array([0.558, 0.442, 0.244])
+                ['X1', 'X2'], ['Y'], formula)
+            s_first_th = np.array([0.229983, 0.4855])
+            s_second_th = np.array([[0., 0.0920076],
+                                    [0.0935536, 0.]])
+            s_total_th = np.array([0.324003, 0.64479])
         elif function == 'Michalewicz':
             def michalewicz(x, d=2, m=10):
                 f = 0.
@@ -192,15 +192,27 @@ class UQ:
             s_first_th = np.array([0.4540, 0.5678])
             s_second_th = np.array([[0., 0.008], [0.008, 0.]])
             s_total_th = np.array([0.4606, 0.5464])
-        elif function == 'Rosenbrock':
+        elif function == 'Ishigami':
             formula = [
-                '100*(X2-X1*X1)*(X2-X1*X1) + (1-X1)*(1-X1)']
+                'sin(X1)+7*sin(X2)*sin(X2)+0.1*((X3)*(X3)*(X3)*(X3))*sin(X1)']
             model_ref = ot.NumericalMathFunction(
-                ['X1', 'X2'], ['Y'], formula)
-            s_first_th = np.array([0.229983, 0.4855])
-            s_second_th = np.array([[0., 0.0920076],
-                                    [0.0935536, 0.]])
-            s_total_th = np.array([0.324003, 0.64479])
+                ['X1', 'X2', 'X3'], ['Y'], formula)
+            s_first_th = np.array([0.3139, 0.4424, 0.])
+            s_second_th = np.array(
+                [[0., 0., 0.2], [0., 0., 0.], [0.2, 0., 0.]])
+            s_total_th = np.array([0.558, 0.442, 0.244])
+        elif function == 'G_Function':
+            d = 4
+            a = np.arange(1, d + 1)
+            def g_function(x, d=4):
+                f = 1.
+                for i in range(d):
+                    f *= (abs(4. * x[i] - 2) + a[i]) / (1. + a[i])
+                return [f]
+            model_ref = ot.PythonFunction(4, 1, g_function)
+            vi = 1. / (3 * (1 + a)**2)
+            v = -1 + np.prod(1 + vi)
+            s_first_th = vi / v
         elif function == 'Channel_Flow':
             def channel_flow(x):
                 Q = x[0]
@@ -231,7 +243,7 @@ class UQ:
         else:
             self.logger.error(
                 "Wrong analytical function, options are: "
-                "Ishigami, Rosenbrock, Michalewicz and Channel_Flow")
+                "Ishigami, Rosenbrock, Michalewicz, G_Function and Channel_Flow")
             return
         try:
             s_l2_2nd = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
@@ -240,7 +252,12 @@ class UQ:
             s_l2_2nd = 0.
 
         s_l2_1st = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
-        s_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
+
+        try:
+            s_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
+        except:
+            self.logger.warn("No Total order indices.")
+            s_l2_total = 0.
 
         # Q2 computation
         y_ref = np.array(model_ref(self.sample))

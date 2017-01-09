@@ -1,0 +1,64 @@
+{
+    "space": {
+        "corners": [
+            [0.0, 0.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0, 1.0]
+        ],
+        "size_max": 65,
+        "delta_space": 0.08,
+        "provider": {
+            "method": "halton",
+            "size": 65
+        }
+    },
+    "pod": {
+        "dim_max": 100,
+        "quality": 0.8,
+        "tolerance": 0.99,
+        "strategy": [
+            ["MSE", 4]
+        ],
+        "resample": "MSE",
+        "server": null,
+        "type": "static"
+    },
+    "snapshot": {
+        "max_workers": 10,
+        "io": {
+            "shapes": {
+                "0": [
+                    [1]
+                ]
+            },
+            "format": "fmt_tp_fortran",
+            "variables": ["F"],
+            "point_filename": "header.py",
+            "filenames": {
+                "0": ["function.dat"]
+            },
+            "template_directory": null,
+            "parameter_names": ["x1", "x2", "x3", "x4"]
+        },
+        "provider": {
+            "command": "bash",
+            "timeout": 10,
+            "context": "data",
+            "script": "data/script.sh",
+            "clean": false,
+            "private-directory": "jpod-data",
+            "data-directory": "cfd-output-data",
+            "restart": "False"
+        }
+    },
+    "prediction": {
+        "points": [[0.5, 0.5, 0.5, 0.5]],
+        "method": "kriging"
+    },
+    "uq": {
+        "sample": 15000,
+        "test": "G_Function",
+        "pdf": ["Uniform(0.0, 1.0)", "Uniform(0.0, 1.0)", "Uniform(0.0, 1.0)", "Uniform(0.0, 1.0)"],
+        "type": "aggregated",
+        "method": "sobol"
+    }
+}
