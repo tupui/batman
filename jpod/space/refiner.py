@@ -219,7 +219,6 @@ class Refiner(object):
             aspect = abs(hypercube[:, 1] - hypercube[:, 0])
             aspect = np.power(np.max(aspect), self.dim) / np.prod(aspect)
             aspect = np.power(aspect, 1 / self.dim)
-            # aspect = np.prod(aspect) / np.power(np.mean(aspect), self.dim)
             if not (aspect <= 1.5):
                 return np.inf
 

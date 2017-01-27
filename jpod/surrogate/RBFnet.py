@@ -23,7 +23,7 @@ class RBFnet:
 
 
     def evaluate(self, point):
-        return self.evalOut(point)
+        return self.evalOut(point), 0
 
 
     def show(self):
