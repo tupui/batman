@@ -58,15 +58,21 @@ class Space(list):
     def __init__(self, settings):
         """Generate a Space.
 
-        :param dict settings: settings
+        :param dict settings: space settings
         """
         self.settings = settings
-        self.doe_init = settings['space']['provider']['size']
-        self.max_points_nb = settings['space']['size_max']
-        self.p_lst = settings['snapshot']['io']['parameter_names']
-        self.dim = len(self.p_lst)
+        self.doe_init = settings['space']['sampling']['init_size']
+        self.doe_method = settings['space']['sampling']['method']
+        self.max_points_nb = settings['space']['resampling']['resamp_size'] + self.doe_init
         self.size = 0
         corners = settings['space']['corners']
+        self.dim = len(corners[0])
+
+        try:
+            self.p_lst = settings['snapshot']['io']['parameter_names']
+        except KeyError:
+            self.p_lst = ["x"+str(i) for i in range(self.dim)]
+            self.logger.warn("Will not be able to refine with Sobol', need complete settings")
 
         # corner points
         try:
@@ -189,7 +195,7 @@ class Space(list):
                                     .format(point))
         return self
 
-    def sampling(self, kind, n):
+    def sampling(self, n, kind=None):
         """Create point samples in the parameter space.
 
         Minimum number of samples for halton and sobol : 4
@@ -201,15 +207,18 @@ class Space(list):
         :return: List of points
         :rtype: self
         """
+        if kind is None:
+            kind = self.doe_method
+
         bounds = np.array(self.corners)
         samples = sampling.doe(n, bounds, kind)
 
         self.empty()
         self += samples
 
-        self.logger.info('Created %d samples with the %s method', len(self),
-                         kind)
-        self.logger.debug("Points are: \n {}".format(samples))
+        self.logger.info("Created {} samples with the {} method"
+                         .format(len(self), kind))
+        self.logger.debug("Points are:\n{}".format(samples))
         return self
 
     def refine(self, pod, point_loo):
@@ -221,10 +230,10 @@ class Space(list):
         """
         refiner = Refiner(pod, self.settings)
         # Refinement strategy
-        method = self.settings['pod']['resample']
-        if method == 'MSE':
+        method = self.settings['space']['resampling']['method']
+        if method == 'sigma':
             new_point = refiner.mse()
-        elif method == 'loo_mse':
+        elif method == 'loo_sigma':
             new_point = refiner.leave_one_out_mse(point_loo)
         elif method == 'loo_sobol':
             new_point = refiner.leave_one_out_sobol(point_loo)

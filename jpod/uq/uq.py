@@ -109,7 +109,7 @@ class UQ:
             self.logger.debug("Not using output folder.")
         self.pod = pod
         self.io = IOFormatSelector(settings['snapshot']['io']['format'])
-        self.surrogate = settings['prediction']['method']
+        self.surrogate = settings['surrogate']['method']
         self.p_lst = settings['snapshot']['io']['parameter_names']
         self.p_len = len(self.p_lst)
         self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]
@@ -139,14 +139,14 @@ class UQ:
             self.f_input = None
 
         # Wrapper for parallelism
-        self.n_cpus = 1#cpu_count()
+        self.n_cpus = 1  # cpu_count()
         self.wrapper = Wrapper(self.pod, self.surrogate,
                                self.p_len, self.output_len)
         self.model = otw.Parallelizer(self.wrapper,
                                       backend='pathos', n_cpus=self.n_cpus)
 
         self.snapshots = settings['space']['provider']['size']
-        self.max_snapshots = settings['space']['size_max']
+        self.resamp_size = settings['space']['resampling']['resamp_size']
 
     def __repr__(self):
         """Information about object."""
@@ -278,7 +278,7 @@ class UQ:
         if self.output_folder is not None:
             with open(self.output_folder + '/pod_err.dat', 'w') as f:
                 f.writelines("{} {} {} {} {} {} {}".format(self.snapshots,
-                                                           self.max_snapshots,
+                                                           self.resamp_size,
                                                            err_q2,
                                                            self.points_sample,
                                                            s_l2_1st,
@@ -468,7 +468,8 @@ class UQ:
             names = ['x'] + names
             data = np.append(self.f_input, data)
 
-        dataset = Dataset(names=names, shape=[self.output_len, 1, 1], data=data)
+        dataset = Dataset(names=names, shape=[
+                          self.output_len, 1, 1], data=data)
         self.io.write(self.output_folder + '/moment.dat', dataset)
 
         # Covariance and correlation matrices
@@ -487,7 +488,8 @@ class UQ:
             dataset = Dataset(names=names,
                               shape=[self.output_len, self.output_len, 1],
                               data=data)
-            self.io.write(self.output_folder + '/correlation_covariance.dat', dataset)
+            self.io.write(self.output_folder +
+                          '/correlation_covariance.dat', dataset)
 
         # Create the PDFs
         kernel = ot.KernelSmoothing()
