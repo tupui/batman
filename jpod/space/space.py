@@ -15,7 +15,7 @@ it can be resampled or points can be added manually.
     >> from jpod.point import Point
     >> space = Space(settings)
     >> point = Point([12.3, 18.0])
-    >> space.add(point)
+    >> space += point
 
 """
 import logging

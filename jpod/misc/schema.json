@@ -9,38 +9,70 @@
           "type": "array",
           "items": {}
         },
-        "size_max": {
-          "type": "integer",
-          "default": 2,
-          "minimum": 0,
-          "exclusiveMinimum": true
-        },
-        "delta_space": {
-          "type": "number",
-          "default": 0.01,
-          "minimum": 0
-        },
-        "provider": {
+
+        "sampling": {
+          "type": "object",
           "properties": {
             "method": {
               "type": "string",
               "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform"],
               "default": "halton"
             },
-            "size": {
+            "init_size": {
               "type": "integer",
               "default": 20,
               "minimum": 0,
               "exclusiveMinimum": true
-            }
+            },
+            "required": [
+              "method",
+              "init_size"
+            ]
+          }
+        },
+
+        "resampling": {
+          "type": "object",
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": ["None", "sigma", "loo_sigma", "loo_sobol", "extrema", "hybrid"],
+              "default": "sigma"
+            },
+            "resamp_size": {
+              "type": "integer",
+              "default": 2,
+              "minimum": 0
+            },
+            "delta_space": {
+              "type": "number",
+              "default": 0.08,
+              "minimum": 0
+            },
+            "q2_criteria": {
+              "type": "number",
+              "default": 0.9,
+              "minimum": 0,
+              "exclusiveMinimum": true,
+              "maximum": 1,
+              "exclusiveMaximum": true
+            },
+            "hybrid": {
+              "type": "array",
+              "items": {}
+            },
+            "required": [
+              "method",
+              "resamp_size",
+              "q2_criteria",
+              "delta_space"
+            ]
           }
         }
       },
       "required": [
         "corners",
-        "size_max",
-        "delta_space",
-        "provider"
+        "sampling"
       ]
     },
     "pod": {
@@ -51,14 +83,6 @@
           "default": 100,
           "minimum": 1
         },
-        "quality": {
-          "type": "number",
-          "default": 0.8,
-          "minimum": 0,
-          "exclusiveMinimum": true,
-          "maximum": 1,
-          "exclusiveMaximum": true
-        },
         "tolerance": {
           "type": "number",
           "default": 0.99,
@@ -66,15 +90,6 @@
           "exclusiveMinimum": true,
           "maximum": 1,
           "exclusiveMaximum": true
-        },
-        "strategy": {
-          "type": "array",
-          "items": {}
-        },
-        "resample": {
-          "type": "string",
-          "enum": ["None", "MSE", "loo_mse", "loo_sobol", "extrema", "hybrid"],
-          "default": "MSE"
         },
         "server": {
           "type": "null",
@@ -88,10 +103,7 @@
       },
       "required": [
         "dim_max",
-        "quality",
         "tolerance",
-        "strategy",
-        "resample",
         "server",
         "type"
       ]
@@ -121,7 +133,7 @@
             },
             "format": {
               "type": "string",
-              "default": "fmt_tp"
+              "default": "fmt_tp_fortran"
             },
             "variables": {
               "type": "array",
@@ -224,20 +236,20 @@
         "provider"
       ]
     },
-    "prediction": {
+    "surrogate": {
       "type": "object",
       "properties": {
-        "points": {
+        "predictions": {
           "type": "array",
           "items": {}
         },
         "method": {
           "type": "string",
-          "default": "kriging"
+          "default": "kriging",
+          "enum": ["rbf", "kriging"]
         }
       },
       "required": [
-        "points",
         "method"
       ]
     },
@@ -280,6 +292,6 @@
     "space",
     "pod",
     "snapshot",
-    "prediction"
+    "surrogate"
   ]
 }
