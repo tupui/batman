@@ -19,7 +19,10 @@ it can be resampled or points can be added manually.
 
 """
 import logging
+import os
 import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from . import sampling
 from .point import Point
 from .refiner import Refiner
@@ -55,15 +58,15 @@ class Space(list):
     def __init__(self, settings):
         """Generate a Space.
 
-        Dilate the space using the delta space.
-
-        :param dict settings: JPOD settings
+        :param dict settings: settings
         """
-        self.dimension = None
-
         self.settings = settings
-        corners = settings['space']['corners']
+        self.doe_init = settings['space']['provider']['size']
         self.max_points_nb = settings['space']['size_max']
+        self.p_lst = settings['snapshot']['io']['parameter_names']
+        self.dim = len(self.p_lst)
+        self.size = 0
+        corners = settings['space']['corners']
 
         # corner points
         try:
@@ -75,16 +78,17 @@ class Space(list):
         # Point of the sample resampled around
         self.refined_pod_points = []
 
-        for i in range(len(corners[0])):
+        # corner points validation
+        for i in range(self.dim):
             if corners[0][i] == corners[1][i]:
                 raise ValueError('%dth corners coordinate are equal' % (i+1))
 
     def __str__(self):
         s = ("Hypercube points: {}\n"
              "Number of points: {}\n"
-             "Max number of points: {}").format([str(c) for c in self.corners],
-                                                str(self.size),
-                                                str(self.max_points_nb))
+             "Max number of points: {}").format([c for c in self.corners],
+                                                self.size,
+                                                self.max_points_nb)
         return s
 
     def __repr__(self):
@@ -97,32 +101,52 @@ class Space(list):
         """Return whether the maximum number of points is reached."""
         return len(self) >= self.max_points_nb
 
-    @property
-    def size(self):
-        """Return the number of points in space."""
-        return len(self)
-
-    @property
-    def dim(self):
-        """Return the dimension of the space."""
-        return len(self[0])
-
     def write(self, path):
         """Write space in the file `path`."""
         np.savetxt(path, self)
+
+        if self.dim > 3:
+            return
+
+        sample = np.array(self)
+
+        fig = plt.figure('Design of Experiment')
+        if self.dim == 1:
+            plt.scatter(sample[0:self.doe_init, 0], [0] * self.doe_init, c='k', marker='o')
+            plt.scatter(sample[self.doe_init:, 0], [0] * (len(self) - self.doe_init), c='r', marker='^')
+            plt.xlabel(self.p_lst[0])
+
+        if self.dim == 2:
+            plt.scatter(sample[0:self.doe_init, 0], sample[0:self.doe_init, 1], c='k', marker='o')
+            plt.scatter(sample[self.doe_init:, 0], sample[self.doe_init:, 1], c='r', marker='^')
+            plt.xlabel(self.p_lst[0])
+            plt.ylabel(self.p_lst[1])
+
+        elif self.dim == 3:
+            axis = Axes3D(fig)
+            axis.scatter(sample[0:self.doe_init, 0], sample[0:self.doe_init, 1],
+                        sample[0:self.doe_init, 2], c='k', marker='o')
+            axis.scatter(sample[self.doe_init:, 0], sample[self.doe_init:, 1],
+                        sample[self.doe_init:, 2], c='r', marker='^')
+            plt.xlabel(self.p_lst[0])
+            plt.ylabel(self.p_lst[1])
+            axis.set_zlabel(self.p_lst[2])
+
+        path = os.path.join(os.path.dirname(os.path.abspath(path)), 'DOE.pdf')
+        fig.savefig(path, transparent=True, bbox_inches='tight')
 
     def read(self, path):
         """Read space from the file `path`."""
         self.empty()
         space = np.loadtxt(path)
         for p in space:
-            self.add(p.flatten().tolist())
+            self += p.flatten().tolist()
 
     def empty(self):
         """Remove all points."""
         del self[:]
 
-    def add(self, points):
+    def __iadd__(self, points):
         """Add `points` to the space.
 
         Raise if point already exists or if space is over full.
@@ -132,16 +156,14 @@ class Space(list):
         # determine if adding one or multiple points
         try:
             points[0][0]
-        except TypeError:
-            points = [points]
+        except (TypeError, IndexError):
+            points = [points]    
 
         for point in points:
-            # set dimension when adding the first point
-            if not self.dimension:
-                self.dimension = len(point)
-            elif len(point) != self.dimension:
+            # check point dimension is correct
+            if len(point) != self.dim:
                 self.logger.exception("Coordinates dimensions mismatch, should be {}"
-                                      .format(self.dimension))
+                                      .format(self.dim))
                 raise SystemExit
 
             # check space is full
@@ -156,14 +178,16 @@ class Space(list):
                 & (np.array(point) <= self.corners[1]).all()
             if not not_alien:
                 raise AlienPointError("Point {} is out of space"
-                                      .format(str(point)))                    
+                                      .format(str(point)))
 
             # verify point is not already in space
             if point not in self:
-                self += [point]
+                self.append(point)
+                self.size += 1
             else:
                 raise UnicityError("Point {} already exists in the space"
                                     .format(point))
+        return self
 
     def sampling(self, kind, n):
         """Create point samples in the parameter space.
@@ -181,7 +205,7 @@ class Space(list):
         samples = sampling.doe(n, bounds, kind)
 
         self.empty()
-        self.add(samples)
+        self += samples
 
         self.logger.info('Created %d samples with the %s method', len(self),
                          kind)
@@ -216,7 +240,7 @@ class Space(list):
         except TypeError:
             point = [Point(point) for point in new_point]
 
-        self.add(point)
+        self += point
 
         self.logger.info('Refined sampling with new point: {}'
                          .format(str(point)))
