@@ -106,7 +106,7 @@ def test_restart_pod(case='/Michalewicz'):
     sys.argv = ['jpod', 'settings.json', '-r']
     options = jpod.ui.parse_options()
     settings = jpod.misc.import_config(options.settings, schema)
-    settings["space"]["size_max"] = 5
+    settings["space"]["resampling"]["resamp_size"] = 1
 
     jpod.ui.run(settings, options)
     check_output()
@@ -116,8 +116,8 @@ def test_restart_pod(case='/Michalewicz'):
 
     init_case(case, force=True)
     # Restart from 4 and add 2 points continuing the DOE sequence
-    settings["space"]["size_max"] = 6
-    settings["space"]["provider"]["size"] = 6
+    settings["space"]["resampling"]["resamp_size"] = 0
+    settings["space"]["sampling"]["init_size"] = 6
 
     jpod.ui.run(settings, options)
     check_output()
@@ -132,13 +132,14 @@ def test_resampling(case='/Michalewicz'):
     sys.argv = ['jpod', 'settings.json']
     options = jpod.ui.parse_options()
     settings = jpod.misc.import_config(options.settings, schema)
-    settings["space"]["size_max"] = 6
+    settings["space"]["resampling"]["resamp_size"] = 2
 
-    for method in ["loo_mse", "loo_sobol", "extrema"]:
+    for method in ["loo_sigma", "loo_sobol", "extrema"]:
+        print("Method: ", method)
         os.system('rm -rf output')
-        settings["pod"]["resample"] = method
+        settings["space"]["resampling"]["method"] = method
         if method == "extrema":
-            settings["space"]["size_max"] = 8
+            settings["space"]["resampling"]["resamp_size"] = 4
         jpod.ui.run(settings, options)
         check_output()
         if not os.path.isdir('output/snapshots/5'):

@@ -159,23 +159,22 @@ class Driver():
             for path in self.provider:
                 point = Snapshot.read_point(path)
                 try:
-                    self.space.add([point])
+                    self.space += point
                 except (AlienPointError, UnicityError, FullSpaceError) as tb:
                     self.logger.warning("Ignoring: {}".format(tb))
                 else:
                     self.initial_points[point] = path
 
         else:
-            space_provider = self.settings['space']['provider']
+            space_provider = self.settings['space']['sampling']
             if isinstance(space_provider, list):
                 # a list of points is provided
                 self.logger.info('Reading list of points from the settings.')
                 self.initial_points = space_provider
-                self.space.add(self.initial_points)
+                self.space += self.initial_points
             elif isinstance(space_provider, dict):
                 # use point sampling
-                self.initial_points = self.space.sampling(space_provider['method'],
-                                                          space_provider['size'])
+                self.initial_points = self.space.sampling(space_provider['init_size'])
             else:
                 self.logger.error('Bad space provider.')
                 raise SystemError
@@ -212,11 +211,11 @@ class Driver():
         From a new sample, it re-generates the POD.
 
         """
-        while len(self.pod.points) < self.settings['space']['size_max']:
+        max_points = self.settings['space']['sampling']['init_size'] + self.settings['space']['resampling']['resamp_size']
+        while len(self.pod.points) < max_points:
             quality, point_loo = self.pod.estimate_quality()
-            # quality = 0.
-            # point_loo = []
-            if quality >= self.settings['pod']['quality']:
+
+            if quality >= self.settings['space']['resampling']['q2_criteria']:
                 break
 
             try:
@@ -306,7 +305,7 @@ class Driver():
             # the processed points
             self.initial_points = []
             self.space.empty()
-            self.space.add(processed_points)
+            self.space += processed_points
 
     def prediction(self, write=False):
         """Perform a prediction."""
@@ -315,8 +314,8 @@ class Driver():
         else:
             output = None
 
-        self.pod.predict(self.settings['prediction']['method'],
-                         self.settings['prediction']['points'], output)
+        self.pod.predict(self.settings['surrogate']['method'],
+                         self.settings['surrogate']['predictions'], output)
 
     def prediction_without_computation(self, write=False):
         """Perform a prediction using an existing model read from file."""
@@ -326,7 +325,7 @@ class Driver():
             output = None
         model = self.read_model()
         self.pod.predict_without_computation(
-            model, self.settings['prediction']['points'], output)
+            model, self.settings['surrogate']['predictions'], output)
 
     def write_model(self):
         """Write model to file."""

@@ -66,8 +66,8 @@ class Refiner(object):
 
         self.settings_full = settings
         self.settings = settings['space']
-        self.corners = np.array(settings['corners']).T
-        delta_space = settings['resampling']['delta_space']
+        self.corners = np.array(self.settings['corners']).T
+        delta_space = self.settings['resampling']['delta_space']
         self.dim = len(self.corners)
 
         # Inner delta space contraction: delta_space * 2 factor

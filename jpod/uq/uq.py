@@ -145,7 +145,7 @@ class UQ:
         self.model = otw.Parallelizer(self.wrapper,
                                       backend='pathos', n_cpus=self.n_cpus)
 
-        self.snapshots = settings['space']['provider']['size']
+        self.snapshots = settings['space']['sampling']['init_size']
         self.resamp_size = settings['space']['resampling']['resamp_size']
 
     def __repr__(self):
