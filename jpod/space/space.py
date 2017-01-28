@@ -118,8 +118,8 @@ class Space(list):
 
         fig = plt.figure('Design of Experiment')
         if self.dim == 1:
-            plt.scatter(sample[0:self.doe_init, 0], [0] * self.doe_init, c='k', marker='o')
-            plt.scatter(sample[self.doe_init:, 0], [0] * (len(self) - self.doe_init), c='r', marker='^')
+            plt.scatter(sample[0:self.doe_init], [0] * self.doe_init, c='k', marker='o')
+            plt.scatter(sample[self.doe_init:], [0] * (len(self) - self.doe_init), c='r', marker='^')
             plt.xlabel(self.p_lst[0])
 
         if self.dim == 2:

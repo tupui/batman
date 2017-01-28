@@ -38,27 +38,12 @@ def test_space():
     s2 = space2.sampling(10, kind='lhsc')
     assert s1[:] != s2[:]
 
-    try:
+    with pytest.raises(UnicityError)
         space += (1, 2, 3)
         space += (1, 2, 3)
-    except UnicityError:
-        assert True
-    else:
-        assert False
 
-    try:
+    with pytest.raises(AlienPointError)
         space += (1, 7, 3)
-    except AlienPointError:
-        assert True
-    else:
-        assert False
 
-    try:
+    with pytest.raises(FullSpaceError)
         space.sampling(17)
-    except FullSpaceError:
-        assert True
-    else:
-        assert False
-
-if __name__ == '__main__':
-    test_space()

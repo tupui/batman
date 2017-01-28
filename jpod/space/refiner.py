@@ -377,7 +377,6 @@ class Refiner(object):
 
                 # Construct the hypercube around the point
                 distance = self.distance_min(point)
-                point = self.scaler.transform(point.reshape(1, -1))[0]
                 hypercube = self.hypercube_distance(point, distance)
 
                 # Global search of the point within the hypercube
