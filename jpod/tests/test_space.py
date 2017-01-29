@@ -20,6 +20,22 @@ settings = {
     }
 }
 
+
+def test_point():
+    point_a = Point([2, 3, 9])
+    point_b = Point([1, 2, 8])
+    point_c = Point([2, 3, 9])
+    assert point_a != point_b
+    assert point_a == point_c
+
+    Point.set_threshold(2)
+    point_a = Point([2, 3, 9])
+    point_b = Point([1, 2, 8])
+    point_c = Point([2, 3, 9])
+    assert point_a == point_b
+    assert point_a == point_c
+
+
 def test_space():
 
     space = Space(settings)
@@ -38,12 +54,12 @@ def test_space():
     s2 = space2.sampling(10, kind='lhsc')
     assert s1[:] != s2[:]
 
-    with pytest.raises(UnicityError)
+    with pytest.raises(UnicityError):
         space += (1, 2, 3)
         space += (1, 2, 3)
 
-    with pytest.raises(AlienPointError)
+    with pytest.raises(AlienPointError):
         space += (1, 7, 3)
 
-    with pytest.raises(FullSpaceError)
+    with pytest.raises(FullSpaceError):
         space.sampling(17)

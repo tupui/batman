@@ -49,12 +49,10 @@ class Point(tuple):
                 raise SystemExit
         return super(Point, cls).__new__(cls, coords)
 
-
     def __eq__(self, other):
         """Compare using the euclidian distance"""
         return np.linalg.norm(np.array(self) - np.array(other)) \
                <= self.__class__.threshold
-
 
     def __ne__(self, other):
         return not self == other
