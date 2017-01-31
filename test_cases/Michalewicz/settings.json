@@ -4,21 +4,21 @@
             [1.0, 1.0],
             [3.1415, 3.1415]
         ],
-        "size_max": 4,
-        "delta_space": 0.01,
-        "provider": {
-            "method": "halton",
-            "size": 4
+        "sampling": {
+            "init_size": 4,
+            "method": "halton"
+        },
+        "resampling":{
+            "delta_space": 0.08,
+            "resamp_size": 0,
+            "method": "sigma",
+            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
+            "q2_criteria": 0.9
         }
     },
     "pod": {
         "dim_max": 100,
-        "quality": 0.8,
         "tolerance": 0.99,
-        "strategy": [
-            ["MSE", 4]
-        ],
-        "resample": "MSE",
         "server": null,
         "type": "static"
     },
@@ -50,8 +50,8 @@
             "restart": "False"
         }
     },
-    "prediction": {
-        "points": [[2, 2]],
+    "surrogate": {
+        "predictions": [[2, 2]],
         "method": "kriging"
     },
     "uq": {

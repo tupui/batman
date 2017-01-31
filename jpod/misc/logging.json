@@ -2,8 +2,8 @@
     "version" : 1,
     "disable_existing_loggers" : false,
     "formatters" : {
-        "console": {"format": "%(name)s :: \n\t%(message)s"},
-       "file": {"format": "%(asctime)s :: %(levelname)s :: %(name)s :: \n\t%(message)s"}
+        "console": {"format": "%(message)s"},
+       "file": {"format": "%(asctime)s :: %(levelname)s :: %(name)s ::\n\t%(message)s"}
     },
     "handlers" : {
         "console": {"class": "logging.StreamHandler", 

@@ -56,19 +56,19 @@ class Refiner(object):
         corners taking into account a ``delta_space`` factor.
 
         :param jpod.pod.pod.Pod pod: POD
-        :param dict settings: JPOD parameters
+        :param dict settings: parameters
         :param tuple(tuple(float)) corners: Boundaries to add a point within
         """
         self.points = copy.deepcopy(pod.points)
         self.pod = pod
-        kind = settings['prediction']['method']
         if self.pod.predictor is None:
-            self.pod.predictor = jpod.pod.Predictor(kind, self.pod)
+            self.pod.predictor = jpod.pod.Predictor("kriging", self.pod)
 
-        self.settings = settings
-        self.corners = np.array(settings['space']['corners']).T
-        delta_space = settings['space']['delta_space']
-        self.dim = self.corners.shape[0]
+        self.settings_full = settings
+        self.settings = settings['space']
+        self.corners = np.array(self.settings['corners']).T
+        delta_space = self.settings['resampling']['delta_space']
+        self.dim = len(self.corners)
 
         # Inner delta space contraction: delta_space * 2 factor
         for i in range(self.dim):
@@ -219,7 +219,6 @@ class Refiner(object):
             aspect = abs(hypercube[:, 1] - hypercube[:, 0])
             aspect = np.power(np.max(aspect), self.dim) / np.prod(aspect)
             aspect = np.power(aspect, 1 / self.dim)
-            # aspect = np.prod(aspect) / np.power(np.mean(aspect), self.dim)
             if not (aspect <= 1.5):
                 return np.inf
 
@@ -316,7 +315,7 @@ class Refiner(object):
         point = np.array(point_loo)
 
         # Get Sobol' indices
-        analyse = UQ(self.pod, self.settings)
+        analyse = UQ(self.pod, self.settings_full)
         indices = analyse.sobol()[2]
         indices = indices * (indices > 0)
         indices = preprocessing.normalize(indices.reshape(1, -1), norm='max')
@@ -378,7 +377,6 @@ class Refiner(object):
 
                 # Construct the hypercube around the point
                 distance = self.distance_min(point)
-                point = self.scaler.transform(point.reshape(1, -1))[0]
                 hypercube = self.hypercube_distance(point, distance)
 
                 # Global search of the point within the hypercube
@@ -447,26 +445,26 @@ class Refiner(object):
         self.logger.info(">>---Hybrid strategy---<<")
 
         try:
-            self.logger.debug('Strategy: {}'.format(self.settings['pod']['strategy_full'])) 
+            self.logger.debug('Strategy: {}'.format(self.settings['resampling']['strategy_full'])) 
         except KeyError:
-            self.settings['pod']['strategy_full'] = self.settings['pod']['strategy']
+            self.settings['resampling']['strategy_full'] = self.settings['resampling']['hybrid']
             self.logger.info('Strategy: {}'
-                             .format(self.settings['pod']['strategy_full']))
+                             .format(self.settings['resampling']['strategy_full']))
 
-        self.settings['pod']['strategy'] = OrderedDict(self.settings['pod']['strategy'])
-        strategies = self.settings['pod']['strategy']
+        self.settings['resampling']['hybrid'] = OrderedDict(self.settings['resampling']['hybrid'])
+        strategies = self.settings['resampling']['hybrid']
 
         if sum(strategies.values()) == 0:
-            self.settings['pod']['strategy'] = OrderedDict(self.settings['pod']['strategy_full'])
-            strategies = self.settings['pod']['strategy']
+            self.settings['resampling']['hybrid'] = OrderedDict(self.settings['resampling']['strategy_full'])
+            strategies = self.settings['resampling']['hybrid']
 
         new_point = []
         for method in strategies:
             if strategies[method] > 0:
-                if method == 'MSE':
+                if method == 'sigma':
                     new_point = self.mse()
                     break
-                elif method == 'loo_mse':
+                elif method == 'loo_sigma':
                     new_point = self.leave_one_out_mse(point_loo)
                     break
                 elif method == 'loo_sobol':
@@ -479,6 +477,6 @@ class Refiner(object):
                     self.logger.exception("Resampling method does't exits")
                     raise SystemExit
 
-        self.settings['pod']['strategy'][method] -= 1
+        self.settings['resampling']['hybrid'][method] -= 1
 
         return new_point, refined_pod_points

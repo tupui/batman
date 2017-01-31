@@ -115,7 +115,7 @@ class Pod(Core):
         super(Pod, self).decompose(matrix)
 
         for s in snapshots:
-            self.points.add(s.point)
+            self.points += s.point
 
         self._post_processing()
         self.logger.info('Computed pod basis with %g modes', self.S.shape[0])
@@ -128,7 +128,7 @@ class Pod(Core):
         self.logger.info('Updating pod basis...')
         snapshot = Snapshot.convert(snapshot)
         super(Pod, self).update(snapshot.data)
-        self.points.add(snapshot.point)
+        self.points += snapshot.point
         self._post_processing()
         self.logger.info('Updated pod basis with snapshot at point %s',
                          snapshot.point)

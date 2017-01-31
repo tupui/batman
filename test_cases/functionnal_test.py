@@ -106,7 +106,7 @@ def test_restart_pod(case='/Michalewicz'):
     sys.argv = ['jpod', 'settings.json', '-r']
     options = jpod.ui.parse_options()
     settings = jpod.misc.import_config(options.settings, schema)
-    settings["space"]["size_max"] = 5
+    settings["space"]["resampling"]["resamp_size"] = 1
 
     jpod.ui.run(settings, options)
     check_output()
@@ -116,8 +116,8 @@ def test_restart_pod(case='/Michalewicz'):
 
     init_case(case, force=True)
     # Restart from 4 and add 2 points continuing the DOE sequence
-    settings["space"]["size_max"] = 6
-    settings["space"]["provider"]["size"] = 6
+    settings["space"]["resampling"]["resamp_size"] = 0
+    settings["space"]["sampling"]["init_size"] = 6
 
     jpod.ui.run(settings, options)
     check_output()
@@ -128,42 +128,33 @@ def test_restart_pod(case='/Michalewicz'):
 
 def test_resampling(case='/Michalewicz'):
     """Assess all resampling methods."""
-    init_case(case)
     sys.argv = ['jpod', 'settings.json']
     options = jpod.ui.parse_options()
     settings = jpod.misc.import_config(options.settings, schema)
-    settings["space"]["size_max"] = 6
+    settings["space"]["sampling"]["init_size"] = 10
+    settings["space"]["resampling"]["resamp_size"] = 2
 
-    for method in ["loo_mse", "loo_sobol", "extrema"]:
+    for method in ["loo_sigma", "loo_sobol", "extrema"]:
+        print("Method: ", method)
         os.system('rm -rf output')
-        settings["pod"]["resample"] = method
+        settings["space"]["resampling"]["method"] = method
         if method == "extrema":
-            settings["space"]["size_max"] = 8
+            settings["space"]["resampling"]["resamp_size"] = 4
         jpod.ui.run(settings, options)
         check_output()
-        if not os.path.isdir('output/snapshots/5'):
+        if not os.path.isdir('output/snapshots/11'):
             assert False
 
-
 # Ishigami: 3D -> 1D
-def test_ishigami():
-    test_init(case='/Ishigami')
-    test_quality(case='/Ishigami')
-    test_uq(case='/Ishigami')
-    test_restart_pod(case='/Ishigami')
-
-
 # Oakley & O'Hagan: 1D -> 1D
-def test_basic():
-    test_init(case='/Basic_function')
-    test_quality(case='/Basic_function')
-    test_uq(case='/Basic_function')
-    test_restart_pod(case='/Basic_function')
-
-
 # Channel_Flow: 2D -> 400D
-def test_channel_flow():
-    test_init(case='/Channel_Flow')
-    test_quality(case='/Channel_Flow')
-    test_uq(case='/Channel_Flow')
-    test_restart_pod(case='/Channel_Flow')
+@pytest.mark.parametrize("name", [
+    ('/Ishigami'),
+    ('/Basic_function'),
+    ('/Channel_Flow'),
+])
+def test_cases(name):
+    test_init(case=name, force=True)
+    test_quality(case=name)
+    test_uq(case=name)
+    test_restart_pod(case=name)

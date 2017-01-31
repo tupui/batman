@@ -97,9 +97,12 @@ def run(settings, options):
         driver.sampling_pod(update)
         driver.write_pod()
 
-        if settings['pod']['resample'] is not None:
-            driver.resampling_pod()
-            driver.write_pod()
+        try:
+            if settings['space']['resampling'] is not None:
+                driver.resampling_pod()
+                driver.write_pod()
+        except KeyError:
+            pass
 
     elif options.no_pod or options.pred:
         # just read the existing pod
