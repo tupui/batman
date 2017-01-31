@@ -1,7 +1,7 @@
 # coding: utf8
 
 import pytest
-from jpod.space import *
+from jpod.space import (Point, Space)
 
 settings = {
     "space": {
