@@ -52,7 +52,7 @@ class Michalewicz(object):
             f += np.sin(x[i]) * np.sin((i + 1) * x[i]
                                        ** 2 / np.pi) ** (2 * self.m)
 
-        return [-f]
+        return -f
 
 
 class Rosenbrock(object):
@@ -81,7 +81,7 @@ class Rosenbrock(object):
         f = 0.
         for i in range(self.d - 1):
             f += 100 * (x[i + 1] - x[i] ** 2) ** 2 + (x[i] - 1) ** 2
-        return [f]
+        return f
 
 
 class Ishigami(object):
@@ -113,8 +113,9 @@ class Ishigami(object):
         :return: f(x)
         :rtype: float
         """
-        return [np.sin(x[0]) + self.a * np.sin(x[1])**2
-                + self.b * (x[2]**4) * np.sin(x[0])]
+        f = np.sin(x[0]) + self.a * np.sin(x[1])**2 + \
+            self.b * (x[2]**4) * np.sin(x[0])
+        return f
 
 
 class G_Function(object):
@@ -153,7 +154,7 @@ class G_Function(object):
         f = 1.
         for i in range(self.d):
             f *= (abs(4. * x[i] - 2) + self.a[i]) / (1. + self.a[i])
-        return [f]
+        return f
 
 
 class Channel_Flow(object):
@@ -206,4 +207,4 @@ class Channel_Flow(object):
                 * ((1 - np.power(h[self.dl - i + 1] / hn, -10. / 3.))
                     / (1 - np.power(h[self.dl - i + 1] / hc, -3.)))
 
-        return [self.Zref + h]
+        return self.Zref + h

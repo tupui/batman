@@ -24,7 +24,7 @@ X3 = float(x3)
 # Function
 f = Ishigami()
 
-F = f([X1, X2, X3])[0]
+F = f([X1, X2, X3])
 
 # Output
 with open('./cfd-output-data/function.dat', 'w') as f:

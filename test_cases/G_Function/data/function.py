@@ -29,7 +29,7 @@ X = [X1, X2, X3, X4]
 
 # Function
 f = G_Function(d=4)
-F = f(X)[0]
+F = f(X)
 
 # Output
 with open('./cfd-output-data/function.dat', 'w') as f:
