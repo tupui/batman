@@ -2,7 +2,7 @@
 # coding:utf-8
 
 import re
-import numpy as np
+from jpod.functions import Ishigami
 
 # Input from header.py
 with open('./jpod-data/header.py', 'r') as a:
@@ -22,8 +22,9 @@ X2 = float(x2)
 X3 = float(x3)
 
 # Function
+f = Ishigami()
 
-F = np.sin(X1) + 7 * np.sin(X2)**2 + 0.1 * (X3**4) * np.sin(X1)
+F = f([X1, X2, X3])[0]
 
 # Output
 with open('./cfd-output-data/function.dat', 'w') as f:

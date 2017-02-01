@@ -2,7 +2,7 @@
 # coding:utf-8
 
 import re
-import numpy as np
+from jpod.functions import G_Function
 
 # Input from header.py
 with open('./jpod-data/header.py', 'r') as a:
@@ -28,11 +28,8 @@ X4 = float(x4)
 X = [X1, X2, X3, X4]
 
 # Function
-d = 4
-a = np.arange(1, d + 1)
-F = 1.
-for i in range(d):
-    F *= (abs(4. * X[i] - 2) + a[i]) / (1. + a[i])
+f = G_Function(d=4)
+F = f(X)[0]
 
 # Output
 with open('./cfd-output-data/function.dat', 'w') as f:

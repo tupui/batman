@@ -26,11 +26,11 @@ def init_case(case, output=True, force=False):
     sys.argv = ['jpod', 'settings.json']
     run = True
 
-    if os.path.isdir('output'):
-        run = False
     if force:
         os.system('rm -rf output')
-        run = True
+    elif os.path.isdir('output'):
+        run = False
+    
     if run:
         jpod.ui.main()
         check_output()
@@ -154,7 +154,7 @@ def test_resampling(case='/Michalewicz'):
     ('/Channel_Flow'),
 ])
 def test_cases(name):
-    test_init(case=name, force=True)
+    test_init(case=name)
     test_quality(case=name)
     test_uq(case=name)
     test_restart_pod(case=name)

@@ -63,7 +63,8 @@ class Space(list):
         self.settings = settings
         self.doe_init = settings['space']['sampling']['init_size']
         self.doe_method = settings['space']['sampling']['method']
-        self.max_points_nb = settings['space']['resampling']['resamp_size'] + self.doe_init
+        self.max_points_nb = settings['space'][
+            'resampling']['resamp_size'] + self.doe_init
         self.size = 0
         corners = settings['space']['corners']
         self.dim = len(corners[0])
@@ -71,8 +72,9 @@ class Space(list):
         try:
             self.p_lst = settings['snapshot']['io']['parameter_names']
         except KeyError:
-            self.p_lst = ["x"+str(i) for i in range(self.dim)]
-            self.logger.warn("Will not be able to refine with Sobol', need complete settings")
+            self.p_lst = ["x" + str(i) for i in range(self.dim)]
+            self.logger.warn(
+                "Will not be able to refine with Sobol', need complete settings")
 
         # corner points
         try:
@@ -87,7 +89,7 @@ class Space(list):
         # corner points validation
         for i in range(self.dim):
             if corners[0][i] == corners[1][i]:
-                raise ValueError('%dth corners coordinate are equal' % (i+1))
+                raise ValueError('%dth corners coordinate are equal' % (i + 1))
 
     def __str__(self):
         s = ("Hypercube points: {}\n"
@@ -100,7 +102,7 @@ class Space(list):
     def __repr__(self):
         s = ("{}\n"
              "Points:\n"
-             "{}").format(str(self), super(Space, self).__str__())
+             "{}").format(str(self), super(Space, self).__repr__())
         return s
 
     def is_full(self):
@@ -118,22 +120,26 @@ class Space(list):
 
         fig = plt.figure('Design of Experiment')
         if self.dim == 1:
-            plt.scatter(sample[0:self.doe_init], [0] * self.doe_init, c='k', marker='o')
-            plt.scatter(sample[self.doe_init:], [0] * (len(self) - self.doe_init), c='r', marker='^')
+            plt.scatter(sample[0:self.doe_init], [0] *
+                        self.doe_init, c='k', marker='o')
+            plt.scatter(sample[self.doe_init:], [0] *
+                        (len(self) - self.doe_init), c='r', marker='^')
             plt.xlabel(self.p_lst[0])
 
         if self.dim == 2:
-            plt.scatter(sample[0:self.doe_init, 0], sample[0:self.doe_init, 1], c='k', marker='o')
-            plt.scatter(sample[self.doe_init:, 0], sample[self.doe_init:, 1], c='r', marker='^')
+            plt.scatter(sample[0:self.doe_init, 0], sample[
+                        0:self.doe_init, 1], c='k', marker='o')
+            plt.scatter(sample[self.doe_init:, 0], sample[
+                        self.doe_init:, 1], c='r', marker='^')
             plt.xlabel(self.p_lst[0])
             plt.ylabel(self.p_lst[1])
 
         elif self.dim == 3:
             axis = Axes3D(fig)
             axis.scatter(sample[0:self.doe_init, 0], sample[0:self.doe_init, 1],
-                        sample[0:self.doe_init, 2], c='k', marker='o')
+                         sample[0:self.doe_init, 2], c='k', marker='o')
             axis.scatter(sample[self.doe_init:, 0], sample[self.doe_init:, 1],
-                        sample[self.doe_init:, 2], c='r', marker='^')
+                         sample[self.doe_init:, 2], c='r', marker='^')
             plt.xlabel(self.p_lst[0])
             plt.ylabel(self.p_lst[1])
             axis.set_zlabel(self.p_lst[2])
@@ -163,7 +169,7 @@ class Space(list):
         try:
             points[0][0]
         except (TypeError, IndexError):
-            points = [points]    
+            points = [points]
 
         for point in points:
             # check point dimension is correct
@@ -192,7 +198,7 @@ class Space(list):
                 self.size += 1
             else:
                 raise UnicityError("Point {} already exists in the space"
-                                    .format(point))
+                                   .format(point))
         return self
 
     def sampling(self, n, kind=None):

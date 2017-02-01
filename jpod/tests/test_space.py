@@ -1,7 +1,8 @@
 # coding: utf8
 
 import pytest
-from jpod.space import (Point, Space)
+from jpod.space import (Point, Space,
+                        UnicityError, AlienPointError, FullSpaceError)
 
 settings = {
     "space": {
@@ -35,6 +36,7 @@ def test_point():
     assert point_a == point_b
     assert point_a == point_c
 
+    Point.set_threshold(0)
 
 def test_space():
 
@@ -54,6 +56,7 @@ def test_space():
     s2 = space2.sampling(10, kind='lhsc')
     assert s1[:] != s2[:]
 
+    space.empty()
     with pytest.raises(UnicityError):
         space += (1, 2, 3)
         space += (1, 2, 3)

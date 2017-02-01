@@ -4,6 +4,7 @@
 import re
 import os
 import numpy as np
+from jpod.function import Channel_Flow
 
 # Input from header.py
 with open('./jpod-data/header.py', 'r') as a:
@@ -18,28 +19,10 @@ with open('./jpod-data/header.py', 'r') as a:
 Q = float(x1)
 Ks = float(x2)
 
-# Function
-L = 500.
-I = 5e-4
-g = 9.8
-dx = 100
-longueur = 40000
-Long = longueur // dx
-hc = np.power((Q**2) / (g * L * L), 1. / 3.)
-hn = np.power((Q**2) / (I * L * L * Ks * Ks), 3. / 10.)
-hinit = 10.
-hh = hinit * np.ones(Long)
 
-for i in range(2, Long + 1):
-    hh[Long - i] = hh[Long - i + 1] - dx * I * \
-        ((1 - np.power(hh[Long - i + 1] / hn, -10. / 3.)) /
-         (1 - np.power(hh[Long - i + 1] / hc, -3.)))
-h = hh
-
-X = np.arange(dx, longueur + 1, dx)
-
-Zref = -X * I
-Z = Zref + h
+f = Channel_Flow()
+X = f.X
+Z = f.(Q, Ks)
 
 # import matplotlib.pyplot as plt
 # plt.figure(1)

@@ -52,7 +52,7 @@ class Michalewicz(object):
             f += np.sin(x[i]) * np.sin((i + 1) * x[i]
                                        ** 2 / np.pi) ** (2 * self.m)
 
-        return - f
+        return [-f]
 
 
 class Rosenbrock(object):
