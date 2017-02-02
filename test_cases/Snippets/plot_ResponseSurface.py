@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-#-*-coding:utf-8-*
-"""Post processing script.
+# coding:utf-8
+"""Post processing QoI.
 
 Allows response surface visualization in 2D and 3D.
+It works on 0D and 1D output.
 Addapt this script to your case.
 
 """
@@ -27,9 +28,9 @@ int_z = {'data': [], 'data_doe': []}
 analytical = False
 prediction = True
 post_processing = False
-len_doe = 70
-len_resample = 20
-len_sampling = len_doe - len_resample
+len_sampling = 20
+len_resample = 10
+len_doe = len_sampling + len_resample
 len_prediction = 625
 nb_samples = len_prediction if prediction else len_doe
 output_shape = '0D'  # 1D
@@ -194,13 +195,13 @@ if analytical:
         (np.power(np.sin(2 * p2['data'] * p2['data'] / np.pi), 20.))
 
 # Plot figures
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'sans-serif', 'sans-serif': ['SF-UI-Text-Light']})
+#plt.rc('text', usetex=True)
+#plt.rc('font', **{'family': 'sans-serif', 'sans-serif': ['SF-UI-Text-Light']})
 bound_z = np.linspace(-2.76, -0.96, 50, endpoint=True)
 
 fig = plt.figure('Response Surface_2D')
 plt.tricontourf(p1['data'], p2['data'], int_z['data'],
-                bound_z, antialiased=True, cmap=c_map)
+                antialiased=True, cmap=c_map)
 if not analytical:
     plt.plot(p1['data_doe'][0:len_sampling], p2[
              'data_doe'][0:len_sampling], 'ko')
@@ -238,3 +239,4 @@ plt.tick_params(axis='x', labelsize=26)
 plt.tick_params(axis='y', labelsize=26)
 plt.tick_params(axis='z', labelsize=28)
 plt.show()
+

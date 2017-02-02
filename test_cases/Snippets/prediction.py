@@ -1,10 +1,17 @@
-"""Add prediction points within settings.json."""
+#!/usr/bin/env python
+# coding:utf-8
+"""Predictions.
+
+Add prediction points within settings.json.
+Addapt this script to your case.
+
+"""
 import numpy as np
 import itertools
 import json
 
 num = 25
-settings_path = '../Michalewicz/'
+settings_path = './'
 
 with open(settings_path + 'settings.json', 'r') as f:
     settings = json.load(f)
@@ -17,7 +24,7 @@ y = np.linspace(settings['space']['corners'][0][1],
 points = []
 for i, j in itertools.product(x, y):
     points += [(float(i), float(j))]
-    settings['prediction']['points'] = points
+    settings['surrogate']['predictions'] = points
 
 with open(settings_path + 'settings-prediction.json', 'w') as f:
     json.dump(settings, f, indent=4)

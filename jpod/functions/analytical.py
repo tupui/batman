@@ -177,10 +177,10 @@ class Channel_Flow(object):
         self.g = 9.8
         self.dx = dx
         self.length = length
-        self.X = np.arange(self.dx, self.length + 1, self.dx)
+        self.x = np.arange(self.dx, self.length + 1, self.dx)
         self.dl = int(self.length // self.dx)
         self.hinit = 10.
-        self.Zref = - self.X * self.I
+        self.Zref = - self.x * self.I
 
         # Sensitivity
         self.s_first = np.array([0.1, 0.8])
@@ -193,11 +193,11 @@ class Channel_Flow(object):
     def __call__(self, x):
         """Call function.
 
-        :param list x: inputs [Q, Ks]
+        :param list x: inputs [Ks, Q]
         :return: Water height along the channel
         :rtype: np.array 1D
         """
-        q, ks = x
+        ks, Q = x
         hc = np.power((q ** 2) / (self.g * self.w ** 2), 1. / 3.)
         hn = np.power((q ** 2) / (self.I * self.w ** 2 * ks ** 2), 3. / 10.)
 

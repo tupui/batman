@@ -2,7 +2,6 @@
 # coding:utf-8
 
 import re
-import os
 import numpy as np
 from jpod.functions import Channel_Flow
 
@@ -20,8 +19,8 @@ Q = float(x1)
 Ks = float(x2)
 
 f = Channel_Flow()
-X = f.X
-Z = f([Q, Ks])
+X = f.x
+Z = f([Ks, Q])
 
 # import matplotlib.pyplot as plt
 # plt.figure(1)
