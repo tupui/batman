@@ -4,9 +4,9 @@
 import re
 import os
 import numpy as np
-from jpod.function import Channel_Flow
+from jpod.functions import Channel_Flow
 
-# Input from header.py
+# # Input from header.py
 with open('./jpod-data/header.py', 'r') as a:
     for line in a.readlines():
         A = re.match(r'x1 = (.*$)', line, re.M | re.I)
@@ -19,10 +19,9 @@ with open('./jpod-data/header.py', 'r') as a:
 Q = float(x1)
 Ks = float(x2)
 
-
 f = Channel_Flow()
 X = f.X
-Z = f.(Q, Ks)
+Z = f([Q, Ks])
 
 # import matplotlib.pyplot as plt
 # plt.figure(1)
@@ -41,7 +40,7 @@ with open('./cfd-output-data/function.dat', 'w') as f:
             f.writelines('\n')
     f.writelines('\n')
 
-    for i in range(len(h)):
+    for i in range(len(Z)):
         f.writelines("{:.7E}".format(float(Z[i])) + "\t ")
         if i % 1000:
             f.writelines('\n')
