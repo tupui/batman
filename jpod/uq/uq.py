@@ -85,7 +85,7 @@ class UQ:
 
         - Method to use for the Sensitivity Analysis (SA),
         - Type of Sobol' indices to compute,
-        - Number of prediction to use for SA,
+        - Number of points per sample to use for SA (:math:`N(2p+2)` predictions),
         - Method to use to predict a new snapshot,
         - The list of input variables,
         - The lengh of the output function.
@@ -255,6 +255,7 @@ class UQ:
 
         """
         indices = [[], [], []]
+        indices_conf = [[], []]
 
         if self.type_indices == 'block':
             self.wrapper = Wrapper(self.pod, self.surrogate,
@@ -355,13 +356,45 @@ class UQ:
             sum_var = np.sum(output_var)
             for i in range(3):
                 indices[i] = sum_var_indices[i] / sum_var
+
+            if (float(ot.__version__[:3]) >= 1.8) and (self.method_sobol != 'FAST'):
+                indices[1] = np.array(sobol.getAggregatedFirstOrderIndices())
+                indices[2] = np.array(sobol.getAggregatedTotalOrderIndices())
+                indices_conf[0] = sobol.getFirstOrderIndicesInterval()
+                indices_conf[1] = sobol.getTotalOrderIndicesInterval()
+
+                self.logger.info("First order confidence: {}".format(indices_conf[0]))
+                self.logger.info("Total order confidence: {}".format(indices_conf[1]))
+
             self.logger.info("Aggregated_indices: {}".format(indices))
 
             # Write aggregated indices to file
             if self.output_folder is not None:
-                i1 = np.array(indices[1]).flatten('F')
-                i2 = np.array(indices[2]).flatten('F')
-                data = np.append(i1, i2)
+                if (float(ot.__version__[:3]) >= 1.8) and (self.method_sobol != 'FAST'):
+                    i1_min = np.array(indices_conf[0].getLowerBound()).flatten('F')
+                    i1 = np.array(indices[1]).flatten('F')
+                    i1_max = np.array(indices_conf[0].getUpperBound()).flatten('F')
+                    i2_min = np.array(indices_conf[1].getLowerBound()).flatten('F')
+                    i2 = np.array(indices[2]).flatten('F')
+                    i2_max = np.array(indices_conf[1].getUpperBound()).flatten('F')
+                    data = np.append([i1_min], [i1, i1_max, i2_min, i2, i2_max])
+                    names = []
+                    for p in self.p_lst:
+                        names += ['S_min_' + str(p)]
+                    for p in self.p_lst:
+                        names += ['S_' + str(p)]
+                    for p in self.p_lst:
+                        names += ['S_max_' + str(p)]
+                    for p in self.p_lst:
+                        names += ['S_T_min_' + str(p)]
+                    for p in self.p_lst:
+                        names += ['S_T_' + str(p)]
+                    for p in self.p_lst:
+                        names += ['S_T_max_' + str(p)]
+                else:
+                    i1 = np.array(indices[1]).flatten('F')
+                    i2 = np.array(indices[2]).flatten('F')
+                    data = np.append(i1, i2)
                 dataset = Dataset(names=names,
                                   shape=[1, 1, 1],
                                   data=data)

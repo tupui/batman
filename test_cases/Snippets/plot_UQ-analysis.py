@@ -12,7 +12,6 @@ This scrit uses matplotlib to plot:
 - Sensitivity map.
 
 """
-
 import numpy as np
 from matplotlib import cm
 import matplotlib.pyplot as plt
@@ -52,12 +51,13 @@ path = './output/uq/'
 pdf_file = path + 'pdf.dat'
 moment_file = path + 'moment.dat'
 sensitivity_file = path + 'sensitivity.dat'
+sensitivity_aggr_file = path + 'sensitivity_aggregated.dat'
 corr_cov_file = path + 'correlation_covariance.dat'
-p2 = {'name': "Q", 's_1': None, 's_t': None}
-p1 = {'name': "Ks", 's_1': None, 's_t': None}
-z = {'name': "Z", 'label': r"$Z$ (m)", 'data': None, 'shape': 14}
+p2 = {'name': "Q", 's_1': None, 's_t': None, 's_1_ag': None, 's_t_ag': None}
+p1 = {'name': "Ks", 's_1': None, 's_t': None, 's_1_ag': None, 's_t_ag': None}
+z = {'name': "Z", 'label': r"$Z$ (m)", 'data': None, 'shape': 400}
 x = {'name': "x", 'label': "Curvilinear abscissa (km)", 'data': None}
-pdf_discretization = 200
+pdf_discretization = 14
 get_pdf = 8
 bound_pdf = np.linspace(0., 1., 50, endpoint=True)
 x_factor = 1000
@@ -65,6 +65,8 @@ x_factor = 1000
 x_pdf, z['data'], pdf = tecplot_reader(pdf_file, 3)
 x['data'], mini, sd_min, mean, sd_max, maxi = tecplot_reader(moment_file, 6)
 _, p1['s_1'], p2['s_1'], p1['s_t'], p2['s_t'] = tecplot_reader(sensitivity_file, 5)
+S_min_x1, S_min_x2, p1['s_1_ag'], p2['s_1_ag'], S_max_x1, S_max_x2, S_T_min_x1, S_T_min_x2, p1['s_t_ag'], p2['s_t_ag'], S_T_max_x1, S_T_max_x2 = tecplot_reader(sensitivity_aggr_file, 12)
+
 x_2d, y_2d, corr, cov = tecplot_reader(corr_cov_file, 4)
 
 # Reshape data
@@ -87,11 +89,11 @@ z_array = z_array[idx]
 pdf_array = pdf_array[idx]
 
 # Plot figures
-# plt.rc('text', usetex=True)
-# plt.rc('font', **{'family': 'sans-serif', 'sans-serif': ['SF-UI-Text-Light']})
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'sans-serif', 'sans-serif': ['SF-UI-Text-Light']})
 
 fig = plt.figure('PDF')
-plt.contourf(x_pdf_matrix/1000, z_matrix, pdf_matrix, bound_pdf, cmap=c_map)
+plt.contourf(x_pdf_matrix/x_factor, z_matrix, pdf_matrix, bound_pdf, cmap=c_map)
 cbar = plt.colorbar()
 cbar.set_label(r"PDF")
 plt.xlabel(x['label'], fontsize=26)
@@ -111,11 +113,11 @@ plt.legend(fontsize=26, loc='upper right')
 plt.show()
 
 fig = plt.figure('Moments')
-plt.plot(x['data']/1000, mini, color='k', ls='--', linewidth=3, label="Min")
-plt.plot(x['data']/1000, sd_min, color='k', ls='-.', linewidth=3, label="Standard Deviation")
-plt.plot(x['data']/1000, mean, color='k', ls='-', linewidth=3, label="Mean")
-plt.plot(x['data']/1000, sd_max, color='k', ls='-.', linewidth=3, label="Standard Deviation")
-plt.plot(x['data']/1000, maxi, color='k', ls='--', linewidth=3, label="Max")
+plt.plot(x['data']/x_factor, mini, color='k', ls='--', linewidth=3, label="Min")
+plt.plot(x['data']/x_factor, sd_min, color='k', ls='-.', linewidth=3, label="Standard Deviation")
+plt.plot(x['data']/x_factor, mean, color='k', ls='-', linewidth=3, label="Mean")
+plt.plot(x['data']/x_factor, sd_max, color='k', ls='-.', linewidth=3, label="Standard Deviation")
+plt.plot(x['data']/x_factor, maxi, color='k', ls='--', linewidth=3, label="Max")
 plt.xlabel(x['label'], fontsize=26)
 plt.ylabel(z['label'], fontsize=26)
 plt.tick_params(axis='x', labelsize=26)
@@ -172,4 +174,19 @@ plt.ylim(-0.1, 1.1)
 plt.tick_params(axis='x', labelsize=26)
 plt.tick_params(axis='y', labelsize=26)
 plt.legend(fontsize=26, loc='center right')
+plt.show()
+
+fig = plt.figure('Aggregated Indices')
+objects = (r"$S_{" + p1['name'] + r"}$", r"$S_{T_{" + p1['name'] + r"}}$",
+           r"$S_{" + p2['name'] + r"}$", r"$S_{T_{" + p2['name'] + r"}}$")
+y_pos = np.arange(4)
+indices = np.array([p1['s_1_ag'], p1['s_t_ag'], p2['s_1_ag'], p2['s_t_ag']])
+conf = np.array([[S_min_x1, S_T_min_x1, S_min_x2, S_T_min_x2],
+                 [S_max_x1, S_T_max_x1, S_max_x2, S_T_max_x2]])
+conf[0] = indices - conf[0]
+conf[1] = conf[1] - indices
+
+plt.bar(y_pos, indices, yerr=conf, align='center', alpha=0.5)
+plt.xticks(y_pos, objects)
+plt.ylabel("Sobol' aggregated indices")
 plt.show()
