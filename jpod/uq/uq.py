@@ -69,6 +69,7 @@ from os import mkdir
 import itertools
 from .wrapper import Wrapper
 from ..input_output import (IOFormatSelector, Dataset)
+from .. import functions as func_ref
 
 
 class UQ:
@@ -172,92 +173,21 @@ class UQ:
         :param str function: name of the analytic function.
 
         """
-        if function == 'Rosenbrock':
-            formula = [
-                '100*(X2-X1*X1)*(X2-X1*X1) + (1-X1)*(1-X1)']
-            model_ref = ot.NumericalMathFunction(
-                ['X1', 'X2'], ['Y'], formula)
-            s_first_th = np.array([0.229983, 0.4855])
-            s_second_th = np.array([[0., 0.0920076],
-                                    [0.0935536, 0.]])
-            s_total_th = np.array([0.324003, 0.64479])
-        elif function == 'Michalewicz':
-            def michalewicz(x, d=2, m=10):
-                f = 0.
-                for i in range(d):
-                    f += np.sin(x[i]) * np.sin((i + 1) * x[i]
-                                               ** 2 / np.pi) ** (2 * m)
-                return [-f]
-            model_ref = ot.PythonFunction(2, 1, michalewicz)
-            s_first_th = np.array([0.4540, 0.5678])
-            s_second_th = np.array([[0., 0.008], [0.008, 0.]])
-            s_total_th = np.array([0.4606, 0.5464])
-        elif function == 'Ishigami':
-            formula = [
-                'sin(X1)+7*sin(X2)*sin(X2)+0.1*((X3)*(X3)*(X3)*(X3))*sin(X1)']
-            model_ref = ot.NumericalMathFunction(
-                ['X1', 'X2', 'X3'], ['Y'], formula)
-            s_first_th = np.array([0.3139, 0.4424, 0.])
-            s_second_th = np.array(
-                [[0., 0., 0.2], [0., 0., 0.], [0.2, 0., 0.]])
-            s_total_th = np.array([0.558, 0.442, 0.244])
-        elif function == 'G_Function':
-            d = 4
-            a = np.arange(1, d + 1)
-            def g_function(x, d=4):
-                f = 1.
-                for i in range(d):
-                    f *= (abs(4. * x[i] - 2) + a[i]) / (1. + a[i])
-                return [f]
-            model_ref = ot.PythonFunction(4, 1, g_function)
-            vi = 1. / (3 * (1 + a)**2)
-            v = -1 + np.prod(1 + vi)
-            s_first_th = vi / v
-        elif function == 'Channel_Flow':
-            def channel_flow(x):
-                Q = x[0]
-                Ks = x[1]
-                L = 500.
-                I = 5e-4
-                g = 9.8
-                dx = 100
-                longueur = 40000
-                Long = longueur // dx
-                hc = np.power((Q**2) / (g * L * L), 1. / 3.)
-                hn = np.power((Q**2) / (I * L * L * Ks * Ks), 3. / 10.)
-                hinit = 10.
-                hh = hinit * np.ones(Long)
-                for i in range(2, Long + 1):
-                    hh[Long - i] = hh[Long - i + 1] - dx * I * ((1 - np.power(
-                        hh[Long - i + 1] / hn, -10. / 3.)) / (1 - np.power(hh[Long - i + 1] / hc, -3.)))
-                h = hh
 
-                X = np.arange(dx, longueur + 1, dx)
+        f = func_ref.dispatcher[function]()
 
-                Zref = - X * I
-                return Zref + h
-            model_ref = ot.PythonFunction(2, 400, channel_flow)
-            s_first_th = np.array([0.1, 0.8])
-            s_second_th = np.array([[0., 0.1], [0.1, 0.]])
-            s_total_th = np.array([0.1, 0.9])
+        if f.d_out > 1:
+            def fun(x):
+                return f(x)
         else:
-            self.logger.error(
-                "Wrong analytical function, options are: "
-                "Ishigami, Rosenbrock, Michalewicz, G_Function and Channel_Flow")
-            return
-        try:
-            s_l2_2nd = np.sqrt(np.sum((s_second_th - indices[0]) ** 2))
-        except:
-            self.logger.warn("No Second order indices with FAST")
-            s_l2_2nd = 0.
+            def fun(x):
+                return [f(x)]
 
-        s_l2_1st = np.sqrt(np.sum((s_first_th - indices[1]) ** 2))
+        model_ref = ot.PythonFunction(f.d_in, f.d_out, fun)
 
-        try:
-            s_l2_total = np.sqrt(np.sum((s_total_th - indices[2]) ** 2))
-        except:
-            self.logger.warn("No Total order indices.")
-            s_l2_total = 0.
+        s_l2_2nd = np.sqrt(np.sum((f.s_second - indices[0]) ** 2))
+        s_l2_1st = np.sqrt(np.sum((f.s_first - indices[1]) ** 2))
+        s_l2_total = np.sqrt(np.sum((f.s_total - indices[2]) ** 2))
 
         # Q2 computation
         y_ref = np.array(model_ref(self.sample))
@@ -270,9 +200,9 @@ class UQ:
         self.logger.info("\n----- Surrogate Model Error -----")
         self.logger.info("\nQ2: {}"
                          "\nMSE: {}"
-                         "\nL2(sobol 1st, 2nd and total order indices error): "
+                         "\nL2(sobol 2nd, 1st and total order indices error): "
                          "{}, {}, {}"
-                         .format(err_q2, mse, s_l2_1st, s_l2_2nd, s_l2_total))
+                         .format(err_q2, mse, s_l2_2nd, s_l2_1st, s_l2_total))
 
         # Write error to file pod_err.dat
         if self.output_folder is not None:
@@ -281,8 +211,8 @@ class UQ:
                                                            self.resamp_size,
                                                            err_q2,
                                                            self.points_sample,
-                                                           s_l2_1st,
                                                            s_l2_2nd,
+                                                           s_l2_1st,
                                                            s_l2_total))
 
             # Visual tests
@@ -356,22 +286,27 @@ class UQ:
                                                         self.points_sample)
 
             for i in range(sobol_len):
-                indices[0].append(np.array(sobol.getSecondOrderIndices(i)))
+                try:
+                    indices[0].append(np.array(sobol.getSecondOrderIndices(i)))
+                except TypeError:
+                    indices[0].append(np.zeros((self.p_len, self.p_len)))
             self.logger.debug("Second order: {}".format(indices[0]))
 
         elif self.method_sobol == 'FAST':
             self.logger.info("\n----- FAST indices -----")
             sobol = ot.FAST(sobol_model, self.distribution, self.points_sample)
             sobol.setBlockSize(self.n_cpus)
-
-        else:
-            self.logger.error("The method {} doesn't exist"
-                              .format(self.method_sobol))
-            return
+            self.logger.warn("No Second order indices with FAST")
 
         for i in range(sobol_len):
-            indices[1].append(np.array(sobol.getFirstOrderIndices(i)))
-            indices[2].append(np.array(sobol.getTotalOrderIndices(i)))
+            try:
+                indices[1].append(np.array(sobol.getFirstOrderIndices(i)))
+            except TypeError:
+                    indices[1].append(np.zeros(self.p_len))
+            try:
+                indices[2].append(np.array(sobol.getTotalOrderIndices(i)))
+            except TypeError:
+                    indices[2].append(np.zeros(self.p_len))
 
         self.logger.debug("First order: {}".format(indices[1]))
         self.logger.debug("Total: {}".format(indices[2]))
@@ -401,8 +336,13 @@ class UQ:
         # Aggregated Indices
         if self.type_indices == 'aggregated':
             self.logger.info("\n----- Aggregated Sensitivity Indices -----")
-            output = self.model(self.sample)
-            output_var = output.computeVariance()
+
+            try:
+                output_var = output_design.computeVariance()
+            except NameError:
+                output_design = sobol_model(self.sample)
+                output_var = output_design.computeVariance()
+
             sum_var_indices = [np.zeros((self.p_len, self.p_len)),
                                np.zeros((self.p_len)), np.zeros((self.p_len))]
             for i, j in itertools.product(range(self.output_len), range(3)):
@@ -411,13 +351,10 @@ class UQ:
                     sum_var_indices[
                         j] += float(output_var[i]) * indices[:][j][i]
                 except IndexError:
-                    pass
+                    sum_var_indices[j] = np.inf
             sum_var = np.sum(output_var)
             for i in range(3):
-                try:
-                    indices[i] = sum_var_indices[i] / sum_var
-                except IndentationError:
-                    pass
+                indices[i] = sum_var_indices[i] / sum_var
             self.logger.info("Aggregated_indices: {}".format(indices))
 
             # Write aggregated indices to file

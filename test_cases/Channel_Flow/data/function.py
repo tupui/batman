@@ -15,8 +15,8 @@ with open('./jpod-data/header.py', 'r') as a:
         if B:
             x2 = "{:.7}".format(B.group(1))
 
-Q = float(x1)
-Ks = float(x2)
+Ks = float(x1)
+Q = float(x2)
 
 f = Channel_Flow()
 X = f.x

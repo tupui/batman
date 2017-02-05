@@ -31,7 +31,8 @@ class Michalewicz(object):
 
     def __init__(self, d=2, m=10):
         """Set up dimension."""
-        self.d = d
+        self.d_in = d
+        self.d_out = 1
         self.m = m
         if self.d == 2:
             self.s_first = np.array([0.4540, 0.5678])
@@ -48,7 +49,7 @@ class Michalewicz(object):
         :rtype: float
         """
         f = 0.
-        for i in range(self.d):
+        for i in range(self.d_in):
             f += np.sin(x[i]) * np.sin((i + 1) * x[i]
                                        ** 2 / np.pi) ** (2 * self.m)
 
@@ -63,8 +64,9 @@ class Rosenbrock(object):
 
     def __init__(self, d=2):
         """Set up dimension."""
-        self.d = d
-        if self.d == 2:
+        self.d_in = d
+        self.d_out = 1
+        if self.d_in == 2:
             self.s_first = np.array([0.229983, 0.4855])
             self.s_second = np.array([[0., 0.0920076], [0.0935536, 0.]])
             self.s_total = np.array([0.324003, 0.64479])
@@ -79,7 +81,7 @@ class Rosenbrock(object):
         :rtype: float
         """
         f = 0.
-        for i in range(self.d - 1):
+        for i in range(self.d_in - 1):
             f += 100 * (x[i + 1] - x[i] ** 2) ** 2 + (x[i] - 1) ** 2
         return f
 
@@ -98,6 +100,8 @@ class Ishigami(object):
 
         :param float a, b: Ishigami parameters
         """
+        self.d_in = 3
+        self.d_out = 1
         self.a = a
         self.b = b
         self.s_first = np.array([0.3139, 0.4424, 0.])
@@ -130,7 +134,7 @@ class G_Function(object):
         :param int d: input dimension
         :param np.array a: (1, d)
         """
-        self.d = d
+        self.d_in = d
 
         if a is None:
             self.a = np.arange(1, d + 1)
@@ -140,9 +144,11 @@ class G_Function(object):
         vi = 1. / (3 * (1 + self.a)**2)
         v = -1 + np.prod(1 + vi)
         self.s_first = vi / v
+        self.s_second = np.zeros((self.d_in, self.d_in))
+        self.s_total = np.zeros(self.d_in)
 
         self.logger.info("Using function G-Function with d={}, a={}"
-                         .format(self.d, self.a))
+                         .format(self.d_in, self.a))
 
     def __call__(self, x):
         """Call function.
@@ -152,7 +158,7 @@ class G_Function(object):
         :rtype: float
         """
         f = 1.
-        for i in range(self.d):
+        for i in range(self.d_in):
             f *= (abs(4. * x[i] - 2) + self.a[i]) / (1. + self.a[i])
         return f
 
@@ -178,14 +184,16 @@ class Channel_Flow(object):
         self.dx = dx
         self.length = length
         self.x = np.arange(self.dx, self.length + 1, self.dx)
+        self.d_out = len(self.x)
+        self.d_in = 2
         self.dl = int(self.length // self.dx)
         self.hinit = 10.
         self.Zref = - self.x * self.I
 
         # Sensitivity
-        self.s_first = np.array([0.1, 0.8])
-        self.s_second = np.array([[0., 0.1], [0.1, 0.]])
-        self.s_total = np.array([0.1, 0.9])
+        self.s_first = np.array([0.92925829, 0.05243018])
+        self.s_second = np.array([[0., 0.01405351], [0.01405351, 0.]])
+        self.s_total = np.array([0.93746788, 0.05887997])
 
         self.logger.info("Using function Channel Flow with: dx={}, length={}, "
                          "width={}".format(dx, length, width))
@@ -197,7 +205,7 @@ class Channel_Flow(object):
         :return: Water height along the channel
         :rtype: np.array 1D
         """
-        ks, Q = x
+        ks, q = x
         hc = np.power((q ** 2) / (self.g * self.w ** 2), 1. / 3.)
         hn = np.power((q ** 2) / (self.I * self.w ** 2 * ks ** 2), 3. / 10.)
 
