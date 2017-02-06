@@ -110,42 +110,53 @@ class Space(list):
         return len(self) >= self.max_points_nb
 
     def write(self, path):
-        """Write space in the file `path`."""
+        """Write space in file.
+
+        After writting points, it plots them with :func:`Space.plot_space`
+
+        :param str path: folder to save the points in
+        """
         np.savetxt(path, self)
+        self.plot_space(path)
 
-        if self.dim > 3:
-            return
+    def plot_space(self, path):
+        """Plot the space of parameters 2d-by-2d.
 
+        :param str path: folder to save the fig in
+        """
         sample = np.array(self)
-
         fig = plt.figure('Design of Experiment')
-        if self.dim == 1:
-            plt.scatter(sample[0:self.doe_init], [0] *
-                        self.doe_init, c='k', marker='o')
-            plt.scatter(sample[self.doe_init:], [0] *
-                        (len(self) - self.doe_init), c='r', marker='^')
-            plt.xlabel(self.p_lst[0])
 
-        if self.dim == 2:
-            plt.scatter(sample[0:self.doe_init, 0], sample[
-                        0:self.doe_init, 1], c='k', marker='o')
-            plt.scatter(sample[self.doe_init:, 0], sample[
-                        self.doe_init:, 1], c='r', marker='^')
+        if self.dim < 2:
+            plt.scatter(sample[0:self.doe_init],
+                        [0] * self.doe_init, c='k', marker='o')
+            plt.scatter(sample[self.doe_init:],
+                        [0] * (len(self) - self.doe_init), c='r', marker='^')
             plt.xlabel(self.p_lst[0])
-            plt.ylabel(self.p_lst[1])
+            plt.tick_params(axis='y', which='both', labelleft='off', left='off')
 
-        elif self.dim == 3:
-            axis = Axes3D(fig)
-            axis.scatter(sample[0:self.doe_init, 0], sample[0:self.doe_init, 1],
-                         sample[0:self.doe_init, 2], c='k', marker='o')
-            axis.scatter(sample[self.doe_init:, 0], sample[self.doe_init:, 1],
-                         sample[self.doe_init:, 2], c='r', marker='^')
-            plt.xlabel(self.p_lst[0])
-            plt.ylabel(self.p_lst[1])
-            axis.set_zlabel(self.p_lst[2])
+        else:
+            # num figs = ((n-1)**2+(n-1))/2
+            fig = plt.figure('Design of Experiment')
+            plt.tick_params(axis='both', labelsize=8)
 
+            for i in range(0, self.dim - 1):
+                for j in range(i + 1, self.dim):
+                    ax = plt.subplot2grid((self.dim, self.dim), (j, i))
+                    ax.scatter(sample[0:self.doe_init, i], sample[
+                                0:self.doe_init, j], s=5, c='k', marker='o')
+                    ax.scatter(sample[self.doe_init:, i], sample[
+                                self.doe_init:, j], s=5, c='r', marker='^')
+                    ax.tick_params(axis='both', labelsize=(10 - self.dim))
+                    if i == 0:
+                        ax.set_ylabel(self.p_lst[j])
+                    if j == (self.dim - 1):
+                        ax.set_xlabel(self.p_lst[i])
+
+        fig.tight_layout()
         path = os.path.join(os.path.dirname(os.path.abspath(path)), 'DOE.pdf')
         fig.savefig(path, transparent=True, bbox_inches='tight')
+        plt.close('all')
 
     def read(self, path):
         """Read space from the file `path`."""
@@ -169,7 +180,7 @@ class Space(list):
         try:
             points[0][0]
         except (TypeError, IndexError):
-            points = [points]
+            points=[points]
 
         for point in points:
             # check point dimension is correct
