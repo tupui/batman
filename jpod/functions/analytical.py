@@ -14,18 +14,39 @@ It implements the following classes:
 - :class:`G_Function`,
 - :class:`Channel_Flow`.
 
+In each case, Sobol' indices are declared.
+
+References
+----------
+
+.. [Oakley] Oakley, J., & O'Hagan, A. (2002). Bayesian inference for the uncertainty distribution of computer model outputs. Biometrika, 89(4), 769-784.
+
+.. [Michalewicz] Molga, M., & Smutnicki, C. Test functions for optimization needs (2005).
+
+.. [Rosenbrock] Dixon, L. C. W., & Szego, G. P. (1978). The global optimization problem: an introduction. Towards global optimization, 2, 1-15.
+
+.. [Ishigami] Ishigami, T., & Homma, T. (1990, December): An importance quantification technique in uncertainty analysis for computer models. In Uncertainty Modeling and Analysis, 1990. Proceedings., First International Symposium on (pp. 398-403). IEEE.
+
+.. [G-Function] Saltelli, A., Chan, K., & Scott, E. M. (Eds.). (2000). Sensitivity analysis (Vol. 134). New York: Wiley.
 """
-
-# Authors: Pamphile ROY <roy.pamphile@gmail.fr>
-# Copyright: CERFACS
-
 import numpy as np
 import logging
 
 
 class Michalewicz(object):
 
-    """Michalewicz class."""
+    r"""[Michalewicz]_ class.
+
+    It is a multimodal *d*-dimensional function which has :math:`d!`
+    local minima
+
+    .. math:: f(x)=-\sum_{i=1}^d \sin(x_i)\sin^{2m}\left(\frac{ix_i^2}{\pi}\right),
+
+    where *m* defines the steepness of the valleys and ridges.
+
+    It is to difficult to search a global minimum when :math:`m`
+    reaches large value. Therefore, it is recommended to have :math:`m < 10`.
+    """
 
     logger = logging.getLogger(__name__)
 
@@ -58,7 +79,14 @@ class Michalewicz(object):
 
 class Rosenbrock(object):
 
-    """Rosenbrock class."""
+    r"""[Rosenbrock]_ class.
+
+    .. math:: f(x)=\sum_{i=1}^{d-1}[100(x_{i+1}-x_i^2)^2+(x_i-1)^2]
+
+    The function is unimodal, and the global minimum lies in a narrow,
+    parabolic valley.
+
+    """
 
     logger = logging.getLogger(__name__)
 
@@ -88,15 +116,21 @@ class Rosenbrock(object):
 
 class Ishigami(object):
 
-    """Ishigami class."""
+    r"""[Ishigami]_ class.
+
+    .. math::
+    F = np.sin(X1)+7*np.sin(X2)**2+0.1*(X3**4)*np.sin(X1)
+
+    It exhibits strong nonlinearity and nonmonotonicity.
+    Depending on `a` and `b`, emphasize the non-linearities.
+    It also has a dependence on x3 due to second order interactions (F13).
+
+    """
 
     logger = logging.getLogger(__name__)
 
     def __init__(self, a=7., b=0.1):
         """Set up Ishigami.
-
-        Depending on a and b, emphasize the non-linearities.
-        Also declare first, second and total Sobol' indices.
 
         :param float a, b: Ishigami parameters
         """
@@ -104,8 +138,21 @@ class Ishigami(object):
         self.d_out = 1
         self.a = a
         self.b = b
-        self.s_first = np.array([0.3139, 0.4424, 0.])
-        self.s_second = np.array([[0., 0., 0.2], [0., 0., 0.], [0.2, 0., 0.]])
+
+        var = 0.5 + self.a ** 2 / 8 + self.b * np.pi ** 4 / 5 + self.b ** 2 * np.pi ** 8 / 18
+        v1 = 0.5 + self.b * np.pi ** 4 / 5 + self.b ** 2 * np.pi ** 8 / 50
+        v2 = a ** 2 / 8
+        v3 = 0
+        v12 = 0
+        v13 = self.b ** 2 * np.pi ** 8 * 8 / 225
+        v23 = 0
+        v123 = 0
+
+        self.s_first = np.array([v1 / var, v2 / var, v3 / var])
+        self.s_second = np.array([[0.       ,        0., v13 / var],
+                                  [v12 / var,        0., v23 / var],
+                                  [v13 / var, v23 / var,        0.]])
+        self.s_total2 = self.s_first + self.s_second.sum(axis=1)
         self.s_total = np.array([0.558, 0.442, 0.244])
         self.logger.info("Using function Ishigami with a={}, b={}"
                          .format(self.a, self.b))
@@ -124,7 +171,16 @@ class Ishigami(object):
 
 class G_Function(object):
 
-    """G-Function class."""
+    r"""[G-Function]_ class.
+
+    .. math::
+    F = \Pi_{i=1}^d \frac{\lvert 4x_i - 2\rvert + a_i}{1 + a_i}
+
+    Depending on the coefficient :math:`a_i`, their is an impact on the impact
+    on the output. The more the coefficient is for a parameter, the less the
+    parameter is important.
+
+    """
 
     logger = logging.getLogger(__name__)
 
@@ -165,14 +221,18 @@ class G_Function(object):
 
 class Channel_Flow(object):
 
-    """Channel Flow class."""
+    """Channel Flow class.
+
+    .. math::
+        \frac{dh}{ds}=\mathcal{F}(h)=I\frac{1-(h/h_n)^{-10/3}}{1-(h/h_c)^{-3}}
+
+    with :math:`h_c=\left(\frac{q^2}{g}\right)^{1/3}, h_n=\left(\frac{q^2}{IK_s^2}\right)^{3/10}`.
+    """
 
     logger = logging.getLogger(__name__)
 
     def __init__(self, dx=100., length=40000., width=500.):
         """Initialize the geometrical configuration.
-
-        Also declare first, second and total Sobol' indices.
 
         :param float dx: discretization
         :param float length: canal length
