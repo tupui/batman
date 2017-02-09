@@ -30,7 +30,10 @@ class PC(object):
         :param lst(ot.Dist) input_dists:
         :param int out_dim:
         """
-        self.model_len = len(output)
+        try:
+            self.model_len = len(output)
+        except TypeError:
+            self.model_len = 1
         self.pc = [None] * self.model_len
         self.pc_result = [None] * self.model_len
         # Define the CPU multi-threading/processing strategy
@@ -45,7 +48,13 @@ class PC(object):
         if function:
             self.logger.info("Polynomial Chaos without prior input/output")
             in_dim = len(input_dists)
-            model = ot.PythonFunction(in_dim, out_dim, function)
+            if out_dim > 1:
+                def wrap_fun(x):
+                    return function(x)
+            else:
+                def wrap_fun(x):
+                    return [function(x)]
+            model = ot.PythonFunction(in_dim, out_dim, wrap_fun)
 
             # distributions
             correl = ot.CorrelationMatrix(in_dim)
@@ -99,7 +108,7 @@ class PC(object):
             pc_algo.run()
             self.sample = np.array(pc_algo.getInputSample())
             self.pc_result[0] = pc_algo.getResult()
-            self.pc[0] = self.pc_result.getMetaModel()
+            self.pc[0] = self.pc_result[0].getMetaModel()
         else:
             self.logger.info("Polynomial Chaos with prior input/output")
             def model_fitting(column):
@@ -112,7 +121,7 @@ class PC(object):
 
             if self.model_len > 1:
                 pool = ProcessPool(self.n_cpu)
-                results = pool.imap(model_fitting, output)
+                results = pool.map(model_fitting, output)
                 results = list(results)
                 pool.terminate()
             else:
@@ -121,6 +130,7 @@ class PC(object):
 
             for i in range(self.model_len):
                 self.pc[i], self.pc_result[i] = results[i]
+            self.logger.info("Done")
 
     def evaluate(self, point):
         """Make a prediction.
@@ -132,11 +142,13 @@ class PC(object):
         :rtype: lst
 
         """
-        point_array = np.asarray(point).reshape(1, len(point))
+        prediction = np.ndarray((self.model_len))
 
-        prediction = np.ndarray((len(self.pc)))
         # Compute a prediction per predictor
         for i, pc in enumerate(self.pc):
-            prediction[i] = np.array(pc(point_array))
+            try:
+                prediction[i] = np.array(pc(point))
+            except ValueError:
+                prediction = np.array(pc(point))
 
-        return prediction, 0
+        return prediction

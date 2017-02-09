@@ -3,7 +3,8 @@ import pytest
 import numpy as np
 import numpy.testing as npt
 import openturns as ot
-from pyuq import (Ishigami, Mascaret, PC)
+from jpod.functions import (Ishigami, Mascaret)
+from jpod.surrogate import PC
 
 
 def test_PC_1d():
@@ -24,7 +25,9 @@ def test_PC_1d():
     assert pred == pytest.approx(target, 0.01)
 
     # Compute predictivity coefficient Q2
-    model = ot.PythonFunction(3, 1, f_3d)
+    def wrap_f_3d(x):
+        return [f_3d(x)]
+    model = ot.PythonFunction(3, 1, wrap_f_3d)
     surrogate = ot.PythonFunction(3, 1, surrogate.evaluate)
 
     dists = ot.ComposedDistribution(dists, ot.IndependentCopula(3))
@@ -53,7 +56,7 @@ def test_PC_14d():
     assert True if test_output is None else False
 
     surrogate = PC(function=f, input_dists=dists,
-                   out_dim=14, total_deg=10,  strategy='Quad')
+                   out_dim=14, total_deg=11,  strategy='Quad')
 
     pred = np.array(surrogate.evaluate(point))
     test_output = npt.assert_almost_equal(target, pred, decimal=2)

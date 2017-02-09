@@ -99,7 +99,7 @@ class Rosenbrock(object):
             self.s_second = np.array([[0., 0.0920076], [0.0935536, 0.]])
             self.s_total = np.array([0.324003, 0.64479])
         self.logger.info("Using function Rosenbrock with d={}"
-                         .format(self.d))
+                         .format(self.d_in))
 
     def __call__(self, x):
         """Call function.

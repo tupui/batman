@@ -88,7 +88,11 @@ class Predictor(object):
         """
         point = np.divide(np.subtract(point, self.bounds_min),
                           self.bounds_max - self.bounds_min)
-        result, sigma = self.predictor.evaluate(point)
+        try:
+            result, sigma = self.predictor.evaluate(point)
+        except ValueError:
+            result = self.predictor.evaluate(point)
+            sigma = 0
 
         return result, sigma
 
