@@ -24,10 +24,6 @@ Reference
 F. Pedregosa et al.: Scikit-learn: Machine Learning in Python. Journal of Machine Learning Research. 2011. ArXiv ID: 1201.0490
 
 """
-
-# Authors: Pamphile ROY <roy.pamphile@gmail.fr>
-# Copyright: CERFACS
-
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 import numpy as np

@@ -155,10 +155,11 @@ class UQ:
         """Information about object."""
         return "UQ object: Method({}), Input({}), Distribution({})".format(self.method_sobol, self.p_lst, self.distribution)
 
-    def error_pod(self, indices, function):
+    def error_model(self, indices, function):
         r"""Compute the error between the POD and the analytic function.
 
-        .. warning:: For test purpose only. Choises are Ishigami, Rosenbrock and Channel Flow test functions.
+        .. warning:: For test purpose only. Choises are Ishigami, Rosenbrock
+        and Channel Flow test functions.
 
         From the surrogate of the function, evaluate the error
         using the analytical evaluation of the function on the sample points.
@@ -167,7 +168,8 @@ class UQ:
 
         Knowing that :math:`err_{l2} = \sum \frac{(prediction - reference)^2}{n}`, :math:`var_{model} = \sum \frac{(prediction - mean)^2}{n}`
 
-        Also, it computes the mean square error on the Sobol first and total order indices.
+        Also, it computes the mean square error on the Sobol first andtotal
+        order indices.
 
         A summary is written within `pod_err.dat`.
 
@@ -176,20 +178,20 @@ class UQ:
 
         """
 
-        f = func_ref.dispatcher[function]()
+        fun = func_ref.dispatcher[function]()
 
-        if f.d_out > 1:
-            def fun(x):
-                return f(x)
+        if fun.d_out > 1:
+            def wrap_fun(x):
+                return fun(x)
         else:
-            def fun(x):
-                return [f(x)]
+            def wrap_fun(x):
+                return [fun(x)]
 
-        model_ref = ot.PythonFunction(f.d_in, f.d_out, fun)
+        model_ref = ot.PythonFunction(fun.d_in, fun.d_out, wrap_fun)
 
-        s_l2_2nd = np.sqrt(np.sum((f.s_second - indices[0]) ** 2))
-        s_l2_1st = np.sqrt(np.sum((f.s_first - indices[1]) ** 2))
-        s_l2_total = np.sqrt(np.sum((f.s_total - indices[2]) ** 2))
+        s_l2_2nd = np.sqrt(np.sum((fun.s_second - indices[0]) ** 2))
+        s_l2_1st = np.sqrt(np.sum((fun.s_first - indices[1]) ** 2))
+        s_l2_total = np.sqrt(np.sum((fun.s_total - indices[2]) ** 2))
 
         # Q2 computation
         y_ref = np.array(model_ref(self.sample))
@@ -218,7 +220,7 @@ class UQ:
                                                            s_l2_total))
 
             # Visual tests
-            if self.output_len == 1:
+            if fun.d_out == 1:
                 # cobweb = ot.VisualTest.DrawCobWeb(self.sample, y_pred, y_min, y_max, 'red', False)
                 # View(cobweb).show()
                 qq_plot = ot.VisualTest_DrawQQplot(y_ref, y_pred)
@@ -284,7 +286,7 @@ class UQ:
                 input_design = ot.SobolIndicesAlgorithmImplementation.Generate(
                     self.distribution, self.points_sample, True)
                 output_design = sobol_model(input_design)
-                # Saltelli, Jansen, MauntzKucherenko
+                # Saltelli, MauntzKucherenko, Jansen
                 ot.ResourceMap.SetAsBool('MartinezSensitivityAlgorithm-UseAsmpytoticInterval', True)
                 sobol = ot.MartinezSensitivityAlgorithm(input_design,
                                                         output_design,
@@ -441,7 +443,7 @@ class UQ:
 
         # Compute error of the POD with a known function
         if (self.type_indices in ['aggregated', 'block']) and (self.test is not None):
-            self.error_pod(indices, self.test)
+            self.error_model(indices, self.test)
 
         return indices
 

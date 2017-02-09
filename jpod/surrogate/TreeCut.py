@@ -73,15 +73,15 @@ class Tree:
 
         self.cellTab[0].nbPoints = self.NbPnts
 
-        self.cellTab[0].PointsOf = array(range(self.NbPnts), Int16)
-        self.cellTab[0].boundsInf = zeros((self.NbDir, ), Float64)
-        self.cellTab[0].boundsSup = zeros((self.NbDir, ), Float64)
+        self.cellTab[0].PointsOf = np.array(range(self.NbPnts), dtype=np.int16)
+        self.cellTab[0].boundsInf = np.zeros((self.NbDir, ), dtype=np.float64)
+        self.cellTab[0].boundsSup = np.zeros((self.NbDir, ), dtype=np.float64)
 
         for i in range(self.NbDir):
-            self.cellTab[0].boundsInf[i] = min(self.TrainSetInTree[:, i])
-            self.cellTab[0].boundsSup[i] = max(self.TrainSetInTree[:, i])
+            self.cellTab[0].boundsInf[i] = np.min(self.TrainSetInTree[:, i])
+            self.cellTab[0].boundsSup[i] = np.max(self.TrainSetInTree[:, i])
 
-        self.ARtab = zeros((self.NbDir, self.NbDir), Float64)
+        self.ARtab = np.zeros((self.NbDir, self.NbDir), dtype=np.float64)
         for i in range(self.NbDir):
             for j in range(self.NbDir):
                 self.ARtab[i, j] = (self.cellTab[0].boundsSup[i]
@@ -103,7 +103,7 @@ class Tree:
         if cellIn.nbPoints >= 2 * self.Pmin:
 
             list_dir = range(self.NbDir)  # ??????????????
-            list_dir.reverse()
+            list_dir = list(reversed(list_dir))
             for dir in list_dir:  # balayage des directions
                 self.sort_inputs(cellIn, dir)
                 for j in range(self.Pmin - 1, cellIn.nbPoints - 1 - (self.Pmin
@@ -132,8 +132,8 @@ class Tree:
             self.subCellR = cell()
             self.subCellR.nbPoints = Nright
             self.subCellL.nbPoints = cellIn.nbPoints - Nright
-            self.subCellR.PointsOf = zeros((Nright, ), Int16)
-            self.subCellL.PointsOf = zeros((cellIn.nbPoints - Nright, ), Int16)
+            self.subCellR.PointsOf = np.zeros((Nright, ), dtype=np.int16)
+            self.subCellL.PointsOf = np.zeros((cellIn.nbPoints - Nright, ), dtype=np.int16)
 
             Nright = 0
             Nleft = 0
@@ -207,7 +207,7 @@ class Tree:
                 val = sum_out - accLeft
                 RMS += val ** 2
 
-        RMS = sqrt(RMS) / cellIn.nbPoints
+        RMS = np.sqrt(RMS) / cellIn.nbPoints
         return RMS
 
     def SplitAR(self, cellIn, b, dir):
@@ -269,14 +269,14 @@ class Tree:
     def setOutputs(self):
         # fonction de post traitement des resultats pour la sortie
         # premets de recuperer les centres et rayons des cellules dans centers et radii
-        centers = zeros((self.NbCells, self.NbDir), Float64)
-        rayon = zeros((self.NbCells, self.NbDir), Float64)
+        centers = np.zeros((self.NbCells, self.NbDir), dtype=np.float64)
+        rayon = np.zeros((self.NbCells, self.NbDir), dtype=np.float64)
         for i in range(self.NbCells):
             cellIn = self.cellTab[i]
             for j in range(self.NbDir):
                 centers[i, j] = (cellIn.boundsSup[j] + cellIn.boundsInf[j]) \
                     * 0.5
-                rayon[i, j] = abs(cellIn.boundsSup[j] - cellIn.boundsInf[j]) \
+                rayon[i, j] = np.abs(cellIn.boundsSup[j] - cellIn.boundsInf[j]) \
                     * 0.5
         return (centers, rayon)
 

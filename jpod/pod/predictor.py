@@ -19,7 +19,7 @@ It allows the creation of a surrogate model and making predictions.
 """
 
 import logging
-from ..surrogate import RBFnet, Kriging
+from ..surrogate import (RBFnet, Kriging, PC)
 import numpy as np
 from .snapshot import Snapshot
 
@@ -69,8 +69,8 @@ class Predictor(object):
             self.predictor = RBFnet(points, data)
         elif kind == 'kriging':
             self.predictor = Kriging(points, data.T)
-        else:
-            raise ValueError('kind must be either "rbf" or "kriging"')
+        elif kind == 'pc':
+            self.predictor = PC(input=points, output=data.T)
 
         self.logger.info('Predictor created')
 

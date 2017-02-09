@@ -234,7 +234,7 @@ if __name__ == '__main__':
 #    sample=np.array([  [0.,0.] , [0.,1.] , [0.,2.] , [1.,0.] , [1.,1.] , [1.,2.]  ])
 #    out   =np.array([  [0.,0] , [0.,100], [0.,200], [10.,0], [10.,100], [10.,200] ])
 #    point=[0.58,1.2]
-    point = np.zeros([2, 3], Float)
+    point = np.zeros([2, 3])
     point[0, 0] = .7
     point[0, 1] = .2
     point[0, 2] = .5
@@ -268,7 +268,7 @@ if __name__ == '__main__':
     print('RBF regression Tree')
     for n in range(noutput):
         out2 = out[:, n:n + 1]
-        rbf = RBFnet(name='rbf')
+        rbf = RBFnet()
         rbf.setNetwork(sample, out2, function=my_function, regtree=1)
         for i in range(2):
             print('evaluation %d = %f' % (n, rbf.evalOut(point[i, :])))
