@@ -31,12 +31,10 @@ def tecplot_reader(file, nb_var):
 
     return output
 
+
 path = './output/uq/'
 sensitivity_aggr_file = path + 'sensitivity_aggregated.dat'
-param = {'p1': {'name': 'x_1', 's_min': None, 's': None,'s_max': None,
-                's_t_min': None, 's_t': None, 's_t_max': None},
-         'p2': {'name': 'x_2', 's_min': None, 's': None,'s_max': None,
-                's_t_min': None, 's_t': None, 's_t_max': None},}
+param = [r"x_1", r"x_2", r"x_3"]
 n = len(param)
 
 output = tecplot_reader(sensitivity_aggr_file, n * 6)
@@ -47,25 +45,19 @@ objects = []
 conf = [[], []]
 indices = []
 for i, p in enumerate(param):
-    param[p]['s_min'] = s_min[i]
-    param[p]['s'] = s[i]
-    param[p]['s_max'] = s_max[i]
-    param[p]['s_t_min'] = s_t_min[i]
-    param[p]['s_t'] = s_t[i]
-    param[p]['s_t_max'] = s_t_max[i]
-    objects.append([r"$S_{" + param[p]['name'] + r"}$", r"$S_{T_{" + param[p]['name'] + r"}}$"])
+    objects.append([r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"])
 
-    ind = np.array([param[p]['s'], param[p]['s_t']])
+    ind = np.array([s[i], s_t[i]])
     indices.append(ind)
 
-    i_min = ind - np.array([param[p]['s_min'], param[p]['s_t_min']])
-    i_max = np.array([param[p]['s_max'], param[p]['s_t_max']]) - ind
+    i_min = ind - np.array([s_min[i], s_t_min[i]])
+    i_max = np.array([s_max[i], s_t_max[i]]) - ind
     conf[0].append(i_min)
     conf[1].append(i_max)
 
-y_pos = np.arange(2* n)
+y_pos = np.arange(2 * n)
 indices = np.array(indices).flatten()
-conf = np.array(conf).reshape((n, 4))
+conf = np.array(conf).reshape((2, 2 * n))
 
 objects = [item for sublist in objects for item in sublist]
 
@@ -73,5 +65,9 @@ fig = plt.figure('Aggregated Indices')
 
 plt.bar(y_pos, indices, yerr=conf, align='center', alpha=0.5)
 plt.xticks(y_pos, objects)
-plt.ylabel("Sobol' aggregated indices")
+plt.tick_params(axis='x', labelsize=20)
+plt.tick_params(axis='y', labelsize=20)
+plt.ylabel("Sobol' aggregated indices", fontsize=20)
+plt.xlabel("Input parameters", fontsize=20)
+fig.tight_layout()
 plt.show()

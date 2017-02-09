@@ -64,7 +64,8 @@ import openturns as ot
 import otwrapy as otw
 from sklearn.metrics import (r2_score, mean_squared_error)
 from multiprocessing import cpu_count
-# from openturns.viewer import View
+from openturns.viewer import View
+import matplotlib.pyplot as plt
 from os import mkdir
 import itertools
 from .wrapper import Wrapper
@@ -86,6 +87,7 @@ class UQ:
         - Method to use for the Sensitivity Analysis (SA),
         - Type of Sobol' indices to compute,
         - Number of points per sample to use for SA (:math:`N(2p+2)` predictions),
+          resulting storage is 6N(out+p)*8 octets => 184Mo if N=1e4
         - Method to use to predict a new snapshot,
         - The list of input variables,
         - The lengh of the output function.
@@ -216,15 +218,15 @@ class UQ:
                                                            s_l2_total))
 
             # Visual tests
-            # if self.output_len == 1:
+            if self.output_len == 1:
                 # cobweb = ot.VisualTest.DrawCobWeb(self.sample, y_pred, y_min, y_max, 'red', False)
                 # View(cobweb).show()
-                # qq_plot = ot.VisualTest_DrawQQplot(y_ref, y_pred)
-                # qq_plot.draw(self.output_folder + '/qq_plot.png')
+                qq_plot = ot.VisualTest_DrawQQplot(y_ref, y_pred)
+                View(qq_plot).save(self.output_folder + '/qq_plot.png')
                 # View(qq_plot).show()
-            # else:
-            #     self.logger.debug(
-            #         "Cannot draw QQplot with output dimension > 1")
+            else:
+                self.logger.debug(
+                    "Cannot draw QQplot with output dimension > 1")
         else:
             self.logger.debug("No output folder to write errors in")
 
@@ -282,7 +284,9 @@ class UQ:
                 input_design = ot.SobolIndicesAlgorithmImplementation.Generate(
                     self.distribution, self.points_sample, True)
                 output_design = sobol_model(input_design)
-                sobol = ot.SaltelliSensitivityAlgorithm(input_design,
+                # Saltelli, Jansen, MauntzKucherenko
+                ot.ResourceMap.SetAsBool('MartinezSensitivityAlgorithm-UseAsmpytoticInterval', True)
+                sobol = ot.MartinezSensitivityAlgorithm(input_design,
                                                         output_design,
                                                         self.points_sample)
 
@@ -370,6 +374,7 @@ class UQ:
 
             # Write aggregated indices to file
             if self.output_folder is not None:
+                ind = np.array(indices[1:]).flatten('F')
                 if (float(ot.__version__[:3]) >= 1.8) and (self.method_sobol != 'FAST'):
                     i1_min = np.array(indices_conf[0].getLowerBound()).flatten('F')
                     i1 = np.array(indices[1]).flatten('F')
@@ -377,6 +382,7 @@ class UQ:
                     i2_min = np.array(indices_conf[1].getLowerBound()).flatten('F')
                     i2 = np.array(indices[2]).flatten('F')
                     i2_max = np.array(indices_conf[1].getUpperBound()).flatten('F')
+
                     data = np.append([i1_min], [i1, i1_max, i2_min, i2, i2_max])
                     names = []
                     for p in self.p_lst:
@@ -391,7 +397,14 @@ class UQ:
                         names += ['S_T_' + str(p)]
                     for p in self.p_lst:
                         names += ['S_T_max_' + str(p)]
+
+                    conf1 = np.vstack((i1_min, i2_min)).flatten('F')
+                    conf1 = ind - conf1
+                    conf2 = np.vstack((i1_max, i2_max)).flatten('F')
+                    conf2 -= ind
+                    conf = np.vstack((conf1, conf2))
                 else:
+                    conf = 0
                     i1 = np.array(indices[1]).flatten('F')
                     i2 = np.array(indices[2]).flatten('F')
                     data = np.append(i1, i2)
@@ -400,6 +413,28 @@ class UQ:
                                   data=data)
                 self.io.write(self.output_folder + '/sensitivity_aggregated.dat',
                               dataset)
+
+                # Plot indices and confidence intervals
+                objects = []
+                for i, p in enumerate(self.p_lst):
+                    objects.append([r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"])
+
+                objects = [item for sublist in objects for item in sublist]
+                y_pos = np.arange(2 * self.p_len)
+
+                fig = plt.figure('Aggregated Indices')
+
+                plt.bar(y_pos, ind, yerr=conf, align='center', alpha=0.5)
+                plt.xticks(y_pos, objects)
+                plt.tick_params(axis='x', labelsize=20)
+                plt.tick_params(axis='y', labelsize=20)
+                plt.ylabel("Sobol' aggregated indices", fontsize=20)
+                plt.xlabel("Input parameters", fontsize=20)
+                fig.tight_layout()
+                path = self.output_folder + '/sensitivity_aggregated.pdf'
+                fig.savefig(path, transparent=True, bbox_inches='tight')
+                plt.close('all')
+
             else:
                 self.logger.debug(
                     "No output folder to write aggregated indices in")

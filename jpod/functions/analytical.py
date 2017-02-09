@@ -55,12 +55,12 @@ class Michalewicz(object):
         self.d_in = d
         self.d_out = 1
         self.m = m
-        if self.d == 2:
+        if self.d_in == 2:
             self.s_first = np.array([0.4540, 0.5678])
             self.s_second = np.array([[0., 0.008], [0.008, 0.]])
             self.s_total = np.array([0.4606, 0.5464])
         self.logger.info("Using function Michalewicz with d={}"
-                         .format(self.d))
+                         .format(self.d_in))
 
     def __call__(self, x):
         """Call function.
