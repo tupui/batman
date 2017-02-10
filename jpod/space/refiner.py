@@ -8,11 +8,11 @@ This class defines all resampling strategies that can be used.
 It implements the following methods:
 
 - :func:`Refiner.func`
-- :func:`Refiner.func_mse`
+- :func:`Refiner.func_sigma`
 - :func:`Refiner.distance_min`
 - :func:`Refiner.hypercube`
-- :func:`Refiner.mse`
-- :func:`Refiner.leave_one_out_mse`
+- :func:`Refiner.sigma`
+- :func:`Refiner.leave_one_out_sigma`
 - :func:`Refiner.leave_one_out_sobol`
 - :func:`Refiner.extrema`
 - :func:`Refiner.hybrid`
@@ -21,7 +21,7 @@ It implements the following methods:
 
     >> corners = ((10, 400), (18, 450))
     >> resample = Refiner(pod, corners)
-    >> new_point = resample.mse()
+    >> new_point = resample.sigma()
 
 References
 ----------
@@ -105,8 +105,8 @@ class Refiner(object):
 
         return sign * sum_f
 
-    def func_mse(self, coords):
-        r"""Get the MSE for a given point.
+    def func_sigma(self, coords):
+        r"""Get the sigma for a given point.
 
         Retrieve Gaussian Process estimation of sigma.
         A composite indicator is constructed using POD's modes.
@@ -251,8 +251,8 @@ class Refiner(object):
 
         return hypercube
 
-    def mse(self, hypercube=None):
-        """Find the point at max MSE.
+    def sigma(self, hypercube=None):
+        """Find the point at max sigma.
 
         It returns the point where the mean square error (sigma) is maximum.
         To do so, it uses Gaussian Process information.
@@ -265,13 +265,13 @@ class Refiner(object):
         """
         if hypercube is None:
             hypercube = self.corners
-        self.logger.debug("MSE strategy")
-        result = differential_evolution(self.func_mse, hypercube)
+        self.logger.debug("sigma strategy")
+        result = differential_evolution(self.func_sigma, hypercube)
 
         return result.x
 
-    def leave_one_out_mse(self, point_loo):
-        """Mixture of Leave-one-out and MSE.
+    def leave_one_out_sigma(self, point_loo):
+        """Mixture of Leave-one-out and sigma.
 
         Estimate the quality of the POD by *leave-one-out cross validation*
         (LOOCV), and add a point arround the max error point.
@@ -284,24 +284,22 @@ class Refiner(object):
         :rtype: lst(float)
 
         """
-        self.logger.info("Leave-one-out + MSE strategy")
+        self.logger.info("Leave-one-out + sigma strategy")
         # Get the point of max error by LOOCV
         point = np.array(point_loo)
 
         # Construct the hypercube around the point
-        # distance = self.distance_min(point)
-        # hypercube = self.hypercube_distance(point, distance)
         hypercube = self.hypercube_optim(point)
 
         # Global search of the point within the hypercube
-        point = self.mse(hypercube)
+        point = self.sigma(hypercube)
 
         return point
 
     def leave_one_out_sobol(self, point_loo):
         """Mixture of Leave-one-out and Sobol' indices.
 
-        Same as function :func:`leave_one_out_mse` but change the shape
+        Same as function :func:`leave_one_out_sigma` but change the shape
         of the hypercube. Using Sobol' indices, the corners are shrinked
         by the corresponding percentage of the total indices.
 
@@ -335,7 +333,7 @@ class Refiner(object):
         self.logger.debug("Post Hypercube:\n{}".format(hypercube))
 
         # Global search of the point within the hypercube
-        point = self.mse(hypercube)
+        point = self.sigma(hypercube)
 
         return point
 
@@ -462,10 +460,10 @@ class Refiner(object):
         for method in strategies:
             if strategies[method] > 0:
                 if method == 'sigma':
-                    new_point = self.mse()
+                    new_point = self.sigma()
                     break
                 elif method == 'loo_sigma':
-                    new_point = self.leave_one_out_mse(point_loo)
+                    new_point = self.leave_one_out_sigma(point_loo)
                     break
                 elif method == 'loo_sobol':
                     new_point = self.leave_one_out_sobol(point_loo)
