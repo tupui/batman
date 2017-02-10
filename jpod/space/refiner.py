@@ -138,7 +138,7 @@ class Refiner(object):
 
         """
         point = self.scaler.transform(point.reshape(1, -1))[0]
-        distances = np.array([np.linalg.norm(pod_point - point)
+        distances = np.array([np.linalg.norm(pod_point - point, ord=np.inf)
                               for _, pod_point in enumerate(self.points)])
         # Do not get itself
         distances = distances[np.nonzero(distances)]
@@ -186,7 +186,7 @@ class Refiner(object):
         :rtype: np.array
 
         """
-        distance = self.distance_min(point) / 3
+        distance = self.distance_min(point)
         x0 = self.hypercube_distance(point, distance).flatten('F')
         point = np.minimum(point, self.corners[:, 1])
         point = np.maximum(point, self.corners[:, 0])
