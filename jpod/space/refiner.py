@@ -34,7 +34,7 @@ C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptat
 # Copyright: CERFACS
 
 import logging
-from scipy.optimize import (differential_evolution, minimize, basinhopping)
+from scipy.optimize import (differential_evolution, minimize, basinhopping, brute)
 import numpy as np
 from sklearn import preprocessing
 import copy
@@ -174,7 +174,7 @@ class Refiner(object):
 
         return hypercube
 
-    def hypercube_optim(self, point):
+    def hypercube_optim_continuous(self, point):
         """Get the hypercube to add a point in.
 
         Compute the largest hypercube around the point based on the `L2-norm`.
@@ -251,6 +251,98 @@ class Refiner(object):
 
         return hypercube
 
+    def hypercube_optim_discret(self, point):
+        """Get the hypercube to add a point in.
+
+        Compute the largest hypercube around the point based on the `L2-norm`.
+        Ensure that only the `leave-one-out` point lies within it.
+        Ensure that new values are bounded by corners.
+
+        :param np.array point: Anchor point
+        :return: The hypercube around the point (a point per column)
+        :rtype: np.array
+
+        """
+        distance = self.distance_min(point)
+        x0 = self.hypercube_distance(point, distance).flatten('F')
+        point = np.minimum(point, self.corners[:, 1])
+        point = np.maximum(point, self.corners[:, 0])
+        point = self.scaler.transform(point.reshape(1, -1))[0]
+
+        points = [p for p in self.points if not np.allclose(p, point)]
+
+        # Get points with coordinates superior to point and add corner
+        sup = [i for i, p in enumerate(points>point) if p.all() == True]
+        try:
+            sup = points[sup]
+        except TypeError:
+            sup = points[sup[0]]
+        sup = np.vstack((sup, np.zeros((1, self.dim)))).T
+
+        # Get points with coordinates inferior to point and add corner
+        inf = [i for i, p in enumerate(points<point) if p.all() == True]
+        try:
+            inf = points[inf]
+        except TypeError:
+            inf = points[inf[0]]
+        inf = np.vstack((inf, np.ones((1, self.dim)))).T
+
+        print(point)
+        print(points)
+        print(inf)
+        print(sup)
+
+        def min_norm(hypercube):
+            """Compute euclidean distance.
+
+            :param np.array hypercube: [x1, y1, x2, y2, ...]
+            :return: distance of between hypercube points
+            :rtype: float
+            """
+            hypercube = hypercube.reshape(2, self.dim)
+
+            # Sort coordinates
+            for i in range(self.dim):
+                hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
+
+            hypercube = hypercube.T
+
+            n = - np.linalg.norm(hypercube[:, 1] - hypercube[:, 0])
+
+            # Check aspect ratio
+            aspect = abs(hypercube[:, 1] - hypercube[:, 0])
+            aspect = np.power(np.max(aspect), self.dim) / np.prod(aspect)
+            aspect = np.power(aspect, 1 / self.dim)
+            if not (aspect <= 1.5):
+                return np.inf
+
+            # Verify that LOO point is inside
+            insiders = (hypercube[:, 0] <= point).all() & (point <= hypercube[:, 1]).all()
+            if not insiders:
+                return np.inf
+
+            # Verify that no other point is inside
+            for p in points:
+                insiders = (hypercube[:, 0] <= p).all() & (p <= hypercube[:, 1]).all()
+                if insiders:
+                    return np.inf
+
+            return n
+
+        bounds = np.vstack((inf, sup))
+        results = brute(min_norm, bounds)
+        hypercube = results.reshape(2, self.dim)
+        for i in range(self.dim):
+                hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
+
+        hypercube = self.scaler.inverse_transform(hypercube)
+        hypercube = hypercube.T
+
+        self.logger.debug("Corners:\n{}".format(self.corners))
+        self.logger.debug("Optimization Hypercube:\n{}".format(hypercube))
+
+        return hypercube
+
     def sigma(self, hypercube=None):
         """Find the point at max sigma.
 
@@ -289,7 +381,7 @@ class Refiner(object):
         point = np.array(point_loo)
 
         # Construct the hypercube around the point
-        hypercube = self.hypercube_optim(point)
+        hypercube = self.hypercube_optim_discret(point)
 
         # Global search of the point within the hypercube
         point = self.sigma(hypercube)
@@ -321,7 +413,7 @@ class Refiner(object):
         indices[indices < 0.1] = 0.1
 
         # Construct the hypercube around the point
-        hypercube = self.hypercube_optim(point)
+        hypercube = self.hypercube_optim_discret(point)
 
         # Modify the hypercube with Sobol' indices
         for i in range(self.dim):
