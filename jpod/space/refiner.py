@@ -34,8 +34,9 @@ C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptat
 # Copyright: CERFACS
 
 import logging
-from scipy.optimize import (differential_evolution, minimize, basinhopping, brute)
+from scipy.optimize import (differential_evolution, minimize, basinhopping)
 import numpy as np
+from itertools import product
 from sklearn import preprocessing
 import copy
 from collections import OrderedDict
@@ -269,7 +270,7 @@ class Refiner(object):
         point = np.maximum(point, self.corners[:, 0])
         point = self.scaler.transform(point.reshape(1, -1))[0]
 
-        points = [p for p in self.points if not np.allclose(p, point)]
+        points = np.array([p for p in self.points if not np.allclose(p, point)])
 
         # Get points with coordinates superior to point and add corner
         sup = [i for i, p in enumerate(points>point) if p.all() == True]
@@ -277,7 +278,7 @@ class Refiner(object):
             sup = points[sup]
         except TypeError:
             sup = points[sup[0]]
-        sup = np.vstack((sup, np.zeros((1, self.dim)))).T
+        sup = np.vstack((sup, np.zeros((1, self.dim)))).T.tolist()
 
         # Get points with coordinates inferior to point and add corner
         inf = [i for i, p in enumerate(points<point) if p.all() == True]
@@ -285,13 +286,9 @@ class Refiner(object):
             inf = points[inf]
         except TypeError:
             inf = points[inf[0]]
-        inf = np.vstack((inf, np.ones((1, self.dim)))).T
+        inf = np.vstack((inf, np.ones((1, self.dim)))).T.tolist()
 
-        print(point)
-        print(points)
-        print(inf)
-        print(sup)
-
+        # TODO class method
         def min_norm(hypercube):
             """Compute euclidean distance.
 
@@ -329,8 +326,22 @@ class Refiner(object):
 
             return n
 
-        bounds = np.vstack((inf, sup))
-        results = brute(min_norm, bounds)
+        bounds = [inf, sup]
+        bounds = [item for sub in [inf, sup] for item in sub]
+        bounds = list(product(*bounds))
+
+        results = []
+        append = results.append
+        for i in bounds:
+            append(min_norm(np.array(i)))
+
+        min_idx = np.argmin(results)
+        if results[min_idx] == np.inf:
+            results = x0
+        results = np.array(bounds[min_idx])
+
+        # TODO do global optim after using results
+
         hypercube = results.reshape(2, self.dim)
         for i in range(self.dim):
                 hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
