@@ -68,15 +68,16 @@ class Refiner(object):
         self.settings_full = settings
         self.settings = settings['space']
         self.corners = np.array(self.settings['corners']).T
-        delta_space = self.settings['resampling']['delta_space']
+        self.delta_space = self.settings['resampling']['delta_space']
         self.dim = len(self.corners)
 
         # Inner delta space contraction: delta_space * 2 factor
         for i in range(self.dim):
-            self.corners[i, 0] = self.corners[i, 0] + delta_space\
+            self.corners[i, 0] = self.corners[i, 0] + self.delta_space\
                 * (self.corners[i, 1]-self.corners[i, 0])
-            self.corners[i, 1] = self.corners[i, 1] - delta_space\
+            self.corners[i, 1] = self.corners[i, 1] - self.delta_space\
                 * (self.corners[i, 1]-self.corners[i, 0])
+        self.logger.debug("Corners:\n{}".format(self.corners))
 
         # Data scaling
         self.scaler = preprocessing.MinMaxScaler()
@@ -265,7 +266,8 @@ class Refiner(object):
 
         """
         distance = self.distance_min(point)
-        x0 = self.hypercube_distance(point, distance).flatten('F')
+        x0 = self.hypercube_distance(point, distance)#.flatten('F')
+        x0 = self.scaler.transform(x0.T).T
         point = np.minimum(point, self.corners[:, 1])
         point = np.maximum(point, self.corners[:, 0])
         point = self.scaler.transform(point.reshape(1, -1))[0]
@@ -288,9 +290,16 @@ class Refiner(object):
             inf = points[inf[0]]
         inf = np.vstack((inf, np.ones((1, self.dim)))).T.tolist()
 
-        # TODO class method
+        # Create all discret possibilities
+        bounds = [inf, sup]
+        bounds = [item for sub in [inf, sup] for item in sub]
+        bounds = list(product(*bounds))
+
         def min_norm(hypercube):
             """Compute euclidean distance.
+
+            Get the size of the hypercube if the anchor point is within it and
+            if no other points are in it.
 
             :param np.array hypercube: [x1, y1, x2, y2, ...]
             :return: distance of between hypercube points
@@ -326,10 +335,7 @@ class Refiner(object):
 
             return n
 
-        bounds = [inf, sup]
-        bounds = [item for sub in [inf, sup] for item in sub]
-        bounds = list(product(*bounds))
-
+        # Discrete optimization
         results = []
         append = results.append
         for i in bounds:
@@ -338,18 +344,31 @@ class Refiner(object):
         min_idx = np.argmin(results)
         if results[min_idx] == np.inf:
             results = x0
-        results = np.array(bounds[min_idx])
+        else:
+            results = np.array(bounds[min_idx])
 
-        # TODO do global optim after using results
+        # Extend results by delta to bound continuous optimization
+        bounds = results.reshape((self.dim, 2))
+        for i in range(self.dim):
+            bounds[i, 0] = bounds[i, 0] - self.delta_space\
+                * (bounds[i, 1]-bounds[i, 0])
+            bounds[i, 1] = bounds[i, 1] + self.delta_space\
+                * (bounds[i, 1]-bounds[i, 0])
+        bounds = np.reshape([bounds] * 2, (self.dim * 2, 2))
 
-        hypercube = results.reshape(2, self.dim)
+        # Continuous optimization
+        # results = differential_evolution(min_norm, bounds, popsize=15)
+        # results = minimize(min_norm, results, method='SLSQP', bounds=bounds)
+        minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
+        results = basinhopping(min_norm, results, niter=1000,
+                               minimizer_kwargs=minimizer_kwargs)
+        hypercube = results.x.reshape(2, self.dim)
         for i in range(self.dim):
                 hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
 
         hypercube = self.scaler.inverse_transform(hypercube)
         hypercube = hypercube.T
 
-        self.logger.debug("Corners:\n{}".format(self.corners))
         self.logger.debug("Optimization Hypercube:\n{}".format(hypercube))
 
         return hypercube
