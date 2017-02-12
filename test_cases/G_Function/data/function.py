@@ -3,6 +3,7 @@
 
 import re
 import numpy as np
+from jpod.input_output import (IOFormatSelector, Dataset)
 
 # Input from header.py
 with open('./jpod-data/header.py', 'r') as a:
@@ -35,9 +36,9 @@ for i in range(d):
     F *= (abs(4. * X[i] - 2) + a[i]) / (1. + a[i])
 
 # Output
-with open('./cfd-output-data/function.dat', 'w') as f:
-    f.writelines('TITLE = \"FUNCTION\" \n')
-    f.writelines('VARIABLES =  \"F\"  \n')
-    f.writelines('ZONE F = \"zone1\" , I=' + str(1) + ', F=BLOCK  \n')
-    f.writelines("{:.7E}".format(F) + "\t ")
-    f.writelines('\n')
+data = np.array(F)
+names = ["F"]
+
+io = IOFormatSelector('fmt_tp_fortran')
+dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
+io.write('./cfd-output-data/function.dat', dataset)
