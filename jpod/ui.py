@@ -62,18 +62,22 @@ def run(settings, options):
                 root = os.path.join(options.output, 'snapshots')
 
                 if not os.path.isdir(root):
-                    logger.warning("No folder snapshots in output folder")
-                    raise SystemExit
+                    logger.warning("No folder 'snapshots' in output folder")
+                    root = misc.ask_path(
+                        "Enter the snapshot folder: [snapshots] > ",
+                        default='snapshots', root=options.output)
+                    root = os.path.join(options.output, root)
 
-                def key(arg):
-                    return int(os.path.basename(
-                        os.path.dirname(os.path.normpath(arg))))
-                settings['snapshot']['provider'] = sorted([os.path.join(
-                    root, d, 'jpod-data')
-                    for d in os.listdir(root)],
-                    key=key)
-                settings['snapshot']['io']['template_directory'] = \
-                    os.path.join(root, '0', 'jpod-data')
+                private_directory = settings['snapshot']['provider']['private-directory']
+
+                # Create list of path to header files
+                settings['snapshot']['provider'] = [os.path.join(
+                    root, d, private_directory) for d in os.listdir(root)]
+
+                if settings['snapshot']['io']['template_directory'] is None:
+                    settings['snapshot']['io']['template_directory'] = \
+                        settings['snapshot']['provider'][0]
+
                 settings['snapshot']['io']['shapes'] = None
 
                 if not use_output:

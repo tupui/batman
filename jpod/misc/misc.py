@@ -5,6 +5,7 @@ Implements functions:
 
 - :func:`misc.clean_path`,
 - :func:`misc.check_yes_no`,
+- :func:`misc.ask_path`,
 - :func:`misc.abs_path`,
 - :func:`misc.import_config`,
 - :class:`misc.ProgressBar`
@@ -57,6 +58,38 @@ def check_yes_no(prompt, default):
     answer = True if value.strip()[0] is 'y' else False
 
     return answer
+
+
+def ask_path(prompt, default, root):
+    """Ask user for a folder path.
+
+    :param str prompt: Ask 
+    :param str default: default value
+    :param str root: root path
+    :returns: path if folder exists
+    :rtype: str
+    """
+    logger = logging.getLogger('User checking')
+    while True:
+        try:
+            try:
+                path = raw_input(prompt)
+            except NameError:
+                path = input(prompt)
+        except ValueError:
+            logger.error("Sorry, I didn't understand that.")
+            continue
+
+        if path is '':
+            path = default
+
+        if not os.path.isdir(os.path.join(root, path)):
+            logger.error("Output folder not found: ".format(path))
+            continue
+        else:
+            break
+
+    return path
 
 
 def abs_path(value):

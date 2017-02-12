@@ -92,7 +92,6 @@
           "exclusiveMaximum": true
         },
         "server": {
-          "type": "null",
           "default": null
         },
         "type": {
@@ -120,15 +119,22 @@
           "type": "object",
           "properties": {
             "shapes": {
-              "type": "object",
-              "properties": {
-                "0": {
-                  "type": "array",
-                  "items": {}
-                }
+              "anyOf":[
+              {
+                "type": "object",
+                "properties": {
+                  "0": {
+                    "type": "array",
+                    "items": {}
+                  }
+                },
+                "required": [
+                  "0"
+                ]
               },
-              "required": [
-                "0"
+              {
+                "type": "null"
+              }
               ]
             },
             "format": {
@@ -156,7 +162,6 @@
               ]
             },
             "template_directory": {
-              "type": "null",
               "default": null
             },
             "parameter_names": {
@@ -258,7 +263,7 @@
       "properties": {
         "sample": {
           "type": "integer",
-          "default": 50000,
+          "default": 25000,
           "minimum": 1000
         },
         "test": {

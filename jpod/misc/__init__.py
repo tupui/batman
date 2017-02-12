@@ -3,10 +3,11 @@ Misc module
 ***********
 """
 
-from .misc import (clean_path, check_yes_no, abs_path,
+from .misc import (clean_path, check_yes_no, ask_path, abs_path,
                    import_config, ProgressBar)
 from .nested_pool import NestedPool
 
 __all__ = ['clean_path', 'check_yes_no',
            'abs_path', 'import_config',
-           'ProgressBar', 'NestedPool']
+           'ProgressBar', 'NestedPool',
+           'ask_path']
