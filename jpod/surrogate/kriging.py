@@ -171,6 +171,7 @@ class Kriging():
         :rtype: lst
 
         """
+        point_array = np.asarray(point).reshape(1, len(point))
         prediction = np.ndarray((len(self.data)))
         sigma = np.ndarray((len(self.data)))
 

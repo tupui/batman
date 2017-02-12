@@ -142,13 +142,14 @@ class PC(object):
         :rtype: lst
 
         """
+        point_array = np.asarray(point).reshape(1, len(point))
         prediction = np.ndarray((self.model_len))
 
         # Compute a prediction per predictor
         for i, pc in enumerate(self.pc):
             try:
-                prediction[i] = np.array(pc(point))
+                prediction[i] = np.array(pc(point_array))
             except ValueError:
-                prediction = np.array(pc(point))
+                prediction = np.array(pc(point_array))
 
         return prediction
