@@ -20,6 +20,7 @@ Defines all methods used to interact with other classes.
 """
 import logging
 import os
+import sys
 
 from concurrent import futures
 
@@ -51,6 +52,10 @@ class SnapshotProvider():
 
     @property
     def is_function(self):
+        if isinstance(self.provider, str):
+            sys.path.append('.')
+            fun_provider = __import__(self.provider)
+            self.provider = fun_provider.f
         return callable(self.provider)
 
     def __getitem__(self, key):
