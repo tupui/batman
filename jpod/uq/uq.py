@@ -128,9 +128,10 @@ class UQ:
         self.distribution = eval("ot.ComposedDistribution(["
                                  + input_pdf
                                  + "], ot.IndependentCopula(self.p_len))")
-        experiment = ot.LHSExperiment(self.distribution,
-                                      self.points_sample)
-        self.sample = experiment.generate()
+        self.experiment = ot.LHSExperiment(self.distribution,
+                                           self.points_sample,
+                                           True, True)
+        self.sample = self.experiment.generate()
         self.logger.info("Created {} samples with an LHS experiment"
                          .format(self.points_sample))
 
@@ -178,7 +179,7 @@ class UQ:
 
         """
 
-        fun = func_ref.dispatcher[function]()
+        fun = func_ref.__dict__[function]()
 
         if fun.d_out > 1:
             def wrap_fun(x):
@@ -249,10 +250,12 @@ class UQ:
         - `map`
         - `aggregated`
 
-        If *aggregated*, *map* indices are computed. In case of a scalar value, all types returns the same values.
-        *map* or *block* indices are written within `sensitivity.dat` and aggregated indices within `sensitivity_aggregated.dat`.
+        If *aggregated*, *map* indices are computed. In case of a scalar value,
+        all types returns the same values. *map* or *block* indices are written
+        within `sensitivity.dat` and aggregated indices within `sensitivity_aggregated.dat`.
 
-        Finally, it calls :func:`error_pod` in order to compare the indices with their analytical values.
+        Finally, it calls :func:`error_pod` in order to compare the indices
+        with their analytical values.
 
         :return: Sobol' indices
         :rtype: lst(np.array)
@@ -276,9 +279,7 @@ class UQ:
             self.logger.info("\n----- Sobol' indices -----")
 
             if float(ot.__version__[:3]) < 1.8:
-                experiment = ot.LHSExperiment(self.distribution,
-                                              self.points_sample)
-                sample2 = experiment.generate()
+                sample2 = self.experiment.generate()
                 sobol = ot.SensitivityAnalysis(self.sample, sample2,
                                                sobol_model)
                 sobol.setBlockSize(self.n_cpus)
