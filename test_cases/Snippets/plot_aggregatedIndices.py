@@ -7,6 +7,7 @@ indices with their confidence intervales.
 """
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import cm
 
 
 def tecplot_reader(file, nb_var):
@@ -44,6 +45,7 @@ s_min, s, s_max, s_t_min, s_t, s_t_max = np.split(np.array(output).flatten(), 6)
 objects = []
 conf = [[], []]
 indices = []
+color = []
 for i, p in enumerate(param):
     objects.append([r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"])
 
@@ -55,15 +57,19 @@ for i, p in enumerate(param):
     conf[0].append(i_min)
     conf[1].append(i_max)
 
+    color.append([cm.Pastel1(i), cm.Pastel1(i)])
+
 y_pos = np.arange(2 * n)
 indices = np.array(indices).flatten()
 conf = np.array(conf).reshape((2, 2 * n))
 
 objects = [item for sublist in objects for item in sublist]
+color = [item for sublist in color for item in sublist]
 
 fig = plt.figure('Aggregated Indices')
 
-plt.bar(y_pos, indices, yerr=conf, align='center', alpha=0.5)
+plt.bar(y_pos, indices, yerr=conf, align='center', alpha=0.5, color=color)
+plt.set_cmap('Pastel2')
 plt.xticks(y_pos, objects)
 plt.tick_params(axis='x', labelsize=20)
 plt.tick_params(axis='y', labelsize=20)

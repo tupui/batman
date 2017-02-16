@@ -23,7 +23,7 @@ import copy
 
 from .core import Core
 from .. import mpi
-import numpy as N
+import numpy as np
 from .predictor import Predictor
 from .snapshot import Snapshot
 from ..space import Space
@@ -53,10 +53,6 @@ class Pod(Core):
         self.quality = None
         '''Quality of the pod, used to know when it needs to be recomputed.'''
 
-        # TODO: refactor observers?
-        self.observers = []
-        '''Objects to update on new pod decomposition.'''
-
         self.predictor = None
         '''Snapshot predictor.'''
 
@@ -74,26 +70,18 @@ class Pod(Core):
                                   settings['pod']['dim_max'])
 
     def __str__(self):
-        format = '%-28s : %s'
-        s = ['POD summary:']
-        s += [format % ('modes filtering tolerance', self.tolerance)]
-        s += [format % ('dimension of parameter space', self.points.dim)]
-        s += [format % ('number of snapshots', self.points.size)]
-        s += [format %
-              ('number of data per snapshot', self.mean_snapshot.shape[0])]
-        s += [format % ('maximum number of modes', self.dim_max)]
-        s += [format % ('number of modes', self.S.shape[0])]
-        s += [format % ('modes', self.S)]
-        return '\n\t'.join(s)
-
-    def register_observer(self, obj):
-        """Register an observer for POD decomposition update."""
-        self.observers += [obj]
-
-    def _notify_observers(self):
-        """Notify observers that depend on POD decomposition update."""
-        for o in self.observers:
-            o.notify()
+        s = ("\nPOD summary:\n"
+             "modes filtering tolerance: {}\n"
+             "dimension of parameter space: {}\n"
+             "number of snapshots: {}\n"
+             "number of data per snapshot: {}\n"
+             "maximum number of modes: {}\n"
+             "number of modes: {}\n"
+             "modes: {}\n"
+             .format(self.tolerance, self.points.dim, self.points.size,
+                     self.mean_snapshot.shape[0], self.dim_max,
+                     self.S.shape[0], self.S))
+        return s
 
     def decompose(self, snapshots):
         """Create a pod from a set of snapshots.
@@ -105,13 +93,11 @@ class Pod(Core):
                 'Empty snapshot list, no decomposition to compute')
             return
 
-        # TODO: manage memory here: make each snapshot a slice of the matrix if its stable, delete otherwise?
-        # TODO: delete data, optional, default true
         snapshots = [Snapshot.convert(s) for s in snapshots]
 
         self.logger.info('Decomposing pod basis...')
 
-        matrix = N.column_stack(tuple([s.data for s in snapshots]))
+        matrix = np.column_stack(tuple([s.data for s in snapshots]))
         super(Pod, self).decompose(matrix)
 
         for s in snapshots:
@@ -136,8 +122,6 @@ class Pod(Core):
     def _post_processing(self):
         # reset quality
         self.quality = None
-        # poking
-        self._notify_observers()
 
     def estimate_quality(self):
         """Quality estimator.
@@ -229,8 +213,8 @@ class Pod(Core):
             Snapshot.write_data(u, path_pattern % i)
 
         if mpi.myid == 0:
-            points = N.vstack(tuple(self.points))
-            N.savez(os.path.join(path, self.pod_file_name),
+            points = np.vstack(tuple(self.points))
+            np.savez(os.path.join(path, self.pod_file_name),
                     parameters=points,
                     # TODO: remove, only here for checking vs jpod 1
                     values=self.S,
@@ -250,14 +234,13 @@ class Pod(Core):
         p = os.path.join(path, self.directories['mean_snapshot'])
         self.mean_snapshot = Snapshot.read_data(p)
 
-        # TODO: MPI com instead of reading from all cpus?
-        lazy_data = N.load(os.path.join(path, self.pod_file_name))
+        lazy_data = np.load(os.path.join(path, self.pod_file_name))
         self.S = lazy_data['values']
         self.V = lazy_data['vectors']
 
         # basis
         size = self.S.shape[0]
-        self.U = N.zeros([self.mean_snapshot.shape[0], size])
+        self.U = np.zeros([self.mean_snapshot.shape[0], size])
 
         path_pattern = os.path.join(path, self.directories['modes'])
         for i in range(size):

@@ -66,6 +66,7 @@ from sklearn.metrics import (r2_score, mean_squared_error)
 from multiprocessing import cpu_count
 from openturns.viewer import View
 import matplotlib.pyplot as plt
+from matplotlib import cm
 from os import mkdir
 import itertools
 from .wrapper import Wrapper
@@ -377,39 +378,30 @@ class UQ:
 
             # Write aggregated indices to file
             if self.output_folder is not None:
-                ind = np.array(indices[1:]).flatten('F')
+                ind_total_first = np.array(indices[1:]).flatten('F')
+                i1 = np.array(indices[1]).flatten('F')
+                i2 = np.array(indices[2]).flatten('F')
                 if (float(ot.__version__[:3]) >= 1.8) and (self.method_sobol != 'FAST'):
                     i1_min = np.array(indices_conf[0].getLowerBound()).flatten('F')
-                    i1 = np.array(indices[1]).flatten('F')
                     i1_max = np.array(indices_conf[0].getUpperBound()).flatten('F')
                     i2_min = np.array(indices_conf[1].getLowerBound()).flatten('F')
-                    i2 = np.array(indices[2]).flatten('F')
                     i2_max = np.array(indices_conf[1].getUpperBound()).flatten('F')
 
                     data = np.append([i1_min], [i1, i1_max, i2_min, i2, i2_max])
                     names = []
-                    for p in self.p_lst:
-                        names += ['S_min_' + str(p)]
-                    for p in self.p_lst:
-                        names += ['S_' + str(p)]
-                    for p in self.p_lst:
-                        names += ['S_max_' + str(p)]
-                    for p in self.p_lst:
-                        names += ['S_T_min_' + str(p)]
-                    for p in self.p_lst:
-                        names += ['S_T_' + str(p)]
-                    for p in self.p_lst:
-                        names += ['S_T_max_' + str(p)]
+
+                    for i, p in itertools.product(['S_min_', 'S_', 'S_max_',
+                                                   'S_T_min_', 'S_T_', 'S_T_max_'],
+                                                   self.p_lst):
+                        names += [i + str(p)]
 
                     conf1 = np.vstack((i1_min, i2_min)).flatten('F')
-                    conf1 = ind - conf1
+                    conf1 = ind_total_first - conf1
                     conf2 = np.vstack((i1_max, i2_max)).flatten('F')
-                    conf2 -= ind
+                    conf2 -= ind_total_first
                     conf = np.vstack((conf1, conf2))
                 else:
                     conf = 0
-                    i1 = np.array(indices[1]).flatten('F')
-                    i2 = np.array(indices[2]).flatten('F')
                     data = np.append(i1, i2)
                 dataset = Dataset(names=names,
                                   shape=[1, 1, 1],
@@ -419,15 +411,19 @@ class UQ:
 
                 # Plot indices and confidence intervals
                 objects = []
+                color = []
                 for i, p in enumerate(self.p_lst):
                     objects.append([r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"])
+                    color.append([cm.Pastel1(i), cm.Pastel1(i)])
 
                 objects = [item for sublist in objects for item in sublist]
+                color = [item for sublist in color for item in sublist]
                 y_pos = np.arange(2 * self.p_len)
 
                 fig = plt.figure('Aggregated Indices')
-
-                plt.bar(y_pos, ind, yerr=conf, align='center', alpha=0.5)
+                plt.bar(y_pos, ind_total_first,
+                        yerr=conf, align='center', alpha=0.5, color=color)
+                plt.set_cmap('Pastel2')
                 plt.xticks(y_pos, objects)
                 plt.tick_params(axis='x', labelsize=20)
                 plt.tick_params(axis='y', labelsize=20)
@@ -437,7 +433,6 @@ class UQ:
                 path = self.output_folder + '/sensitivity_aggregated.pdf'
                 fig.savefig(path, transparent=True, bbox_inches='tight')
                 plt.close('all')
-
             else:
                 self.logger.debug(
                     "No output folder to write aggregated indices in")

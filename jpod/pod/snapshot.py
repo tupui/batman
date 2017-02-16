@@ -3,15 +3,13 @@ import os
 import logging
 import shutil
 import re
-import numpy as N
+import numpy as np
 from ..input_output import IOFormatSelector, Dataset
 from ..space import Point
-from .. import mpi
-
-__docformat__ = "reStructuredText"
 
 
 class Snapshot(object):
+
     """A snapshot container.
 
     A snapshot is a vector bound to a point in the space of parameter.
@@ -62,34 +60,19 @@ class Snapshot(object):
         parameter_names = settings['parameter_names']
         cls.parameter_names = tuple(parameter_names)
 
-        # filenames
-        if mpi.size != 1:
-            if mpi.size != len(settings['filenames']):
-                msg = 'cpu number and filenames number mismatch : %i != %i'
-                msg = msg % (mpi.size, len(settings['filenames']))
-                raise Exception(msg)
-            cls.filenames = settings['filenames'][mpi.myid]
-        else:
-            # gather all filenames
-            cls.filenames = []
-            for v in settings['filenames'].values():
-                cls.filenames += v
+        # gather all filenames
+        cls.filenames = []
+        for v in settings['filenames'].values():
+            cls.filenames += v
 
         # one and only one of shapes or template_directory must be set
-        ok = False
+        cls.initialized = False
 
         if settings['shapes']:
-            if mpi.size != 1:
-                if mpi.size != len(settings['shapes']):
-                    msg = 'cpu number and shapes number mismatch : %i != %i'
-                    msg = msg % (mpi.size, len(settings['shapes']))
-                    raise Exception(msg)
-                shapes = settings['shapes'][mpi.myid]
-            else:
-                # gather all shapes
-                shapes = []
-                for v in settings['shapes'].values():
-                    shapes += v
+            # gather all shapes
+            shapes = []
+            for v in settings['shapes'].values():
+                shapes += v
 
             if len(shapes) != len(cls.filenames):
                 msg = 'shapes number and filenames number mismatch : %i != %i'
@@ -97,40 +80,41 @@ class Snapshot(object):
                 raise Exception(msg)
 
             cls.shapes = shapes
-            ok = not ok
+            cls.initialized = True
 
         if settings['template_directory']:
             cls._get_shapes_from_template(settings['template_directory'])
             cls.template_directory = settings['template_directory']
-            ok = not ok
+            cls.initialized = True
 
-        if not ok:
-            raise Exception(
-                'one of "shapes" or "template_directory" must be set.')
-
-        cls.initialized = True
+        if not cls.initialized:
+            cls.logger.exception('one of "shapes" or "template_directory" must be set.')
+            raise SystemExit
 
         # logging
-        format = '%-18s : %s'
-        msg = ['Snapshot settings:']
-        msg += [format % ('variables', cls.variables)]
-        msg += [format % ('format', cls.io.format)]
-        msg += [format % ('parameter_names', cls.parameter_names)]
-        msg += [format % ('template_directory', cls.template_directory)]
-        msg += [format % ('shapes', cls.shapes)]
-        msg += [format % ('filenames', cls.filenames)]
-        msg += [format % ('point_filename', cls.point_filename)]
+        msg = ("\nSnapshot settings:\n"
+               "variables: {}\n"
+               "format: {}\n"
+               "parameter_names: {}\n"
+               "template_directory: {}\n"
+               "shapes: {}\n"
+               "filenames: {}\n"
+               "point_filename: {}\n"
+               .format(cls.variables, cls.io.format, cls.parameter_names,
+                       cls.template_directory, cls.shapes, cls.filenames,
+                       cls.point_filename))
 
-        cls.logger.info('\n\t'.join(msg))
+        cls.logger.info(msg)
 
     @classmethod
     def _create_templates(cls, directory):
         # create template directory
         t_d = cls.template_directory
         if not os.path.exists(t_d):
-            mpi.makedirs(t_d)
+            os.makedirs(t_d)
         elif not os.path.isdir(t_d):
-            raise IOError('template path must be a directory.')
+            cls.logger.exception('template path must be a directory.')
+            raise IOError
 
         # gather potential template files for checking
         files_to_copy = []
@@ -155,7 +139,7 @@ class Snapshot(object):
     @classmethod
     def _get_shapes_from_template(cls, directory):
         shapes = []
-        for i, f in enumerate(cls.filenames):
+        for f in cls.filenames:
             path = os.path.join(directory, f)
             cls.io.meta_data(path)
             shapes += [cls.io.info.shape]
@@ -195,9 +179,9 @@ class Snapshot(object):
 
         # check shapes or store them for later check
         if data.size != total_size:
-            msg = 'bad dataset size: got %s instead of %s' % \
-                  (data.size, total_size)
-            raise Exception(msg)
+            cls.logger.exception('bad dataset size: got {} instead of {}'
+                                 .format(data.size, total_size))
+            raise SystemExit
 
     @classmethod
     def read_point(cls, directory):
@@ -206,23 +190,27 @@ class Snapshot(object):
         names = []
         coordinates = []
         path = os.path.join(directory, cls.point_filename)
-        for line in open(path):
-            p = re.findall('^\s*(\S+)\s*=\s*(\S+)\s*', line)
+        with open(path, 'rb') as f:
+            for line in f:
+                line = line.decode('utf8')
+                p = re.findall('^\s*(\S+)\s*=\s*(\S+)\s*', line)
 
-            # checks
-            if len(p) != 1:
-                msg = 'parsing problem in %s on the line "%s"' % (path, line)
-                raise ValueError(msg)
+                # checks
+                if len(p) != 1:
+                    cls.logger.exception('parsing problem in {} on the line {}'
+                                         .format(path, line))
+                    raise ValueError
 
-            names += [p[0][0]]
-            coordinates += [p[0][1]]
+                names += [p[0][0]]
+                coordinates += [p[0][1]]
 
         if tuple(names) != cls.parameter_names:
-            msg = 'bad coordinate names, should be ' + str(cls.parameter_names)
-            msg += ' but got ' + str(names)
-            raise ValueError(msg)
+            cls.logger.exception("bad coordinate names, should be: {}"
+                                 " but got: {}"
+                                 .format(str(cls.parameter_names), str(names)))
+            raise ValueError
 
-        cls.logger.debug('Read point from\n\t%s', path)
+        cls.logger.debug('Read point from\n\t{}'.format(path))
         return Point(coordinates)
 
     @classmethod
@@ -232,10 +220,10 @@ class Snapshot(object):
         if not os.path.isdir(directory):
             os.makedirs(directory)
         path = os.path.join(directory, cls.point_filename)
-        f = open(path, 'w')
-        for k, v in zip(cls.parameter_names, point):
-            f.write(cls.point_format % (k, repr(v)))
-        cls.logger.debug('Wrote point to\n\t%s', path)
+        with open(path, 'wb') as f:
+            for k, v in zip(cls.parameter_names, point):
+                f.write((cls.point_format % (k, repr(v))).encode('utf8'))
+        cls.logger.debug('Wrote point to\n\t{}'.format(path))
 
     @classmethod
     def read_data(cls, directory):
@@ -246,11 +234,11 @@ class Snapshot(object):
         cls._must_be_initialized()
 
         # read the data and gather dataset infos
-        data = N.zeros(0)
+        data = np.zeros(0)
         for f in cls.filenames:
             path = os.path.join(directory, f)
             d = cls.io.read(path, cls.variables)
-            data = N.concatenate((data, d.data.ravel()))
+            data = np.concatenate((data, d.data.ravel()))
 
         cls._check_data(data)
 
@@ -262,7 +250,10 @@ class Snapshot(object):
         """Write snapshot data to `directory`."""
         cls._must_be_initialized()
         cls._check_data(data)
-        mpi.makedirs(directory)
+        try:
+            os.makedirs(directory)
+        except OSError:
+            pass
 
         start = 0
         for i, f in enumerate(cls.filenames):
@@ -313,7 +304,8 @@ class Snapshot(object):
     @classmethod
     def _must_be_initialized(cls):
         if not cls.initialized:
-            raise Exception('Snapshot class is not initialized.')
+            cls.logger.exception('Snapshot class is not initialized.')
+            raise SystemExit
 
     def __init__(self, point, data):
         cls = self.__class__
@@ -328,17 +320,18 @@ class Snapshot(object):
         '''Data of a snapshot, ndarray(total nb of data).'''
 
     def __str__(self):
-        s = ['point : ' + repr(self.point)]
-        s += ['data  :']
-        s += ['\t' + 'shape: ' + str(self.data.shape)]
-        s += ['\t' + s.lstrip() for s in str(self.data.flags).split('\n')]
-        return '\n'.join(s)
+        s = ("point: {}\n"
+             "data: {}\n"
+             "\tshape: {}\n"
+             "\t{}\n"
+             .format(repr(self.point), str(self.data.shape),
+                     [s.lstrip() for s in str(self.data.flags).split('\n')]))
+        return s
 
     def write(self, directory):
         """Write snapshot to `directory`."""
         cls = self.__class__
-        if mpi.myid == 0:
-            cls.write_point(self.point, directory)
+        cls.write_point(self.point, directory)
         cls.write_data(self.data, directory)
         cls.logger.info('Wrote snapshot at point %s in\n\t%s',
                         self.point, directory)

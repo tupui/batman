@@ -50,8 +50,6 @@ class Predictor(object):
         points = self.pod.points
         '''List of points coordinate.'''
 
-        self.pod.register_observer(self)
-
         # adimentionalize corners
         bounds = np.array(self.pod.corners)
         axis = len(bounds.shape) - 1

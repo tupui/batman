@@ -7,10 +7,14 @@ __docformat__ = "reStructuredText"
 
 
 class TecplotAscii(IOBase):
+
     """Manages IO for ASCII tecplot files.
 
     See data format documentation on tecplot web site.
-    In addition to the attributes of the base class :class:`IOBase`, the `data_format` attribute is used to defined the format used for writing data in fortran.
+    In addition to the attributes of the base class :class:`IOBase`, the
+    `data_format` attribute is used to defined the format used for writing data
+    in fortran.
+
     """
 
     format = 'fmt_tp_fortran'
@@ -21,7 +25,7 @@ class TecplotAscii(IOBase):
 
     @use_base_class_docstring
     def read(self, path, names=None):
-        # process header
+        """Process header."""
         self.meta_data(path)
 
         # provides an iterator with lazy evaluation over the quantities stored
@@ -39,11 +43,11 @@ class TecplotAscii(IOBase):
 
     @use_base_class_docstring
     def write(self, path, dataset):
+        """Write header and data."""
         # header
-        f = open(path, 'w')
-        for line in self.header(dataset):
-            f.write(line)
-        f.close()
+        with open(path, 'wb') as f:
+            for line in self.header(dataset):
+                f.write(line.encode('utf8'))
 
         # data
         unit = ascii.open_file(path, 'formatted', 'write', 'append')
@@ -52,7 +56,7 @@ class TecplotAscii(IOBase):
         ascii.close_file(unit)
 
     def header(self, dataset):
-        """Returns a header from dataset info, as a list of strings."""
+        """Return a header from dataset info, as a list of strings."""
         header = []
 
         # if self.file:
@@ -83,10 +87,12 @@ class TecplotAscii(IOBase):
 
         # process names
         names = None
-        for line in open(path):
-            if re.match('^\s*VARIABLES', line, flags=re.IGNORECASE):
-                names = re.findall('"(.*?)"', line)
-                break
+        with open(path, 'rb') as f:
+            for line in f:
+                line = line.decode('utf8')
+                if re.match('^\s*VARIABLES', line, flags=re.IGNORECASE):
+                    names = re.findall('"(.*?)"', line)
+                    break
 
         if names is None:
             raise NameError('cannot find "names" field in the file %s' % path)
@@ -95,25 +101,27 @@ class TecplotAscii(IOBase):
 
         # process shape
         shape_map = None
-        for line in open(path):
-            # assume shape are on the ZONE line
-            if re.match('^\s*ZONE', line, flags=re.IGNORECASE):
-                # must be block format, not point
-                if re.match('.*=\s*POINT.*', line, flags=re.IGNORECASE):
-                    raise FormatError('data not in block format.')
+        with open(path, 'rb') as f:
+            for line in f:
+                line = line.decode('utf8')
+                # assume shape are on the ZONE line
+                if re.match('^\s*ZONE', line, flags=re.IGNORECASE):
+                    # must be block format, not point
+                    if re.match('.*=\s*POINT.*', line, flags=re.IGNORECASE):
+                        raise FormatError('data not in block format.')
 
-                ids = re.findall('(I|J|K)\s*=\s*(\d+)',
-                                 line, flags=re.IGNORECASE)
-                for i in ids:
-                    try:
-                        if shape_map is None:
-                            shape_map = {}
-                        shape_map[i[0].lower()] = int(i[1])
-                    except:
-                        msg = 'cannot read shape from the line "%s" in the file %s' \
-                              % (line, path)
-                        raise ShapeError(msg)
-                break
+                    ids = re.findall('(I|J|K)\s*=\s*(\d+)',
+                                     line, flags=re.IGNORECASE)
+                    for i in ids:
+                        try:
+                            if shape_map is None:
+                                shape_map = {}
+                            shape_map[i[0].lower()] = int(i[1])
+                        except:
+                            msg = 'cannot read shape from the line "%s" in the file %s' \
+                                  % (line, path)
+                            raise ShapeError(msg)
+                    break
 
         if shape_map is None:
             raise ShapeError('cannot find "zone" field in the file %s' % path)

@@ -128,9 +128,10 @@ class Refiner(object):
     def distance_min(self, point):
         """Get the distance of influence.
 
-        Compute the distance, L2 norm between the anchor point and
-        every sampling points. It returns the minimal distance.
-        ``point`` is scaled by ``self.corners`` so the distance is also scaled.
+        Compute the distance, Linf norm between the anchor point and
+        every sampling points. Linf allows to add this lenght to all 
+        coordinates and ensure that no points will be within this hypercube.
+        It returns the minimal distance. ``point`` needs to be scaled by ``self.corners`` so the returned distance is scaled.
 
         :param np.array point: Anchor point
         :return: The distance to the nearest point
@@ -165,7 +166,6 @@ class Refiner(object):
         hypercube = self.scaler.inverse_transform(hypercube)
         hypercube = hypercube.T
         self.logger.debug("Prior Hypercube:\n{}".format(hypercube))
-        self.logger.debug("Corners:\n{}".format(self.corners))
         hypercube[:, 0] = np.minimum(hypercube[:, 0], self.corners[:, 1])
         hypercube[:, 0] = np.maximum(hypercube[:, 0], self.corners[:, 0])
         hypercube[:, 1] = np.minimum(hypercube[:, 1], self.corners[:, 1])
