@@ -3,6 +3,7 @@
 import pytest
 from jpod.space import (Point, Space,
                         UnicityError, AlienPointError, FullSpaceError)
+from jpod.functions import Ishigami
 
 settings = {
     "space": {
@@ -38,6 +39,14 @@ def test_point():
 
     Point.set_threshold(0)
 
+
+def test_point_evaluation():
+    f_3d = Ishigami()
+    point = Point([2.20, 1.57, 3])
+    target = f_3d(point)
+    assert target == 14.357312835804658
+
+
 def test_space():
 
     space = Space(settings)
@@ -51,7 +60,7 @@ def test_space():
     space += [(1, 2, 3), (1, 1, 3)]
     assert space[:] == [(1, 2, 3), (1, 1, 3)]
 
-    s1 = space.sampling(10)
+    s1 = space.sampling()
     space2 = Space(settings)
     s2 = space2.sampling(10, kind='lhsc')
     assert s1[:] != s2[:]
@@ -66,3 +75,13 @@ def test_space():
 
     with pytest.raises(FullSpaceError):
         space.sampling(17)
+
+
+def test_point_evaluation():
+    f_3d = Ishigami()
+    space = Space(settings)
+    space.sampling(2)
+    print(space[:])
+    targets = f_3d(space)
+
+    # assert targets == []

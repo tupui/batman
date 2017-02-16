@@ -164,8 +164,16 @@ class Ishigami(object):
         :return: f(x)
         :rtype: float
         """
-        f = np.sin(x[0]) + self.a * np.sin(x[1])**2 + \
-            self.b * (x[2]**4) * np.sin(x[0])
+        try:
+            x[0][0]
+            n_x = len(x)
+        except (TypeError, IndexError):
+            x=[x]
+            n_x = 1
+        f = np.empty(n_x)
+        for i, x_i in enumerate(x):
+            f[i] = (np.sin(x_i[0]) + self.a * np.sin(x_i[1])**2 + \
+                self.b * (x_i[2]**4) * np.sin(x_i[0]))
         return f
 
 

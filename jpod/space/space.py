@@ -62,8 +62,11 @@ class Space(list):
         self.settings = settings
         self.doe_init = settings['space']['sampling']['init_size']
         self.doe_method = settings['space']['sampling']['method']
-        self.max_points_nb = settings['space'][
-            'resampling']['resamp_size'] + self.doe_init
+        try:
+            self.max_points_nb = settings['space'][
+                'resampling']['resamp_size'] + self.doe_init
+        except KeyError:
+            self.max_points_nb = self.doe_init
         self.size = 0
         corners = settings['space']['corners']
         self.dim = len(corners[0])
@@ -211,7 +214,7 @@ class Space(list):
                                    .format(point))
         return self
 
-    def sampling(self, n, kind=None):
+    def sampling(self, n=None, kind=None):
         """Create point samples in the parameter space.
 
         Minimum number of samples for halton and sobol : 4
@@ -225,6 +228,8 @@ class Space(list):
         """
         if kind is None:
             kind = self.doe_method
+        if n is None:
+            n = self.doe_init
 
         bounds = np.array(self.corners)
         samples = sampling.doe(n, bounds, kind)

@@ -1,7 +1,7 @@
 import os
 import re
 import logging
-from .snapshot import SnapshotTask
+from .snapshot_task import SnapshotTask
 import rpyc
 import socket
 import numpy as N

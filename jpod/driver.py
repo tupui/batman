@@ -26,9 +26,9 @@ from concurrent import futures
 
 from collections import OrderedDict
 from . import mpi
-from .pod import (Snapshot, Pod)
+from .pod import Pod
 from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
-from .tasks import (PodServerTask, SnapshotTask)
+from .tasks import (PodServerTask, SnapshotTask, Snapshot)
 from .uq import UQ
 
 

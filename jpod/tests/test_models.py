@@ -4,7 +4,18 @@ import numpy as np
 import numpy.testing as npt
 import openturns as ot
 from jpod.functions import (Ishigami, Mascaret)
-from jpod.surrogate import PC
+from jpod.surrogate import (PC, Kriging)
+from jpod.space import Space, Point
+
+settings = {
+    "space": {
+        "corners": [[-np.pi, -np.pi, -np.pi], [np.pi, np.pi, np.pi]],
+        "sampling": {
+            "init_size": 100,
+            "method": "halton"
+        }
+    }
+}
 
 
 def test_PC_1d():
@@ -77,5 +88,38 @@ def test_PC_14d():
     mse = ((pred - ref) ** 2).sum(axis=0)
 
     q2 = (np.ones(14) - mse / var).mean()
+
+    assert q2 == pytest.approx(1, 0.01)
+
+
+def test_GP_1d():
+    f_3d = Ishigami()
+    point = Point([2.20, 1.57, 3])
+    target = f_3d(point)
+    space = Space(settings)
+    space.sampling(100)
+    x = space[:]
+    y = f_3d(x)
+    
+    x1 = ot.Uniform(-3.1415, 3.1415)
+    dists = [x1] * 3
+
+    surrogate = Kriging(space, y)
+    pred = np.array(surrogate.evaluate(point))
+    assert pred == pytest.approx(target, 0.01)
+
+    # Compute predictivity coefficient Q2
+    def wrap_f_3d(x):
+        return [f_3d(x)]
+    model = ot.PythonFunction(3, 1, wrap_f_3d)
+    surrogate = ot.PythonFunction(3, 1, surrogate.evaluate)
+
+    dists = ot.ComposedDistribution(dists, ot.IndependentCopula(3))
+    experiment = ot.LHSExperiment(dists, 1000)
+    sample = experiment.generate()
+    ref = model(sample)
+
+    val = ot.MetaModelValidation(sample, ref, surrogate)
+    q2 = val.computePredictivityFactor()
 
     assert q2 == pytest.approx(1, 0.01)

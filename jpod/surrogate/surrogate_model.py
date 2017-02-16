@@ -12,7 +12,8 @@ It allows the creation of a surrogate model and making predictions.
 
     >> from surrogate_model import SurrogateModel
     >> method = "kriging"
-    >> predictor = SurrogateModel(method)
+    >> predictor = SurrogateModel(method, space, data)
+    >> predictor.save()
     >> points = [(12.5, 56.8), (2.2, 5.3)]
     >> predictions = SurrogateModel(point)
 
@@ -22,13 +23,15 @@ import logging
 from .kriging import Kriging
 from .polynomial_chaos import PC
 from .RBFnet import RBFnet
+from ..tasks import Snapshot
+import dill as pickle
 import numpy as np
-from ..pod.snapshot import Snapshot
+import os
 
 
 class SurrogateModel(object):
 
-    """Predictor."""
+    """Surrogate model."""
 
     logger = logging.getLogger(__name__)
 
@@ -48,13 +51,10 @@ class SurrogateModel(object):
         if self.pod is not None:
             data = self.pod.VS().T  # SV.T a snapshot per column
             self.__call__ = self._call_pod
+            self.update = False  # update switch: update model if POD update
         else:
             data = data
             self.__call__ = self._call
-
-        self.update = False
-        '''Switch to update or not predictor _preprocessing,
-        used when the pod decomposition is updated.'''
 
         # adimentionalize corners
         axis = len(bounds.shape) - 1
@@ -108,10 +108,6 @@ class SurrogateModel(object):
         :return: Standard deviation
         :rtype: lst(np.array)
         """
-        if self.update:
-            # pod has changed : update predictor
-            self.__init__(self.kind, self.pod)
-
         results = []
         sigmas = []
         for p in points:
@@ -120,7 +116,6 @@ class SurrogateModel(object):
             sigmas += [sigma]
 
         return results, sigmas
-
 
     def _call_pod(self, points):
         """Compute predictions.
@@ -144,3 +139,29 @@ class SurrogateModel(object):
             sigmas += [sigma]
 
         return results, sigmas
+
+    def save(self, path):
+            """Save model to disk.
+
+            Write a file containing information on the model
+
+            :param str path: path to a directory.
+            """
+            # Write the model
+            file_name = os.path.join(path, 'model.dat')
+            with open(file_name, 'wb') as fichier:
+                mon_pickler = pickle.Pickler(fichier)
+                mon_pickler.dump(self.predictor)
+            self.logger.info('Wrote model to {}'.format(path))
+
+    def load(self, path):
+        """Load model from disk.
+
+        :param str path: path to a output/surrogate directory.
+        """
+        file_name = os.path.join(path, 'model.dat')
+        with open(file_name, 'rb') as fichier:
+            mon_depickler = pickle.Unpickler(fichier)
+            model_recupere = mon_depickler.load()
+        self.logger.info('Model loaded.')
+        return model_recupere

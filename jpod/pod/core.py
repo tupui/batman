@@ -13,7 +13,7 @@ M. Brand: Fast low-rank modifications of the thin singular value decomposition. 
 """
 import numpy as np
 import copy
-from .predictor import Predictor
+from ..surrogate import SurrogateModel
 from .. import mpi
 from ..misc import ProgressBar, NestedPool
 from pathos.multiprocessing import cpu_count
@@ -243,8 +243,8 @@ class Core(object):
             new_pod.S = S_1
 
             # New prediction with points_nb - 1
-            predictor = Predictor(self.leave_one_out_predictor,
-                                  new_pod)
+            predictor = SurrogateModel(self.leave_one_out_predictor,
+                                       new_pod)
 
             prediction, _ = predictor.predict(points[i])
 

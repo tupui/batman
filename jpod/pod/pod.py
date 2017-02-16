@@ -18,14 +18,13 @@ This class wraps the core of POD computations and manages high level IO.
 """
 import logging
 import os
-import dill as pickle
 import copy
 
 from .core import Core
 from .. import mpi
 import numpy as np
-from .predictor import Predictor
-from .snapshot import Snapshot
+from ..surrogate import SurrogateModel
+from ..tasks import Snapshot
 from ..space import Space
 
 
@@ -161,7 +160,7 @@ class Pod(Core):
         try:
             snapshots, sigma = self.predictor(points)
         except TypeError:
-            self.predictor = Predictor(method, self)
+            self.predictor = SurrogateModel(method, self)
             snapshots, sigma = self.predictor(points)
 
         if path is not None:
@@ -247,29 +246,3 @@ class Pod(Core):
             self.U[:, i] = Snapshot.read_data(path_pattern % i)
 
         self.logger.info('Read pod from %s', path)
-
-    def write_model(self, path):
-            """Save model to disk.
-
-            Write a file containing information on the model
-
-            :param str path: path to a directory.
-            """
-            # Write the model
-            file_name = os.path.join(path, 'model')
-            with open(file_name, 'wb') as fichier:
-                mon_pickler = pickle.Pickler(fichier)
-                mon_pickler.dump(self.predictor)
-            self.logger.info('Wrote model to %s', path)
-
-    @staticmethod
-    def read_model(path):
-        """Read the model from disk.
-
-        :param str path: path to a output/pod directory.
-        """
-        file_name = os.path.join(path, 'model')
-        with open(file_name, 'rb') as fichier:
-            mon_depickler = pickle.Unpickler(fichier)
-            model_recupere = mon_depickler.load()
-        return model_recupere

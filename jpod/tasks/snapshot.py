@@ -1,303 +1,337 @@
-# -*- coding: utf-8 -*-
-"""
-SnapshotTask Class
-==================
-
-An object of this class corresponds to a snapshot.
-The initialize classmethod is used to define common characteristics.
-It is only after that a :class:`SnapshotTask` object can be created.
-
-:Example:
-
-::
-
-    >> from tasks import SnapshotTask
-    >> SnapshotTask.initialize(provider, data_files)
-    >> task = SnapshotTask(point, path)
-    >> task.run()
-
-"""
+# coding: utf8
 import os
-import re
-import time
 import logging
 import shutil
-from ..misc import clean_path
-import subprocess
-from ..pod import Snapshot
+import re
+import numpy as np
+from ..input_output import IOFormatSelector, Dataset
+from ..space import Point
 
-opj = os.path.join
 
+class Snapshot(object):
 
-class SnapshotTask():
+    """A snapshot container.
 
-    """SnapshotTask class."""
+    A snapshot is a vector bound to a point in the space of parameter.
+    This class manages several aspects:
+    * settings common to all snapshots,
+    * splitting across MPI jobs,
+    * IO, to read and write snapshots to disk,
+    * data manipulations to be provided to the pod processing.
+    """
 
     logger = logging.getLogger(__name__)
 
-    # these attributes should be independent of external settings
-    started_file = 'job-started'
-    '''Name of the empty file which indicates that the task script has been started.'''
+    point_filename = None
+    '''File name for storing the coordinates of a point.'''
 
-    finished_file = 'job-finished'
-    '''Name of the empty file which indicates that the task script has finished.'''
+    point_format = '%s = %s\n'
+    '''Line format for writing a point coordinate to file, name and coordinate value, the value must be repr().'''
 
-    touch = 'touch'
-    '''Shell program to create an empty file, used to create the script state files.'''
+    template_directory = None
+    '''Location of io templates.'''
 
-    dummy_line = '^(\s*#|\n)'
-    '''Regular expression used that match a non executable statement in a shell script.'''
+    shapes = None
+    '''Shapes of the data partitions.'''
 
-    info_line = '# State file insertion <<<<<<<<<<<<<<<<<<<<<<<<<\n'
-    '''Commented lines to be inserted in the script before and after state file creation statements.'''
+    variables = None
+    '''Names of the variables contained in a snapshot.'''
 
-    period = None
-    '''Period of time in seconds between state files existence checking.'''
+    filenames = None
+    '''File names used for io.'''
+
+    io = None
+    '''Object for doing io operations with a given file format.'''
 
     initialized = False
-    '''Switch to check that the class has been initialized.'''
+    '''Switch to check that initialization has been done.'''
 
-    # these attributes are settings common to all objects
-    context = None
-    '''Path to the directory which contains the files required for running the snapshot producer.'''
-
-    private_directory = None
-    '''Directory inside the task working_directory where jpod stuff to keep will be located.'''
-
-    command = None
-    '''Command line used for executing the script.'''
-
-    script = None
-    '''Script that will run the snapshot producer.'''
-
-    timeout = None
-    '''Period of time to wait before a task is considered to be failed.'''
-
-    data_files = None
-    '''List of path to data files that defines a snapshot, paths must be relative to the context directory.'''
-
-    clean_working_directory = False
-    '''Clean the working directory after a task is terminated.'''
+    parameter_names = None
+    '''List of coordinate names, used for points io.'''
 
     @classmethod
-    def _reset(cls):
-        """Reset class attributes settings, for unit testing purposes."""
-        cls.private_directory = None
-        cls.context = None
-        cls.command = None
-        cls.script = None
-        cls.timeout = None
-        cls.data_files = None
+    def initialize(cls, settings):
+        """Initialize the `settings` common to all snapshots."""
+        cls.point_filename = settings['point_filename']
+        cls.variables = settings['variables']
+        cls.io = IOFormatSelector(settings['format'])
+
+        # parameter names
+        parameter_names = settings['parameter_names']
+        cls.parameter_names = tuple(parameter_names)
+
+        # gather all filenames
+        cls.filenames = []
+        for v in settings['filenames'].values():
+            cls.filenames += v
+
+        # one and only one of shapes or template_directory must be set
         cls.initialized = False
-        cls.clean_working_directory = False
+
+        if settings['shapes']:
+            # gather all shapes
+            shapes = []
+            for v in settings['shapes'].values():
+                shapes += v
+
+            if len(shapes) != len(cls.filenames):
+                msg = 'shapes number and filenames number mismatch : %i != %i'
+                msg = msg % (len(shapes), len(cls.filenames))
+                raise Exception(msg)
+
+            cls.shapes = shapes
+            cls.initialized = True
+
+        if settings['template_directory']:
+            cls._get_shapes_from_template(settings['template_directory'])
+            cls.template_directory = settings['template_directory']
+            cls.initialized = True
+
+        if not cls.initialized:
+            cls.logger.exception('one of "shapes" or "template_directory" must be set.')
+            raise SystemExit
+
+        # logging
+        msg = ("\nSnapshot settings:\n"
+               "variables: {}\n"
+               "format: {}\n"
+               "parameter_names: {}\n"
+               "template_directory: {}\n"
+               "shapes: {}\n"
+               "filenames: {}\n"
+               "point_filename: {}\n"
+               .format(cls.variables, cls.io.format, cls.parameter_names,
+                       cls.template_directory, cls.shapes, cls.filenames,
+                       cls.point_filename))
+
+        cls.logger.info(msg)
 
     @classmethod
-    def initialize(cls, provider, data_files):
-        """Initialize the settings common to all objects."""
-        if not os.path.isdir(provider['context']):
-            cls.logger.error(
-                'Cannot find the context directory: {}'.format(provider['context']))
-            raise SystemError
-        else:
-            cls.context = clean_path(provider['context'])
+    def _create_templates(cls, directory):
+        # create template directory
+        t_d = cls.template_directory
+        if not os.path.exists(t_d):
+            os.makedirs(t_d)
+        elif not os.path.isdir(t_d):
+            cls.logger.exception('template path must be a directory.')
+            raise IOError
 
-        if not os.path.isfile(provider['script']):
-            cls.logger.error(
-                'Cannot find script file: {}'.format(provider['script']))
-            raise SystemError
-        else:
-            cls.script = clean_path(provider['script'])
+        # gather potential template files for checking
+        files_to_copy = []
+        for f in cls.filenames:
+            path = os.path.join(t_d, f)
+            if not os.path.isfile(path):
+                files_to_copy += [f]
 
-        cls.private_directory = provider['private-directory']
-        cls.command = provider['command']
-        cls.timeout = provider['timeout']
-        cls.period = cls.timeout / 100.
-        cls.data_files = data_files
-        cls.clean_working_directory = provider['clean']
-
-    def __init__(self, point, working_directory):
-        """Create a task the will produce a snapshot.
-
-        :param point: a point object
-        :param working_directory: path to the directory in which the task will be run.
-        """
-        cls = self.__class__
-
-        self.working_directory = clean_path(working_directory)
-        self.point = point
-        self.private_directory = opj(self.working_directory,
-                                     cls.private_directory)
-        self.started_file = opj(self.private_directory, cls.started_file)
-        self.finished_file = opj(self.private_directory, cls.finished_file)
-        self.script = opj(self.private_directory,
-                          os.path.basename(cls.script))
-
-    def run(self):
-        """Return the result of the task.
-
-        If the task has already been completed, just return its result, otherwise try to run it first.
-        """
-        cls = self.__class__
-        result = self._before_run()
-
-        command = cls.command.split() + [self.script]
-        wkdir = self.working_directory
-        # check if the task has already been run
-        if result is None:
-            self.handle = subprocess.Popen(command, cwd=wkdir)
-            cls.logger.info('Launched : %s', ' '.join(command))
-            result = self._after_run()
-        else:
-            cls.logger.info('Task is up to date and was not run.')
-
-        return result
-
-    def _before_run(self):
-        """Prepare the run.
-
-        The `working_directory` is created as a replica of the `context` directory tree with symbolic links. This is where the snapshot producer will be run, by issuing the command line generated with `command` and `script`. In addition to the files located in the directory `context`, the snapshot producer needs the parameters or the coordinates of the point in the parameters space bound to the snapshot to be created, this file is created here. In order to be informed about the state of the snapshot computation, without relying on querying a third party tool, the producer script is modified in order to create dummy state files in `working_directory`. A file which indicates that the script is starting (see `started_file`) is created right before any executable statements of the script and similarly right after all executable statements (see `finished_file`).
-        """
-        cls = self.__class__
-
-        # check whether the task needs to be run
-        task_already_done = True
-        for f in cls.data_files:
-            f = opj(self.private_directory, os.path.basename(f))
-            if not os.path.isfile(f):
-                task_already_done = False
-                break
-
-        if task_already_done:
-            return self.private_directory
-
-        else:
-            # there must be no working directory
-            if os.path.isdir(self.working_directory):
-                cls.logger.error(
-                    'Working directory already exists:\n{}'.format(self))
-                raise SystemError
-
-            # prepare the working directory
-            self._copytree_with_symlinks(cls.context, self.working_directory)
-
-            # create the private directory
-            os.makedirs(self.private_directory)
-
-            # write the point's coordinates
-            Snapshot.write_point(self.point, self.private_directory)
-
-            # add state files creation to the script
-            self._state_files_hook()
-
-            return None
-
-    def _wait_for_completion(self):
-        """Check if the task is completed."""
-        cls = self.__class__
-
-        # initial time for checking timeout
-        start_time = time.time()
-
-        while True:
-            # check for finished state file
-            if os.path.isfile(self.finished_file):
-                break
-
-            # otherwise check timeout
-            elif time.time() - start_time > cls.timeout:
-                # the task is taking too long
-                # first see if it has started at all
-                if os.path.isfile(self.started_file):
-                    msg = 'The job started but did not finish'
-                else:
-                    msg = 'The job has not started'
-                cls.logger.error('{}:\n{}'.format(msg, self))
-                raise SystemError
-
-            # elif os.path.isfile(self.started_file):
-            #     start_time = os.path.getctime(self.started_file)
-            #     life_span = time.time() - start_time
-            #     if life_span > self.__class__.timeout: ...
-            #     raise TaskTimeoutError('')
-
-            # finally wait a few seconds
+        # check if templates are all already existing or
+        # all not existing
+        if files_to_copy:
+            if len(files_to_copy) != len(cls.filenames):
+                raise Exception('check template directory content')
             else:
-                time.sleep(cls.period)
+                for f in cls.filenames:
+                    path = os.path.join(directory, f)
+                    shutil.copy(path, t_d)
 
-    def _after_run(self):
-        """Wait for the job completion and return the snapshot directory."""
+        cls._get_shapes_from_template(directory)
+        cls.logger.info('Created snapshot file templates.')
+
+    @classmethod
+    def _get_shapes_from_template(cls, directory):
+        shapes = []
+        for f in cls.filenames:
+            path = os.path.join(directory, f)
+            cls.io.meta_data(path)
+            shapes += [cls.io.info.shape]
+        cls.shapes = shapes
+        cls.logger.info('Read shape from template.')
+
+    @classmethod
+    def convert(cls, snapshot, path=None):
+        """Convert a `snapshot` between disk and object.
+
+        :param snapshot: either an object or a directory path
+        :param path: optional, when `snapshot` is an object, path to directory where to write it.
+        """
+        if path is None:
+            if isinstance(snapshot, cls):
+                # nothing to do
+                output = snapshot
+            else:
+                # convert snapshot on disk to a snapshot object
+                output = cls.read(snapshot)
+        else:
+            # convert a snapshot object to a snapshot on disk
+            snapshot.write(path)
+            output = path
+
+        return output
+
+    @classmethod
+    def _check_data(cls, data):
+        # compute expected data size
+        total_size = 0
+        for shape in cls.shapes:
+            size = len(cls.variables)
+            for i in shape:
+                size *= i
+            total_size += size
+
+        # check shapes or store them for later check
+        if data.size != total_size:
+            cls.logger.exception('bad dataset size: got {} instead of {}'
+                                 .format(data.size, total_size))
+            raise SystemExit
+
+    @classmethod
+    def read_point(cls, directory):
+        """Read a snapshot point from `directory` and return it."""
+        cls._must_be_initialized()
+        names = []
+        coordinates = []
+        path = os.path.join(directory, cls.point_filename)
+        with open(path, 'rb') as f:
+            for line in f:
+                line = line.decode('utf8')
+                p = re.findall('^\s*(\S+)\s*=\s*(\S+)\s*', line)
+
+                # checks
+                if len(p) != 1:
+                    cls.logger.exception('parsing problem in {} on the line {}'
+                                         .format(path, line))
+                    raise ValueError
+
+                names += [p[0][0]]
+                coordinates += [p[0][1]]
+
+        if tuple(names) != cls.parameter_names:
+            cls.logger.exception("bad coordinate names, should be: {}"
+                                 " but got: {}"
+                                 .format(str(cls.parameter_names), str(names)))
+            raise ValueError
+
+        cls.logger.debug('Read point from\n\t{}'.format(path))
+        return Point(coordinates)
+
+    @classmethod
+    def write_point(cls, point, directory):
+        """Write a snapshot point to `directory`."""
+        cls._must_be_initialized()
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+        path = os.path.join(directory, cls.point_filename)
+        with open(path, 'wb') as f:
+            for k, v in zip(cls.parameter_names, point):
+                f.write((cls.point_format % (k, repr(v))).encode('utf8'))
+        cls.logger.debug('Wrote point to\n\t{}'.format(path))
+
+    @classmethod
+    def read_data(cls, directory):
+        """Read snapshot data from `directory` and return it.
+
+        :param directory : directory path
+        """
+        cls._must_be_initialized()
+
+        # read the data and gather dataset infos
+        data = np.zeros(0)
+        for f in cls.filenames:
+            path = os.path.join(directory, f)
+            d = cls.io.read(path, cls.variables)
+            data = np.concatenate((data, d.data.ravel()))
+
+        cls._check_data(data)
+
+        cls.logger.debug('Read data from\n\t%s', directory)
+        return data
+
+    @classmethod
+    def write_data(cls, data, directory):
+        """Write snapshot data to `directory`."""
+        cls._must_be_initialized()
+        cls._check_data(data)
+        try:
+            os.makedirs(directory)
+        except OSError:
+            pass
+
+        start = 0
+        for i, f in enumerate(cls.filenames):
+            # determine data shape
+            if cls.template_directory:
+                # get template data too
+                template = os.path.join(cls.template_directory, f)
+                full_data = cls.io.read(template)
+                shape = full_data.shape
+            else:
+                shape = cls.shapes[i]  # TODO: not necessary
+
+            # create a dataset
+            size = len(cls.variables)
+            for i in shape:
+                size *= i
+            end = start + size
+            dataset = Dataset(names=cls.variables, shape=shape,
+                              data=data[start:end])
+            start = end
+
+            path = os.path.join(directory, f)
+
+            # write date to disk
+            if cls.template_directory:
+                # replace data
+                for name in dataset.names:
+                    full_data[name] = dataset[name]
+
+                cls.io.write(path, full_data)
+            else:
+                cls.io.write(path, dataset)
+
+        cls.logger.debug('Wrote data in\n\t%s', directory)
+
+    @classmethod
+    def read(cls, directory):
+        """Read snapshot data from disk.
+
+        :param directory : directory path
+        """
+        point = cls.read_point(directory)
+        data = cls.read_data(directory)
+        cls.logger.info('Read snapshot at point %s from\n\t%s',
+                        point, directory)
+        return cls(point, data)
+
+    @classmethod
+    def _must_be_initialized(cls):
+        if not cls.initialized:
+            cls.logger.exception('Snapshot class is not initialized.')
+            raise SystemExit
+
+    def __init__(self, point, data):
         cls = self.__class__
 
-        self._wait_for_completion()
+        cls._must_be_initialized()
 
-        # move the expected snapshot files in the private directory
-        for f in cls.data_files:
-            f_original = opj(self.working_directory, f)
-            if not os.path.isfile(f_original):
-                cls.logger.error('Missing data file: {}'.format(f))
-                raise SystemError
-            else:
-                f_moved = opj(self.private_directory, os.path.basename(f))
-                os.rename(f_original, f_moved)
+        self.point = Point(point)
+        '''Point coordinates in the space of parameters.'''
 
-        # clean up working directory but the private directory
-        if self.clean_working_directory:
-            for f in os.listdir(self.working_directory):
-                f = opj(self.working_directory, f)
-                if f != self.private_directory:
-                    try:
-                        shutil.rmtree(f)
-                    except OSError:
-                        os.remove(f)
-
-        return self.private_directory
+        cls._check_data(data)
+        self.data = data
+        '''Data of a snapshot, ndarray(total nb of data).'''
 
     def __str__(self):
-        cls = self.__class__
-        s = 'command line : ' + cls.command + '\n'
-        s += 'run form : ' + str(os.getcwd()) + '\n'
-        s += 'point : ' + str(self.point) + '\n'
-        s += 'context : ' + self.context + '\n'
-        s += 'working directory : ' + self.working_directory
+        s = ("point: {}\n"
+             "data: {}\n"
+             "\tshape: {}\n"
+             "\t{}\n"
+             .format(repr(self.point), str(self.data.shape),
+                     [s.lstrip() for s in str(self.data.flags).split('\n')]))
         return s
 
-    def _state_files_hook(self):
-        """Modify the script to create the state files."""
+    def write(self, directory):
+        """Write snapshot to `directory`."""
         cls = self.__class__
-
-        # file creation command lines
-        touch_started = cls.touch + ' ' + self.started_file + '\n'
-        touch_finished = cls.touch + ' ' + self.finished_file + '\n'
-
-        # wrap with info strings
-        touch_started = cls.info_line + touch_started + cls.info_line
-        touch_finished = cls.info_line + touch_finished + cls.info_line
-
-        # insert started state file creation
-        with open(cls.script, 'r') as f:
-            script = f.readlines()
-            for i, line in enumerate(script):
-                if not re.match(cls.dummy_line, line):
-                    script.insert(i, touch_started)
-                    break
-
-        # append finished state file creation
-        script.append(touch_finished)
-
-        # create the hooked script
-        with open(self.script, 'w') as f:
-            f.writelines(script)
-
-    def _copytree_with_symlinks(self, original, copy):
-        """Make a copy of a directory tree with symbolic links.
-
-        :param original: path to the directory to be copied.
-        :param copy    : path to the copy location.
-        """
-        os.makedirs(copy)
-        for root, dirs, files in os.walk(original):
-            local = root.replace(original, copy)
-            for d in dirs:
-                os.makedirs(opj(local, d))
-            for f in files:
-                os.symlink(opj(root, f), opj(local, f))
+        cls.write_point(self.point, directory)
+        cls.write_data(self.data, directory)
+        cls.logger.info('Wrote snapshot at point %s in\n\t%s',
+                        self.point, directory)
