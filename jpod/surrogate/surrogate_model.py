@@ -1,7 +1,7 @@
 # coding: utf8
 """
-Predictor Class
-===============
+SurrogateModel Class
+====================
 
 This class manages snapshot prediction.
 It allows the creation of a surrogate model and making predictions.
@@ -10,48 +10,53 @@ It allows the creation of a surrogate model and making predictions.
 
 ::
 
-    >> from predictor import Predictor
+    >> from surrogate_model import SurrogateModel
     >> method = "kriging"
-    >> predictor = Predictor(method, pod)
-    >> point = [(12.5, 56.8)]
-    >> prediction = predictor(point)
+    >> predictor = SurrogateModel(method)
+    >> points = [(12.5, 56.8), (2.2, 5.3)]
+    >> predictions = SurrogateModel(point)
 
 """
 
 import logging
-from ..surrogate import (RBFnet, Kriging, PC)
+from .kriging import Kriging
+from .polynomial_chaos import PC
+from .RBFnet import RBFnet
 import numpy as np
-from .snapshot import Snapshot
+from ..pod.snapshot import Snapshot
 
 
-class Predictor(object):
+class SurrogateModel(object):
 
     """Predictor."""
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, kind, pod):
+    def __init__(self, kind, space=None, data=None, pod=None):
         """Init POD predictor.
 
         :param :class:`jpod.Pod` pod: a pod
+        :param lst points:
+        :param np.array data:
         :param str kind : name of prediction method, rbf or kriging
         """
         self.kind = kind
-
         self.pod = pod
-        '''Pod used for predictions.'''
+        points = space
+        bounds = np.array(space.corners)
+
+        if self.pod is not None:
+            data = self.pod.VS().T  # SV.T a snapshot per column
+            self.__call__ = self._call_pod
+        else:
+            data = data
+            self.__call__ = self._call
 
         self.update = False
         '''Switch to update or not predictor _preprocessing,
         used when the pod decomposition is updated.'''
 
-        data = self.pod.VS().T  # SV.T
-        '''Output data at each point.'''
-        points = self.pod.points
-        '''List of points coordinate.'''
-
         # adimentionalize corners
-        bounds = np.array(self.pod.corners)
         axis = len(bounds.shape) - 1
         self.bounds_min = np.array(
             (np.amin(bounds, axis=axis).reshape(2, -1)[0, :]))
@@ -94,7 +99,30 @@ class Predictor(object):
 
         return result, sigma
 
-    def __call__(self, points):
+    def _call(self, points):
+        """Compute predictions.
+
+        :param points: list of points in the parameter space
+        :return: Result
+        :rtype: lst(:class:`pod.snapshot.Snapshot`)
+        :return: Standard deviation
+        :rtype: lst(np.array)
+        """
+        if self.update:
+            # pod has changed : update predictor
+            self.__init__(self.kind, self.pod)
+
+        results = []
+        sigmas = []
+        for p in points:
+            result, sigma = self.predict(p)
+            results += [Snapshot(p, result)]
+            sigmas += [sigma]
+
+        return results, sigmas
+
+
+    def _call_pod(self, points):
         """Compute predictions.
 
         :param points: list of points in the parameter space
