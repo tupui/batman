@@ -33,6 +33,23 @@ import numpy as np
 import logging
 
 
+def multi_eval(func):
+    """Check if evaluating an unique point or a space of points.
+
+    :param callable func: the function to decorate
+    """
+    def wrapper_func(self, x):
+        try:
+            x[0][0]
+        except (TypeError, IndexError):
+            x=[x]
+        f = np.empty(len(x))
+        for i, x_i in enumerate(x):
+            f[i] = func(self, x_i)
+        return f
+    return wrapper_func
+
+
 class Michalewicz(object):
 
     r"""[Michalewicz]_ class.
@@ -157,6 +174,10 @@ class Ishigami(object):
         self.logger.info("Using function Ishigami with a={}, b={}"
                          .format(self.a, self.b))
 
+
+
+
+    @multi_eval
     def __call__(self, x):
         """Call function.
 
@@ -164,17 +185,28 @@ class Ishigami(object):
         :return: f(x)
         :rtype: float
         """
-        try:
-            x[0][0]
-            n_x = len(x)
-        except (TypeError, IndexError):
-            x=[x]
-            n_x = 1
-        f = np.empty(n_x)
-        for i, x_i in enumerate(x):
-            f[i] = (np.sin(x_i[0]) + self.a * np.sin(x_i[1])**2 + \
-                self.b * (x_i[2]**4) * np.sin(x_i[0]))
+        f = np.sin(x[0]) + self.a * np.sin(x[1])**2 + \
+            self.b * (x[2]**4) * np.sin(x[0])
         return f
+
+    # def __call__(self, x):
+    #     """Call function.
+
+    #     :param list x: inputs
+    #     :return: f(x)
+    #     :rtype: float
+    #     """
+    #     try:
+    #         x[0][0]
+    #         n_x = len(x)
+    #     except (TypeError, IndexError):
+    #         x=[x]
+    #         n_x = 1
+    #     f = np.empty(n_x)
+    #     for i, x_i in enumerate(x):
+    #         f[i] = (np.sin(x_i[0]) + self.a * np.sin(x_i[1])**2 + \
+    #             self.b * (x_i[2]**4) * np.sin(x_i[0]))
+    #     return f
 
 
 class G_Function(object):
