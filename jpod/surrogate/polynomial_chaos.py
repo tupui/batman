@@ -6,6 +6,7 @@ Polynomial Chaos class
 """
 import numpy as np
 from pathos.multiprocessing import (cpu_count, ProcessPool)
+from ..functions import multi_eval
 import logging
 import openturns as ot
 
@@ -132,6 +133,7 @@ class PC(object):
                 self.pc[i], self.pc_result[i] = results[i]
             self.logger.info("Done")
 
+    @multi_eval
     def evaluate(self, point):
         """Make a prediction.
 
@@ -142,7 +144,7 @@ class PC(object):
         :rtype: lst
 
         """
-        point_array = np.asarray(point).reshape(1, len(point))
+        point_array = np.asarray(point).reshape(1, -1)
         prediction = np.ndarray((self.model_len))
 
         # Compute a prediction per predictor

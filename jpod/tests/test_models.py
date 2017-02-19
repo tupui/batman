@@ -66,21 +66,21 @@ def test_PC_14d():
 
     surrogate = PC(function=f, input_dists=dists,
                    out_dim=14, n_sample=300, total_deg=10,  strategy='LS')
-    pred = np.array(surrogate.evaluate(point))
+    pred = np.array(surrogate.evaluate(point)).reshape(14)
     test_output = npt.assert_almost_equal(target, pred, decimal=2)
     assert True if test_output is None else False
 
     surrogate = PC(function=f, input_dists=dists,
                    out_dim=14, total_deg=11,  strategy='Quad')
 
-    pred = np.array(surrogate.evaluate(point))
+    pred = np.array(surrogate.evaluate(point)).reshape(14)
     test_output = npt.assert_almost_equal(target, pred, decimal=2)
     assert True if test_output is None else False
 
     # Compute predictivity coefficient Q2
     model = ot.PythonFunction(2, 14, f)
-    surrogate = ot.PythonFunction(2, 14, surrogate.evaluate)
-    q2 = ot_q2(dists, model, surrogate)
+    surrogate_ot = ot.PythonFunction(2, 14, surrogate.evaluate)
+    q2 = ot_q2(dists, model, surrogate_ot)
 
     assert q2 == pytest.approx(1, 0.1)
 
@@ -129,9 +129,6 @@ def test_GP_14d():
 
     surrogate = Kriging(space, y)
     pred, _ = np.array(surrogate.evaluate(point))
-
-    print(target.shape)
-    print(pred.shape)
 
     test_output = npt.assert_almost_equal(target, pred, decimal=0)
     assert True if test_output is None else False

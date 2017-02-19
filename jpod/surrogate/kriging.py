@@ -182,8 +182,8 @@ class Kriging():
 
         """
         point_array = np.asarray(point).reshape(1, -1)
-        prediction = np.ndarray((len(self.data)))
-        sigma = np.ndarray((len(self.data)))
+        prediction = np.ndarray((self.model_len))
+        sigma = np.ndarray((self.model_len))
 
         # Compute a prediction per predictor
         for i, gp in enumerate(self.data):

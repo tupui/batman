@@ -85,6 +85,6 @@ def test_space_evaluation():
     targets = f_3d(space)
     print(targets)
 
-    f_data_base = [8.10060038,  5.18818004]
+    f_data_base = np.array([8.10060038,  5.18818004]).reshape(2, 1)
     test_output = npt.assert_almost_equal(targets, f_data_base)
     assert True if test_output is None else False
