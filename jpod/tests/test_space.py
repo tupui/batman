@@ -50,7 +50,6 @@ def test_point_evaluation():
 
 
 def test_space():
-
     space = Space(settings)
 
     space += (1, 2, 3)

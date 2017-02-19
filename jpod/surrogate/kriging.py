@@ -31,6 +31,8 @@ import logging
 from scipy.optimize import differential_evolution
 from pathos.multiprocessing import cpu_count
 from ..misc import NestedPool
+from ..space import Space
+from ..functions import multi_eval
 import os
 
 
@@ -60,15 +62,22 @@ class Kriging():
         If there is not enought CPU, :math:`N=\frac{n_{cpu}}{n_restart}`.
 
         :param ndarray input: The input used to generate the output. (nb snapshots, nb parameters)
-        :param ndarray output: The observed data.
+        :param ndarray output: The observed data. (nb snapshots, [nb output dim])
 
         """
+        if isinstance(input, Space):
+            input = np.array(input).reshape(len(input), -1)
         input_len = input.shape[1]
+        self.model_len = output.shape[1]
+        if self.model_len == 1:
+            output = output.ravel()
+
+        # Define the model settings
         l_scale = ((1.0),) * input_len
         scale_bounds = [(1e-03, 1000.0)] * input_len
         self.kernel = 1.0 * RBF(length_scale=l_scale,
                                 length_scale_bounds=scale_bounds)
-        self.model_len = len(output)
+
         self.n_restart = 3
         # Define the CPU multi-threading/processing strategy
         try:
@@ -91,11 +100,11 @@ class Kriging():
         # Create a predictor per output, parallelize if several output
         if self.model_len > 1:
             pool = NestedPool(self.n_cpu)
-            results = pool.imap(model_fitting, output)
+            results = pool.imap(model_fitting, output.T)
             results = list(results)
             pool.terminate()
         else:
-            results = [model_fitting(output[0])]
+            results = [model_fitting(output)]
 
         # Gather results
         self.data = [None] * self.model_len
@@ -159,6 +168,7 @@ class Kriging():
 
         return theta_opt, func_min
 
+    @multi_eval
     def evaluate(self, point):
         """Make a prediction.
 
@@ -171,7 +181,7 @@ class Kriging():
         :rtype: lst
 
         """
-        point_array = np.asarray(point).reshape(1, len(point))
+        point_array = np.asarray(point).reshape(1, -1)
         prediction = np.ndarray((len(self.data)))
         sigma = np.ndarray((len(self.data)))
 

@@ -49,7 +49,7 @@ class SurrogateModel(object):
         bounds = np.array(space.corners)
 
         if self.pod is not None:
-            data = self.pod.VS().T  # SV.T a snapshot per column
+            data = self.pod.VS()  # SV.T a snapshot per column
             self.__call__ = self._call_pod
             self.update = False  # update switch: update model if POD update
         else:

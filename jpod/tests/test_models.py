@@ -3,19 +3,31 @@ import pytest
 import numpy as np
 import numpy.testing as npt
 import openturns as ot
+from sklearn.metrics import r2_score
 from jpod.functions import (Ishigami, Mascaret)
 from jpod.surrogate import (PC, Kriging)
 from jpod.space import Space, Point
+from jpod.functions import output_to_sequence
 
 settings = {
     "space": {
         "corners": [[-np.pi, -np.pi, -np.pi], [np.pi, np.pi, np.pi]],
         "sampling": {
-            "init_size": 100,
+            "init_size": 200,
             "method": "halton"
         }
     }
 }
+
+def ot_q2(dists, model, surrogate):
+    dim = len(dists)
+    dists = ot.ComposedDistribution(dists, ot.IndependentCopula(dim))
+    experiment = ot.LHSExperiment(dists, 1000)
+    sample = experiment.generate()
+    ref = model(sample)
+    pred = surrogate(sample)
+
+    return r2_score(ref, pred, multioutput='uniform_average')
 
 
 def test_PC_1d():
@@ -36,20 +48,12 @@ def test_PC_1d():
     assert pred == pytest.approx(target, 0.01)
 
     # Compute predictivity coefficient Q2
-    def wrap_f_3d(x):
-        return [f_3d(x)]
-    model = ot.PythonFunction(3, 1, wrap_f_3d)
+    model = ot.PythonFunction(3, 1, output_to_sequence(f_3d))
     surrogate = ot.PythonFunction(3, 1, surrogate.evaluate)
 
-    dists = ot.ComposedDistribution(dists, ot.IndependentCopula(3))
-    experiment = ot.LHSExperiment(dists, 1000)
-    sample = experiment.generate()
-    ref = model(sample)
+    q2 = ot_q2(dists, model, surrogate)
 
-    val = ot.MetaModelValidation(sample, ref, surrogate)
-    q2 = val.computePredictivityFactor()
-
-    assert q2 == pytest.approx(1, 0.01)
+    assert q2 == pytest.approx(1, 0.1)
 
 
 def test_PC_14d():
@@ -76,50 +80,68 @@ def test_PC_14d():
     # Compute predictivity coefficient Q2
     model = ot.PythonFunction(2, 14, f)
     surrogate = ot.PythonFunction(2, 14, surrogate.evaluate)
+    q2 = ot_q2(dists, model, surrogate)
 
-    dists = ot.ComposedDistribution(dists, ot.IndependentCopula(2))
-    experiment = ot.LHSExperiment(dists, 1000)
-    sample = experiment.generate()
-
-    ref = np.array(model(sample))
-    pred = np.array(surrogate(sample))
-    mean = ref.mean(axis=1).reshape(-1, 1)
-    var = ((pred - mean) ** 2).sum(axis=0)
-    mse = ((pred - ref) ** 2).sum(axis=0)
-
-    q2 = (np.ones(14) - mse / var).mean()
-
-    assert q2 == pytest.approx(1, 0.01)
+    assert q2 == pytest.approx(1, 0.1)
 
 
 def test_GP_1d():
     f_3d = Ishigami()
-    point = Point([2.20, 1.57, 3])
+    point = Point([0.20, 1.57, -1.4])
     target = f_3d(point)
     space = Space(settings)
-    space.sampling(100)
-    x = space[:]
-    y = f_3d(x)
-    
+    space.sampling(150)
+    y = f_3d(space)
+
     x1 = ot.Uniform(-3.1415, 3.1415)
     dists = [x1] * 3
 
     surrogate = Kriging(space, y)
-    pred = np.array(surrogate.evaluate(point))
-    assert pred == pytest.approx(target, 0.01)
+    pred, _ = np.array(surrogate.evaluate(point))
+
+    assert pred == pytest.approx(target, 0.1)
 
     # Compute predictivity coefficient Q2
-    def wrap_f_3d(x):
-        return [f_3d(x)]
-    model = ot.PythonFunction(3, 1, wrap_f_3d)
-    surrogate = ot.PythonFunction(3, 1, surrogate.evaluate)
+    model = ot.PythonFunction(3, 1, output_to_sequence(f_3d))
 
-    dists = ot.ComposedDistribution(dists, ot.IndependentCopula(3))
-    experiment = ot.LHSExperiment(dists, 1000)
-    sample = experiment.generate()
-    ref = model(sample)
+    def wrap_surrogate(x):
+        evaluation, _ = surrogate.evaluate(x)
+        return [evaluation]
+    surrogate_ot = ot.PythonFunction(3, 1, wrap_surrogate)
 
-    val = ot.MetaModelValidation(sample, ref, surrogate)
-    q2 = val.computePredictivityFactor()
+    q2 = ot_q2(dists, model, surrogate_ot)
 
-    assert q2 == pytest.approx(1, 0.01)
+    assert q2 == pytest.approx(1, 0.1)
+
+
+def test_GP_14d():
+    f = Mascaret()
+    point = [31.54, 4237.025]
+    target = f(point)
+    x1 = ot.Uniform(15., 60.)
+    x2 = ot.Normal(4035., 400.)
+    dists = [x1, x2]
+
+    settings["space"]["corners"] = [[15.0, 2500.0], [60, 6000.0]]
+    space = Space(settings)
+    space.sampling(50)
+    y = f(space)
+
+    surrogate = Kriging(space, y)
+    pred, _ = np.array(surrogate.evaluate(point))
+
+    print(target.shape)
+    print(pred.shape)
+
+    test_output = npt.assert_almost_equal(target, pred, decimal=0)
+    assert True if test_output is None else False
+
+    # Compute predictivity coefficient Q2
+    model = ot.PythonFunction(2, 14, f)
+    def wrap_surrogate(x):
+        evaluation, _ = surrogate.evaluate(x)
+        return evaluation
+    surrogate_ot = ot.PythonFunction(2, 14, wrap_surrogate)
+    q2 = ot_q2(dists, model, surrogate_ot)
+
+    assert q2 == pytest.approx(1, 0.1)

@@ -183,8 +183,7 @@ class UQ:
         fun = func_ref.__dict__[function]()
 
         if fun.d_out > 1:
-            def wrap_fun(x):
-                return fun(x)
+            wrap_fun = fun
         else:
             def wrap_fun(x):
                 return [fun(x)]
