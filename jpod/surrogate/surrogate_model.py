@@ -12,10 +12,11 @@ It allows the creation of a surrogate model and making predictions.
 
     >> from surrogate_model import SurrogateModel
     >> method = "kriging"
-    >> predictor = SurrogateModel(method, space, data)
-    >> predictor.save()
+    >> predictor = SurrogateModel(method, space.corners)
+    >> predictor.fit(space, target_space)
+    >> predictor.save('.')
     >> points = [(12.5, 56.8), (2.2, 5.3)]
-    >> predictions = SurrogateModel(point)
+    >> predictions = SurrogateModel(points)
 
 """
 
@@ -48,6 +49,7 @@ class SurrogateModel(object):
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
         self.pod = pod
+        self.update = False  # update switch: update model if POD update
         self.directories = {
             'surrogate': 'surrogate.dat',
             'snapshot': 'Newsnap%04d'
@@ -67,7 +69,7 @@ class SurrogateModel(object):
             self.predictor = PC(input=points, output=data)
 
         self.logger.info('Predictor created')
-        self.update = False  # update switch: update model if POD update
+        self.update = False
 
     def notify(self):
         """Notify the predictor that it requires an update."""
@@ -78,7 +80,8 @@ class SurrogateModel(object):
         """Predict snapshots.
 
         :param :class:`space.point.Point` points: point(s) to predict
-        :param str path: if not set, will return a list of predicted snapshots instances, otherwise write them to disk.
+        :param str path: if not set, will return a list of predicted snapshots
+        instances, otherwise write them to disk.
         :return: Result
         :rtype: lst(:class:`tasks.snapshot.Snapshot`)
         :return: Standard deviation
@@ -98,6 +101,8 @@ class SurrogateModel(object):
         else:
             results = self.predictor.evaluate(points)
             sigma = None
+
+        results = np.atleast_2d(results)
 
         if self.pod is not None:
             for i, s in enumerate(results):

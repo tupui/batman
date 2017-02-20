@@ -139,9 +139,7 @@ class Driver():
             for files in self.settings['snapshot']['io']['filenames'].values():
                 for f in files:
                     data_files += [
-                        os.path.join(
-                            self.provider['data-directory'],
-                            f)]
+                        os.path.join(self.provider['data-directory'], f)]
             SnapshotTask.initialize(self.provider, data_files)
 
             # snapshots generation manager

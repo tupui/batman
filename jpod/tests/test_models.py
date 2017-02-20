@@ -188,6 +188,10 @@ def test_SurrogateModel_class(ishigami):
     pred, _ = surrogate(point)
     assert pred[0].data == pytest.approx(target_point, 0.1)
 
+    pred, _ = surrogate(point, path='.')
+    if not os.path.isfile(os.path.join(pred[0], 'function.dat')):
+        assert False
+
     # Compute predictivity coefficient Q2
     def wrap_surrogate(x):
         evaluation, _ = surrogate(x)
