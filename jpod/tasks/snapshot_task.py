@@ -29,7 +29,7 @@ from .snapshot import Snapshot
 opj = os.path.join
 
 
-class SnapshotTask():
+class SnapshotTask(object):
 
     """SnapshotTask class."""
 

@@ -36,7 +36,7 @@ from ..functions import multi_eval
 import os
 
 
-class Kriging():
+class Kriging(object):
 
     """Kriging based on Gaussian Process."""
 

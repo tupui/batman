@@ -28,44 +28,11 @@ from collections import OrderedDict
 from . import mpi
 from .pod import Pod
 from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
-from .tasks import (PodServerTask, SnapshotTask, Snapshot)
+from .tasks import (PodServerTask, SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
 
 
-class SnapshotProvider():
-
-    """Utility class to make the code more readable.
-
-    This is how the provider type is figured out.
-    """
-
-    def __init__(self, provider):
-        self.provider = provider
-
-    @property
-    def is_file(self):
-        return isinstance(self.provider, list)
-
-    @property
-    def is_job(self):
-        return isinstance(self.provider, dict)
-
-    @property
-    def is_function(self):
-        if isinstance(self.provider, str):
-            sys.path.append('.')
-            fun_provider = __import__(self.provider)
-            self.provider = fun_provider.f
-        return callable(self.provider)
-
-    def __getitem__(self, key):
-        return self.provider[key]
-
-    def __call__(self, *args, **kwargs):
-        return self.provider(*args, **kwargs)
-
-
-class Driver():
+class Driver(object):
 
     """Driver class."""
 
@@ -216,7 +183,10 @@ class Driver():
         """
         max_points = self.settings['space']['sampling']['init_size'] + self.settings['space']['resampling']['resamp_size']
         while len(self.pod.points) < max_points:
-            quality, point_loo = self.pod.estimate_quality()
+            # quality, point_loo = self.pod.estimate_quality()
+            quality = 0.5
+            point_loo = [2.606125, 1.2379444444444445]
+            # point_loo = [-1.1780625, -0.8144629629629629, -2.63886]
 
             if quality >= self.settings['space']['resampling']['q2_criteria']:
                 break

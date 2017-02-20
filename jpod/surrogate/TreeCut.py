@@ -6,13 +6,13 @@
 #
 import numpy as np
 
-class cell:
+class cell(object):
 
     def __init__(self, name='cellTab'):
         self.name = name
 
 
-class Tree:
+class Tree(object):
 
     def __init__(self, name='Regression_Tree'):
         self.name = name

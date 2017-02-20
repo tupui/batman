@@ -16,7 +16,7 @@ from .TreeCut import Tree
 from math import sqrt, exp
 import numpy as np
 
-class RBFnet:
+class RBFnet(object):
 
     def __init__(self, *args, **kwargs):
         if args or kwargs: self.setNetwork(*args, **kwargs)

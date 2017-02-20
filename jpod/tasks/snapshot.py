@@ -8,6 +8,39 @@ from ..input_output import IOFormatSelector, Dataset
 from ..space import Point
 
 
+class SnapshotProvider(object):
+
+    """Utility class to make the code more readable.
+
+    This is how the provider type is figured out.
+    """
+
+    def __init__(self, provider):
+        self.provider = provider
+
+    @property
+    def is_file(self):
+        return isinstance(self.provider, list)
+
+    @property
+    def is_job(self):
+        return isinstance(self.provider, dict)
+
+    @property
+    def is_function(self):
+        if isinstance(self.provider, str):
+            sys.path.append('.')
+            fun_provider = __import__(self.provider)
+            self.provider = fun_provider.f
+        return callable(self.provider)
+
+    def __getitem__(self, key):
+        return self.provider[key]
+
+    def __call__(self, *args, **kwargs):
+        return self.provider(*args, **kwargs)
+
+
 class Snapshot(object):
 
     """A snapshot container.

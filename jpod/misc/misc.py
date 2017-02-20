@@ -122,7 +122,7 @@ def import_config(path_config, path_schema):
     return settings
 
 
-class ProgressBar():
+class ProgressBar(object):
 
     """Print progress bar in console."""
 
