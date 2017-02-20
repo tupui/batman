@@ -30,16 +30,41 @@ def ot_q2(dists, model, surrogate):
     return r2_score(ref, pred, multioutput='uniform_average')
 
 
-def test_PC_1d():
+@pytest.fixture(scope="session")
+def ishigami():
     f_3d = Ishigami()
-    point = [2.20, 1.57, 3]
+    x1 = ot.Uniform(-3.1415, 3.1415)
+    dists = [x1] * 3
+    model = ot.PythonFunction(3, 1, output_to_sequence(f_3d))
+    point = Point([2.20, 1.57, 3])
     target_point = f_3d(point)
+    settings["space"]["corners"] = [[-np.pi, -np.pi, -np.pi],
+                                    [np.pi, np.pi, np.pi]]
     space = Space(settings)
     space.sampling(150)
     target_space = f_3d(space)
+    return (f_3d, dists, model, point, target_point, space, target_space)
 
-    x1 = ot.Uniform(-3.1415, 3.1415)
-    dists = [x1] * 3
+
+@pytest.fixture(scope="session")
+def mascaret():
+    f = Mascaret()
+    x1 = ot.Uniform(15., 60.)
+    x2 = ot.Normal(4035., 400.)
+    dists = [x1, x2]
+    model = ot.PythonFunction(2, 14, f)
+    point = [31.54, 4237.025]
+    target_point = f(point)
+    settings["space"]["corners"] = [[15.0, 2500.0], [60, 6000.0]]
+    space = Space(settings)
+    space.sampling(50)
+    target_space = f(space)
+    return (f, dists, model, point, target_point, space, target_space)
+
+
+
+def test_PC_1d(ishigami):
+    f_3d, dists, model, point, target_point, space, target_space = ishigami
 
     surrogate = PC(function=f_3d, input_dists=dists,
                    out_dim=1, n_sample=1000, total_deg=10, strategy='LS')
@@ -57,24 +82,13 @@ def test_PC_1d():
     assert True if test_output is None else False
 
     # Compute predictivity coefficient Q2
-    model = ot.PythonFunction(3, 1, output_to_sequence(f_3d))
     surrogate = ot.PythonFunction(3, 1, surrogate.evaluate)
-
     q2 = ot_q2(dists, model, surrogate)
-
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_GP_1d():
-    f_3d = Ishigami()
-    point = Point([0.20, 1.57, -1.4])
-    target_point = f_3d(point)
-    space = Space(settings)
-    space.sampling(150)
-    target_space = f_3d(space)
-
-    x1 = ot.Uniform(-3.1415, 3.1415)
-    dists = [x1] * 3
+def test_GP_1d(ishigami):
+    f_3d, dists, model, point, target_point, space, target_space = ishigami
 
     surrogate = Kriging(space, target_space)
 
@@ -88,30 +102,16 @@ def test_GP_1d():
     assert True if test_output is None else False
 
     # Compute predictivity coefficient Q2
-    model = ot.PythonFunction(3, 1, output_to_sequence(f_3d))
-
     def wrap_surrogate(x):
         evaluation, _ = surrogate.evaluate(x)
         return [evaluation]
     surrogate_ot = ot.PythonFunction(3, 1, wrap_surrogate)
-
     q2 = ot_q2(dists, model, surrogate_ot)
-
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_PC_14d():
-    f = Mascaret()
-    point = [31.54, 4237.025]
-    target_point = f(point)
-    x1 = ot.Uniform(15., 60.)
-    x2 = ot.Normal(4035., 400.)
-    dists = [x1, x2]
-
-    settings["space"]["corners"] = [[15.0, 2500.0], [60, 6000.0]]
-    space = Space(settings)
-    space.sampling(50)
-    target_space = f(space)
+def test_PC_14d(mascaret):
+    f, dists, model, point, target_point, space, target_space = mascaret
 
     surrogate = PC(function=f, input_dists=dists,
                    out_dim=14, n_sample=300, total_deg=10,  strategy='LS')
@@ -133,25 +133,13 @@ def test_PC_14d():
     assert True if test_output is None else False
 
     # Compute predictivity coefficient Q2
-    model = ot.PythonFunction(2, 14, f)
     surrogate_ot = ot.PythonFunction(2, 14, surrogate.evaluate)
     q2 = ot_q2(dists, model, surrogate_ot)
-
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_GP_14d():
-    f = Mascaret()
-    point = [31.54, 4237.025]
-    target_point = f(point)
-    x1 = ot.Uniform(15., 60.)
-    x2 = ot.Normal(4035., 400.)
-    dists = [x1, x2]
-
-    settings["space"]["corners"] = [[15.0, 2500.0], [60, 6000.0]]
-    space = Space(settings)
-    space.sampling(50)
-    target_space = f(space)
+def test_GP_14d(mascaret):
+    f, dists, model, point, target_point, space, target_space = mascaret
 
     surrogate = Kriging(space, target_space)
 
@@ -172,5 +160,4 @@ def test_GP_14d():
         return evaluation
     surrogate_ot = ot.PythonFunction(2, 14, wrap_surrogate)
     q2 = ot_q2(dists, model, surrogate_ot)
-
     assert q2 == pytest.approx(1, 0.1)
