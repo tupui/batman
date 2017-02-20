@@ -38,7 +38,7 @@ class SurrogateModel(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, kind, corners, pod=None):
+    def __init__(self, kind, corners):
         """Init Surrogate model.
 
         :param np.array corners: space corners to normalize
@@ -48,19 +48,20 @@ class SurrogateModel(object):
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
-        self.pod = pod
         settings = {"space": {
         "corners": corners,
         "sampling": {"init_size": np.inf, "method": kind}}}
         self.space = Space(settings)
+        self.pod = None
         self.update = False  # update switch: update model if POD update
         self.directories = {
             'surrogate': 'surrogate.dat',
             'snapshot': 'Newsnap%04d'
         }
 
-    def fit(self, points, data):
+    def fit(self, points, data, pod=None):
         """Construct the surrogate."""
+        self.pod = pod
         self.space += points
         points = np.array(points)
         points = self.scaler.transform(points)
@@ -118,12 +119,9 @@ class SurrogateModel(object):
             snapshots[i] = Snapshot(point, results[i])
 
         if path is not None:
-            s_list = []
             for i, s in enumerate(snapshots):
                 s_path = os.path.join(path, self.directories['snapshot'] % i)
-                s_list += [s_path]
                 s.write(s_path)
-            snapshots = s_list
         return snapshots, sigma
 
     def write(self, path):

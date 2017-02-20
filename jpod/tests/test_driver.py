@@ -15,7 +15,7 @@ def f(x):
 settings = {
     "space": {
         "corners": [[-np.pi, -np.pi, -np.pi],[np.pi, np.pi, np.pi]],
-        "sampling": {"init_size": 50,"method": "halton"},
+        "sampling": {"init_size": 100,"method": "halton"},
         "resampling": {"delta_space": 0.08, "resamp_size": 0,
             "method": "sigma", "hybrid": [["sigma", 4], ["loo_sobol", 2]],
             "q2_criteria": 0.9}},
@@ -29,16 +29,30 @@ settings = {
         # {"command": "bash", "timeout": 10, "context": "data",
         #     "script": "data/script.sh", "clean": False, "private-directory": "jpod-data",
         #     "data-directory": "cfd-output-data", "restart": "False"}},
-    "surrogate": {"predictions": [[1, 1, 1]], "method": "kriging"},
+    "surrogate": {"predictions": [[0, 2, 1]], "method": "kriging"},
     "uq": {
         "sample": 2000, "test": "Ishigami",
         "pdf": ["Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)"],
         "type": "aggregated","method": "sobol"}}
 
 
-def test_Driver_init():
-    output = './'
-    driver = Driver(settings, output)
+@pytest.fixture(scope="session")
+def driver_init():
+    output = './tmp_test'
+    return output, Driver(settings, output)
 
+
+def test_driver_chain(driver_init):
+    output, driver = driver_init
     driver.sampling()
     driver.write()
+    if not os.path.isdir(os.path.join(output, 'surrogate')):
+        assert False
+
+    driver.read()
+    pred, _ = driver.prediction(write=True)
+    if not os.path.isdir(os.path.join(output, 'predictions/Newsnap0000')):
+        assert False
+
+    target_point = f_ishigami([0, 2, 1])
+    assert pred[0].data == pytest.approx(target_point, 0.1)

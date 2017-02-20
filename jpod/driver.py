@@ -114,6 +114,10 @@ class Driver(object):
         else:
             self.pod = None
 
+        # Surrogate model
+        self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
+                                        self.settings['space']['corners'])
+
     def sampling(self, points=None, update=False):
         """Create snapshots.
 
@@ -151,27 +155,32 @@ class Driver(object):
                     snapshots += [self.snapshooter.submit(t.run)]
 
         # compute the pod
-        # if self.pod is not None:
-        if update:
+        if self.pod is not None:
+            if update:
+                if self.provider.is_job:
+                    for s in futures.as_completed(snapshots):
+                        self.pod.update(s.result())
+                else:
+                    for s in snapshots:
+                        self.pod.update(s)
+            else:
+                if self.provider.is_job:
+                    _snapshots = []
+                    for s in futures.as_completed(snapshots):
+                        _snapshots += [s.result()]
+                    snapshots = _snapshots
+                self.pod.decompose(snapshots)
+
+            self.surrogate.fit(self.pod.points, self.pod.VS(), pod=self.pod)
+        else:
+            self.logger.info('No POD is computed.')
             if self.provider.is_job:
                 for s in futures.as_completed(snapshots):
-                    self.pod.update(s.result())
+                    s.result()
             else:
                 for s in snapshots:
-                    self.pod.update(s)
-        else:
-            if self.provider.is_job:
-                _snapshots = []
-                for s in futures.as_completed(snapshots):
-                    _snapshots += [s.result()]
-                snapshots = _snapshots
-            self.pod.decompose(snapshots)
-
-        # Surrogate model
-        self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                        self.settings['space']['corners'],
-                                        self.pod)
-        self.surrogate.fit(self.pod.points, self.pod.VS())
+                    s
+            self.surrogate.fit(self.pod.points, self.pod.VS(), pod=self.pod)
 
     def resampling(self):
         """Resampling of the POD.
@@ -217,6 +226,7 @@ class Driver(object):
         self.surrogate.read(os.path.join(self.output, self.output_tree['surrogate']))
         if self.pod is not None:
             self.pod.read(os.path.join(self.output, self.output_tree['pod']))
+            self.surrogate.pod = self.pod
 
     def restart(self):
         """Restart process."""
@@ -245,7 +255,10 @@ class Driver(object):
         else:
             output = None
 
-        self.surrogate(self.settings['surrogate']['predictions'], path=output)
+        points = Space(self.settings)
+        points += self.settings['surrogate']['predictions']
+
+        return self.surrogate(points, path=output)
 
     def prediction_without_computation(self, write=False):
         """Perform a prediction using an existing model read from file."""
@@ -254,6 +267,8 @@ class Driver(object):
         else:
             output = None
         self.read()
+        points = Space(self.settings)
+        points += self.settings['surrogate']['predictions']
         self.surrogate(self.settings['surrogate']['predictions'], path=output)
 
     def uq(self):

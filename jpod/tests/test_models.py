@@ -179,7 +179,7 @@ def test_SurrogateModel_class(ishigami):
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
     surrogate.write('.')
-    if not os.path.isfile('./model.dat'):
+    if not os.path.isfile('./surrogate.dat'):
         assert False
     surrogate.predictor = None
     surrogate.read('.')
@@ -189,7 +189,8 @@ def test_SurrogateModel_class(ishigami):
     assert pred[0].data == pytest.approx(target_point, 0.1)
 
     pred, _ = surrogate(point, path='.')
-    if not os.path.isfile(os.path.join(pred[0], 'function.dat')):
+    assert pred[0].data == pytest.approx(target_point, 0.1)
+    if not os.path.isfile('./Newsnap0000/function.dat'):
         assert False
 
     # Compute predictivity coefficient Q2
