@@ -33,19 +33,28 @@ def ot_q2(dists, model, surrogate):
 def test_PC_1d():
     f_3d = Ishigami()
     point = [2.20, 1.57, 3]
-    target = f_3d(point)
+    target_point = f_3d(point)
+    space = Space(settings)
+    space.sampling(150)
+    target_space = f_3d(space)
+
     x1 = ot.Uniform(-3.1415, 3.1415)
     dists = [x1] * 3
 
     surrogate = PC(function=f_3d, input_dists=dists,
                    out_dim=1, n_sample=1000, total_deg=10, strategy='LS')
     pred = np.array(surrogate.evaluate(point))
-    assert pred == pytest.approx(target, 0.01)
+    assert pred == pytest.approx(target_point, 0.01)
 
     surrogate = PC(function=f_3d, input_dists=dists,
                    out_dim=1, total_deg=10, strategy='Quad')
     pred = np.array(surrogate.evaluate(point))
-    assert pred == pytest.approx(target, 0.01)
+    assert pred == pytest.approx(target_point, 0.01)
+
+    # Test space evaluation
+    pred = np.array(surrogate.evaluate(space))
+    test_output = npt.assert_almost_equal(target_space, pred, decimal=1)
+    assert True if test_output is None else False
 
     # Compute predictivity coefficient Q2
     model = ot.PythonFunction(3, 1, output_to_sequence(f_3d))
@@ -56,50 +65,27 @@ def test_PC_1d():
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_PC_14d():
-    f = Mascaret()
-    point = [31.54, 4237.025]
-    target = f(point)
-    x1 = ot.Uniform(15., 60.)
-    x2 = ot.Normal(4035., 400.)
-    dists = [x1, x2]
-
-    surrogate = PC(function=f, input_dists=dists,
-                   out_dim=14, n_sample=300, total_deg=10,  strategy='LS')
-    pred = np.array(surrogate.evaluate(point)).reshape(14)
-    test_output = npt.assert_almost_equal(target, pred, decimal=2)
-    assert True if test_output is None else False
-
-    surrogate = PC(function=f, input_dists=dists,
-                   out_dim=14, total_deg=11,  strategy='Quad')
-
-    pred = np.array(surrogate.evaluate(point)).reshape(14)
-    test_output = npt.assert_almost_equal(target, pred, decimal=2)
-    assert True if test_output is None else False
-
-    # Compute predictivity coefficient Q2
-    model = ot.PythonFunction(2, 14, f)
-    surrogate_ot = ot.PythonFunction(2, 14, surrogate.evaluate)
-    q2 = ot_q2(dists, model, surrogate_ot)
-
-    assert q2 == pytest.approx(1, 0.1)
-
-
 def test_GP_1d():
     f_3d = Ishigami()
     point = Point([0.20, 1.57, -1.4])
-    target = f_3d(point)
+    target_point = f_3d(point)
     space = Space(settings)
     space.sampling(150)
-    y = f_3d(space)
+    target_space = f_3d(space)
 
     x1 = ot.Uniform(-3.1415, 3.1415)
     dists = [x1] * 3
 
-    surrogate = Kriging(space, y)
-    pred, _ = np.array(surrogate.evaluate(point))
+    surrogate = Kriging(space, target_space)
 
-    assert pred == pytest.approx(target, 0.1)
+    # Test one point evaluation
+    pred, _ = np.array(surrogate.evaluate(point))
+    assert pred == pytest.approx(target_point, 0.1)
+
+    # Test space evaluation
+    pred, _ = np.array(surrogate.evaluate(space))
+    test_output = npt.assert_almost_equal(target_space, pred, decimal=1)
+    assert True if test_output is None else False
 
     # Compute predictivity coefficient Q2
     model = ot.PythonFunction(3, 1, output_to_sequence(f_3d))
@@ -114,10 +100,10 @@ def test_GP_1d():
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_GP_14d():
+def test_PC_14d():
     f = Mascaret()
     point = [31.54, 4237.025]
-    target = f(point)
+    target_point = f(point)
     x1 = ot.Uniform(15., 60.)
     x2 = ot.Normal(4035., 400.)
     dists = [x1, x2]
@@ -125,12 +111,58 @@ def test_GP_14d():
     settings["space"]["corners"] = [[15.0, 2500.0], [60, 6000.0]]
     space = Space(settings)
     space.sampling(50)
-    y = f(space)
+    target_space = f(space)
 
-    surrogate = Kriging(space, y)
+    surrogate = PC(function=f, input_dists=dists,
+                   out_dim=14, n_sample=300, total_deg=10,  strategy='LS')
+    pred = np.array(surrogate.evaluate(point)).reshape(14)
+    test_output = npt.assert_almost_equal(target_point, pred, decimal=2)
+    assert True if test_output is None else False
+
+    surrogate = PC(function=f, input_dists=dists,
+                   out_dim=14, total_deg=11,  strategy='Quad')
+
+    # Test point evaluation
+    pred = np.array(surrogate.evaluate(point)).reshape(14)
+    test_output = npt.assert_almost_equal(target_point, pred, decimal=2)
+    assert True if test_output is None else False
+
+    # Test space evaluation
+    pred = np.array(surrogate.evaluate(space))
+    test_output = npt.assert_almost_equal(target_space, pred, decimal=0)
+    assert True if test_output is None else False
+
+    # Compute predictivity coefficient Q2
+    model = ot.PythonFunction(2, 14, f)
+    surrogate_ot = ot.PythonFunction(2, 14, surrogate.evaluate)
+    q2 = ot_q2(dists, model, surrogate_ot)
+
+    assert q2 == pytest.approx(1, 0.1)
+
+
+def test_GP_14d():
+    f = Mascaret()
+    point = [31.54, 4237.025]
+    target_point = f(point)
+    x1 = ot.Uniform(15., 60.)
+    x2 = ot.Normal(4035., 400.)
+    dists = [x1, x2]
+
+    settings["space"]["corners"] = [[15.0, 2500.0], [60, 6000.0]]
+    space = Space(settings)
+    space.sampling(50)
+    target_space = f(space)
+
+    surrogate = Kriging(space, target_space)
+
+    # Test space evaluation
     pred, _ = np.array(surrogate.evaluate(point))
+    test_output = npt.assert_almost_equal(target_point, pred, decimal=1)
+    assert True if test_output is None else False
 
-    test_output = npt.assert_almost_equal(target, pred, decimal=0)
+    # Test space evaluation
+    pred, _ = np.array(surrogate.evaluate(space))
+    test_output = npt.assert_almost_equal(target_space, pred, decimal=1)
     assert True if test_output is None else False
 
     # Compute predictivity coefficient Q2

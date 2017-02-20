@@ -45,8 +45,8 @@ def test_point():
 def test_point_evaluation():
     f_3d = Ishigami()
     point = Point([2.20, 1.57, 3])
-    target = f_3d(point)
-    assert target == 14.357312835804658
+    target_point = f_3d(point)
+    assert target_point == 14.357312835804658
 
 
 def test_space():
@@ -82,9 +82,8 @@ def test_space_evaluation():
     f_3d = Ishigami()
     space = Space(settings)
     space.sampling(2)
-    targets = f_3d(space)
-    print(targets)
+    targets_space = f_3d(space)
 
     f_data_base = np.array([8.10060038,  5.18818004]).reshape(2, 1)
-    test_output = npt.assert_almost_equal(targets, f_data_base)
+    test_output = npt.assert_almost_equal(targets_space, f_data_base)
     assert True if test_output is None else False
