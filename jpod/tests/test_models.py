@@ -178,11 +178,11 @@ def test_SurrogateModel_class(ishigami):
     Snapshot.initialize(settings['snapshot']['io'])
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
-    surrogate.save('.')
+    surrogate.write('.')
     if not os.path.isfile('./model.dat'):
         assert False
     surrogate.predictor = None
-    surrogate.load('.')
+    surrogate.read('.')
     assert surrogate.predictor is not None
 
     pred, _ = surrogate(point)

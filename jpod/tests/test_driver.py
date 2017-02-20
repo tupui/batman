@@ -39,3 +39,6 @@ settings = {
 def test_Driver_init():
     output = './'
     driver = Driver(settings, output)
+
+    driver.sampling()
+    driver.write()

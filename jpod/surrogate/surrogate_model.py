@@ -49,6 +49,10 @@ class SurrogateModel(object):
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
         self.pod = pod
+        settings = {"space": {
+        "corners": corners,
+        "sampling": {"init_size": np.inf, "method": kind}}}
+        self.space = Space(settings)
         self.update = False  # update switch: update model if POD update
         self.directories = {
             'surrogate': 'surrogate.dat',
@@ -57,6 +61,7 @@ class SurrogateModel(object):
 
     def fit(self, points, data):
         """Construct the surrogate."""
+        self.space += points
         points = np.array(points)
         points = self.scaler.transform(points)
         # predictor object
@@ -121,7 +126,7 @@ class SurrogateModel(object):
             snapshots = s_list
         return snapshots, sigma
 
-    def save(self, path):
+    def write(self, path):
             """Save model to disk.
 
             Write a file containing information on the model
@@ -135,7 +140,7 @@ class SurrogateModel(object):
                 pickler.dump(self.predictor)
             self.logger.info('Wrote model to {}'.format(path))
 
-    def load(self, path):
+    def read(self, path):
         """Load model from disk.
 
         :param str path: path to a output/surrogate directory.

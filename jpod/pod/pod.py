@@ -21,7 +21,6 @@ import os
 import copy
 
 from .core import Core
-from .. import mpi
 import numpy as np
 from ..tasks import Snapshot
 from ..space import Space
@@ -150,7 +149,10 @@ class Pod(Core):
         :param str path: path to a directory.
         """
         # create output directory if necessary
-        mpi.makedirs(path)
+        try:
+            os.makedirs(path)
+        except OSError:
+            pass
 
         # points
         self.points.write(os.path.join(path, self.points_file_name))

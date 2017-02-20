@@ -5,11 +5,11 @@ import logging
 from logging.config import dictConfig
 import argparse
 import os
+import shutil
 import json
 
 from jpod import __version__, __branch__, __commit__
 from jpod import Driver
-from jpod import mpi
 from jpod import misc
 
 description_message = '''
@@ -50,7 +50,7 @@ def run(settings, options):
         Last commit: {}".format(__branch__, __commit__))
 
     # clean up output directory or re-use it
-    if not options.restart and not options.no_pod and not options.pred:
+    if not options.restart and not options.no_surrogate and not options.pred:
         delete = True
         # check if output is empty and ask for confirmation
         if os.path.isdir(options.output):
@@ -92,35 +92,35 @@ def run(settings, options):
 
     update = True if settings['pod']['type'] != 'static' else False
 
-    if not options.no_pod and not options.pred:
-        # the pod will be computed
+    if not options.no_surrogate and not options.pred:
+        # the surrogate [and POD] will be computed
         if options.restart:
             driver.restart()
             update = True
 
-        driver.sampling_pod(update)
-        driver.write_pod()
+        driver.sampling(update)
+        driver.write()
 
         try:
             if settings['space']['resampling']['resamp_size'] != 0:
-                driver.resampling_pod()
-                driver.write_pod()
+                driver.resampling()
+                driver.write()
         except KeyError:
             pass
 
-    elif options.no_pod or options.pred:
+    elif options.no_surrogate or options.pred:
         # just read the existing pod
         try:
-            driver.read_pod()
+            driver.read()
         except IOError:
             logger.exception(
-                "POD need to be computed: \
+                "Surrogate need to be computed: \
                 check output folder or re-try without -n")
             raise SystemExit
 
     if not options.pred:
         driver.prediction(write=options.save_snapshots)
-        driver.write_model()
+        driver.write()
     else:
         driver.prediction_without_computation(write=True)
         logger.info('Prediction without model building')
@@ -181,10 +181,10 @@ def parse_options():
         help='restart pod, [default: %(default)s]')
 
     parser.add_argument(
-        '-n', '--no-pod',
+        '-n', '--no-surrogate',
         action='store_true',
         default=False,
-        help='do not compute pod but read it from disk,\
+        help='do not compute surrogate but read it from disk,\
              [default: %(default)s]')
 
     parser.add_argument(

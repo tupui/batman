@@ -134,8 +134,7 @@ class Core(object):
             # by filtering: 0. singular value
             self.mean_snapshot = snapshot
             self.U = np.zeros([snapshot.shape[0], 1])
-            if mpi.myid == 0:
-                self.U[0, 0] = 1.
+            self.U[0, 0] = 1.
             self.S = np.zeros([1])
             self.V = np.ones([1, 1])
 

@@ -35,15 +35,9 @@ class SnapshotTask(object):
 
     logger = logging.getLogger(__name__)
 
-    # these attributes should be independent of external settings
     started_file = 'job-started'
-    '''Name of the empty file which indicates that the task script has been started.'''
-
     finished_file = 'job-finished'
-    '''Name of the empty file which indicates that the task script has finished.'''
-
     touch = 'touch'
-    '''Shell program to create an empty file, used to create the script state files.'''
 
     dummy_line = '^(\s*#|\n)'
     '''Regular expression used that match a non executable statement in a shell script.'''
