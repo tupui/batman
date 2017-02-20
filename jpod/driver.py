@@ -36,6 +36,7 @@ class Driver(object):
 
     """Driver class."""
 
+    logger = logging.getLogger(__name__)
     output_tree = {
         'snapshots': 'snapshots',
         'pod': 'pod',
@@ -44,7 +45,7 @@ class Driver(object):
     }
     '''Structure of the output directory.'''
 
-    def __init__(self, settings, script, output):
+    def __init__(self, settings, output):
         """Initialize Driver.
 
         From settings, init snapshot, space and POD.
@@ -55,49 +56,13 @@ class Driver(object):
 
         """
         self.settings = settings
-        '''JPOD settings'''
-
         self.output = output
-        '''Path to output directory.'''
-
-        self.logger = logging.getLogger(__name__)
-        '''Console and file logger.'''
-
         self.external_pod = None
-        '''External pod task handle.'''
-
         self.pod = None
-        '''POD processing, either local or external.'''
-
-        self.snapshooter = None
-        '''Snapshots generation manager.'''
-
-        self.provider = None
-        '''Snapshot provider, it generates a snapshot.'''
-
-        self.space = None
-        '''Parameter space.'''
-
-        self.initial_points = None
-        '''Points in the parameter space for the static pod.'''
-
         self.snapshot_counter = 0
-        '''Counter for numbering the snapshots.'''
 
-        # snapshot computation
-        self._init_snapshot()
-
-        # parameter space and points
-        self._init_space()
-
-        # Init pod
-        self._init_pod(script)
-
-    def _init_snapshot(self):
-        """Initialize snapshots  :class:`SnapshotTask`."""
+        # Snapshots
         Snapshot.initialize(self.settings['snapshot']['io'])
-
-        # snapshot generation
         self.provider = SnapshotProvider(self.settings['snapshot']['provider'])
 
         if self.provider.is_job:
@@ -113,15 +78,11 @@ class Driver(object):
             self.snapshooter = futures.ThreadPoolExecutor(
                 max_workers=self.settings['snapshot']['max_workers'])
 
-    def _init_space(self):
-        """Initialize :class:`Space` by creating the DOE."""
-        # space
+        # Space
         self.space = Space(self.settings)
 
-        # initial points
         if self.provider.is_file:
             # get the point from existing snapshot files,
-            # the points outside the space are ignored
             self.logger.info('Reading points from a list of snapshots files.')
 
             self.initial_points = OrderedDict()
@@ -149,25 +110,18 @@ class Driver(object):
                 self.logger.error('Bad space provider.')
                 raise SystemError
 
-    def _init_pod(self, script):
-        """Initialize :class:`Pod`."""
+        # Pod
         if self.settings['pod']['server'] is not None:
-            if mpi.size > 1:
-                raise Exception(
-                    'When using the external pod, the driver must be sequential.')
-
             self.logger.info('Using external pod.')
+            script = './settings.json'
             # get the pod server running and connect to its through its proxy
             self.external_pod = PodServerTask(self.settings['pod']['server']['port'],
                                               self.settings['pod']['server']['python'],
                                               script, self.output)
             self.external_pod.run()
-            # self.external_pod._after_run()
             self.pod = self.external_pod.proxy.Pod(self.settings,
                                                    self.settings['snapshot']['io'])
         else:
-            # directly instantiate the pod,
-            # the snapshot class is initialized as a by product
             self.pod = Pod(self.settings)
 
     def sampling_pod(self, update):

@@ -81,10 +81,14 @@ def run(settings, options):
                         'Stopped to prevent deletion. Change options')
                     raise SystemExit
         if delete:
-            mpi.clean_makedirs(options.output)
+            try:
+                shutil.rmtree(options.output)
+            except OSError:
+                pass
+            os.makedirs(options.output)
             logger.debug('cleaning : {}'.format(options.output))
 
-    driver = Driver(settings, options.script, options.output)
+    driver = Driver(settings, options.output)
 
     update = True if settings['pod']['type'] != 'static' else False
 
@@ -98,7 +102,7 @@ def run(settings, options):
         driver.write_pod()
 
         try:
-            if settings['space']['resampling'] is not None:
+            if settings['space']['resampling']['resamp_size'] != 0:
                 driver.resampling_pod()
                 driver.write_pod()
         except KeyError:
@@ -204,9 +208,6 @@ def parse_options():
 
     # parse command line
     options = parser.parse_args()
-
-    # store settings absolute file path
-    options.script = os.path.abspath(options.settings)
 
     if options.check:
         raise SystemExit
