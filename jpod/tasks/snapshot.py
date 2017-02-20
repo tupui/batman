@@ -15,7 +15,6 @@ class Snapshot(object):
     A snapshot is a vector bound to a point in the space of parameter.
     This class manages several aspects:
     * settings common to all snapshots,
-    * splitting across MPI jobs,
     * IO, to read and write snapshots to disk,
     * data manipulations to be provided to the pod processing.
     """

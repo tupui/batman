@@ -1,20 +1,30 @@
 # coding: utf8
 import pytest
+import os
 import numpy as np
 import numpy.testing as npt
 import openturns as ot
 from sklearn.metrics import r2_score
 from jpod.functions import (Ishigami, Mascaret)
-from jpod.surrogate import (PC, Kriging)
-from jpod.space import Space, Point
+from jpod.surrogate import (PC, Kriging, SurrogateModel)
+from jpod.space import (Space, Point)
+from jpod.tasks import Snapshot
 from jpod.functions import output_to_sequence
 
 settings = {
     "space": {
         "corners": [[-np.pi, -np.pi, -np.pi], [np.pi, np.pi, np.pi]],
-        "sampling": {
-            "init_size": 200,
-            "method": "halton"
+        "sampling": {"init_size": 200, "method": "halton"}
+    },
+    "snapshot": {
+        "io": {
+            "shapes": {"0": [[1]]},
+            "format": "fmt_tp_fortran",
+            "variables": ["F"],
+            "point_filename": "header.py",
+            "filenames": {"0": ["function.dat"]},
+            "template_directory": None,
+            "parameter_names": ["x1", "x2", "x3"]
         }
     }
 }
@@ -60,7 +70,6 @@ def mascaret():
     space.sampling(50)
     target_space = f(space)
     return (f, dists, model, point, target_point, space, target_space)
-
 
 
 def test_PC_1d(ishigami):
@@ -159,5 +168,30 @@ def test_GP_14d(mascaret):
         evaluation, _ = surrogate.evaluate(x)
         return evaluation
     surrogate_ot = ot.PythonFunction(2, 14, wrap_surrogate)
+    q2 = ot_q2(dists, model, surrogate_ot)
+    assert q2 == pytest.approx(1, 0.1)
+
+
+def test_SurrogateModel_class(ishigami):
+    f_3d, dists, model, point, target_point, space, target_space = ishigami
+
+    Snapshot.initialize(settings['snapshot']['io'])
+    surrogate = SurrogateModel('kriging', space.corners)
+    surrogate.fit(space, target_space)
+    surrogate.save('.')
+    if not os.path.isfile('./model.dat'):
+        assert False
+    surrogate.predictor = None
+    surrogate.load('.')
+    assert surrogate.predictor is not None
+
+    pred, _ = surrogate(point)
+    assert pred[0].data == pytest.approx(target_point, 0.1)
+
+    # Compute predictivity coefficient Q2
+    def wrap_surrogate(x):
+        evaluation, _ = surrogate(x)
+        return [evaluation[0].data]
+    surrogate_ot = ot.PythonFunction(3, 1, wrap_surrogate)
     q2 = ot_q2(dists, model, surrogate_ot)
     assert q2 == pytest.approx(1, 0.1)

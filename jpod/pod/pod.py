@@ -23,7 +23,6 @@ import copy
 from .core import Core
 from .. import mpi
 import numpy as np
-from ..surrogate import SurrogateModel
 from ..tasks import Snapshot
 from ..space import Space
 
@@ -102,7 +101,6 @@ class Pod(Core):
         for s in snapshots:
             self.points += s.point
 
-        self._post_processing()
         self.logger.info('Computed pod basis with %g modes', self.S.shape[0])
 
     def update(self, snapshot):
@@ -114,13 +112,8 @@ class Pod(Core):
         snapshot = Snapshot.convert(snapshot)
         super(Pod, self).update(snapshot.data)
         self.points += snapshot.point
-        self._post_processing()
         self.logger.info('Updated pod basis with snapshot at point %s',
                          snapshot.point)
-
-    def _post_processing(self):
-        # reset quality
-        self.quality = None
 
     def estimate_quality(self):
         """Quality estimator.
@@ -151,45 +144,6 @@ class Pod(Core):
                          point)
         return self.quality, point
 
-    def predict(self, method, points, path=None):
-        """Predict snapshots.
-
-        :param str method: method used to compute the model
-        :param str path: if not set, will return a list of predicted snapshots instances, otherwise write them to disk.
-        """
-        try:
-            snapshots, sigma = self.predictor(points)
-        except TypeError:
-            self.predictor = SurrogateModel(method, self)
-            snapshots, sigma = self.predictor(points)
-
-        if path is not None:
-            s_list = []
-            for i, s in enumerate(snapshots):
-                s_path = os.path.join(path, self.directories['snapshot'] % i)
-                s_list += [s_path]
-                s.write(s_path)
-            snapshots = s_list
-        return snapshots, sigma
-
-    def predict_without_computation(self, model_predictor, points, path=None):
-        """Predict snapshots.
-
-        :param str path: if not set, will return a list of predicted snapshots instances, otherwise write them to disk.
-        """
-        self.predictor = model_predictor
-
-        snapshots, sigma = self.predictor(points)
-
-        if path is not None:
-            s_list = []
-            for i, s in enumerate(snapshots):
-                s_path = os.path.join(path, self.directories['snapshot'] % i)
-                s_list += [s_path]
-                s.write(s_path)
-            snapshots = s_list
-        return snapshots, sigma
-
     def write(self, path):
         """Save a pod to disk.
 
@@ -199,8 +153,7 @@ class Pod(Core):
         mpi.makedirs(path)
 
         # points
-        if mpi.myid == 0:
-            self.points.write(os.path.join(path, self.points_file_name))
+        self.points.write(os.path.join(path, self.points_file_name))
 
         # mean snapshot
         p = os.path.join(path, self.directories['mean_snapshot'])
@@ -211,13 +164,12 @@ class Pod(Core):
         for i, u in enumerate(self.U.T):
             Snapshot.write_data(u, path_pattern % i)
 
-        if mpi.myid == 0:
-            points = np.vstack(tuple(self.points))
-            np.savez(os.path.join(path, self.pod_file_name),
-                    parameters=points,
-                    # TODO: remove, only here for checking vs jpod 1
-                    values=self.S,
-                    vectors=self.V)
+        points = np.vstack(tuple(self.points))
+        np.savez(os.path.join(path, self.pod_file_name),
+                parameters=points,
+                # TODO: remove, only here for checking vs jpod 1
+                values=self.S,
+                vectors=self.V)
 
         self.logger.info('Wrote pod to %s', path)
 
