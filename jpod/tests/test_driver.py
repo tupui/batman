@@ -74,9 +74,30 @@ def test_provider_dict():
     driver.sampling()
     driver.write()
 
+    pred, _ = driver.prediction(write=True)
+    if not os.path.isdir(os.path.join(output, 'predictions/Newsnap0000')):
+        assert False
+
+    target_point = f_ishigami([0, 2, 1])
+    assert pred[0].data == pytest.approx(target_point, 0.1)
+
 
 def test_resampling(driver_init):
     driver = driver_init
     driver.write()
     driver.resampling()
     driver.write()
+
+
+def test_no_pod():
+    settings.pop('pod')
+    driver = Driver(settings, output)
+    driver.sampling()
+    driver.write()
+
+    pred, _ = driver.prediction(write=True)
+    if not os.path.isdir(os.path.join(output, 'predictions/Newsnap0000')):
+        assert False
+
+    target_point = f_ishigami([0, 2, 1])
+    assert pred[0].data == pytest.approx(target_point, 0.1)

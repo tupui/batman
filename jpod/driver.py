@@ -20,6 +20,7 @@ Defines all methods used to interact with other classes.
 """
 import logging
 import os
+import numpy as np
 
 from concurrent import futures
 
@@ -154,10 +155,11 @@ class Driver(object):
                     t = SnapshotTask(p, path)
                     snapshots += [self.snapshooter.submit(t.run)]
 
-        # compute the pod
+        # Fit the Surrogate [and POD]
+        if update:
+                self.surrogate.space.empty()
         if self.pod is not None:
             if update:
-                self.surrogate.space.empty()
                 if self.provider.is_job:
                     for s in futures.as_completed(snapshots):
                         self.pod.update(s.result())
@@ -176,12 +178,16 @@ class Driver(object):
         else:
             self.logger.info('No POD is computed.')
             if self.provider.is_job:
+                print("JOB")
+                _snapshots = []
                 for s in futures.as_completed(snapshots):
-                    s.result()
-            else:
-                for s in snapshots:
-                    s
-            self.surrogate.fit(self.pod.points, self.pod.VS(), pod=self.pod)
+                    _snapshots += [s.result()]
+                snapshots = _snapshots
+
+            snapshots = [Snapshot.convert(s) for s in snapshots]
+            snapshots = np.vstack([s.data for s in snapshots])
+
+            self.surrogate.fit(points, snapshots, pod=self.pod)
 
     def resampling(self):
         """Resampling of the POD.

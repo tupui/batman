@@ -354,9 +354,9 @@ class Snapshot(object):
     def __str__(self):
         s = ("point: {}\n"
              "data: {}\n"
-             "\tshape: {}\n"
-             "\t{}\n"
-             .format(repr(self.point), str(self.data.shape),
+             "shape: {}\n"
+             "{}\n"
+             .format(repr(self.point), self.data, str(self.data.shape),
                      [s.lstrip() for s in str(self.data.flags).split('\n')]))
         return s
 
