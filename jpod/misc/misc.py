@@ -79,7 +79,7 @@ def import_config(path_config, path_schema):
         :raises: Parsing Exception from ``json.loads``.
         :returns: dict or list.
         """
-        file = file.read()
+        file = file.read().decode('utf8')
         regex = r'\s*(#|\/{2}).*$'
         regex_inline = r'(:?(?:\s)*([A-Za-z\d\.{}]*)|((?<=\").*\"),?)(?:\s)*(((#|(\/{2})).*)|)$'
         lines = file.split('\n')
@@ -92,15 +92,15 @@ def import_config(path_config, path_schema):
                     lines[index] = re.sub(regex_inline, r'\1', line)
 
         try:
-            return json.loads('\n'.join(lines), **kwargs)
+            return json.loads('\n'.join(lines), encoding="utf-8", **kwargs)
         except:
             logger.exception("Connot load configuration file: json error")
             raise SystemExit
 
-    with open(path_config, 'r') as file:
+    with open(path_config, 'rb') as file:
         settings = minify_comments(file)
 
-    with open(path_schema, 'r') as file:
+    with open(path_schema, 'rb') as file:
         schema = minify_comments(file)
 
     error = False
