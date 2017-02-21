@@ -63,7 +63,6 @@ def test_resampling(driver_init):
 
 def test_no_pod(ishigami_data, clean_output):
     settings.pop('pod')
-    print(settings)
     driver = Driver(settings, output)
     driver.sampling()
 
@@ -94,4 +93,12 @@ def test_provider_dict(clean_output):
 
     pred, _ = driver.prediction(write=True)
     if not os.path.isdir(os.path.join(output, 'predictions/Newsnap0000')):
+        assert False
+
+
+def test_uq(driver_init, clean_output):
+    driver = driver_init
+    driver.uq()
+
+    if not os.path.isdir(os.path.join(output, 'uq')):
         assert False

@@ -58,6 +58,10 @@ class Driver(object):
         """
         self.settings = settings
         self.output = output
+        try:
+            os.makedirs(self.output)
+        except OSError:
+            pass
         self.snapshot_counter = 0
 
         # Snapshots
@@ -274,6 +278,6 @@ class Driver(object):
     def uq(self):
         """Perform UQ analysis."""
         output = os.path.join(self.output, self.output_tree['uq'])
-        analyse = UQ(self.pod, self.settings, output)
+        analyse = UQ(self.surrogate, self.settings, output)
         analyse.sobol()
         analyse.error_propagation()

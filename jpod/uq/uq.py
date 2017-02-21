@@ -80,7 +80,7 @@ class UQ:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, pod, settings, output=None):
+    def __init__(self, surrogate, settings, output=None):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -111,9 +111,8 @@ class UQ:
             self.logger.debug("Output folder already exists.")
         except TypeError:
             self.logger.debug("Not using output folder.")
-        self.pod = pod
         self.io = IOFormatSelector(settings['snapshot']['io']['format'])
-        self.surrogate = settings['surrogate']['method']
+        self.surrogate = surrogate
         self.p_lst = settings['snapshot']['io']['parameter_names']
         self.p_len = len(self.p_lst)
         self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]
@@ -138,15 +137,14 @@ class UQ:
 
         # Get discretization if functionnal output
         try:
-            f_eval, _ = self.pod.predict(self.surrogate, [self.sample[0]])
+            f_eval, _ = self.surrogate(self.sample[0])
             self.f_input, _ = np.split(f_eval[0].data, 2)
         except:
             self.f_input = None
 
         # Wrapper for parallelism
         self.n_cpus = 1  # cpu_count()
-        self.wrapper = Wrapper(self.pod, self.surrogate,
-                               self.p_len, self.output_len)
+        self.wrapper = Wrapper(self.surrogate, self.p_len, self.output_len)
         self.model = otw.Parallelizer(self.wrapper,
                                       backend='pathos', n_cpus=self.n_cpus)
 
