@@ -1,5 +1,6 @@
 # coding: utf8
 import os
+import sys
 import logging
 import shutil
 import re
@@ -28,7 +29,11 @@ class SnapshotProvider(object):
 
     @property
     def is_function(self):
-        if isinstance(self.provider, str):
+        try:
+            check_type = isinstance(self.provider, unicode)
+        except NameError:
+            check_type = isinstance(self.provider, str)
+        if check_type:
             sys.path.append('.')
             fun_provider = __import__(self.provider)
             self.provider = fun_provider.f

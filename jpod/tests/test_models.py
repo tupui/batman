@@ -1,6 +1,7 @@
 # coding: utf8
 import pytest
 import os
+import shutil
 import numpy as np
 import numpy.testing as npt
 import openturns as ot
@@ -11,6 +12,7 @@ from jpod.space import (Space, Point)
 from jpod.tasks import Snapshot
 from jpod.functions import output_to_sequence
 
+output = './tmp_test'
 settings = {
     "space": {
         "corners": [[-np.pi, -np.pi, -np.pi], [np.pi, np.pi, np.pi]],
@@ -29,6 +31,14 @@ settings = {
     }
 }
 
+@pytest.fixture()
+def clean_output():
+    try:
+        shutil.rmtree(output)
+    except OSError:
+        pass
+
+
 def ot_q2(dists, model, surrogate):
     dim = len(dists)
     dists = ot.ComposedDistribution(dists, ot.IndependentCopula(dim))
@@ -41,7 +51,7 @@ def ot_q2(dists, model, surrogate):
 
 
 @pytest.fixture(scope="session")
-def ishigami():
+def ishigami_data():
     f_3d = Ishigami()
     x1 = ot.Uniform(-3.1415, 3.1415)
     dists = [x1] * 3
@@ -57,7 +67,7 @@ def ishigami():
 
 
 @pytest.fixture(scope="session")
-def mascaret():
+def mascaret_data():
     f = Mascaret()
     x1 = ot.Uniform(15., 60.)
     x2 = ot.Normal(4035., 400.)
@@ -72,8 +82,8 @@ def mascaret():
     return (f, dists, model, point, target_point, space, target_space)
 
 
-def test_PC_1d(ishigami):
-    f_3d, dists, model, point, target_point, space, target_space = ishigami
+def test_PC_1d(ishigami_data):
+    f_3d, dists, model, point, target_point, space, target_space = ishigami_data
 
     surrogate = PC(function=f_3d, input_dists=dists,
                    out_dim=1, n_sample=1000, total_deg=10, strategy='LS')
@@ -96,8 +106,8 @@ def test_PC_1d(ishigami):
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_GP_1d(ishigami):
-    f_3d, dists, model, point, target_point, space, target_space = ishigami
+def test_GP_1d(ishigami_data):
+    f_3d, dists, model, point, target_point, space, target_space = ishigami_data
 
     surrogate = Kriging(space, target_space)
 
@@ -119,8 +129,8 @@ def test_GP_1d(ishigami):
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_PC_14d(mascaret):
-    f, dists, model, point, target_point, space, target_space = mascaret
+def test_PC_14d(mascaret_data):
+    f, dists, model, point, target_point, space, target_space = mascaret_data
 
     surrogate = PC(function=f, input_dists=dists,
                    out_dim=14, n_sample=300, total_deg=10,  strategy='LS')
@@ -147,8 +157,8 @@ def test_PC_14d(mascaret):
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_GP_14d(mascaret):
-    f, dists, model, point, target_point, space, target_space = mascaret
+def test_GP_14d(mascaret_data):
+    f, dists, model, point, target_point, space, target_space = mascaret_data
 
     surrogate = Kriging(space, target_space)
 
@@ -164,6 +174,7 @@ def test_GP_14d(mascaret):
 
     # Compute predictivity coefficient Q2
     model = ot.PythonFunction(2, 14, f)
+
     def wrap_surrogate(x):
         evaluation, _ = surrogate.evaluate(x)
         return evaluation
@@ -172,13 +183,13 @@ def test_GP_14d(mascaret):
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_SurrogateModel_class(ishigami):
-    f_3d, dists, model, point, target_point, space, target_space = ishigami
+def test_SurrogateModel_class(clean_output, ishigami_data):
+    f_3d, dists, model, point, target_point, space, target_space = ishigami_data
 
     Snapshot.initialize(settings['snapshot']['io'])
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
-    surrogate.write('.')
+    surrogate.write(output)
     if not os.path.isfile('./surrogate.dat'):
         assert False
     surrogate.predictor = None
@@ -188,9 +199,9 @@ def test_SurrogateModel_class(ishigami):
     pred, _ = surrogate(point)
     assert pred[0].data == pytest.approx(target_point, 0.1)
 
-    pred, _ = surrogate(point, path='.')
+    pred, _ = surrogate(point, path=output)
     assert pred[0].data == pytest.approx(target_point, 0.1)
-    if not os.path.isfile('./Newsnap0000/function.dat'):
+    if not os.path.isdir(os.path.join(output, 'predictions/Newsnap0000')):
         assert False
 
     # Compute predictivity coefficient Q2

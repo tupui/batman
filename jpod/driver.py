@@ -258,28 +258,18 @@ class Driver(object):
             self.space.empty()
             self.space += processed_points
 
-    def prediction(self, write=False):
+    def prediction(self, write=False, points=None):
         """Perform a prediction."""
         if write:
             output = os.path.join(self.output, self.output_tree['predictions'])
         else:
             output = None
 
-        points = Space(self.settings)
-        points += self.settings['surrogate']['predictions']
+        if points is None:
+            points = Space(self.settings)
+            points += self.settings['surrogate']['predictions']
 
         return self.surrogate(points, path=output)
-
-    def prediction_without_computation(self, write=False):
-        """Perform a prediction using an existing model read from file."""
-        if write:
-            output = os.path.join(self.output, self.output_tree['predictions'])
-        else:
-            output = None
-        self.read()
-        points = Space(self.settings)
-        points += self.settings['surrogate']['predictions']
-        self.surrogate(self.settings['surrogate']['predictions'], path=output)
 
     def uq(self):
         """Perform UQ analysis."""
