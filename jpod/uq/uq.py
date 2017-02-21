@@ -175,6 +175,8 @@ class UQ:
 
         :param lst(array) indices: Sobol first order indices computed using the POD.
         :param str function: name of the analytic function.
+        :return: err_q2, mse, s_l2_2nd, s_l2_1st, s_l2_total
+        :rtype: float
 
         """
 
@@ -230,6 +232,8 @@ class UQ:
                     "Cannot draw QQplot with output dimension > 1")
         else:
             self.logger.debug("No output folder to write errors in")
+
+        return err_q2, mse, s_l2_2nd, s_l2_1st, s_l2_total
 
     def sobol(self):
         """Compute Sobol' indices.
