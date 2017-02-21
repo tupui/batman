@@ -40,7 +40,6 @@ from sklearn import preprocessing
 import copy
 from collections import OrderedDict
 from ..uq import UQ
-import jpod.pod
 
 
 class Refiner(object):
@@ -49,21 +48,21 @@ class Refiner(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, pod, settings):
-        """Initialize the refiner with the POD and space corners.
+    def __init__(self, surrogate, settings):
+        """Initialize the refiner with the Surrogate and space corners.
 
         Points data are scaled between ``[0, 1]`` based on the size of the
         corners taking into account a ``delta_space`` factor.
 
-        :param jpod.pod.pod.Pod pod: POD
+        :param class:`surrogate.surrogate_model.SurrogateModel`: Surrogate
         :param dict settings: parameters
-        :param tuple(tuple(float)) corners: Boundaries to add a point within
         """
-        self.points = copy.deepcopy(pod.points)
-        self.pod = pod
-        if self.pod.predictor is None:
-            self.pod.predictor = jpod.pod.Predictor("kriging", self.pod)
-
+        self.points = copy.deepcopy(surrogate.space[:])
+        self.surrogate = surrogate
+        if self.surrogate.pod is None:
+            self.pod_S = 1
+        else:
+            self.pod_S = self.surrogate.pod.S
         self.settings_full = settings
         self.settings = settings['space']
         self.corners = np.array(self.settings['corners']).T
@@ -95,7 +94,7 @@ class Refiner(object):
         :rtype: float
 
         """
-        f, _ = self.pod.predictor([coords])
+        f, _ = self.surrogate(coords)
         try:
             _, f = np.split(f[0].data, 2)
         except:
@@ -120,8 +119,8 @@ class Refiner(object):
         :rtype: float
 
         """
-        _, sigma = self.pod.predictor([coords])
-        sum_sigma = np.sum(self.pod.S ** 2 * sigma)
+        _, sigma = self.surrogate(coords)
+        sum_sigma = np.sum(self.pod_S ** 2 * sigma)
 
         return - sum_sigma
 
@@ -315,7 +314,7 @@ class Refiner(object):
         point = np.array(point_loo)
 
         # Get Sobol' indices
-        analyse = UQ(self.pod, self.settings_full)
+        analyse = UQ(self.surrogate, self.settings_full)
         indices = analyse.sobol()[2]
         indices = indices * (indices > 0)
         indices = preprocessing.normalize(indices.reshape(1, -1), norm='max')

@@ -157,6 +157,7 @@ class Driver(object):
         # compute the pod
         if self.pod is not None:
             if update:
+                self.surrogate.space.empty()
                 if self.provider.is_job:
                     for s in futures.as_completed(snapshots):
                         self.pod.update(s.result())
@@ -191,19 +192,22 @@ class Driver(object):
         """
         max_points = self.settings['space']['sampling']['init_size'] + self.settings['space']['resampling']['resamp_size']
         while len(self.pod.points) < max_points:
-            # quality, point_loo = self.pod.estimate_quality()
-            quality = 0.5
-            point_loo = [-1.1780625, -0.8144629629629629, -2.63886]
-
-            if quality >= self.settings['space']['resampling']['q2_criteria']:
-                break
+            if self.pod is not None:
+                # quality, point_loo = self.pod.estimate_quality()
+                quality = 0.5
+                point_loo = [-1.1780625, -0.8144629629629629, -2.63886]
+                if quality >= self.settings['space']['resampling']['q2_criteria']:
+                    break
+            else:
+                quality = None
+                point_loo = None
 
             try:
-                new_point = self.space.refine(self.pod, point_loo)
+                new_point = self.space.refine(self.surrogate, point_loo)
             except FullSpaceError:
                 break
 
-            self._pod_processing(new_point, update=True)
+            self.sampling(new_point, update=True)
 
     def write(self):
         """Write Surrogate [and POD] to disk."""

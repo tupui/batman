@@ -18,7 +18,7 @@ settings = {
     "space": {
         "corners": [[-np.pi, -np.pi, -np.pi],[np.pi, np.pi, np.pi]],
         "sampling": {"init_size": 100,"method": "halton"},
-        "resampling": {"delta_space": 0.08, "resamp_size": 0,
+        "resampling": {"delta_space": 0.08, "resamp_size": 1,
             "method": "sigma", "q2_criteria": 0.9}},
     "pod": { "dim_max": 100, "tolerance": 0.99, "server": None, "type": "static"},
     "snapshot": {"max_workers": 10,
@@ -34,17 +34,23 @@ settings = {
         "type": "aggregated","method": "sobol"}}
 
 
-# @pytest.fixture(scope="function")
-# def clean_output():
-#     try:
-#         shutil.rmtree(output)
-#     except OSError:
-#         pass
+@pytest.fixture(autouse=True, scope="function")
+def clean_output():
+    try:
+        shutil.rmtree(output)
+    except OSError:
+        pass
 
 
-def test_driver_chain():
-    output, driver = driver_init
+@pytest.fixture(scope="session")
+def driver_init():
+    driver = Driver(settings, output)
     driver.sampling()
+    return driver
+
+
+def test_driver_chain(driver_init):
+    driver = driver_init
     driver.write()
     if not os.path.isdir(os.path.join(output, 'surrogate')):
         assert False
@@ -66,4 +72,11 @@ def test_provider_dict():
         "data-directory": "cfd-output-data", "restart": "False"}
     driver = Driver(settings, output)
     driver.sampling()
+    driver.write()
+
+
+def test_resampling(driver_init):
+    driver = driver_init
+    driver.write()
+    driver.resampling()
     driver.write()
