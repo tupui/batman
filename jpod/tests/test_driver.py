@@ -83,9 +83,9 @@ def test_no_pod(ishigami_data, clean_output):
 
 
 def test_provider_dict(clean_output):   
-    settings['space']['sampling']['init_size'] = 10
+    settings['space']['sampling']['init_size'] = 4
     settings['snapshot']['provider'] = {
-        "command": "bash", "timeout": 10, "context": "data",
+        "command": "bash", "timeout": 30, "context": "data",
         "script": "data/script.sh", "clean": False, "private-directory": "jpod-data",
         "data-directory": "cfd-output-data", "restart": "False"}
     driver = Driver(settings, output)

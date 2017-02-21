@@ -37,6 +37,9 @@ def clean_output():
         shutil.rmtree(output)
     except OSError:
         pass
+    yield
+    # Teardown
+    shutil.rmtree(output)
 
 
 def ot_q2(dists, model, surrogate):
@@ -189,11 +192,12 @@ def test_SurrogateModel_class(clean_output, ishigami_data):
     Snapshot.initialize(settings['snapshot']['io'])
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
+    os.makedirs(output)
     surrogate.write(output)
-    if not os.path.isfile('./surrogate.dat'):
+    if not os.path.isfile(os.path.join(output, 'surrogate.dat')):
         assert False
     surrogate.predictor = None
-    surrogate.read('.')
+    surrogate.read(output)
     assert surrogate.predictor is not None
 
     pred, _ = surrogate(point)
@@ -201,7 +205,7 @@ def test_SurrogateModel_class(clean_output, ishigami_data):
 
     pred, _ = surrogate(point, path=output)
     assert pred[0].data == pytest.approx(target_point, 0.1)
-    if not os.path.isdir(os.path.join(output, 'predictions/Newsnap0000')):
+    if not os.path.isdir(os.path.join(output, 'Newsnap0000')):
         assert False
 
     # Compute predictivity coefficient Q2
