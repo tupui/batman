@@ -11,13 +11,13 @@ path = os.path.dirname(os.path.realpath(__file__))
 schema = path + "/../jpod/misc/schema.json"
 
 def check_output():
-    if not os.path.isdir('output/pod'):
+    if not os.path.isdir('output/surrogate/pod'):
         assert False
-    if not os.path.isfile('output/pod/model'):
+    if not os.path.isfile('output/surrogate/surrogate.dat'):
         assert False
-    if not os.path.isfile('output/pod/points.dat'):
+    if not os.path.isfile('output/surrogate/pod/points.dat'):
         assert False
-    if not os.path.isfile('output/pod/pod.npz'):
+    if not os.path.isfile('output/surrogate/pod/pod.npz'):
         assert False
 
 
@@ -30,7 +30,7 @@ def init_case(case, output=True, force=False):
         os.system('rm -rf output')
     elif os.path.isdir('output'):
         run = False
-    
+
     if run:
         jpod.ui.main()
         check_output()

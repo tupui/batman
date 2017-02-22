@@ -12,7 +12,6 @@ from jpod.space import (Space, Point)
 from jpod.tasks import Snapshot
 from jpod.functions import output_to_sequence
 
-output = './tmp_test'
 settings = {
     "space": {
         "corners": [[-np.pi, -np.pi, -np.pi], [np.pi, np.pi, np.pi]],
@@ -30,16 +29,6 @@ settings = {
         }
     }
 }
-
-@pytest.fixture()
-def clean_output():
-    try:
-        shutil.rmtree(output)
-    except OSError:
-        pass
-    yield
-    # Teardown
-    shutil.rmtree(output)
 
 
 def ot_q2(dists, model, surrogate):
@@ -186,13 +175,13 @@ def test_GP_14d(mascaret_data):
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_SurrogateModel_class(clean_output, ishigami_data):
+def test_SurrogateModel_class(tmpdir_factory, ishigami_data):
     f_3d, dists, model, point, target_point, space, target_space = ishigami_data
 
     Snapshot.initialize(settings['snapshot']['io'])
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
-    os.makedirs(output)
+    output = str(tmpdir_factory.mktemp('tmp_test'))
     surrogate.write(output)
     if not os.path.isfile(os.path.join(output, 'surrogate.dat')):
         assert False

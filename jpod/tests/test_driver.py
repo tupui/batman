@@ -5,9 +5,8 @@ import numpy as np
 import openturns as ot
 from jpod import Driver
 from jpod.functions import Ishigami
-from test_models import (ot_q2, ishigami_data, clean_output)
+from test_models import (ot_q2, ishigami_data)
 
-output = './tmp_test'
 f_ishigami = Ishigami()
 
 settings = {
@@ -31,10 +30,11 @@ settings = {
 
 
 @pytest.fixture(scope="session")
-def driver_init():
+def driver_init(tmpdir_factory):
+    output = str(tmpdir_factory.mktemp('tmp_test'))
     driver = Driver(settings, output)
     driver.sampling()
-    return driver
+    return output, driver
 
 
 def test_driver_init(driver_init):
@@ -42,7 +42,7 @@ def test_driver_init(driver_init):
 
 
 def test_driver_chain(driver_init):
-    driver = driver_init
+    output, driver = driver_init
     driver.write()
     if not os.path.isdir(os.path.join(output, 'surrogate')):
         assert False
@@ -57,11 +57,12 @@ def test_driver_chain(driver_init):
 
 
 def test_resampling(driver_init):
-    driver = driver_init
+    output, driver = driver_init
     driver.resampling()
 
 
-def test_no_pod(ishigami_data, clean_output):
+def test_no_pod(ishigami_data, driver_init):
+    output, _ = driver_init
     settings.pop('pod')
     driver = Driver(settings, output)
     driver.sampling()
@@ -81,12 +82,13 @@ def test_no_pod(ishigami_data, clean_output):
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_provider_dict(clean_output):   
+def test_provider_dict(driver_init):   
     settings['space']['sampling']['init_size'] = 4
     settings['snapshot']['provider'] = {
         "command": "bash", "timeout": 30, "context": "data",
         "script": "data/script.sh", "clean": False, "private-directory": "jpod-data",
         "data-directory": "cfd-output-data", "restart": "False"}
+    output, _ = driver_init
     driver = Driver(settings, output)
     driver.sampling()
     driver.write()
@@ -96,9 +98,12 @@ def test_provider_dict(clean_output):
         assert False
 
 
-def test_uq(driver_init, clean_output):
-    driver = driver_init
+def test_uq(driver_init):
+    output, driver = driver_init
     driver.uq()
 
     if not os.path.isdir(os.path.join(output, 'uq')):
+        assert False
+
+    if not os.path.isfile(os.path.join(output, 'uq', 'sensitivity.dat')):
         assert False

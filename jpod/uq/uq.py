@@ -39,7 +39,7 @@ The *settings* file must contains the following parameters::
 
 ::
 
-    >> analyse = UQ(pod, settings, output)
+    >> analyse = UQ(surrogate, settings, output)
     >> analyse.sobol()
     >> analyse.error_propagation()
 
@@ -95,7 +95,7 @@ class UQ:
 
         Also, it creates the `model` and `int_model` as `ot.PythonFunction()`.
 
-        :param jpod.pod.pod.Pod pod: a POD,
+        :param class:`surrogate.surrogate_model.SurrogateModel` surrogate: a surrogate,
         :param dict settings: The settings file.
 
         """

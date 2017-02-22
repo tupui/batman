@@ -90,7 +90,8 @@ def run(settings, options):
 
     driver = Driver(settings, options.output)
 
-    update = True if settings['pod']['type'] != 'static' else False
+    if 'pod' in settings:
+        update = True if settings['pod']['type'] != 'static' else False
 
     if not options.no_surrogate and not options.pred:
         # the surrogate [and POD] will be computed
@@ -98,7 +99,7 @@ def run(settings, options):
             driver.restart()
             update = True
 
-        driver.sampling(update)
+        driver.sampling(update=update)
         driver.write()
 
         try:
@@ -118,14 +119,10 @@ def run(settings, options):
                 check output folder or re-try without -n")
             raise SystemExit
 
-    if not options.pred:
-        driver.prediction(write=options.save_snapshots)
-        driver.write()
-    else:
-        driver.prediction_without_computation(write=True)
-        logger.info('Prediction without model building')
+    driver.prediction(write=options.save_snapshots)
 
-    logger.info(driver.pod)
+    if 'pod' in settings:
+        logger.info(driver.pod)
 
     if options.q2:
         driver.pod.estimate_quality()
