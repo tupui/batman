@@ -102,8 +102,19 @@ def test_uq(driver_init):
     output, driver = driver_init
     driver.uq()
 
-    if not os.path.isdir(os.path.join(output, 'uq')):
+    output = os.path.join(output, 'uq')
+
+    if not os.path.isdir(output):
         assert False
 
-    if not os.path.isfile(os.path.join(output, 'uq', 'sensitivity.dat')):
+    if not os.path.isfile(os.path.join(output, 'sensitivity.dat')):
+        assert False
+
+    if not os.path.isfile(os.path.join(output, 'moment.dat')):
+        assert False
+
+    if not os.path.isfile(os.path.join(output, 'pdf.dat')):
+        assert False
+
+    if not os.path.isfile(os.path.join(output, 'sensitivity_aggregated.dat')):
         assert False

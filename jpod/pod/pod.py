@@ -168,10 +168,10 @@ class Pod(Core):
 
         points = np.vstack(tuple(self.points))
         np.savez(os.path.join(path, self.pod_file_name),
-                parameters=points,
-                # TODO: remove, only here for checking vs jpod 1
-                values=self.S,
-                vectors=self.V)
+                 parameters=points,
+                 # TODO: remove, only here for checking vs jpod 1
+                 values=self.S,
+                 vectors=self.V)
 
         self.logger.info('Wrote pod to %s', path)
 
