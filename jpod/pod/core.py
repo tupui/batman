@@ -217,6 +217,8 @@ class Core(object):
         data_len = self.U.shape[0]
         error = np.empty(points_nb)
         mean = np.empty((points_nb, data_len))
+        surrogate = SurrogateModel(self.leave_one_out_predictor,
+                                   self.corners)
 
         def quality(i):
             """Error at a point.
@@ -242,10 +244,9 @@ class Core(object):
             new_pod.S = S_1
 
             # New prediction with points_nb - 1
-            predictor = SurrogateModel(self.leave_one_out_predictor,
-                                       new_pod)
+            surrogate.fit(new_pod.points, new_pod.V * new_pod.S)
 
-            prediction, _ = predictor.predict(points[i])
+            prediction, _ = surrogate(points[i], snapshots=False)
 
             # MSE on the missing point
             error = np.sum((np.dot(Urot, prediction) - float(points_nb)

@@ -192,6 +192,9 @@ def test_SurrogateModel_class(tmpdir_factory, ishigami_data):
     pred, _ = surrogate(point)
     assert pred[0].data == pytest.approx(target_point, 0.1)
 
+    pred, _ = surrogate(point, snapshots=False)
+    assert pred == pytest.approx(target_point, 0.1)
+
     pred, _ = surrogate(point, path=output)
     assert pred[0].data == pytest.approx(target_point, 0.1)
     if not os.path.isdir(os.path.join(output, 'Newsnap0000')):

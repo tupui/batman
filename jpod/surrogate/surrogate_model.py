@@ -82,14 +82,15 @@ class SurrogateModel(object):
         self.update = True
         self.logger.info('got update notification')
 
-    def __call__(self, points, path=None):
+    def __call__(self, points, path=None, snapshots=True):
         """Predict snapshots.
 
         :param :class:`space.point.Point` points: point(s) to predict
         :param str path: if not set, will return a list of predicted snapshots
         instances, otherwise write them to disk.
+        :param bool snapshots: whether or not to return a Snapshot object
         :return: Result
-        :rtype: lst(:class:`tasks.snapshot.Snapshot`)
+        :rtype: lst(:class:`tasks.snapshot.Snapshot`) or np.array(n_points, n_features)
         :return: Standard deviation
         :rtype: lst(np.array)
         """
@@ -114,14 +115,18 @@ class SurrogateModel(object):
             for i, s in enumerate(results):
                 results[i] = self.pod.mean_snapshot + np.dot(self.pod.U, s)
 
-        snapshots = [None] * len(points)
-        for i, point in enumerate(points):
-            snapshots[i] = Snapshot(point, results[i])
+        if snapshots:
+            snapshots = [None] * len(points)
+            for i, point in enumerate(points):
+                snapshots[i] = Snapshot(point, results[i])
 
-        if path is not None:
-            for i, s in enumerate(snapshots):
-                s_path = os.path.join(path, self.directories['snapshot'] % i)
-                s.write(s_path)
+            if path is not None:
+                for i, s in enumerate(snapshots):
+                    s_path = os.path.join(path, self.directories['snapshot'] % i)
+                    s.write(s_path)
+        else:
+            return results, sigma
+
         return snapshots, sigma
 
     def write(self, path):
