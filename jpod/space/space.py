@@ -77,8 +77,6 @@ class Space(list):
             self.p_lst = settings['snapshot']['io']['parameter_names']
         except KeyError:
             self.p_lst = ["x" + str(i) for i in range(self.dim)]
-            self.logger.warn(
-                "Will not be able to refine with Sobol', need complete settings")
 
         # corner points
         try:

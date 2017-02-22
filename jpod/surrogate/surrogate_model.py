@@ -56,6 +56,7 @@ class SurrogateModel(object):
         self.update = False  # update switch: update model if POD update
         self.directories = {
             'surrogate': 'surrogate.dat',
+            'space': 'space.dat',
             'snapshot': 'Newsnap%04d'
         }
 
@@ -132,24 +133,36 @@ class SurrogateModel(object):
     def write(self, path):
             """Save model to disk.
 
-            Write a file containing information on the model
+            Write a file containing information on the model.
+            And write another one containing the associated space.
 
             :param str path: path to a directory.
             """
-            # Write the model
-            path = os.path.join(path, self.directories['surrogate'])
-            with open(path, 'wb') as f:
+            path_model = os.path.join(path, self.directories['surrogate'])
+            with open(path_model, 'wb') as f:
                 pickler = pickle.Pickler(f)
                 pickler.dump(self.predictor)
-            self.logger.info('Wrote model to {}'.format(path))
+            self.logger.info('Wrote model to {}'.format(path_model))
+
+            path_space = os.path.join(path, self.directories['space'])
+            with open(path_space, 'wb') as f:
+                pickler = pickle.Pickler(f)
+                pickler.dump(self.space)
+            self.logger.info('Wrote space to {}'.format(path))
 
     def read(self, path):
-        """Load model from disk.
+        """Load model and space from disk.
 
         :param str path: path to a output/surrogate directory.
         """
-        path = os.path.join(path, self.directories['surrogate'])
-        with open(path, 'rb') as f:
+        path_model = os.path.join(path, self.directories['surrogate'])
+        with open(path_model, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.predictor = unpickler.load()
         self.logger.info('Model loaded.')
+
+        path_space = os.path.join(path, self.directories['space'])
+        with open(path_space, 'rb') as f:
+            unpickler = pickle.Unpickler(f)
+            self.space = unpickler.load()
+        self.logger.info('Space loaded.')

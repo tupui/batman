@@ -185,9 +185,12 @@ def test_SurrogateModel_class(tmpdir_factory, ishigami_data):
     surrogate.write(output)
     if not os.path.isfile(os.path.join(output, 'surrogate.dat')):
         assert False
+
     surrogate.predictor = None
+    surrogate.space = None
     surrogate.read(output)
     assert surrogate.predictor is not None
+    assert surrogate.space == space
 
     pred, _ = surrogate(point)
     assert pred[0].data == pytest.approx(target_point, 0.1)
