@@ -65,6 +65,8 @@ import otwrapy as otw
 from sklearn.metrics import (r2_score, mean_squared_error)
 from multiprocessing import cpu_count
 from openturns.viewer import View
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from os import mkdir

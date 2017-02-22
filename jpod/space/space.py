@@ -21,6 +21,8 @@ it can be resampled or points can be added manually.
 import logging
 import os
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from . import sampling
 from .point import Point
