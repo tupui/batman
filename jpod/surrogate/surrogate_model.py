@@ -43,14 +43,14 @@ class SurrogateModel(object):
 
         :param np.array corners: space corners to normalize
         :param str kind: name of prediction method, rbf or kriging
-        :param :class:`pod.pod.Pod` POD: a POD
+        :param np.array corners: parameter space corners (2 points extrema, n_features)
         """
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
         settings = {"space": {
-        "corners": corners,
-        "sampling": {"init_size": np.inf, "method": kind}}}
+                        "corners": corners,
+                        "sampling": {"init_size": np.inf, "method": kind}}}
         self.space = Space(settings)
         self.pod = None
         self.update = False  # update switch: update model if POD update
@@ -99,7 +99,9 @@ class SurrogateModel(object):
             # pod has changed: update predictor
             self.fit(self.pod.points, self.pod.VS())
 
-        if not isinstance(points, Space):
+        try:
+            points[0][0]
+        except (TypeError, IndexError):
             points = [points]
 
         points = np.array(points)
@@ -113,8 +115,11 @@ class SurrogateModel(object):
         results = np.atleast_2d(results)
 
         if self.pod is not None:
+            pred = np.empty((len(results), len(self.pod.mean_snapshot)))
             for i, s in enumerate(results):
-                results[i] = self.pod.mean_snapshot + np.dot(self.pod.U, s)
+                pred[i] = self.pod.mean_snapshot + np.dot(self.pod.U, s)
+
+            results = np.atleast_2d(pred)
 
         if snapshots:
             snapshots = [None] * len(points)

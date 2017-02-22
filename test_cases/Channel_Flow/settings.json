@@ -51,7 +51,7 @@
         }
     },
     "surrogate": {
-        "predictions": [[4000, 30]],
+        "predictions": [[30, 4000]],
         "method": "kriging"
     },
     "uq": {

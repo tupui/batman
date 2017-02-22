@@ -17,8 +17,11 @@ def multi_eval(fun):
         :return: function evaluation(s) [sigma(s)]
         :rtype: np.array([n_eval], n_feature)
         """
-        if not isinstance(x, space.Space):
+        try:
+            x[0][0]
+        except (TypeError, IndexError):
             x = [x]
+
         n_eval = len(x)
         f = [None] * n_eval
 

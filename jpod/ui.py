@@ -119,7 +119,8 @@ def run(settings, options):
                 check output folder or re-try without -n")
             raise SystemExit
 
-    driver.prediction(write=options.save_snapshots)
+    if 'predictions' in settings["surrogate"]:
+        driver.prediction(write=options.save_snapshots)
 
     if 'pod' in settings:
         logger.info(driver.pod)

@@ -195,6 +195,7 @@ class G_Function(object):
         :param np.array a: (1, d)
         """
         self.d_in = d
+        self.d_out = 1
 
         if a is None:
             self.a = np.arange(1, d + 1)

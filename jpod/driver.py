@@ -236,7 +236,7 @@ class Driver(object):
             self.pod.write(pod_path)
 
     def read(self):
-        """Read Surrogate [and POD] from disk.""" 
+        """Read Surrogate [and POD] from disk."""
         self.surrogate.read(os.path.join(self.output, self.output_tree['surrogate']))
         if self.pod is not None:
             self.pod.read(os.path.join(self.output, self.output_tree['pod']))
@@ -270,8 +270,7 @@ class Driver(object):
             output = None
 
         if points is None:
-            points = Space(self.settings)
-            points += self.settings['surrogate']['predictions']
+            points = self.settings['surrogate']['predictions']
 
         return self.surrogate(points, path=output)
 

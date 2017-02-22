@@ -182,7 +182,7 @@ class Space(list):
         try:
             points[0][0]
         except (TypeError, IndexError):
-            points=[points]
+            points = [points]
 
         for point in points:
             # check point dimension is correct

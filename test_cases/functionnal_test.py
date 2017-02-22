@@ -107,21 +107,24 @@ def test_restart_pod(case='/Michalewicz'):
     options = jpod.ui.parse_options()
     settings = jpod.misc.import_config(options.settings, schema)
     settings["space"]["resampling"]["resamp_size"] = 1
+    jpod.ui.run(settings, options)
+    check_output()
+    if not os.path.isdir('output/snapshots/4'):
+        assert False
 
+    init_case(case, force=True)
+    # Restart from snapshots and read a template directory
+    settings["snapshot"]["io"]["template_directory"] = "output/snapshots/0/jpod-data"
     jpod.ui.run(settings, options)
     check_output()
 
-    if not os.path.isdir('output/snapshots/4'):
-        assert False
 
     init_case(case, force=True)
     # Restart from 4 and add 2 points continuing the DOE sequence
     settings["space"]["resampling"]["resamp_size"] = 0
     settings["space"]["sampling"]["init_size"] = 6
-
     jpod.ui.run(settings, options)
     check_output()
-
     if not os.path.isdir('output/snapshots/5'):
         assert False
 
@@ -149,7 +152,7 @@ def test_resampling(case='/Michalewicz'):
 # Oakley & O'Hagan: 1D -> 1D
 # Channel_Flow: 2D -> 400D
 @pytest.mark.parametrize("name", [
-    ('/Ishigami'),
+    ('/G_Function'),
     ('/Basic_function'),
     ('/Channel_Flow'),
 ])
