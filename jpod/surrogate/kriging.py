@@ -65,8 +65,13 @@ class Kriging(object):
         :param ndarray output: The observed data. (nb snapshots, [nb output dim])
 
         """
-        if isinstance(input, Space):
+        try:
+            input[0][0]
+        except (TypeError, IndexError):
+            pass
+        else:
             input = np.array(input).reshape(len(input), -1)
+
         input_len = input.shape[1]
         self.model_len = output.shape[1]
         if self.model_len == 1:

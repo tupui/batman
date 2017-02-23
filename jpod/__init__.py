@@ -11,4 +11,4 @@ __all__ = ['Driver', 'mpi', 'misc']
 
 __version__ = '1.4'
 __branch__ = 'heads/feature-refactor_predictor-snapshot'
-__commit__ = '1.4-152-gb9980fe'
+__commit__ = '1.4-172-g8e18729'

@@ -147,13 +147,15 @@ class SurrogateModel(object):
             with open(path_model, 'wb') as f:
                 pickler = pickle.Pickler(f)
                 pickler.dump(self.predictor)
-            self.logger.info('Wrote model to {}'.format(path_model))
+            self.logger.debug('Wrote model to {}'.format(path_model))
 
             path_space = os.path.join(path, self.directories['space'])
             with open(path_space, 'wb') as f:
                 pickler = pickle.Pickler(f)
                 pickler.dump(self.space)
-            self.logger.info('Wrote space to {}'.format(path))
+            self.logger.debug('Wrote space to {}'.format(path_space))
+
+            self.logger.debug('Wrote model and space.')
 
     def read(self, path):
         """Load model and space from disk.
@@ -164,10 +166,12 @@ class SurrogateModel(object):
         with open(path_model, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.predictor = unpickler.load()
-        self.logger.info('Model loaded.')
+        self.logger.debug('Read model from {}'.format(path_model))
 
         path_space = os.path.join(path, self.directories['space'])
         with open(path_space, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.space = unpickler.load()
-        self.logger.info('Space loaded.')
+        self.logger.debug('Read space from {}'.format(path_space))
+
+        self.logger.info('Model and space loaded.')

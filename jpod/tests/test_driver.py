@@ -82,7 +82,9 @@ def test_no_pod(ishigami_data, driver_init):
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_provider_dict(driver_init):   
+def test_provider_dict(driver_init):
+    path = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(path)
     settings['space']['sampling']['init_size'] = 4
     settings['snapshot']['provider'] = {
         "command": "bash", "timeout": 30, "context": "data",

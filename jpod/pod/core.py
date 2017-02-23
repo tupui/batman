@@ -249,8 +249,8 @@ class Core(object):
             prediction, _ = surrogate(points[i], snapshots=False)
 
             # MSE on the missing point
-            error = np.sum((np.dot(Urot, prediction) - float(points_nb)
-                           / float(points_nb - 1) * self.V[i] * self.S)
+            error = np.sum((np.dot(Urot, prediction[0]) - float(points_nb)
+                            / float(points_nb - 1) * self.V[i] * self.S)
                            ** 2)
 
             # Because V = V.T -> V[i] is a column so V[i]S = SV.T
