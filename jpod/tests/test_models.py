@@ -4,73 +4,9 @@ import os
 import numpy as np
 import numpy.testing as npt
 import openturns as ot
-from sklearn.metrics import r2_score
-from jpod.functions import (Ishigami, Mascaret)
 from jpod.surrogate import (PC, Kriging, SurrogateModel)
-from jpod.space import (Space, Point)
 from jpod.tasks import Snapshot
-from jpod.functions import output_to_sequence
-
-settings = {
-    "space": {
-        "corners": [[-np.pi, -np.pi, -np.pi], [np.pi, np.pi, np.pi]],
-        "sampling": {"init_size": 200, "method": "halton"}
-    },
-    "snapshot": {
-        "io": {
-            "shapes": {"0": [[1]]},
-            "format": "fmt_tp_fortran",
-            "variables": ["F"],
-            "point_filename": "header.py",
-            "filenames": {"0": ["function.dat"]},
-            "template_directory": None,
-            "parameter_names": ["x1", "x2", "x3"]
-        }
-    }
-}
-
-
-def ot_q2(dists, model, surrogate):
-    dim = len(dists)
-    dists = ot.ComposedDistribution(dists, ot.IndependentCopula(dim))
-    experiment = ot.LHSExperiment(dists, 1000)
-    sample = experiment.generate()
-    ref = model(sample)
-    pred = surrogate(sample)
-
-    return r2_score(ref, pred, multioutput='uniform_average')
-
-
-@pytest.fixture(scope="session")
-def ishigami_data():
-    f_3d = Ishigami()
-    x1 = ot.Uniform(-3.1415, 3.1415)
-    dists = [x1] * 3
-    model = ot.PythonFunction(3, 1, output_to_sequence(f_3d))
-    point = Point([2.20, 1.57, 3])
-    target_point = f_3d(point)
-    settings["space"]["corners"] = [[-np.pi, -np.pi, -np.pi],
-                                    [np.pi, np.pi, np.pi]]
-    space = Space(settings)
-    space.sampling(150)
-    target_space = f_3d(space)
-    return (f_3d, dists, model, point, target_point, space, target_space)
-
-
-@pytest.fixture(scope="session")
-def mascaret_data():
-    f = Mascaret()
-    x1 = ot.Uniform(15., 60.)
-    x2 = ot.Normal(4035., 400.)
-    dists = [x1, x2]
-    model = ot.PythonFunction(2, 14, f)
-    point = [31.54, 4237.025]
-    target_point = f(point)
-    settings["space"]["corners"] = [[15.0, 2500.0], [60, 6000.0]]
-    space = Space(settings)
-    space.sampling(50)
-    target_space = f(space)
-    return (f, dists, model, point, target_point, space, target_space)
+from jpod.tests.conftest import sklearn_q2
 
 
 def test_PC_1d(ishigami_data):
@@ -93,7 +29,7 @@ def test_PC_1d(ishigami_data):
 
     # Compute predictivity coefficient Q2
     surrogate = ot.PythonFunction(3, 1, surrogate.evaluate)
-    q2 = ot_q2(dists, model, surrogate)
+    q2 = sklearn_q2(dists, model, surrogate)
     assert q2 == pytest.approx(1, 0.1)
 
 
@@ -116,7 +52,7 @@ def test_GP_1d(ishigami_data):
         evaluation, _ = surrogate.evaluate(x)
         return [evaluation]
     surrogate_ot = ot.PythonFunction(3, 1, wrap_surrogate)
-    q2 = ot_q2(dists, model, surrogate_ot)
+    q2 = sklearn_q2(dists, model, surrogate_ot)
     assert q2 == pytest.approx(1, 0.1)
 
 
@@ -144,7 +80,7 @@ def test_PC_14d(mascaret_data):
 
     # Compute predictivity coefficient Q2
     surrogate_ot = ot.PythonFunction(2, 14, surrogate.evaluate)
-    q2 = ot_q2(dists, model, surrogate_ot)
+    q2 = sklearn_q2(dists, model, surrogate_ot)
     assert q2 == pytest.approx(1, 0.1)
 
 
@@ -170,24 +106,23 @@ def test_GP_14d(mascaret_data):
         evaluation, _ = surrogate.evaluate(x)
         return evaluation
     surrogate_ot = ot.PythonFunction(2, 14, wrap_surrogate)
-    q2 = ot_q2(dists, model, surrogate_ot)
+    q2 = sklearn_q2(dists, model, surrogate_ot)
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_SurrogateModel_class(tmpdir_factory, ishigami_data):
+def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     f_3d, dists, model, point, target_point, space, target_space = ishigami_data
 
-    Snapshot.initialize(settings['snapshot']['io'])
+    Snapshot.initialize(settings_ishigami['snapshot']['io'])
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
-    output = str(tmpdir_factory.mktemp('tmp_test'))
-    surrogate.write(output)
-    if not os.path.isfile(os.path.join(output, 'surrogate.dat')):
+    surrogate.write(tmp)
+    if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
         assert False
 
     surrogate.predictor = None
     surrogate.space = None
-    surrogate.read(output)
+    surrogate.read(tmp)
     assert surrogate.predictor is not None
     assert surrogate.space == space
 
@@ -197,9 +132,9 @@ def test_SurrogateModel_class(tmpdir_factory, ishigami_data):
     pred, _ = surrogate(point, snapshots=False)
     assert pred == pytest.approx(target_point, 0.1)
 
-    pred, _ = surrogate(point, path=output)
+    pred, _ = surrogate(point, path=tmp)
     assert pred[0].data == pytest.approx(target_point, 0.1)
-    if not os.path.isdir(os.path.join(output, 'Newsnap0000')):
+    if not os.path.isdir(os.path.join(tmp, 'Newsnap0000')):
         assert False
 
     # Compute predictivity coefficient Q2
@@ -207,5 +142,5 @@ def test_SurrogateModel_class(tmpdir_factory, ishigami_data):
         evaluation, _ = surrogate(x)
         return [evaluation[0].data]
     surrogate_ot = ot.PythonFunction(3, 1, wrap_surrogate)
-    q2 = ot_q2(dists, model, surrogate_ot)
+    q2 = sklearn_q2(dists, model, surrogate_ot)
     assert q2 == pytest.approx(1, 0.1)

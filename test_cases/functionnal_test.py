@@ -5,159 +5,160 @@ import mock
 import jpod.ui
 import jpod.misc
 import os
+import shutil
 import sys
+from jpod.tests.conftest import tmp
 
 path = os.path.dirname(os.path.realpath(__file__))
-schema = path + "/../jpod/misc/schema.json"
+schema = os.path.join(path, '../jpod/misc/schema.json')
 
-def check_output():
-    if not os.path.isdir('output/surrogate/pod'):
+def check_output(tmp):
+    if not os.path.isdir(os.path.join(tmp, 'surrogate/pod')):
         assert False
-    if not os.path.isfile('output/surrogate/surrogate.dat'):
+    if not os.path.isfile(os.path.join(tmp, 'surrogate/surrogate.dat')):
         assert False
-    if not os.path.isfile('output/surrogate/pod/points.dat'):
+    if not os.path.isfile(os.path.join(tmp, 'surrogate/pod/points.dat')):
         assert False
-    if not os.path.isfile('output/surrogate/pod/pod.npz'):
+    if not os.path.isfile(os.path.join(tmp, 'surrogate/pod/pod.npz')):
         assert False
 
 
-def init_case(case, output=True, force=False):
-    os.chdir(path + case)
-    sys.argv = ['jpod', 'settings.json']
+def init_case(tmp, case, output=True, force=False):
+    os.chdir(os.path.join(path, case))
+    sys.argv = ['jpod', 'settings.json', '-o', tmp]
     run = True
 
     if force:
-        os.system('rm -rf output')
-    elif os.path.isdir('output'):
+        shutil.rmtree(tmp)
+    elif os.path.isdir(tmp):
         run = False
 
     if run:
         jpod.ui.main()
-        check_output()
+        check_output(tmp)
     if not output:
-        os.system('rm -rf output/pod')
+        shutil.rmtree(os.path.join(tmp, 'surrogate/pod'))
 
 
 # Use Michalewicz: 2D -> 1D
-def test_init(case='/Michalewicz'):
-    init_case(case, force=True)
-    check_output()
+def test_init(tmp, case='Michalewicz'):
+    init_case(tmp, case, force=True)
+    check_output(tmp)
 
 
-def test_no_pod(case='/Michalewicz'):
-    init_case(case)
-    sys.argv = ['jpod', 'settings.json', '-n']
+def test_no_pod(tmp, case='Michalewicz'):
+    init_case(tmp, case)
+    sys.argv = ['jpod', 'settings.json', '-n', '-o', tmp]
     jpod.ui.main()
-    check_output()
+    check_output(tmp)
 
 
-def test_no_model_pred(case='/Michalewicz'):
-    init_case(case)
-    sys.argv = ['jpod', 'settings.json', '-ps']
+def test_no_model_pred(tmp, case='Michalewicz'):
+    init_case(tmp, case)
+    sys.argv = ['jpod', 'settings.json', '-ps', '-o', tmp]
     jpod.ui.main()
-    check_output()
-    if not os.path.isdir('output/predictions'):
+    check_output(tmp)
+    if not os.path.isdir(os.path.join(tmp, 'predictions')):
         assert False
 
 
-def test_quality(case='/Michalewicz'):
-    init_case(case)
-    sys.argv = ['jpod', 'settings.json', '-pq']
+def test_quality(tmp, case='Michalewicz'):
+    init_case(tmp, case)
+    sys.argv = ['jpod', 'settings.json', '-pq', '-o', tmp]
     jpod.ui.main()
-    check_output()
+    check_output(tmp)
 
 
-def test_uq(case='/Michalewicz'):
-    init_case(case)
-    sys.argv = ['jpod', 'settings.json', '-pu']
+def test_uq(tmp, case='Michalewicz'):
+    init_case(tmp, case)
+    sys.argv = ['jpod', 'settings.json', '-pu', '-o', tmp]
     jpod.ui.main()
-    check_output()
-    if not os.path.isdir('output/uq'):
+    check_output(tmp)
+    if not os.path.isdir(os.path.join(tmp, 'uq')):
         assert False
 
 
-def test_checks(case='/Michalewicz'):
+def test_checks(tmp, case='Michalewicz'):
     """Check answers to questions if there is an output folder."""
-    init_case(case, output=False)
+    init_case(tmp, case, output=False)
 
     # Restart from snapshots
     with mock.patch.object(jpod.misc, 'check_yes_no', lambda prompt, default: '\n'):
         jpod.ui.main()
 
-    check_output()
+    check_output(tmp)
 
     # Remove files and restart
     with mock.patch.object(jpod.misc, 'check_yes_no', lambda prompt, default: 'y'):
         jpod.ui.main()
 
-    check_output()
+    check_output(tmp)
 
     # Exit without doing anything
     with mock.patch.object(jpod.misc, 'check_yes_no', lambda prompt, default: 'n'):
         jpod.ui.main()
 
-    check_output()
+    check_output(tmp)
 
 
-def test_restart_pod(case='/Michalewicz'):
+def test_restart_pod(tmp, case='Michalewicz'):
     """Test all restart options."""
     # Restart POD from existing one and continue with resample
-    init_case(case)
-    sys.argv = ['jpod', 'settings.json', '-r']
+    init_case(tmp, case)
+    sys.argv = ['jpod', 'settings.json', '-r', '-o', tmp]
     options = jpod.ui.parse_options()
     settings = jpod.misc.import_config(options.settings, schema)
     settings["space"]["resampling"]["resamp_size"] = 1
     jpod.ui.run(settings, options)
-    check_output()
-    if not os.path.isdir('output/snapshots/4'):
+    check_output(tmp)
+    if not os.path.isdir(os.path.join(tmp, 'snapshots/4')):
         assert False
 
-    init_case(case, force=True)
+    init_case(tmp, case, force=True)
     # Restart from snapshots and read a template directory
-    settings["snapshot"]["io"]["template_directory"] = "output/snapshots/0/jpod-data"
+    settings["snapshot"]["io"]["template_directory"] = os.path.join(tmp, 'snapshots/0/jpod-data')
     jpod.ui.run(settings, options)
-    check_output()
+    check_output(tmp)
 
 
-    init_case(case, force=True)
+    init_case(tmp, case, force=True)
     # Restart from 4 and add 2 points continuing the DOE sequence
     settings["space"]["resampling"]["resamp_size"] = 0
     settings["space"]["sampling"]["init_size"] = 6
     jpod.ui.run(settings, options)
-    check_output()
-    if not os.path.isdir('output/snapshots/5'):
+    check_output(tmp)
+    if not os.path.isdir(os.path.join(tmp, 'snapshots/5')):
         assert False
 
 
-def test_resampling(case='/Michalewicz'):
+def test_resampling(tmp, case='Michalewicz'):
     """Assess all resampling methods."""
-    sys.argv = ['jpod', 'settings.json']
+    sys.argv = ['jpod', 'settings.json', '-o', tmp]
     options = jpod.ui.parse_options()
     settings = jpod.misc.import_config(options.settings, schema)
     settings["space"]["sampling"]["init_size"] = 10
     settings["space"]["resampling"]["resamp_size"] = 2
 
     for method in ["loo_sigma", "loo_sobol", "extrema"]:
-        print("Method: ", method)
-        os.system('rm -rf output')
+        shutil.rmtree(tmp)
         settings["space"]["resampling"]["method"] = method
         if method == "extrema":
             settings["space"]["resampling"]["resamp_size"] = 4
         jpod.ui.run(settings, options)
-        check_output()
-        if not os.path.isdir('output/snapshots/11'):
+        check_output(tmp)
+        if not os.path.isdir(os.path.join(tmp, 'snapshots/11')):
             assert False
 
 # Ishigami: 3D -> 1D
 # Oakley & O'Hagan: 1D -> 1D
 # Channel_Flow: 2D -> 400D
 @pytest.mark.parametrize("name", [
-    ('/G_Function'),
-    ('/Basic_function'),
-    ('/Channel_Flow'),
+    ('G_Function'),
+    ('Basic_function'),
+    ('Channel_Flow'),
 ])
-def test_cases(name):
-    test_init(case=name)
-    test_quality(case=name)
-    test_uq(case=name)
-    test_restart_pod(case=name)
+def test_cases(tmp, name):
+    test_init(tmp, case=name)
+    test_quality(tmp, case=name)
+    test_uq(tmp, case=name)
+    test_restart_pod(tmp, case=name)
