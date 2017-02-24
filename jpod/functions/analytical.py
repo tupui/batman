@@ -188,7 +188,7 @@ class G_Function(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, d=5, a=None):
+    def __init__(self, d=4, a=None):
         """G-function definition.
 
         :param int d: input dimension
