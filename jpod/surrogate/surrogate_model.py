@@ -122,6 +122,7 @@ class SurrogateModel(object):
             results = np.atleast_2d(pred)
 
         if snapshots:
+            points = self.scaler.inverse_transform(points)
             snapshots = [None] * len(points)
             for i, point in enumerate(points):
                 snapshots[i] = Snapshot(point, results[i])
