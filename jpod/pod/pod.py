@@ -125,18 +125,12 @@ class Pod(Core):
         self.logger.info('Estimating pod quality...')
 
         # Get rid of predictor creation messages
-        console = logging.getLogger().handlers[0]
         level_init = copy.copy(self.logger.getEffectiveLevel())
-
-        console.setLevel(logging.WARNING)
-        logging.getLogger().removeHandler('console')
-        logging.getLogger().addHandler(console)
+        logging.getLogger().setLevel(logging.WARNING)
 
         quality, point = super(Pod, self).estimate_quality(self.points)
 
-        logging.getLogger().removeHandler('console')
-        console.setLevel(level_init)
-        logging.getLogger().addHandler(console)
+        logging.getLogger().setLevel(level_init)
 
         self.quality = quality
         self.logger.info('pod quality = %g, max error location = %s', quality,

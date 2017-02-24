@@ -1,6 +1,7 @@
 # coding: utf8
 import pytest
 import os
+import copy
 import numpy as np
 import openturns as ot
 from jpod import Driver
@@ -56,15 +57,11 @@ def test_driver_chain(driver_init):
     assert pred[0].data == pytest.approx(target_point, 0.1)
 
 
-def test_resampling(driver_init):
-    output, driver = driver_init
-    driver.resampling()
-
-
 def test_no_pod(ishigami_data, driver_init):
     output, _ = driver_init
-    settings.pop('pod')
-    driver = Driver(settings, output)
+    test_settings = copy.copy(settings)
+    test_settings.pop('pod')
+    driver = Driver(test_settings, output)
     driver.sampling()
 
     f_3d, dists, model, point, target_point, space, target_space = ishigami_data
@@ -85,19 +82,29 @@ def test_no_pod(ishigami_data, driver_init):
 def test_provider_dict(driver_init):
     path = os.path.dirname(os.path.realpath(__file__))
     os.chdir(path)
-    settings['space']['sampling']['init_size'] = 4
-    settings['snapshot']['provider'] = {
+    test_settings = copy.copy(settings)
+    test_settings['space']['sampling']['init_size'] = 4
+    test_settings['snapshot']['provider'] = {
         "command": "bash", "timeout": 30, "context": "data",
         "script": "data/script.sh", "clean": False, "private-directory": "jpod-data",
         "data-directory": "cfd-output-data", "restart": "False"}
     output, _ = driver_init
-    driver = Driver(settings, output)
+    driver = Driver(test_settings, output)
     driver.sampling()
     driver.write()
 
     pred, _ = driver.prediction(write=True)
     if not os.path.isdir(os.path.join(output, 'predictions/Newsnap0000')):
         assert False
+
+
+def test_resampling(driver_init):
+    output, _ = driver_init
+    test_settings = copy.copy(settings)
+    test_settings['space']['sampling']['init_size'] = 4
+    driver = Driver(test_settings, output)
+    driver.sampling()
+    driver.resampling()
 
 
 def test_uq(driver_init):
