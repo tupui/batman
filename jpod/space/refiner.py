@@ -38,7 +38,6 @@ from scipy.optimize import (differential_evolution, minimize, basinhopping)
 import numpy as np
 from sklearn import preprocessing
 import copy
-from collections import OrderedDict
 from ..uq import UQ
 
 
@@ -431,51 +430,31 @@ class Refiner(object):
 
         return new_points, refined_pod_points
 
-    def hybrid(self, refined_pod_points, point_loo):
+    def hybrid(self, refined_pod_points, point_loo, method):
         """Composite resampling strategy.
 
         Uses all methods one after another to add new points.
         It uses the navigator defined within settings file.
 
+        :param refined_pod_points: points not to consider for extrema
+        :param :class:`space.point.Point` point_loo:
+        :param str strategy: resampling method
         :return: The coordinate of the point to add
         :rtype: lst(float)
 
         """
         self.logger.info(">>---Hybrid strategy---<<")
 
-        try:
-            self.logger.debug('Strategy: {}'.format(self.settings['resampling']['strategy_full'])) 
-        except KeyError:
-            self.settings['resampling']['strategy_full'] = self.settings['resampling']['hybrid']
-            self.logger.info('Strategy: {}'
-                             .format(self.settings['resampling']['strategy_full']))
-
-        self.settings['resampling']['hybrid'] = OrderedDict(self.settings['resampling']['hybrid'])
-        strategies = self.settings['resampling']['hybrid']
-
-        if sum(strategies.values()) == 0:
-            self.settings['resampling']['hybrid'] = OrderedDict(self.settings['resampling']['strategy_full'])
-            strategies = self.settings['resampling']['hybrid']
-
-        new_point = []
-        for method in strategies:
-            if strategies[method] > 0:
-                if method == 'sigma':
-                    new_point = self.mse()
-                    break
-                elif method == 'loo_sigma':
-                    new_point = self.leave_one_out_mse(point_loo)
-                    break
-                elif method == 'loo_sobol':
-                    new_point = self.leave_one_out_sobol(point_loo)
-                    break
-                elif method == 'extrema':
-                    new_point, refined_pod_points = self.extrema(refined_pod_points)
-                    break
-                else:
-                    self.logger.exception("Resampling method does't exits")
-                    raise SystemExit
-
-        self.settings['resampling']['hybrid'][method] -= 1
+        if method == 'sigma':
+            new_point = self.mse()
+        elif method == 'loo_sigma':
+            new_point = self.leave_one_out_mse(point_loo)
+        elif method == 'loo_sobol':
+            new_point = self.leave_one_out_sobol(point_loo)
+        elif method == 'extrema':
+            new_point, refined_pod_points = self.extrema(refined_pod_points)
+        else:
+            self.logger.exception("Resampling method does't exits")
+            raise SystemExit
 
         return new_point, refined_pod_points
