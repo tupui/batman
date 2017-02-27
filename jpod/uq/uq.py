@@ -39,7 +39,7 @@ The *settings* file must contains the following parameters::
 
 ::
 
-    >> analyse = UQ(pod, settings, output)
+    >> analyse = UQ(surrogate, settings, output)
     >> analyse.sobol()
     >> analyse.error_propagation()
 
@@ -65,6 +65,8 @@ import otwrapy as otw
 from sklearn.metrics import (r2_score, mean_squared_error)
 from multiprocessing import cpu_count
 from openturns.viewer import View
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from os import mkdir
@@ -80,7 +82,7 @@ class UQ:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, pod, settings, output=None):
+    def __init__(self, surrogate, settings, output=None):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -95,7 +97,7 @@ class UQ:
 
         Also, it creates the `model` and `int_model` as `ot.PythonFunction()`.
 
-        :param jpod.pod.pod.Pod pod: a POD,
+        :param class:`surrogate.surrogate_model.SurrogateModel` surrogate: a surrogate,
         :param dict settings: The settings file.
 
         """
@@ -111,9 +113,8 @@ class UQ:
             self.logger.debug("Output folder already exists.")
         except TypeError:
             self.logger.debug("Not using output folder.")
-        self.pod = pod
         self.io = IOFormatSelector(settings['snapshot']['io']['format'])
-        self.surrogate = settings['surrogate']['method']
+        self.surrogate = surrogate
         self.p_lst = settings['snapshot']['io']['parameter_names']
         self.p_len = len(self.p_lst)
         self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]
@@ -138,15 +139,14 @@ class UQ:
 
         # Get discretization if functionnal output
         try:
-            f_eval, _ = self.pod.predict(self.surrogate, [self.sample[0]])
+            f_eval, _ = self.surrogate(self.sample[0])
             self.f_input, _ = np.split(f_eval[0].data, 2)
         except:
             self.f_input = None
 
         # Wrapper for parallelism
         self.n_cpus = 1  # cpu_count()
-        self.wrapper = Wrapper(self.pod, self.surrogate,
-                               self.p_len, self.output_len)
+        self.wrapper = Wrapper(self.surrogate, self.p_len, self.output_len)
         self.model = otw.Parallelizer(self.wrapper,
                                       backend='pathos', n_cpus=self.n_cpus)
 
@@ -177,14 +177,15 @@ class UQ:
 
         :param lst(array) indices: Sobol first order indices computed using the POD.
         :param str function: name of the analytic function.
+        :return: err_q2, mse, s_l2_2nd, s_l2_1st, s_l2_total
+        :rtype: float
 
         """
 
         fun = func_ref.__dict__[function]()
 
         if fun.d_out > 1:
-            def wrap_fun(x):
-                return fun(x)
+            wrap_fun = fun
         else:
             def wrap_fun(x):
                 return [fun(x)]
@@ -233,6 +234,8 @@ class UQ:
                     "Cannot draw QQplot with output dimension > 1")
         else:
             self.logger.debug("No output folder to write errors in")
+
+        return err_q2, mse, s_l2_2nd, s_l2_1st, s_l2_total
 
     def sobol(self):
         """Compute Sobol' indices.

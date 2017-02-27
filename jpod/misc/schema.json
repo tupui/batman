@@ -91,10 +91,6 @@
           "maximum": 1,
           "exclusiveMaximum": true
         },
-        "server": {
-          "type": "null",
-          "default": null
-        },
         "type": {
           "type": "string",
           "default": "static",
@@ -104,7 +100,6 @@
       "required": [
         "dim_max",
         "tolerance",
-        "server",
         "type"
       ]
     },
@@ -156,7 +151,6 @@
               ]
             },
             "template_directory": {
-              "type": "null",
               "default": null
             },
             "parameter_names": {

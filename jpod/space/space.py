@@ -21,6 +21,10 @@ it can be resampled or points can be added manually.
 import logging
 import os
 import numpy as np
+from collections import OrderedDict
+import itertools
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from . import sampling
 from .point import Point
@@ -62,8 +66,11 @@ class Space(list):
         self.settings = settings
         self.doe_init = settings['space']['sampling']['init_size']
         self.doe_method = settings['space']['sampling']['method']
-        self.max_points_nb = settings['space'][
-            'resampling']['resamp_size'] + self.doe_init
+        if 'resampling' in settings['space']:
+            self.refiner = None
+            self.max_points_nb = settings['space']['resampling']['resamp_size'] + self.doe_init
+        else:
+            self.max_points_nb = self.doe_init
         self.size = 0
         corners = settings['space']['corners']
         self.dim = len(corners[0])
@@ -72,8 +79,6 @@ class Space(list):
             self.p_lst = settings['snapshot']['io']['parameter_names']
         except KeyError:
             self.p_lst = ["x" + str(i) for i in range(self.dim)]
-            self.logger.warn(
-                "Will not be able to refine with Sobol', need complete settings")
 
         # corner points
         try:
@@ -132,7 +137,8 @@ class Space(list):
             plt.scatter(sample[self.doe_init:],
                         [0] * (len(self) - self.doe_init), c='r', marker='^')
             plt.xlabel(self.p_lst[0])
-            plt.tick_params(axis='y', which='both', labelleft='off', left='off')
+            plt.tick_params(axis='y', which='both',
+                            labelleft='off', left='off')
 
         else:
             # num figs = ((n-1)**2+(n-1))/2
@@ -143,9 +149,9 @@ class Space(list):
                 for j in range(i + 1, self.dim):
                     ax = plt.subplot2grid((self.dim, self.dim), (j, i))
                     ax.scatter(sample[0:self.doe_init, i], sample[
-                                0:self.doe_init, j], s=5, c='k', marker='o')
+                        0:self.doe_init, j], s=5, c='k', marker='o')
                     ax.scatter(sample[self.doe_init:, i], sample[
-                                self.doe_init:, j], s=5, c='r', marker='^')
+                        self.doe_init:, j], s=5, c='r', marker='^')
                     ax.tick_params(axis='both', labelsize=(10 - self.dim))
                     if i == 0:
                         ax.set_ylabel(self.p_lst[j])
@@ -179,7 +185,7 @@ class Space(list):
         try:
             points[0][0]
         except (TypeError, IndexError):
-            points=[points]
+            points = [points]
 
         for point in points:
             # check point dimension is correct
@@ -211,7 +217,7 @@ class Space(list):
                                    .format(point))
         return self
 
-    def sampling(self, n, kind=None):
+    def sampling(self, n=None, kind=None):
         """Create point samples in the parameter space.
 
         Minimum number of samples for halton and sobol : 4
@@ -225,6 +231,8 @@ class Space(list):
         """
         if kind is None:
             kind = self.doe_method
+        if n is None:
+            n = self.doe_init
 
         bounds = np.array(self.corners)
         samples = sampling.doe(n, bounds, kind)
@@ -237,28 +245,35 @@ class Space(list):
         self.logger.debug("Points are:\n{}".format(samples))
         return self
 
-    def refine(self, pod, point_loo):
+    def refine(self, surrogate, point_loo):
         """Refine the sample, update space points and return the new point(s).
 
-        :param jpod.pod.pod.Pod pod: POD
+        :param :class:`surrogate.surrogate_model.SurrogateModel` surrogate: surrogate
         :return: List of points to add
         :rtype: space.point.Point -> lst(tuple(float))
         """
-        refiner = Refiner(pod, self.settings)
         # Refinement strategy
+        if self.refiner is None:
+            self.refiner = Refiner(surrogate, self.settings)
+            if self.settings['space']['resampling']['method'] == 'hybrid':
+                strategy = []
+                for method in self.settings['space']['resampling']['hybrid']:
+                    strategy.append([method[0]] * method[1])
+                self.hybrid = itertools.cycle(itertools.chain.from_iterable(strategy))
+
         method = self.settings['space']['resampling']['method']
         if method == 'sigma':
-            new_point = refiner.mse()
+            new_point = self.refiner.mse()
         elif method == 'loo_sigma':
-            new_point = refiner.leave_one_out_mse(point_loo)
+            new_point = self.refiner.leave_one_out_mse(point_loo)
         elif method == 'loo_sobol':
-            new_point = refiner.leave_one_out_sobol(point_loo)
+            new_point = self.refiner.leave_one_out_sobol(point_loo)
         elif method == 'extrema':
-            new_point, self.refined_pod_points = \
-                refiner.extrema(self.refined_pod_points)
+            new_point, self.refined_pod_points = self.refiner.extrema(self.refined_pod_points)
         elif method == 'hybrid':
-            new_point, self.refined_pod_points = \
-                refiner.hybrid(self.refined_pod_points, point_loo)
+            new_point, self.refined_pod_points = self.refiner.hybrid(self.refined_pod_points,
+                                                                point_loo,
+                                                                next(self.hybrid))
 
         try:
             point = [Point(point) for point in [new_point]]

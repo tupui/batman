@@ -33,7 +33,7 @@ def test_G_Function():
     f_6d = G_Function(d=6, a=np.array([78., 12., 0.5, 2., 97., 33.]))
     assert f_6d([0., 2./3., 1., 0., 0., 1./3.]) == pytest.approx(2.193, 0.01)
 
-    f_5d = G_Function(d=5, a=[1, 2, 3, 4., 5.])
+    f_5d = G_Function(d=5)
     test_indices = npt.assert_almost_equal(f_5d.s_first,
                                            [0.48, 0.21, 0.12, 0.08, 0.05],
                                            decimal=2)

@@ -1,8 +1,11 @@
 # coding: utf8
 
 import pytest
+import numpy as np
+import numpy.testing as npt
 from jpod.space import (Point, Space,
                         UnicityError, AlienPointError, FullSpaceError)
+from jpod.functions import Ishigami
 
 settings = {
     "space": {
@@ -38,8 +41,15 @@ def test_point():
 
     Point.set_threshold(0)
 
-def test_space():
 
+def test_point_evaluation():
+    f_3d = Ishigami()
+    point = Point([2.20, 1.57, 3])
+    target_point = f_3d(point)
+    assert target_point == 14.357312835804658
+
+
+def test_space():
     space = Space(settings)
 
     space += (1, 2, 3)
@@ -51,7 +61,7 @@ def test_space():
     space += [(1, 2, 3), (1, 1, 3)]
     assert space[:] == [(1, 2, 3), (1, 1, 3)]
 
-    s1 = space.sampling(10)
+    s1 = space.sampling()
     space2 = Space(settings)
     s2 = space2.sampling(10, kind='lhsc')
     assert s1[:] != s2[:]
@@ -66,3 +76,14 @@ def test_space():
 
     with pytest.raises(FullSpaceError):
         space.sampling(17)
+
+
+def test_space_evaluation():
+    f_3d = Ishigami()
+    space = Space(settings)
+    space.sampling(2)
+    targets_space = f_3d(space)
+
+    f_data_base = np.array([8.10060038,  5.18818004]).reshape(2, 1)
+    test_output = npt.assert_almost_equal(targets_space, f_data_base)
+    assert True if test_output is None else False

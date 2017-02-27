@@ -16,6 +16,7 @@ import numpy as np
 from scipy.spatial import distance
 import os
 import logging
+from ..utils import multi_eval
 
 
 class Mascaret(object):
@@ -84,6 +85,7 @@ class Mascaret(object):
 
         self.logger.info("Using function Mascaret")
 
+    @multi_eval
     def __call__(self, x):
         """Call function.
 

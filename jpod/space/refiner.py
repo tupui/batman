@@ -38,9 +38,7 @@ from scipy.optimize import (differential_evolution, minimize, basinhopping)
 import numpy as np
 from sklearn import preprocessing
 import copy
-from collections import OrderedDict
 from ..uq import UQ
-import jpod.pod
 
 
 class Refiner(object):
@@ -49,21 +47,21 @@ class Refiner(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, pod, settings):
-        """Initialize the refiner with the POD and space corners.
+    def __init__(self, surrogate, settings):
+        """Initialize the refiner with the Surrogate and space corners.
 
         Points data are scaled between ``[0, 1]`` based on the size of the
         corners taking into account a ``delta_space`` factor.
 
-        :param jpod.pod.pod.Pod pod: POD
+        :param class:`surrogate.surrogate_model.SurrogateModel`: Surrogate
         :param dict settings: parameters
-        :param tuple(tuple(float)) corners: Boundaries to add a point within
         """
-        self.points = copy.deepcopy(pod.points)
-        self.pod = pod
-        if self.pod.predictor is None:
-            self.pod.predictor = jpod.pod.Predictor("kriging", self.pod)
-
+        self.points = copy.deepcopy(surrogate.space[:])
+        self.surrogate = surrogate
+        if self.surrogate.pod is None:
+            self.pod_S = 1
+        else:
+            self.pod_S = self.surrogate.pod.S
         self.settings_full = settings
         self.settings = settings['space']
         self.corners = np.array(self.settings['corners']).T
@@ -95,7 +93,7 @@ class Refiner(object):
         :rtype: float
 
         """
-        f, _ = self.pod.predictor([coords])
+        f, _ = self.surrogate(coords)
         try:
             _, f = np.split(f[0].data, 2)
         except:
@@ -120,8 +118,8 @@ class Refiner(object):
         :rtype: float
 
         """
-        _, sigma = self.pod.predictor([coords])
-        sum_sigma = np.sum(self.pod.S ** 2 * sigma)
+        _, sigma = self.surrogate(coords)
+        sum_sigma = np.sum(self.pod_S ** 2 * sigma)
 
         return - sum_sigma
 
@@ -315,7 +313,7 @@ class Refiner(object):
         point = np.array(point_loo)
 
         # Get Sobol' indices
-        analyse = UQ(self.pod, self.settings_full)
+        analyse = UQ(self.surrogate, self.settings_full)
         indices = analyse.sobol()[2]
         indices = indices * (indices > 0)
         indices = preprocessing.normalize(indices.reshape(1, -1), norm='max')
@@ -432,51 +430,31 @@ class Refiner(object):
 
         return new_points, refined_pod_points
 
-    def hybrid(self, refined_pod_points, point_loo):
+    def hybrid(self, refined_pod_points, point_loo, method):
         """Composite resampling strategy.
 
         Uses all methods one after another to add new points.
         It uses the navigator defined within settings file.
 
+        :param refined_pod_points: points not to consider for extrema
+        :param :class:`space.point.Point` point_loo:
+        :param str strategy: resampling method
         :return: The coordinate of the point to add
         :rtype: lst(float)
 
         """
         self.logger.info(">>---Hybrid strategy---<<")
 
-        try:
-            self.logger.debug('Strategy: {}'.format(self.settings['resampling']['strategy_full'])) 
-        except KeyError:
-            self.settings['resampling']['strategy_full'] = self.settings['resampling']['hybrid']
-            self.logger.info('Strategy: {}'
-                             .format(self.settings['resampling']['strategy_full']))
-
-        self.settings['resampling']['hybrid'] = OrderedDict(self.settings['resampling']['hybrid'])
-        strategies = self.settings['resampling']['hybrid']
-
-        if sum(strategies.values()) == 0:
-            self.settings['resampling']['hybrid'] = OrderedDict(self.settings['resampling']['strategy_full'])
-            strategies = self.settings['resampling']['hybrid']
-
-        new_point = []
-        for method in strategies:
-            if strategies[method] > 0:
-                if method == 'sigma':
-                    new_point = self.mse()
-                    break
-                elif method == 'loo_sigma':
-                    new_point = self.leave_one_out_mse(point_loo)
-                    break
-                elif method == 'loo_sobol':
-                    new_point = self.leave_one_out_sobol(point_loo)
-                    break
-                elif method == 'extrema':
-                    new_point, refined_pod_points = self.extrema(refined_pod_points)
-                    break
-                else:
-                    self.logger.exception("Resampling method does't exits")
-                    raise SystemExit
-
-        self.settings['resampling']['hybrid'][method] -= 1
+        if method == 'sigma':
+            new_point = self.mse()
+        elif method == 'loo_sigma':
+            new_point = self.leave_one_out_mse(point_loo)
+        elif method == 'loo_sobol':
+            new_point = self.leave_one_out_sobol(point_loo)
+        elif method == 'extrema':
+            new_point, refined_pod_points = self.extrema(refined_pod_points)
+        else:
+            self.logger.exception("Resampling method does't exits")
+            raise SystemExit
 
         return new_point, refined_pod_points

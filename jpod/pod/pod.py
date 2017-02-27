@@ -18,14 +18,11 @@ This class wraps the core of POD computations and manages high level IO.
 """
 import logging
 import os
-import dill as pickle
 import copy
 
 from .core import Core
-from .. import mpi
 import numpy as np
-from .predictor import Predictor
-from .snapshot import Snapshot
+from ..tasks import Snapshot
 from ..space import Space
 
 
@@ -103,7 +100,6 @@ class Pod(Core):
         for s in snapshots:
             self.points += s.point
 
-        self._post_processing()
         self.logger.info('Computed pod basis with %g modes', self.S.shape[0])
 
     def update(self, snapshot):
@@ -115,13 +111,8 @@ class Pod(Core):
         snapshot = Snapshot.convert(snapshot)
         super(Pod, self).update(snapshot.data)
         self.points += snapshot.point
-        self._post_processing()
         self.logger.info('Updated pod basis with snapshot at point %s',
                          snapshot.point)
-
-    def _post_processing(self):
-        # reset quality
-        self.quality = None
 
     def estimate_quality(self):
         """Quality estimator.
@@ -134,62 +125,17 @@ class Pod(Core):
         self.logger.info('Estimating pod quality...')
 
         # Get rid of predictor creation messages
-        console = logging.getLogger().handlers[0]
         level_init = copy.copy(self.logger.getEffectiveLevel())
-
-        console.setLevel(logging.WARNING)
-        logging.getLogger().removeHandler('console')
-        logging.getLogger().addHandler(console)
+        logging.getLogger().setLevel(logging.WARNING)
 
         quality, point = super(Pod, self).estimate_quality(self.points)
 
-        logging.getLogger().removeHandler('console')
-        console.setLevel(level_init)
-        logging.getLogger().addHandler(console)
+        logging.getLogger().setLevel(level_init)
 
         self.quality = quality
         self.logger.info('pod quality = %g, max error location = %s', quality,
                          point)
         return self.quality, point
-
-    def predict(self, method, points, path=None):
-        """Predict snapshots.
-
-        :param str method: method used to compute the model
-        :param str path: if not set, will return a list of predicted snapshots instances, otherwise write them to disk.
-        """
-        try:
-            snapshots, sigma = self.predictor(points)
-        except TypeError:
-            self.predictor = Predictor(method, self)
-            snapshots, sigma = self.predictor(points)
-
-        if path is not None:
-            s_list = []
-            for i, s in enumerate(snapshots):
-                s_path = os.path.join(path, self.directories['snapshot'] % i)
-                s_list += [s_path]
-                s.write(s_path)
-            snapshots = s_list
-        return snapshots, sigma
-
-    def predict_without_computation(self, model_predictor, points, path=None):
-        """Predict snapshots.
-
-        :param str path: if not set, will return a list of predicted snapshots instances, otherwise write them to disk.
-        """
-        self.predictor = model_predictor
-
-        snapshots, sigma = self.predictor(points)
-
-        if path is not None:
-            s_list = []
-            for i, s in enumerate(snapshots):
-                s_path = os.path.join(path, self.directories['snapshot'] % i)
-                s_list += [s_path]
-                s.write(s_path)
-            snapshots = s_list
-        return snapshots, sigma
 
     def write(self, path):
         """Save a pod to disk.
@@ -197,11 +143,13 @@ class Pod(Core):
         :param str path: path to a directory.
         """
         # create output directory if necessary
-        mpi.makedirs(path)
+        try:
+            os.makedirs(path)
+        except OSError:
+            pass
 
         # points
-        if mpi.myid == 0:
-            self.points.write(os.path.join(path, self.points_file_name))
+        self.points.write(os.path.join(path, self.points_file_name))
 
         # mean snapshot
         p = os.path.join(path, self.directories['mean_snapshot'])
@@ -212,13 +160,12 @@ class Pod(Core):
         for i, u in enumerate(self.U.T):
             Snapshot.write_data(u, path_pattern % i)
 
-        if mpi.myid == 0:
-            points = np.vstack(tuple(self.points))
-            np.savez(os.path.join(path, self.pod_file_name),
-                    parameters=points,
-                    # TODO: remove, only here for checking vs jpod 1
-                    values=self.S,
-                    vectors=self.V)
+        points = np.vstack(tuple(self.points))
+        np.savez(os.path.join(path, self.pod_file_name),
+                 parameters=points,
+                 # TODO: remove, only here for checking vs jpod 1
+                 values=self.S,
+                 vectors=self.V)
 
         self.logger.info('Wrote pod to %s', path)
 
@@ -247,29 +194,3 @@ class Pod(Core):
             self.U[:, i] = Snapshot.read_data(path_pattern % i)
 
         self.logger.info('Read pod from %s', path)
-
-    def write_model(self, path):
-            """Save model to disk.
-
-            Write a file containing information on the model
-
-            :param str path: path to a directory.
-            """
-            # Write the model
-            file_name = os.path.join(path, 'model')
-            with open(file_name, 'wb') as fichier:
-                mon_pickler = pickle.Pickler(fichier)
-                mon_pickler.dump(self.predictor)
-            self.logger.info('Wrote model to %s', path)
-
-    @staticmethod
-    def read_model(path):
-        """Read the model from disk.
-
-        :param str path: path to a output/pod directory.
-        """
-        file_name = os.path.join(path, 'model')
-        with open(file_name, 'rb') as fichier:
-            mon_depickler = pickle.Unpickler(fichier)
-            model_recupere = mon_depickler.load()
-        return model_recupere

@@ -31,6 +31,7 @@ References
 """
 import numpy as np
 import logging
+from .utils import multi_eval
 
 
 class Michalewicz(object):
@@ -62,6 +63,7 @@ class Michalewicz(object):
         self.logger.info("Using function Michalewicz with d={}"
                          .format(self.d_in))
 
+    @multi_eval
     def __call__(self, x):
         """Call function.
 
@@ -71,8 +73,7 @@ class Michalewicz(object):
         """
         f = 0.
         for i in range(self.d_in):
-            f += np.sin(x[i]) * np.sin((i + 1) * x[i]
-                                       ** 2 / np.pi) ** (2 * self.m)
+            f += np.sin(x[i]) * np.sin((i + 1) * x[i] ** 2 / np.pi) ** (2 * self.m)
 
         return -f
 
@@ -101,6 +102,7 @@ class Rosenbrock(object):
         self.logger.info("Using function Rosenbrock with d={}"
                          .format(self.d_in))
 
+    @multi_eval
     def __call__(self, x):
         """Call function.
 
@@ -157,6 +159,8 @@ class Ishigami(object):
         self.logger.info("Using function Ishigami with a={}, b={}"
                          .format(self.a, self.b))
 
+
+    @multi_eval
     def __call__(self, x):
         """Call function.
 
@@ -184,13 +188,14 @@ class G_Function(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, d=5, a=None):
+    def __init__(self, d=4, a=None):
         """G-function definition.
 
         :param int d: input dimension
         :param np.array a: (1, d)
         """
         self.d_in = d
+        self.d_out = 1
 
         if a is None:
             self.a = np.arange(1, d + 1)
@@ -206,6 +211,7 @@ class G_Function(object):
         self.logger.info("Using function G-Function with d={}, a={}"
                          .format(self.d_in, self.a))
 
+    @multi_eval
     def __call__(self, x):
         """Call function.
 
@@ -258,6 +264,7 @@ class Channel_Flow(object):
         self.logger.info("Using function Channel Flow with: dx={}, length={}, "
                          "width={}".format(dx, length, width))
 
+    @multi_eval
     def __call__(self, x):
         """Call function.
 

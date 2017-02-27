@@ -98,8 +98,6 @@ install_requires = ['sphinx_rtd_theme',
                     'jsonschema',
                     'pathos>=0.2',
                     'otwrapy>=0.6',
-                    'rpyc',
-                    'h5py',
                     'scikit-learn>=0.18']
 
 if sys.version_info <= (3, 3):

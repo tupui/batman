@@ -13,7 +13,7 @@ M. Brand: Fast low-rank modifications of the thin singular value decomposition. 
 """
 import numpy as np
 import copy
-from .predictor import Predictor
+from ..surrogate import SurrogateModel
 from .. import mpi
 from ..misc import ProgressBar, NestedPool
 from pathos.multiprocessing import cpu_count
@@ -134,8 +134,7 @@ class Core(object):
             # by filtering: 0. singular value
             self.mean_snapshot = snapshot
             self.U = np.zeros([snapshot.shape[0], 1])
-            if mpi.myid == 0:
-                self.U[0, 0] = 1.
+            self.U[0, 0] = 1.
             self.S = np.zeros([1])
             self.V = np.ones([1, 1])
 
@@ -218,6 +217,8 @@ class Core(object):
         data_len = self.U.shape[0]
         error = np.empty(points_nb)
         mean = np.empty((points_nb, data_len))
+        surrogate = SurrogateModel(self.leave_one_out_predictor,
+                                   self.corners)
 
         def quality(i):
             """Error at a point.
@@ -243,14 +244,13 @@ class Core(object):
             new_pod.S = S_1
 
             # New prediction with points_nb - 1
-            predictor = Predictor(self.leave_one_out_predictor,
-                                  new_pod)
+            surrogate.fit(new_pod.points, new_pod.V * new_pod.S)
 
-            prediction, _ = predictor.predict(points[i])
+            prediction, _ = surrogate(points[i], snapshots=False)
 
             # MSE on the missing point
-            error = np.sum((np.dot(Urot, prediction) - float(points_nb)
-                           / float(points_nb - 1) * self.V[i] * self.S)
+            error = np.sum((np.dot(Urot, prediction[0]) - float(points_nb)
+                            / float(points_nb - 1) * self.V[i] * self.S)
                            ** 2)
 
             # Because V = V.T -> V[i] is a column so V[i]S = SV.T

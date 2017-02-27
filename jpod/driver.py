@@ -20,68 +20,33 @@ Defines all methods used to interact with other classes.
 """
 import logging
 import os
-import sys
+import numpy as np
 
 from concurrent import futures
 
 from collections import OrderedDict
-from . import mpi
-from .pod import (Snapshot, Pod)
+from .pod import Pod
 from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
-from .tasks import (PodServerTask, SnapshotTask)
+from .surrogate import SurrogateModel
+from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
 
 
-class SnapshotProvider():
-
-    """Utility class to make the code more readable.
-
-    This is how the provider type is figured out.
-    """
-
-    def __init__(self, provider):
-        self.provider = provider
-
-    @property
-    def is_file(self):
-        return isinstance(self.provider, list)
-
-    @property
-    def is_job(self):
-        return isinstance(self.provider, dict)
-
-    @property
-    def is_function(self):
-        try:
-            check_type = isinstance(self.provider, unicode)
-        except NameError:
-            check_type = isinstance(self.provider, str)
-        if check_type:
-            sys.path.append('.')
-            fun_provider = __import__(self.provider)
-            self.provider = fun_provider.f
-        return callable(self.provider)
-
-    def __getitem__(self, key):
-        return self.provider[key]
-
-    def __call__(self, *args, **kwargs):
-        return self.provider(*args, **kwargs)
-
-
-class Driver():
+class Driver(object):
 
     """Driver class."""
 
+    logger = logging.getLogger(__name__)
     output_tree = {
         'snapshots': 'snapshots',
-        'pod': 'pod',
+        'pod': 'surrogate/pod',
+        'surrogate': 'surrogate',
         'predictions': 'predictions',
         'uq': 'uq',
     }
     '''Structure of the output directory.'''
 
-    def __init__(self, settings, script, output):
+    def __init__(self, settings, output):
         """Initialize Driver.
 
         From settings, init snapshot, space and POD.
@@ -92,49 +57,15 @@ class Driver():
 
         """
         self.settings = settings
-        '''JPOD settings'''
-
         self.output = output
-        '''Path to output directory.'''
-
-        self.logger = logging.getLogger(__name__)
-        '''Console and file logger.'''
-
-        self.external_pod = None
-        '''External pod task handle.'''
-
-        self.pod = None
-        '''POD processing, either local or external.'''
-
-        self.snapshooter = None
-        '''Snapshots generation manager.'''
-
-        self.provider = None
-        '''Snapshot provider, it generates a snapshot.'''
-
-        self.space = None
-        '''Parameter space.'''
-
-        self.initial_points = None
-        '''Points in the parameter space for the static pod.'''
-
+        try:
+            os.makedirs(self.output)
+        except OSError:
+            pass
         self.snapshot_counter = 0
-        '''Counter for numbering the snapshots.'''
 
-        # snapshot computation
-        self._init_snapshot()
-
-        # parameter space and points
-        self._init_space()
-
-        # Init pod
-        self._init_pod(script)
-
-    def _init_snapshot(self):
-        """Initialize snapshots  :class:`SnapshotTask`."""
+        # Snapshots
         Snapshot.initialize(self.settings['snapshot']['io'])
-
-        # snapshot generation
         self.provider = SnapshotProvider(self.settings['snapshot']['provider'])
 
         if self.provider.is_job:
@@ -143,24 +74,18 @@ class Driver():
             for files in self.settings['snapshot']['io']['filenames'].values():
                 for f in files:
                     data_files += [
-                        os.path.join(
-                            self.provider['data-directory'],
-                            f)]
+                        os.path.join(self.provider['data-directory'], f)]
             SnapshotTask.initialize(self.provider, data_files)
 
             # snapshots generation manager
             self.snapshooter = futures.ThreadPoolExecutor(
                 max_workers=self.settings['snapshot']['max_workers'])
 
-    def _init_space(self):
-        """Initialize :class:`Space` by creating the DOE."""
-        # space
+        # Space
         self.space = Space(self.settings)
 
-        # initial points
         if self.provider.is_file:
             # get the point from existing snapshot files,
-            # the points outside the space are ignored
             self.logger.info('Reading points from a list of snapshots files.')
 
             self.initial_points = OrderedDict()
@@ -188,69 +113,34 @@ class Driver():
                 self.logger.error('Bad space provider.')
                 raise SystemError
 
-    def _init_pod(self, script):
-        """Initialize :class:`Pod`."""
-        if self.settings['pod']['server'] is not None:
-            if mpi.size > 1:
-                raise Exception(
-                    'When using the external pod, the driver must be sequential.')
-
-            self.logger.info('Using external pod.')
-            # get the pod server running and connect to its through its proxy
-            self.external_pod = PodServerTask(self.settings['pod']['server']['port'],
-                                              self.settings['pod']['server']['python'],
-                                              script, self.output)
-            self.external_pod.run()
-            # self.external_pod._after_run()
-            self.pod = self.external_pod.proxy.Pod(self.settings,
-                                                   self.settings['snapshot']['io'])
-        else:
-            # directly instantiate the pod,
-            # the snapshot class is initialized as a by product
+        # Pod
+        if 'pod' in self.settings:
             self.pod = Pod(self.settings)
+        else:
+            self.pod = None
 
-    def sampling_pod(self, update):
-        """Call private method _pod_processing."""
-        self._pod_processing(self.initial_points, update)
+        # Surrogate model
+        self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
+                                        self.settings['space']['corners'])
 
-    def resampling_pod(self):
-        """Resampling of the POD.
+    def sampling(self, points=None, update=False):
+        """Create snapshots.
 
-        Generate new samples if quality and number of sample are not satisfied.
-        From a new sample, it re-generates the POD.
+        Generates or retrieve the snapshots [and then perform the POD].
 
-        """
-        max_points = self.settings['space']['sampling']['init_size'] + self.settings['space']['resampling']['resamp_size']
-        while len(self.pod.points) < max_points:
-            quality, point_loo = self.pod.estimate_quality()
-
-            if quality >= self.settings['space']['resampling']['q2_criteria']:
-                break
-
-            try:
-                new_point = self.space.refine(self.pod, point_loo)
-            except FullSpaceError:
-                break
-
-            self._pod_processing(new_point, True)
-
-    def _pod_processing(self, points, update):
-        """POD processing.
-
-        Generates or retrieve the snapshots and then perform the POD.
-
-        :param :class:`Space` points: points to perform the POD from
+        :param :class:`Space` points: points to perform the sample from
         :param bool update: perform dynamic or static computation
 
         """
+        if points is None:
+            points = self.initial_points
         # snapshots generation
         snapshots = []
         for p in points:
             if self.provider.is_file:
                 snapshots += [points[p]]
             else:
-                if self.external_pod is None \
-                   and not self.provider.is_job:
+                if not self.provider.is_job:
                     # snapshots are in memory
                     path = None
                 else:
@@ -269,39 +159,95 @@ class Driver():
                     t = SnapshotTask(p, path)
                     snapshots += [self.snapshooter.submit(t.run)]
 
-        # compute the pod
+        # Fit the Surrogate [and POD]
         if update:
-            if self.provider.is_job:
-                for s in futures.as_completed(snapshots):
-                    self.pod.update(s.result())
+                self.surrogate.space.empty()
+        if self.pod is not None:
+            if update:
+                if self.provider.is_job:
+                    for s in futures.as_completed(snapshots):
+                        self.pod.update(s.result())
+                else:
+                    for s in snapshots:
+                        self.pod.update(s)
             else:
-                for s in snapshots:
-                    self.pod.update(s)
+                if self.provider.is_job:
+                    _snapshots = []
+                    for s in futures.as_completed(snapshots):
+                        _snapshots += [s.result()]
+                    snapshots = _snapshots
+                self.pod.decompose(snapshots)
+
+            self.surrogate.fit(self.pod.points, self.pod.VS(), pod=self.pod)
         else:
+            self.logger.info('No POD is computed.')
             if self.provider.is_job:
+                print("JOB")
                 _snapshots = []
                 for s in futures.as_completed(snapshots):
                     _snapshots += [s.result()]
                 snapshots = _snapshots
-            self.pod.decompose(snapshots)
 
-    def write_pod(self):
-        """Write POD to file."""
-        self.pod.write(os.path.join(self.output, self.output_tree['pod']))
+            snapshots = [Snapshot.convert(s) for s in snapshots]
+            snapshots = np.vstack([s.data for s in snapshots])
 
-    def read_pod(self, path=None):
-        """Read POD from file."""
-        path = path or os.path.join(self.output, self.output_tree['pod'])
-        self.pod.read(path)
+            self.surrogate.fit(points, snapshots, pod=self.pod)
+
+    def resampling(self):
+        """Resampling of the POD.
+
+        Generate new samples if quality and number of sample are not satisfied.
+        From a new sample, it re-generates the POD.
+
+        """
+        max_points = self.settings['space']['sampling']['init_size'] + self.settings['space']['resampling']['resamp_size']
+        while len(self.pod.points) < max_points:
+            if self.pod is not None:
+                quality, point_loo = self.pod.estimate_quality()
+                # quality = 0.5
+                # point_loo = [-1.1780625, -0.8144629629629629, -2.63886]
+                if quality >= self.settings['space']['resampling']['q2_criteria']:
+                    break
+            else:
+                quality = None
+                point_loo = None
+
+            try:
+                new_point = self.space.refine(self.surrogate, point_loo)
+            except FullSpaceError:
+                break
+
+            self.sampling(new_point, update=True)
+
+    def write(self):
+        """Write Surrogate [and POD] to disk."""
+        model_path = os.path.join(self.output, self.output_tree['surrogate'])
+        try:
+            os.makedirs(model_path)
+        except OSError:
+            pass
+        self.surrogate.write(model_path)
+        if self.pod is not None:
+            pod_path = os.path.join(self.output, self.output_tree['pod'])
+            try:
+                os.makedirs(pod_path)
+            except OSError:
+                pass
+            self.pod.write(pod_path)
+
+    def read(self):
+        """Read Surrogate [and POD] from disk."""
+        self.surrogate.read(os.path.join(self.output, self.output_tree['surrogate']))
+        if self.pod is not None:
+            self.pod.read(os.path.join(self.output, self.output_tree['pod']))
+            self.surrogate.pod = self.pod
 
     def restart(self):
         """Restart process."""
-        # POD has already been computed previously
-        self.logger.info('Restarting pod.')
-        # read the pod data
-        self.pod.read(os.path.join(self.output, self.output_tree['pod']))
-        # points that have been already processed
-        processed_points = self.pod.points
+        # Surrogate [and POD] has already been computed
+        self.logger.info('Restarting from previous computation...')
+        self.read()
+        processed_points = self.surrogate.space
         self.snapshot_counter = len(processed_points)
 
         if len(processed_points) < self.initial_points.size:
@@ -316,48 +262,21 @@ class Driver():
             self.space.empty()
             self.space += processed_points
 
-    def prediction(self, write=False):
+    def prediction(self, write=False, points=None):
         """Perform a prediction."""
-        if self.external_pod is not None or write:
+        if write:
             output = os.path.join(self.output, self.output_tree['predictions'])
         else:
             output = None
 
-        self.pod.predict(self.settings['surrogate']['method'],
-                         self.settings['surrogate']['predictions'], output)
+        if points is None:
+            points = self.settings['surrogate']['predictions']
 
-    def prediction_without_computation(self, write=False):
-        """Perform a prediction using an existing model read from file."""
-        if self.external_pod is not None or write:
-            output = os.path.join(self.output, self.output_tree['predictions'])
-        else:
-            output = None
-        model = self.read_model()
-        self.pod.predict_without_computation(
-            model, self.settings['surrogate']['predictions'], output)
-
-    def write_model(self):
-        """Write model to file."""
-        self.pod.write_model(
-            os.path.join(
-                self.output,
-                self.output_tree['pod']))
-
-    def read_model(self, path=None):
-        """Read model from file."""
-        path = path or os.path.join(self.output, self.output_tree['pod'])
-        return self.pod.read_model(path)
+        return self.surrogate(points, path=output)
 
     def uq(self):
         """Perform UQ analysis."""
         output = os.path.join(self.output, self.output_tree['uq'])
-        analyse = UQ(self.pod, self.settings, output)
+        analyse = UQ(self.surrogate, self.settings, output)
         analyse.sobol()
         analyse.error_propagation()
-
-    def __del__(self):
-        """Driver destructor."""
-        # terminate pending tasks
-        if mpi.myid == 0 and self.external_pod is not None:
-            self.logger.info('Terminating the external pod.')
-            self.external_pod.terminate()
