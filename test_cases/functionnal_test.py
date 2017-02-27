@@ -133,6 +133,7 @@ def test_restart_pod(tmp, case='Michalewicz'):
 
 def test_resampling(tmp, case='Michalewicz'):
     """Assess all resampling methods."""
+    init_case(tmp, case)
     sys.argv = ['jpod', 'settings.json', '-o', tmp]
     options = jpod.ui.parse_options()
     settings = jpod.misc.import_config(options.settings, schema)

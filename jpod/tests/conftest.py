@@ -2,6 +2,7 @@
 
 import pytest
 import numpy as np
+import copy
 from sklearn.metrics import r2_score
 import openturns as ot
 from jpod.functions import (Ishigami, Mascaret)
@@ -71,8 +72,10 @@ def mascaret_data(settings_ishigami):
     model = ot.PythonFunction(2, 14, f)
     point = [31.54, 4237.025]
     target_point = f(point)
-    settings_ishigami["space"]["corners"] = [[15.0, 2500.0], [60, 6000.0]]
-    space = Space(settings_ishigami)
+    test_settings = copy.deepcopy(settings_ishigami)
+    test_settings["space"]["corners"] = [[15.0, 2500.0], [60, 6000.0]]
+    test_settings["snapshot"]["io"]["parameter_names"] = ["Ks", "Q"]
+    space = Space(test_settings)
     space.sampling(50)
     target_space = f(space)
     return (f, dists, model, point, target_point, space, target_space)
