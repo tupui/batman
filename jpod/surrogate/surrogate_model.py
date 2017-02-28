@@ -64,6 +64,7 @@ class SurrogateModel(object):
         """Construct the surrogate."""
         self.pod = pod
         self.space += points
+        self.space.doe_init = len(points)
         points = np.array(points)
         points = self.scaler.transform(points)
         # predictor object
@@ -151,9 +152,7 @@ class SurrogateModel(object):
             self.logger.debug('Wrote model to {}'.format(path_model))
 
             path_space = os.path.join(path, self.directories['space'])
-            with open(path_space, 'wb') as f:
-                pickler = pickle.Pickler(f)
-                pickler.dump(self.space)
+            self.space.write(path_space)
             self.logger.debug('Wrote space to {}'.format(path_space))
 
             self.logger.debug('Wrote model and space.')
@@ -170,9 +169,7 @@ class SurrogateModel(object):
         self.logger.debug('Read model from {}'.format(path_model))
 
         path_space = os.path.join(path, self.directories['space'])
-        with open(path_space, 'rb') as f:
-            unpickler = pickle.Unpickler(f)
-            self.space = unpickler.load()
+        self.space.read(path_space)
         self.logger.debug('Read space from {}'.format(path_space))
 
         self.logger.info('Model and space loaded.')

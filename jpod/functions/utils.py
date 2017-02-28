@@ -3,7 +3,6 @@
 Utility for functions.
 """
 import numpy as np
-from .. import space
 import inspect
 
 
