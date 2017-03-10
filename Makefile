@@ -20,8 +20,8 @@ MOD_DIR = -I
 
 # f2py flags
 F2PY_FLAGS = $(F2PY_NUM) $(F2PY_DEBUG) --opt="$(FOPT)" --f90flags="$(FFLAGS)"
-SRC     = jpod/input_output/tecplot.f90
-MISC    = jpod/input_output/io_tools.f90
+SRC     = batman/input_output/tecplot.f90
+MISC    = batman/input_output/io_tools.f90
 MODULE  = _`basename $(SRC) .f90`
 
 OBJ_DIR = obj
