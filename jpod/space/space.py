@@ -232,9 +232,9 @@ class Space(list):
         # Refinement strategy
         method = self.settings['space']['resampling']['method']
         if method == 'sigma':
-            new_point = refiner.mse()
+            new_point = refiner.sigma()
         elif method == 'loo_sigma':
-            new_point = refiner.leave_one_out_mse(point_loo)
+            new_point = refiner.leave_one_out_sigma(point_loo)
         elif method == 'loo_sobol':
             new_point = refiner.leave_one_out_sobol(point_loo)
         elif method == 'extrema':

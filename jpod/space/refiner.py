@@ -8,11 +8,11 @@ This class defines all resampling strategies that can be used.
 It implements the following methods:
 
 - :func:`Refiner.func`
-- :func:`Refiner.func_mse`
+- :func:`Refiner.func_sigma`
 - :func:`Refiner.distance_min`
 - :func:`Refiner.hypercube`
-- :func:`Refiner.mse`
-- :func:`Refiner.leave_one_out_mse`
+- :func:`Refiner.sigma`
+- :func:`Refiner.leave_one_out_sigma`
 - :func:`Refiner.leave_one_out_sobol`
 - :func:`Refiner.extrema`
 - :func:`Refiner.hybrid`
@@ -21,7 +21,7 @@ It implements the following methods:
 
     >> corners = ((10, 400), (18, 450))
     >> resample = Refiner(pod, corners)
-    >> new_point = resample.mse()
+    >> new_point = resample.sigma()
 
 References
 ----------
@@ -36,6 +36,7 @@ C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptat
 import logging
 from scipy.optimize import (differential_evolution, minimize, basinhopping)
 import numpy as np
+from itertools import product
 from sklearn import preprocessing
 import copy
 from collections import OrderedDict
@@ -67,15 +68,16 @@ class Refiner(object):
         self.settings_full = settings
         self.settings = settings['space']
         self.corners = np.array(self.settings['corners']).T
-        delta_space = self.settings['resampling']['delta_space']
+        self.delta_space = self.settings['resampling']['delta_space']
         self.dim = len(self.corners)
 
         # Inner delta space contraction: delta_space * 2 factor
         for i in range(self.dim):
-            self.corners[i, 0] = self.corners[i, 0] + delta_space\
+            self.corners[i, 0] = self.corners[i, 0] + self.delta_space\
                 * (self.corners[i, 1]-self.corners[i, 0])
-            self.corners[i, 1] = self.corners[i, 1] - delta_space\
+            self.corners[i, 1] = self.corners[i, 1] - self.delta_space\
                 * (self.corners[i, 1]-self.corners[i, 0])
+        self.logger.debug("Corners:\n{}".format(self.corners))
 
         # Data scaling
         self.scaler = preprocessing.MinMaxScaler()
@@ -105,8 +107,8 @@ class Refiner(object):
 
         return sign * sum_f
 
-    def func_mse(self, coords):
-        r"""Get the MSE for a given point.
+    def func_sigma(self, coords):
+        r"""Get the sigma for a given point.
 
         Retrieve Gaussian Process estimation of sigma.
         A composite indicator is constructed using POD's modes.
@@ -138,7 +140,7 @@ class Refiner(object):
 
         """
         point = self.scaler.transform(point.reshape(1, -1))[0]
-        distances = np.array([np.linalg.norm(pod_point - point)
+        distances = np.array([np.linalg.norm(pod_point - point, ord=np.inf)
                               for _, pod_point in enumerate(self.points)])
         # Do not get itself
         distances = distances[np.nonzero(distances)]
@@ -174,7 +176,7 @@ class Refiner(object):
 
         return hypercube
 
-    def hypercube_optim(self, point):
+    def hypercube_optim_discret(self, point):
         """Get the hypercube to add a point in.
 
         Compute the largest hypercube around the point based on the `L2-norm`.
@@ -186,26 +188,47 @@ class Refiner(object):
         :rtype: np.array
 
         """
-        distance = self.distance_min(point) / 3
-        x0 = self.hypercube_distance(point, distance).flatten('F')
+        distance = self.distance_min(point)
+        x0 = self.hypercube_distance(point, distance)#.flatten('F')
+        x0 = self.scaler.transform(x0.T).T
         point = np.minimum(point, self.corners[:, 1])
         point = np.maximum(point, self.corners[:, 0])
         point = self.scaler.transform(point.reshape(1, -1))[0]
 
-        gen = [p for p in self.points if not np.allclose(p, point)]
+        points = np.array([p for p in self.points if not np.allclose(p, point)])
+
+        # Get points with coordinates superior to point and add corner
+        sup = [i for i, p in enumerate(points>point) if p.all() == True]
+        try:
+            sup = points[sup]
+        except TypeError:
+            sup = points[sup[0]]
+        sup = np.vstack((sup, np.zeros((1, self.dim)))).T.tolist()
+
+        # Get points with coordinates inferior to point and add corner
+        inf = [i for i, p in enumerate(points<point) if p.all() == True]
+        try:
+            inf = points[inf]
+        except TypeError:
+            inf = points[inf[0]]
+        inf = np.vstack((inf, np.ones((1, self.dim)))).T.tolist()
+
+        # Create all discret possibilities
+        bounds = [inf, sup]
+        bounds = [item for sub in [inf, sup] for item in sub]
+        bounds = list(product(*bounds))
 
         def min_norm(hypercube):
             """Compute euclidean distance.
+
+            Get the size of the hypercube if the anchor point is within it and
+            if no other points are in it.
 
             :param np.array hypercube: [x1, y1, x2, y2, ...]
             :return: distance of between hypercube points
             :rtype: float
             """
             hypercube = hypercube.reshape(2, self.dim)
-            try:
-                hypercube = self.scaler.transform(hypercube)
-            except ValueError:  # If the hypercube is nan
-                return np.inf
 
             # Sort coordinates
             for i in range(self.dim):
@@ -228,31 +251,53 @@ class Refiner(object):
                 return np.inf
 
             # Verify that no other point is inside
-            for p in gen:
+            for p in points:
                 insiders = (hypercube[:, 0] <= p).all() & (p <= hypercube[:, 1]).all()
                 if insiders:
                     return np.inf
 
             return n
 
-        bounds = np.reshape([self.corners] * 2, (self.dim * 2, 2))
-        # results = differential_evolution(min_norm, bounds, popsize=100)
-        # results = minimize(min_norm, x0, method='L-BFGS-B', bounds=bounds)
-        # results = minimize(min_norm, x0, method='SLSQP', bounds=bounds)
+        # Discrete optimization
+        results = []
+        append = results.append
+        for i in bounds:
+            append(min_norm(np.array(i)))
+
+        min_idx = np.argmin(results)
+        if results[min_idx] == np.inf:
+            results = x0
+        else:
+            results = np.array(bounds[min_idx])
+
+        # Extend results by delta to bound continuous optimization
+        bounds = results.reshape((self.dim, 2))
+        for i in range(self.dim):
+            bounds[i, 0] = bounds[i, 0] - self.delta_space\
+                * (bounds[i, 1]-bounds[i, 0])
+            bounds[i, 1] = bounds[i, 1] + self.delta_space\
+                * (bounds[i, 1]-bounds[i, 0])
+        bounds = np.reshape([bounds] * 2, (self.dim * 2, 2))
+
+        # Continuous optimization
+        # results = differential_evolution(min_norm, bounds, popsize=15)
+        # results = minimize(min_norm, results, method='SLSQP', bounds=bounds)
         minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
-        results = basinhopping(min_norm, x0, niter=1000, minimizer_kwargs=minimizer_kwargs)
+        results = basinhopping(min_norm, results, niter=1000,
+                               minimizer_kwargs=minimizer_kwargs)
         hypercube = results.x.reshape(2, self.dim)
         for i in range(self.dim):
                 hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
+
+        hypercube = self.scaler.inverse_transform(hypercube)
         hypercube = hypercube.T
 
-        self.logger.debug("Corners:\n{}".format(self.corners))
         self.logger.debug("Optimization Hypercube:\n{}".format(hypercube))
 
         return hypercube
 
-    def mse(self, hypercube=None):
-        """Find the point at max MSE.
+    def sigma(self, hypercube=None):
+        """Find the point at max sigma.
 
         It returns the point where the mean square error (sigma) is maximum.
         To do so, it uses Gaussian Process information.
@@ -265,13 +310,13 @@ class Refiner(object):
         """
         if hypercube is None:
             hypercube = self.corners
-        self.logger.debug("MSE strategy")
-        result = differential_evolution(self.func_mse, hypercube)
+        self.logger.debug("sigma strategy")
+        result = differential_evolution(self.func_sigma, hypercube)
 
         return result.x
 
-    def leave_one_out_mse(self, point_loo):
-        """Mixture of Leave-one-out and MSE.
+    def leave_one_out_sigma(self, point_loo):
+        """Mixture of Leave-one-out and sigma.
 
         Estimate the quality of the POD by *leave-one-out cross validation*
         (LOOCV), and add a point arround the max error point.
@@ -284,24 +329,22 @@ class Refiner(object):
         :rtype: lst(float)
 
         """
-        self.logger.info("Leave-one-out + MSE strategy")
+        self.logger.info("Leave-one-out + sigma strategy")
         # Get the point of max error by LOOCV
         point = np.array(point_loo)
 
         # Construct the hypercube around the point
-        # distance = self.distance_min(point)
-        # hypercube = self.hypercube_distance(point, distance)
-        hypercube = self.hypercube_optim(point)
+        hypercube = self.hypercube_optim_discret(point)
 
         # Global search of the point within the hypercube
-        point = self.mse(hypercube)
+        point = self.sigma(hypercube)
 
         return point
 
     def leave_one_out_sobol(self, point_loo):
         """Mixture of Leave-one-out and Sobol' indices.
 
-        Same as function :func:`leave_one_out_mse` but change the shape
+        Same as function :func:`leave_one_out_sigma` but change the shape
         of the hypercube. Using Sobol' indices, the corners are shrinked
         by the corresponding percentage of the total indices.
 
@@ -323,7 +366,7 @@ class Refiner(object):
         indices[indices < 0.1] = 0.1
 
         # Construct the hypercube around the point
-        hypercube = self.hypercube_optim(point)
+        hypercube = self.hypercube_optim_discret(point)
 
         # Modify the hypercube with Sobol' indices
         for i in range(self.dim):
@@ -335,7 +378,7 @@ class Refiner(object):
         self.logger.debug("Post Hypercube:\n{}".format(hypercube))
 
         # Global search of the point within the hypercube
-        point = self.mse(hypercube)
+        point = self.sigma(hypercube)
 
         return point
 
@@ -462,10 +505,10 @@ class Refiner(object):
         for method in strategies:
             if strategies[method] > 0:
                 if method == 'sigma':
-                    new_point = self.mse()
+                    new_point = self.sigma()
                     break
                 elif method == 'loo_sigma':
-                    new_point = self.leave_one_out_mse(point_loo)
+                    new_point = self.leave_one_out_sigma(point_loo)
                     break
                 elif method == 'loo_sobol':
                     new_point = self.leave_one_out_sobol(point_loo)
