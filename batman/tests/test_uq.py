@@ -1,8 +1,8 @@
 # coding: utf8
 import pytest
-from jpod.uq import UQ
-from jpod.surrogate import SurrogateModel
-from jpod.tasks import Snapshot
+from batman.uq import UQ
+from batman.surrogate import SurrogateModel
+from batman.tasks import Snapshot
 
 
 def test_indices(tmp, ishigami_data, settings_ishigami):

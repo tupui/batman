@@ -3,8 +3,8 @@ import pytest
 import os
 import copy
 import openturns as ot
-from jpod import Driver
-from jpod.tests.conftest import sklearn_q2
+from batman import Driver
+from batman.tests.conftest import sklearn_q2
 
 
 def test_driver_init(driver_init):
@@ -56,7 +56,7 @@ def test_provider_dict(tmp, settings_ishigami):
     test_settings['space']['sampling']['init_size'] = 4
     test_settings['snapshot']['provider'] = {
         "command": "bash", "timeout": 30, "context": "data",
-        "script": "data/script.sh", "clean": False, "private-directory": "jpod-data",
+        "script": "data/script.sh", "clean": False, "private-directory": "batman-data",
         "data-directory": "cfd-output-data", "restart": "False"}
     driver = Driver(test_settings, tmp)
     driver.sampling()

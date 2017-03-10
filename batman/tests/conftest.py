@@ -5,10 +5,10 @@ import numpy as np
 import copy
 from sklearn.metrics import r2_score
 import openturns as ot
-from jpod.functions import (Ishigami, Mascaret)
-from jpod.functions import output_to_sequence
-from jpod.space import (Space, Point)
-from jpod import Driver
+from batman.functions import (Ishigami, Mascaret)
+from batman.functions import output_to_sequence
+from batman.space import (Space, Point)
+from batman import Driver
 
 
 @pytest.fixture(scope="session")

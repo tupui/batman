@@ -131,10 +131,10 @@ def find_version(*file_paths):
 
 
 setup(
-    name='jpod',
-    version=find_version("jpod", "__init__.py"),
+    name='batman',
+    version=find_version("batman", "__init__.py"),
     packages=find_packages(exclude=['test_cases', 'doc']),
-    entry_points={'console_scripts': ['jpod=jpod.ui:main']},
+    entry_points={'console_scripts': ['batman=batman.ui:main']},
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
     # Package requirements
     setup_requires=setup_requires,
@@ -147,8 +147,7 @@ setup(
     # metadata
     maintainer="Pamphile ROY",
     maintainer_email="roy@cerfacs.fr",
-    description="JPOD creates a surrogate model using \
-        POD+Kriging and perform UQ.",
+    description="BATMAN creates a surrogate model and perform UQ.",
     long_description=open('./README.rst').read(),
     classifiers=['Development Status :: 5 - Production/Stable',
                  'Environment :: Console',
@@ -166,5 +165,6 @@ setup(
     include_package_data=True,
     zip_safe=False,
     license="CERFACS",
-    url="https://inle.cerfacs.fr/projects/jpod",
+    url=["https://inle.cerfacs.fr/projects/jpod",
+         "https://nitrox.cerfacs.fr/open-source/batman"],
 )

@@ -106,7 +106,7 @@
             "clean": false,
             # Directory where the JPOD files are stored
             # format: string
-            "private-directory": "jpod-data",
+            "private-directory": "batman-data",
             # Directory where CFD ouput dat are stored
             # format string
             "data-directory": "cfd-output-data",

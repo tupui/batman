@@ -56,7 +56,7 @@ class SnapshotTask(object):
     '''Path to the directory which contains the files required for running the snapshot producer.'''
 
     private_directory = None
-    '''Directory inside the task working_directory where jpod stuff to keep will be located.'''
+    '''Directory inside the task working_directory where batman stuff to keep will be located.'''
 
     command = None
     '''Command line used for executing the script.'''

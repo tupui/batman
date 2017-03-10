@@ -3,10 +3,10 @@
 
 import re
 import numpy as np
-from jpod.functions import Channel_Flow
+from batman.functions import Channel_Flow
 
 # # Input from header.py
-with open('./jpod-data/header.py', 'r') as a:
+with open('./batman-data/header.py', 'r') as a:
     for line in a.readlines():
         A = re.match(r'x1 = (.*$)', line, re.M | re.I)
         if A:

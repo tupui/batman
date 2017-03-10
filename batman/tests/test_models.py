@@ -4,9 +4,9 @@ import os
 import numpy as np
 import numpy.testing as npt
 import openturns as ot
-from jpod.surrogate import (PC, Kriging, SurrogateModel)
-from jpod.tasks import Snapshot
-from jpod.tests.conftest import sklearn_q2
+from batman.surrogate import (PC, Kriging, SurrogateModel)
+from batman.tasks import Snapshot
+from batman.tests.conftest import sklearn_q2
 
 
 def test_PC_1d(ishigami_data):
@@ -120,8 +120,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
         assert False
 
-    surrogate.predictor = None
-    surrogate.space = None
+    surrogate = SurrogateModel('kriging', space.corners)
     surrogate.read(tmp)
     assert surrogate.predictor is not None
     assert surrogate.space == space

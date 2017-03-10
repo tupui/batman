@@ -2,11 +2,11 @@
 # coding:utf-8
 
 import re
-from jpod.functions import G_Function
-from jpod.input_output import (IOFormatSelector, Dataset)
+from batman.functions import G_Function
+from batman.input_output import (IOFormatSelector, Dataset)
 
 # Input from header.py
-with open('./jpod-data/header.py', 'r') as a:
+with open('./batman-data/header.py', 'r') as a:
     for line in a.readlines():
         A = re.match(r'x1 = (.*$)', line, re.M | re.I)
         if A:

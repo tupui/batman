@@ -9,7 +9,7 @@ Defines all methods used to interact with other classes.
 
 ::
 
-    >> from jpod import Driver
+    >> from batman import Driver
     >> driver = Driver(settings, script_path, output_path)
     >> driver.sampling_pod(update=False)
     >> driver.write_pod()

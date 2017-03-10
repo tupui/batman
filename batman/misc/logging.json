@@ -11,7 +11,7 @@
               "level": "INFO"},
         "file": {"class": "logging.handlers.RotatingFileHandler",  
              "formatter": "file",
-             "filename": "JPOD.log",
+             "filename": "batman.log",
              "maxBytes": 1024000,
              "backupCount": 1,
              "level": "DEBUG"}

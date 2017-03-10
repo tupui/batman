@@ -131,8 +131,8 @@ for i in range(nb_samples):
         int_z['data'].append(int_f)
 
     else:
-        file = snap_path + str(i) + '/jpod-data/function.dat'
-        header_file = snap_path + str(i) + '/jpod-data/header.py'
+        file = snap_path + str(i) + '/batman-data/function.dat'
+        header_file = snap_path + str(i) + '/batman-data/header.py'
         x['data'], z['data'], int_f = integral_processing(file,
                                                                   header_file,
                                                                   output_shape)
@@ -143,7 +143,7 @@ for i in range(nb_samples):
             x_splitted = np.split(x['data'], nb_value // 1000 + 1)
             z_splitted = np.split(z['data'], nb_value // 1000 + 1)
             # Filter only the extrados
-            file = snap_path + str(i) + '/jpod-data/reshaped_function.dat'
+            file = snap_path + str(i) + '/batman-data/reshaped_function.dat'
             with open(file, 'w') as f:
                 f.write('TITLE = " Reshaped output " \n')
                 f.write('VARIABLES = "x" "z"  \n')
@@ -170,14 +170,14 @@ for i in range(nb_samples):
 
 # Get DOE from header.py
 for i in range(len_doe):
-    header_file = snap_path + str(i) + '/jpod-data/header.py'
+    header_file = snap_path + str(i) + '/batman-data/header.py'
 
     a, b = header_reader([p1['name'], p2['name']], header_file)
 
     p1['data_doe'].append(a)
     p2['data_doe'].append(b)
 
-    file = snap_path + str(i) + '/jpod-data/function.dat'
+    file = snap_path + str(i) + '/batman-data/function.dat'
 
     x['data'], z['data_doe'], int_f = integral_processing(file,
                                                                   header_file,

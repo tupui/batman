@@ -1,4 +1,4 @@
 .. _uq:
 
-.. automodule:: jpod.uq
+.. automodule:: batman.uq
    :members:

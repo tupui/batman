@@ -1,5 +1,5 @@
 # coding:utf-8
-from jpod.functions import Ishigami
+from batman.functions import Ishigami
 
 f_ishigami = Ishigami()
 

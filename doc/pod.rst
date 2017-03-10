@@ -42,18 +42,18 @@ References
 Pod module
 ----------
 
-.. automodule:: jpod.pod.core
+.. automodule:: batman.pod.core
    :members:
    :undoc-members:
 
-.. automodule:: jpod.pod.pod
+.. automodule:: batman.pod.pod
    :members:
    :undoc-members:
 
-.. automodule:: jpod.pod.predictor
+.. automodule:: batman.pod.predictor
    :members:
    :undoc-members:
 
-.. automodule:: jpod.pod.snapshot
+.. automodule:: batman.pod.snapshot
    :members:
    :undoc-members:

@@ -7,7 +7,8 @@ Contents:
    :maxdepth: 2
 
    readme_link
-   CHANGES
+   changes_link
+   contributing_link
    introduction
    tutorial
    settings

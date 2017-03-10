@@ -11,8 +11,8 @@ it can be resampled or points can be added manually.
 
 ::
 
-    >> from jpod.space import Space
-    >> from jpod.point import Point
+    >> from batman.space import Space
+    >> from batman.point import Point
     >> space = Space(settings)
     >> point = Point([12.3, 18.0])
     >> space += point

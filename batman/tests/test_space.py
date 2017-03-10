@@ -3,9 +3,9 @@
 import pytest
 import numpy as np
 import numpy.testing as npt
-from jpod.space import (Point, Space,
+from batman.space import (Point, Space,
                         UnicityError, AlienPointError, FullSpaceError)
-from jpod.functions import Ishigami
+from batman.functions import Ishigami
 
 settings = {
     "space": {

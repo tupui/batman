@@ -15,7 +15,7 @@ import numpy as np
 x = {'label': "Curvilinear abscissa (m)", 'data': None}
 z = {'label': "Water elevation (m)", 'data': None}
 format = 'fmt_tp'
-file = "./output/snapshots/5/jpod-data/function.dat"
+file = "./output/snapshots/5/batman-data/function.dat"
 
 
 def tecplot_reader(file, nb_var):

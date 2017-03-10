@@ -1,5 +1,5 @@
 # coding: utf8
-"""A command line interface to jpod."""
+"""A command line interface to batman."""
 
 import logging
 from logging.config import dictConfig
@@ -8,12 +8,12 @@ import os
 import shutil
 import json
 
-from jpod import __version__, __branch__, __commit__
-from jpod import Driver
-from jpod import misc
+from batman import __version__, __branch__, __commit__
+from batman import Driver
+from batman import misc
 
 description_message = '''
-BATMAN creates a surrogate model using POD+Kriging and perform UQ.
+BATMAN creates a surrogate model and perform UQ.
 '''
 
 banner = r"""
@@ -25,7 +25,7 @@ banner = r"""
 | $$  \ $$| $$  | $$   | $$   | $$\  $ | $$| $$  | $$| $$\  $$$
 | $$$$$$$/| $$  | $$   | $$   | $$ \/  | $$| $$  | $$| $$ \  $$
 |_______/ |__/  |__/   |__/   |__/     |__/|__/  |__/|__/  \__/
-BAyesian Tool for Modelling and uncertainty ANalysis
+Baysian Analysis Tool for Modelling And uNcertainty quantification
 """
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -69,11 +69,11 @@ def run(settings, options):
                     return int(os.path.basename(
                         os.path.dirname(os.path.normpath(arg))))
                 settings['snapshot']['provider'] = sorted([os.path.join(
-                    root, d, 'jpod-data')
+                    root, d, 'batman-data')
                     for d in os.listdir(root)],
                     key=key)
                 settings['snapshot']['io']['template_directory'] = \
-                    os.path.join(root, '0', 'jpod-data')
+                    os.path.join(root, '0', 'batman-data')
                 settings['snapshot']['io']['shapes'] = None
 
                 if not use_output:
@@ -135,7 +135,7 @@ def run(settings, options):
 def parse_options():
     """Parse options."""
     # parser
-    parser = argparse.ArgumentParser(prog="JPOD",
+    parser = argparse.ArgumentParser(prog="BATMAN",
                                      description=description_message)
     parser.add_argument('--version',
                         action='version',

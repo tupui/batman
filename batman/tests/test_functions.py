@@ -1,6 +1,6 @@
 # coding: utf8
 import pytest
-from jpod.functions import (Michalewicz, Rosenbrock, Ishigami, G_Function, Mascaret)
+from batman.functions import (Michalewicz, Rosenbrock, Ishigami, G_Function, Mascaret)
 from scipy.optimize import differential_evolution
 import numpy as np
 import numpy.testing as npt

@@ -196,7 +196,7 @@
             },
             "private-directory": {
               "type": "string",
-              "default": "jpod-data"
+              "default": "batman-data"
             },
             "data-directory": {
               "type": "string",

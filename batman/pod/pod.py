@@ -163,7 +163,7 @@ class Pod(Core):
         points = np.vstack(tuple(self.points))
         np.savez(os.path.join(path, self.pod_file_name),
                  parameters=points,
-                 # TODO: remove, only here for checking vs jpod 1
+                 # TODO: remove, only here for checking vs batman 1
                  values=self.S,
                  vectors=self.V)
 
