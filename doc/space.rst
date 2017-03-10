@@ -26,19 +26,19 @@ References
 Space module
 ------------
 
-.. automodule:: jpod.space.space
+.. automodule:: batman.space.space
    :members:
    :undoc-members:
 
-.. automodule:: jpod.space.sampling
+.. automodule:: batman.space.sampling
    :members:
    :undoc-members:
 
-.. automodule:: jpod.space.point
+.. automodule:: batman.space.point
    :members:
    :undoc-members:
 
-.. automodule:: jpod.space.refiner
+.. automodule:: batman.space.refiner
    :members:
    :undoc-members:
 

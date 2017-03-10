@@ -14,3 +14,6 @@ jpod.egg-info/
 .eggs
 .idea
 ./jpod/__init__.py
+/.cache
+/jpod/input_output/ascii.mod
+/jpod/input_output/io_tools.mod

@@ -1,0 +1,25 @@
+{
+    "version" : 1,
+    "disable_existing_loggers" : false,
+    "formatters" : {
+        "console": {"format": "%(message)s"},
+       "file": {"format": "%(asctime)s :: %(levelname)s :: %(name)s ::\n\t%(message)s"}
+    },
+    "handlers" : {
+        "console": {"class": "logging.StreamHandler", 
+              "formatter": "console",
+              "level": "INFO"},
+        "file": {"class": "logging.handlers.RotatingFileHandler",  
+             "formatter": "file",
+             "filename": "batman.log",
+             "maxBytes": 1024000,
+             "backupCount": 1,
+             "level": "DEBUG"}
+    },
+    "loggers":{
+       "": {
+            "handlers": ["console", "file"],
+           "level" : "DEBUG"
+           }
+    }
+}

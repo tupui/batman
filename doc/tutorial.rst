@@ -68,7 +68,7 @@ To summarize, we have the Michalewicz 2*D* function as follows:
 Create the case for JPOD
 """"""""""""""""""""""""
 
-For each snapshot, JPOD will copy the content of ``data`` and add a new folder ``jpod-data`` which contains a single file ``header.py``. The content of this file is updated per snapshot and it only contains the input parameters to change for the current simulation. Hence, to use Michalewicz's function with JPOD, we need to have this file read to gather input parameters.
+For each snapshot, JPOD will copy the content of ``data`` and add a new folder ``batman-data`` which contains a single file ``header.py``. The content of this file is updated per snapshot and it only contains the input parameters to change for the current simulation. Hence, to use Michalewicz's function with JPOD, we need to have this file read to gather input parameters.
 
 Aside from the simulation code and this headers, there is a ``data/script.sh``. It is this script that is launched by JPOD. Once it is completed, the computation is considered as finished. Thus, this script manages an AVBP launch, calls a python script, etc.
 
@@ -132,7 +132,7 @@ Then, we configure the snapshot itself. We define the name of the header and out
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
-            "private-directory": "jpod-data",
+            "private-directory": "batman-data",
             "data-directory": "cfd-output-data",
             "restart": "False"
         }
@@ -191,7 +191,7 @@ Step 3: Running JPOD
 
 To launch JPOD, simply call it with::
 
-    jpod settings.json -qsu
+    batman settings.json -qsu
 
 JPOD's log are found within ``JPOD.log``. Here is an extract:: 
 
@@ -204,16 +204,16 @@ JPOD's log are found within ``JPOD.log``. Here is an extract::
         maximum number of modes      : 100
         number of modes              : 1
         modes                        : [ 2.69091785]
-    jpod.pod.pod ::
+    batman.pod.pod ::
         pod quality = 0.45977, max error location = (3.0263943749999997, 1.5448927777777777)
 
     ----- Sobol' indices -----
-    jpod.uq ::
+    batman.uq ::
         Second order: [array([[ 0.        ,  0.06490131],
            [ 0.06490131,  0.        ]])]
-    jpod.uq ::
+    batman.uq ::
         First order: [array([ 0.43424729,  0.49512012])]
-    jpod.uq ::
+    batman.uq ::
         Total: [array([ 0.51371718,  0.56966205])]
 
 In this example, the quality of the model is estimated around :math:`Q_2\sim 0.46` which means that the model is able to represents around 46% of the variability of the quantity of interest. Also, from Sobol' indices, both parameters appears to be as important.

@@ -1,7 +1,7 @@
 .. _introduction:
 
-JPOD introduction
-=================
+BATMAN introduction
+===================
 
 A surrogate tool
 ----------------
@@ -23,11 +23,11 @@ The use of *Computational Fluid Dynamics* (CFD) has proven to be reliable, faste
 
 Once this model has been constructed, using *Monte Carlo* sampling we can compute Sobol' indices, etc. Indeed, this model is said to be costless to evaluate, this is why the use of the *Monte Carlo* sampling is feasible. To increase convergence, we can still use the same methods as for the DOE.
 
-Both *Proper Orthogonal Decomposition* (POD) and *Kriging* are techniques that can interpolate data using snapshots. The main difference being that POD compresses the data it uses to use only the relevant modes whereas Kriging method doesn't reduce the size of the used snapshots. On the other hand, POD cannot reconstruct data from a domain missing ones [Gunes2006]_. Thus, the strategy used by JPOD consists in:
+Both *Proper Orthogonal Decomposition* (POD) and *Kriging* (*PC*, *RBF*, etc.) are techniques that can interpolate data using snapshots. The main difference being that POD compresses the data it uses to use only the relevant modes whereas Kriging method doesn't reduce the size of the used snapshots. On the other hand, POD cannot reconstruct data from a domain missing ones [Gunes2006]_. Thus, the strategy used by BATMAN consists in:
 
 0. Create a Design Of Experiments,
-1. Use POD reconstruction in order to compress data,
-2. Use Kriging interpolation on POD's coefficients,
+1. Optionaly Use POD reconstruction in order to compress data,
+2. Use Kriging (or other) interpolation (on POD's coefficients),
 3. Interpolate missing data.
 
 
@@ -40,14 +40,14 @@ Content of the package
 The JPOD package includes 2 repository:
 
 * ``doc`` contains the documentation,
-* ``jpod`` contains the module implementation,
+* ``batman`` contains the module implementation,
 * ``test_cases`` contains some example.
 
 
 General functionment
 ....................
 
-The package is composed of several python modules which are self contained within the directory ``jpod``.
+The package is composed of several python modules which are self contained within the directory ``batman``.
 Following is a quick reference:
 
 * :py:mod:`ui`: command line interface,
@@ -59,11 +59,11 @@ Following is a quick reference:
 * :py:mod:`tasks`: defines the context to compute each snapshot from,
 * :py:mod:`misc`: defines the logging configuration and the settings schema.
 
-After JPOD has been installed, ``jpod`` is available as a command and it can be imported in python. It is a link to :py:mod:`ui`. The module imports the package and use the function defined in :py:mod:`driver`.
+After JPOD has been installed, ``batman`` is available as a command and it can be imported in python. It is a link to :py:mod:`ui`. The module imports the package and use the function defined in :py:mod:`driver`.
 
 Thus JPOD is launched using::
 
-    jpod settings.json
+    batman settings.json
 
 An ``output`` directory is created and it contains the results of the computations of all the *snapshots*, the *pod* and the *predictions*.
 
@@ -79,11 +79,12 @@ This folder contains ready to launch examples:
 * ``Basic_function`` is a simple *1-input_parameter* function,
 * ``Michalewicz`` is a *2-input_parameters* non-linear function,
 * ``Ishigami`` is a *3-input_parameters*,
+* ``G_Function`` is a *4-input_parameters*,
 * ``Channel_Flow`` is a *2-input_parameters* with a functionnal output,
 * ``RAE2822`` is a *2-input_parameters* that launches an *elsA* case,
 * ``Flamme_1D`` is a *2-input_parameters* that launches an *AVBP* case.
 
-In every case, there is ``README.md`` file that summarize and explain it.
+In every case, there is ``README.rst`` file that summarize and explain it.
 
 References
 ----------

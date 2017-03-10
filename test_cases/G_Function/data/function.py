@@ -2,11 +2,11 @@
 # coding:utf-8
 
 import re
-import numpy as np
-from jpod.input_output import (IOFormatSelector, Dataset)
+from batman.functions import G_Function
+from batman.input_output import (IOFormatSelector, Dataset)
 
 # Input from header.py
-with open('./jpod-data/header.py', 'r') as a:
+with open('./batman-data/header.py', 'r') as a:
     for line in a.readlines():
         A = re.match(r'x1 = (.*$)', line, re.M | re.I)
         if A:
@@ -29,16 +29,10 @@ X4 = float(x4)
 X = [X1, X2, X3, X4]
 
 # Function
-d = 4
-a = np.arange(1, d + 1)
-F = 1.
-for i in range(d):
-    F *= (abs(4. * X[i] - 2) + a[i]) / (1. + a[i])
+f = G_Function(d=4)
+data = f(X)
 
 # Output
-data = np.array(F)
-names = ["F"]
-
 io = IOFormatSelector('fmt_tp_fortran')
-dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
+dataset = Dataset(names=["F"], shape=[1, 1, 1], data=data)
 io.write('./cfd-output-data/function.dat', dataset)

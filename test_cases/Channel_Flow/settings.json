@@ -1,8 +1,8 @@
 {
     "space": {
         "corners": [
-            [2500.0, 15.0],
-            [6000.0, 60.0]
+            [15.0, 2500.0],
+            [60.0, 6000.0]
         ],
         "sampling": {
             "init_size": 4,
@@ -23,7 +23,7 @@
         "type": "static"
     },
     "snapshot": {
-        "max_workers": 10,
+        "max_workers": 5,
         "io": {
             "shapes": {
                 "0": [
@@ -41,23 +41,23 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 10,
+            "timeout": 20,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
-            "private-directory": "jpod-data",
+            "private-directory": "batman-data",
             "data-directory": "cfd-output-data",
             "restart": "False"
         }
     },
     "surrogate": {
-        "predictions": [[4000, 30]],
+        "predictions": [[30, 4000]],
         "method": "kriging"
     },
     "uq": {
-        "sample": 5000,
+        "sample": 1000,
         "test": "Channel_Flow",
-        "pdf": ["Normal(4035., 400.)", "Uniform(15., 60.)"],
+        "pdf": ["Uniform(15., 60.)", "Normal(4035., 400.)"],
         "type": "aggregated",
         "method": "FAST"
     }

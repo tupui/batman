@@ -41,11 +41,11 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 10,
+            "timeout": 20,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
-            "private-directory": "jpod-data",
+            "private-directory": "batman-data",
             "data-directory": "cfd-output-data",
             "restart": "False"
         }
