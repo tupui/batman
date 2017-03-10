@@ -49,11 +49,3 @@ Pod module
 .. automodule:: batman.pod.pod
    :members:
    :undoc-members:
-
-.. automodule:: batman.pod.predictor
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.pod.snapshot
-   :members:
-   :undoc-members:

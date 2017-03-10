@@ -161,7 +161,7 @@ class UQ:
         r"""Compute the error between the POD and the analytic function.
 
         .. warning:: For test purpose only. Choises are Ishigami, Rosenbrock
-        and Channel Flow test functions.
+           and Channel Flow test functions.
 
         From the surrogate of the function, evaluate the error
         using the analytical evaluation of the function on the sample points.

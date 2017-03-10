@@ -8,7 +8,7 @@ Tutorial
 Introduction
 ------------
 
-Examples can be found in JPOD's installer subrepository ``test-cases``. To create a new study, you have to keep the same structure as this example on the *Michalewicz* function:
+Examples can be found in BATMAN's installer subrepository ``test-cases``. To create a new study, you have to keep the same structure as this example on the *Michalewicz* function:
 
 .. code::
 
@@ -34,8 +34,8 @@ Finally, the folder ``Post-treatment`` contains example scripts that perform som
 .. note:: The following section is a step-by-step tutorial that can be applied to any case.
 
 
-JPOD step-by-step
------------------
+BATMAN step-by-step
+-------------------
 
 
 Step 1: Simulation directory
@@ -65,12 +65,12 @@ To summarize, we have the Michalewicz 2*D* function as follows:
 
 .. seealso:: For other *optimization functions*, read more at `this website <http://www.sfu.ca/~ssurjano/optimization.html>`_.
 
-Create the case for JPOD
-""""""""""""""""""""""""
+Create the case for BATMAN
+""""""""""""""""""""""""""
 
-For each snapshot, JPOD will copy the content of ``data`` and add a new folder ``batman-data`` which contains a single file ``header.py``. The content of this file is updated per snapshot and it only contains the input parameters to change for the current simulation. Hence, to use Michalewicz's function with JPOD, we need to have this file read to gather input parameters.
+For each snapshot, BATMAN will copy the content of ``data`` and add a new folder ``batman-data`` which contains a single file ``header.py``. The content of this file is updated per snapshot and it only contains the input parameters to change for the current simulation. Hence, to use Michalewicz's function with BATMAN, we need to have this file read to gather input parameters.
 
-Aside from the simulation code and this headers, there is a ``data/script.sh``. It is this script that is launched by JPOD. Once it is completed, the computation is considered as finished. Thus, this script manages an AVBP launch, calls a python script, etc.
+Aside from the simulation code and this headers, there is a ``data/script.sh``. It is this script that is launched by BATMAN. Once it is completed, the computation is considered as finished. Thus, this script manages an AVBP launch, calls a python script, etc.
 
 In the end, the quantity of interest has to be written in tecplot format within the repository ``cfd-output-data``.
 
@@ -80,7 +80,7 @@ In the end, the quantity of interest has to be written in tecplot format within 
 Step 2: Setting up the case
 ...........................
 
-JPOD's settings are managed via a python file located in ``scripts``. An example template can be found within all examples directory. This file consists in five blocks with different functions:
+BATMAN's settings are managed via a python file located in ``scripts``. An example template can be found within all examples directory. This file consists in five blocks with different functions:
 
 Block 1 - Space of Parameters
 """""""""""""""""""""""""""""
@@ -105,7 +105,7 @@ The space of parameters is created using the two extrem points of the domain her
 Block 2 - Snapshot provider
 """""""""""""""""""""""""""
 
-Then, we configure the snapshot itself. We define the name of the header and output file as well as the dimension of the output. Here JPOD will look at the variable ``F``, which is a scalar value, within the file ``function.dat``.
+Then, we configure the snapshot itself. We define the name of the header and output file as well as the dimension of the output. Here BATMAN will look at the variable ``F``, which is a scalar value, within the file ``function.dat``.
 
 .. code-block:: python
 
@@ -186,16 +186,16 @@ Once the model has been created, it can be used to perform a statistical analysi
     }
 
 
-Step 3: Running JPOD
-....................
+Step 3: Running BATMAN
+......................
 
-To launch JPOD, simply call it with::
+To launch BATMAN, simply call it with::
 
     batman settings.json -qsu
 
-JPOD's log are found within ``JPOD.log``. Here is an extract:: 
+BATMAN's log are found within ``BATMAN.log``. Here is an extract:: 
 
-    JPOD main ::
+    BATMAN main ::
         POD summary:
         modes filtering tolerance    : 0.99
         dimension of parameter space : 2
@@ -283,7 +283,7 @@ The first block has to be modified also:
         }
     }
 
-This block tells JPOD to compute a maximum of 20 resampling snapshots in case the quality has not reach 0.8. This ``loo_mse`` strategy uses the information of the model error provided by the gaussian process regression. This leads to an improvement in the error with :math:`Q_2 \sim 0.71`.
+This block tells BATMAN to compute a maximum of 20 resampling snapshots in case the quality has not reach 0.8. This ``loo_mse`` strategy uses the information of the model error provided by the gaussian process regression. This leads to an improvement in the error with :math:`Q_2 \sim 0.71`.
 
 .. figure:: fig/response_Michalewicz_model_2D_loo-mse.png
    

@@ -8,7 +8,7 @@ Introduction
 ^^^^^^^^^^^^
 
 
-The file ``settings.py`` contains the configuration of JPOD. It can is devided into 5 blocks.
+The file ``settings.py`` contains the configuration of BATMAN. It can is devided into 5 blocks.
 
 
 Block 1 - Space of Parameters
@@ -62,7 +62,7 @@ It could be *a python function*, *a python list of directories* or *a python dic
 
 + ``max_workers``: maximum number of simultaneous running snapshot provider.
 + ``parameter_names``: names of the parameters.
-+ ``format``:  *fmt_tp_fortran* (Tecplot 360) included in JPOD.
++ ``format``:  *fmt_tp_fortran* (Tecplot 360) included in BATMAN.
 + ``filenames``: for each MPI CPU. When ran on only 1 CPU, all filenames are gathered.
 + ``point_filename``: name of the file that contains the coordinates of a point in the space of parameters.
 + ``template_directory``: depreciated option                             
