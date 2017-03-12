@@ -45,9 +45,6 @@
         # A percentage of the sum of the singular values, values that account for less than of this tolerance are ignored.
         # format: float
         "tolerance": 0.99,
-        # Otherwise the pod processing is run in another process or on another
-        # computer.
-        "server": null,
         # Type of pod to perform.
         # format: one of 'static', 'dynamic'
         "type": "static"

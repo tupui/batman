@@ -8,7 +8,7 @@ Tutorial
 Introduction
 ------------
 
-Examples can be found in BATMAN's installer subrepository ``test-cases``. To create a new study, you have to keep the same structure as this example on the *Michalewicz* function:
+Examples can be found in BATMAN's installer subrepository ``test-cases``. To create a new study, use the same structure as this example on the *Michalewicz* function:
 
 .. code::
 
@@ -54,7 +54,6 @@ where *m* defines the steepness of the valleys and ridges.
 .. note:: + It is to difficult to search a global minimum when :math:`m` reaches large value. Therefore, it is recommended to have :math:`m < 10`.
           + In this case we used the two-dimensional form, i.e. :math:`d = 2`. 
 
-
 To summarize, we have the Michalewicz 2*D* function as follows:
 
 .. math:: f(x)=-\sin(x_1)\sin^{20}\left(\frac{x_1^2}{\pi}\right)-\sin(x_2)\sin^{20}\left(\frac{2x_2^2}{\pi}\right).
@@ -76,6 +75,7 @@ In the end, the quantity of interest has to be written in tecplot format within 
 
 .. note:: These directories' name and path are fully configurables.
 
+.. note:: For a simple function script, you can pass it directly in the settings file.
 
 Step 2: Setting up the case
 ...........................
@@ -94,12 +94,10 @@ The space of parameters is created using the two extrem points of the domain her
             [1.0, 1.0],
             [3.1415, 3.1415]
         ],
-        "size_max": 50,
-        "delta_space": 0.01,
-        "provider": {
-            "method": "halton",
-            "size": 50
-        }
+        "sampling": {
+            "init_size": 50,
+            "method": "halton"
+        },
     }
 
 Block 2 - Snapshot provider
@@ -128,7 +126,7 @@ Then, we configure the snapshot itself. We define the name of the header and out
         },
         "provider": {
             "command": "bash",
-            "timeout": 3600,
+            "timeout": 10,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
@@ -138,10 +136,17 @@ Then, we configure the snapshot itself. We define the name of the header and out
         }
     }
 
+
+.. note:: For a simple function script, you can pass it directly in the settings file::
+
+        "provider": "function"
+
+    with ``function`` the name of the file containing the function. For an example, see ``test_cases/Ishigami``.
+
 Block 3 - POD
 """""""""""""
 
-After that, we can control the quality of the resulting POD, chose a re-sampling strategy, etc.
+In this example, a POD is not necessary as it will result in only one mode. However, its use is presented. We can control the quality of the POD, chose a re-sampling strategy, etc.
 
 .. code-block:: python
 
@@ -149,26 +154,21 @@ After that, we can control the quality of the resulting POD, chose a re-sampling
         "dim_max": 100,
         "quality": 0.8,
         "tolerance": 0.99,
-        "strategy": [
-            ["MSE", 4]
-        ],
-        "resample": "None",
-        "server": null,
         "type": "static"
     }
 
-Block 4 - Prediction
-""""""""""""""""""""
+Block 4 - Surrogate
+"""""""""""""""""""
 
-A model is build on POD's matrices to approximate a new snapshot. The Kriging method is selected. To construct a response surface, we need to make predictions.
+A model is build on the snapshot matrix to approximate a new snapshot. The Kriging method is selected. To construct a response surface, we need to make predictions.
 
 .. code-block:: python
 
-    prediction = {'method' : 'kriging',
-                  'points' : [],
+    surrogate = {'method' : 'kriging',
+                 'predictions' : [[1., 2.], [2., 2.]],
                  }
 
-To fill in easily ``points``, use the script ``prediction.py``.
+To fill in easily ``predictions``, use the script ``prediction.py``.
 
 
 Block 5 - UQ
@@ -216,7 +216,7 @@ BATMAN's log are found within ``BATMAN.log``. Here is an extract::
     batman.uq ::
         Total: [array([ 0.51371718,  0.56966205])]
 
-In this example, the quality of the model is estimated around :math:`Q_2\sim 0.46` which means that the model is able to represents around 46% of the variability of the quantity of interest. Also, from Sobol' indices, both parameters appears to be as important.
+In this example, the quality of the model is estimated around :math:`Q_2\sim 0.46` which means that the model is able to represents around 46% of the variability of the quantity of interest. Also, from *Sobol'* indices, both parameters appears to be as important.
 
 Post-treatment
 ..............
@@ -231,7 +231,7 @@ Result files are separated in 4 directories under ``output``::
      |
      |__ output
          |
-         |__ pod
+         |__ surrogate
          |
          |__ predictions
          |
@@ -239,59 +239,37 @@ Result files are separated in 4 directories under ``output``::
          |
          |__ uq
 
-``snapshots`` contains all snapshots computations, ``predictions`` contains all predictions and ``uq`` contains the statistical analysis. Using predictions we can plot the response surface of the function as calculated using the model:
+``snapshots`` contains all snapshots computations, ``predictions`` contains all predictions, ``surrogate`` contains the model and ``uq`` contains the statistical analysis. Using predictions we can plot the response surface of the function as calculated using the model:
 
 .. image:: fig/response_Michalewicz_model_2D.png
 
 It can be noted that using 50 snapshots on this case is not enought to capture all the non-linearities of the function.
 
-.. note:: Physical phenomena usualy are smoother. Thus, less points are needed for a 2 parameters problem when dealing with real physics.
+.. note:: Usually, physical phenomena are smoother. Thus, less points are needed for a 2 parameters problem when dealing with real physics.
 
 Refinement strategies
 .....................
 
-In this case, the error was fairly high using 50 snapshots. A computation with 50 snapshots using 20 refinement points have been tried. To use this functionnality, the POD block has been changed in order to use a resampling strategy:
+In this case, the error was fairly high using 50 snapshots. A computation with 50 snapshots using 20 refinement points have been tried. To use this functionnality, the resampling dictionary has to be added:
 
 .. code-block:: python
 
-    "pod": {
-        "dim_max": 100,
-        "quality": 0.8,
-        "tolerance": 0.99,
-        "strategy": [
-            ["MSE", 4]
-        ],
-        "resample": "loo_mse",
-        "server": null,
-        "type": "static"
-    }
-
-The first block has to be modified also: 
-
-.. code-block:: python
-
-    "space": {
-        "corners": [
-            [1.0, 1.0],
-            [3.1415, 3.1415]
-        ],
-        "size_max": 70,
-        "delta_space": 0.01,
-        "provider": {
-            "method": "halton",
-            "size": 50
+    "resampling":{
+            "delta_space": 0.08,
+            "resamp_size": 20,
+            "method": "loo_sigma",
+            "q2_criteria": 0.8
         }
-    }
 
-This block tells BATMAN to compute a maximum of 20 resampling snapshots in case the quality has not reach 0.8. This ``loo_mse`` strategy uses the information of the model error provided by the gaussian process regression. This leads to an improvement in the error with :math:`Q_2 \sim 0.71`.
+This block tells BATMAN to compute a maximum of 20 resampling snapshots in case the quality has not reach 0.8. This ``loo_sigma`` strategy uses the information of the model error provided by the gaussian process regression. This leads to an improvement in the error with :math:`Q_2 \sim 0.71`.
 
 .. figure:: fig/response_Michalewicz_model_2D_loo-mse.png
    
    Response surface interpolation using 50 snapshots and 20 refined points,
    represented by the red triangles.
 
-Using a basic ``MSE`` technique with again 20 new snapshots, the error is :math:`Q_2 \sim 0.60`.
+Using a basic ``sigma`` technique with again 20 new snapshots, the error is :math:`Q_2 \sim 0.60`.
 
 .. image:: fig/response_Michalewicz_model_2D_mse.png
 
-In this case, ``loo_mse`` method performed better but this is highly case dependent. 
+In this case, ``loo_sigma`` method performed better but this is highly case dependent. 

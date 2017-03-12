@@ -50,20 +50,20 @@ General functionment
 The package is composed of several python modules which are self contained within the directory ``batman``.
 Following is a quick reference:
 
-* :py:mod:`ui`: command line interface,
-* :py:mod:`driver`: contains the main functions,
-* :py:mod:`uq`: uncertainty quantification,
-* :py:mod:`surrogate`: constructs the surrogate model,
-* :py:mod:`space`: defines the (re)sampling space,
-* :py:mod:`pod`: constructs the POD,
-* :py:mod:`tasks`: defines the context to compute each snapshot from,
-* :py:mod:`functions`: defines usefull test functions,
-* :py:mod:`misc`: defines the logging configuration and the settings schema.
+* :py:mod:`batman.ui`: command line interface,
+* :py:mod:`batman.driver`: contains the main functions,
+* :py:mod:`batman.uq`: uncertainty quantification,
+* :py:mod:`batman.surrogate`: constructs the surrogate model,
+* :py:mod:`batman.space`: defines the (re)sampling space,
+* :py:mod:`batman.pod`: constructs the POD,
+* :py:mod:`batman.tasks`: defines the context to compute each snapshot from,
+* :py:mod:`batman.functions`: defines usefull test functions,
+* :py:mod:`batman.misc`: defines the logging configuration and the settings schema.
 
 Using it
 ........
 
-After BATMAN has been installed, ``batman`` is available as a command and it can be imported in python. It is a link to :py:mod:`ui`. The module imports the package and use the function defined in :py:mod:`driver`.
+After BATMAN has been installed, ``batman`` is available as a command line tool or it can be imported in python. The CLI is defined in :py:mod:`batman.ui`. The module imports the package and use the function defined in :py:mod:`batman.driver`.
 
 Thus BATMAN is launched using::
 

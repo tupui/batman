@@ -17,6 +17,8 @@ Contents:
    surrogate
    pod
    uq
+   misc
+   io
 
 Indices and tables
 ==================
