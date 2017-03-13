@@ -134,7 +134,8 @@ setup(
     name='batman',
     version=find_version("batman", "__init__.py"),
     packages=find_packages(exclude=['test_cases', 'doc']),
-    entry_points={'console_scripts': ['batman=batman.ui:main']},
+    entry_points={'console_scripts': ['batman=batman.ui:main',
+                                      'run_mascaret=batman.functions.mascaret.run_mascaret:run_mascaret']},
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
     # Package requirements
     setup_requires=setup_requires,

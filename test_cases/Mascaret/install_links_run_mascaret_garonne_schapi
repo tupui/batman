@@ -1,0 +1,15 @@
+#!/bin/tcsh
+setenv LD_LIBRARY_PATH ../../batman/functions/mascaret/run_mascaret/lib:$LD_LIBRARY_PATH
+rm -rf *.loi *.xcas *.dtd *.geo *.lig dico.txt fort.22 *.damoc
+mv run_mascaret.txt run_mascaret.txt_old
+mv run_mascaret_Param.txt run_mascaret_Param.txt_old
+mv ResultatsListing.lis ResultatsListing.lis_old
+mv ResultatsOpthyca.opt ResultatsOpthyca.opt_old
+ln -s data_garonne_schapi/ParametresMascaret.xcas ParametresMascaret.xcas
+ln -s data_garonne_schapi/mascaret-1.0.dtd mascaret-1.0.dtd
+ln -s data_garonne_schapi/geometrie.geo geometrie.geo
+ln -s data_garonne_schapi/LigneEauInitiale.lig LigneEauInitiale.lig
+ln -s data_garonne_schapi/Hydro_Tonneins_1981.loi Hydro_Tonneins_1981.loi
+ln -s data_garonne_schapi/CT_LaReole.loi CT_LaReole.loi
+cp data_garonne_schapi/run_mascaret.txt run_mascaret.txt
+cp data_garonne_schapi/run_mascaret_Param.txt run_mascaret_Param.txt

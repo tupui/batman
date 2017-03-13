@@ -11,4 +11,4 @@ __all__ = ['Driver', 'mpi', 'misc', 'pod']
 
 __version__ = '1.5'
 __branch__ = 'heads/release-Oswald'
-__commit__ = ''
+__commit__ = '1.4-203-gd8427ed'
