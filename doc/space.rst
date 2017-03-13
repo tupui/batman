@@ -1,7 +1,9 @@
 .. _space:
+.. py:module:: space
 
 Sampling the Space of Parameters
 ================================
+
 
 Design Of Experiments
 ---------------------

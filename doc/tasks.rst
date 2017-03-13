@@ -1,3 +1,5 @@
+.. py:module:: tasks
+
 Tasks module
 ============
 

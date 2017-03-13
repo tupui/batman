@@ -27,7 +27,7 @@ The working directory consists in two parts:
 
 + ``settings.json``: contains the case setup.
 
-.. seealso:: Find more details on every keywords in :ref:`settings` section.
+.. seealso:: Find more details on every keywords in :ref:`CLI <cli>` section.
 
 Finally, the folder ``Post-treatment`` contains example scripts that perform some post treatment.
 

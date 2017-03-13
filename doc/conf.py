@@ -40,11 +40,14 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
 
 intersphinx_mapping = {'openturns': ('http://doc.openturns.org/openturns-latest/sphinx/', None), 
                        'sklearn': ('http://scikit-learn.org/dev/', None),
+                       'python': ('https://docs.python.org/3.6', None)
 }
 
 
 def skip(app, what, name, obj, skip, options):
     if name == "__init__":
+        return False
+    if name == "__call__":
         return False
     return skip
 

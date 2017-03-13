@@ -19,6 +19,7 @@ Contents:
    uq
    misc
    io
+   functions
 
 Indices and tables
 ==================

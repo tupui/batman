@@ -3,7 +3,7 @@
 Space class
 ===========
 
-Derives from :class:`list` and constitutes a groupment for points.
+Derives from :py:class:`list` and constitutes a groupment for points.
 The space can be filled using low discrepancy sequences from :class:`openturns.LowDiscrepancySequence`,
 it can be resampled or points can be added manually.
 

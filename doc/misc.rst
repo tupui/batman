@@ -1,3 +1,6 @@
+
+.. py:module:: misc
+
 Misc module
 ===========
 

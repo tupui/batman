@@ -1,7 +1,8 @@
-.. _settings:
+.. _cli:
+.. py:module:: ui
 
-Settings
-========
+Command Line Interface
+======================
 
 
 Introduction
@@ -37,7 +38,7 @@ First of all, we define the space of parameters using an hypercube. Taking the m
 + ``method``: method to create the DoE: *uniform*, *faure*, *halton*, *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling) or *lhsc* (Latin Hypercube  Sampling Centered),
 + ``size``: initial size of the DoE.
 
-The method used to create the DoE is paramount. It ensures that that the physics will be captured correclty all over the domain of interest, see :ref:`space`. All *faure*, *halton* and *sobol* methods are low discrepancy sequences with good filling properties.
+The method used to create the DoE is paramount. It ensures that that the physics will be captured correclty all over the domain of interest, see :ref:`Space <space>`. All *faure*, *halton* and *sobol* methods are low discrepancy sequences with good filling properties.
 
 
 Block 2 - Snapshot provider
@@ -169,4 +170,12 @@ UQ (or *Uncertainty Quantification*) is used as a method to evaluate the results
 + ``pdf`` *Probability density function* for uncertainty propagation. Enter the PDF of the inputs: x1: Normal(mu, sigma), x2: Uniform(inf, sup).
 
 
+.. py:module:: driver
+.. py:currentmodule:: driver
 
+Driver module
+^^^^^^^^^^^^^
+
+.. automodule:: batman.driver
+   :members:
+   :undoc-members:

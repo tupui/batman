@@ -1,4 +1,5 @@
 .. _surrogate:
+.. py:module:: surrogate
 
 Surrogate model
 ===============

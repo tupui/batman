@@ -31,7 +31,7 @@ Both *Proper Orthogonal Decomposition* (POD) and *Kriging* (*PC*, *RBF*, etc.) a
 3. Interpolate new data.
 
 
-.. seealso:: More details about :ref:`space`, :ref:`pod` or :ref:`surrogate`.
+.. seealso:: More details about :ref:`Space <space>`, :ref:`POD <pod>` or :ref:`Surrogate <surrogate>`.
 
 
 Content of the package
@@ -50,26 +50,26 @@ General functionment
 The package is composed of several python modules which are self contained within the directory ``batman``.
 Following is a quick reference:
 
-* :py:mod:`batman.ui`: command line interface,
-* :py:mod:`batman.driver`: contains the main functions,
-* :py:mod:`batman.uq`: uncertainty quantification,
-* :py:mod:`batman.surrogate`: constructs the surrogate model,
-* :py:mod:`batman.space`: defines the (re)sampling space,
-* :py:mod:`batman.pod`: constructs the POD,
-* :py:mod:`batman.tasks`: defines the context to compute each snapshot from,
-* :py:mod:`batman.functions`: defines usefull test functions,
-* :py:mod:`batman.misc`: defines the logging configuration and the settings schema.
+* :py:mod:`ui`: command line interface,
+* :py:mod:`driver`: contains the main functions,
+* :py:mod:`uq`: uncertainty quantification,
+* :py:mod:`surrogate`: constructs the surrogate model,
+* :py:mod:`space`: defines the (re)sampling space,
+* :py:mod:`pod`: constructs the POD,
+* :py:mod:`tasks`: defines the context to compute each snapshot from,
+* :py:mod:`functions`: defines usefull test functions,
+* :py:mod:`misc`: defines the logging configuration and the settings schema.
 
 Using it
 ........
 
-After BATMAN has been installed, ``batman`` is available as a command line tool or it can be imported in python. The CLI is defined in :py:mod:`batman.ui`. The module imports the package and use the function defined in :py:mod:`batman.driver`.
+After BATMAN has been installed, ``batman`` is available as a command line tool or it can be imported in python. The CLI is defined in :py:mod:`ui`. The module imports the package and use the function defined in :py:mod:`driver`.
 
 Thus BATMAN is launched using::
 
     batman settings.json
 
-.. seealso:: The definition of the case is to be filled in ``settings.json``. Refer to :ref:`settings`.
+.. seealso:: The definition of the case is to be filled in ``settings.json``. Refer to :ref:`CLI <cli>`.
 
 An ``output`` directory is created and it contains the results of the computation splited across the following folders: 
 
@@ -91,7 +91,7 @@ This folder contains ready to launch examples:
 * ``RAE2822`` is a *2-input_parameters* that launches an *elsA* case,
 * ``Flamme_1D`` is a *2-input_parameters* that launches an *AVBP* case.
 
-In every case, there is ``README.rst`` file that summarize and explain it.
+In every case folder, there is ``README.rst`` file that summarizes and explains it.
 
 References
 ----------

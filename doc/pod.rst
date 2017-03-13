@@ -1,4 +1,5 @@
 .. _pod:
+.. py:module:: pod
 
 POD for *Proper Orthogonal Decomposition*
 =========================================
@@ -26,7 +27,7 @@ The Singular Value Decomposition (SVD) is a factorization operation of a matrix 
 .. math::
    A = U \Sigma V^T,
 
-with $V$ diagonalizes :math:`A^TA`, :math:`U` diagonalizes :math:`AA^T` and :math:`\Sigma` is the singular value matrix which diagonal is composed by the singular values of :math:`A`. Knowing that a singular value is the square root of an eigen value. :math:`u_i` and :math:`v_i` are eigen vectors of respectively :math:`U` and :math:`V` which form an orthonormal basis. Thus, the initial matrix can be rewritten:
+with :math:`V` diagonalizes :math:`A^TA`, :math:`U` diagonalizes :math:`AA^T` and :math:`\Sigma` is the singular value matrix which diagonal is composed by the singular values of :math:`A`. Knowing that a singular value is the square root of an eigen value. :math:`u_i` and :math:`v_i` are eigen vectors of respectively :math:`U` and :math:`V` which form an orthonormal basis. Thus, the initial matrix can be rewritten:
 
 .. math::
    A = \sum_{i=1}^{r} \sigma_i u_i v_i^T,

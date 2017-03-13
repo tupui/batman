@@ -1,3 +1,6 @@
+
+.. py:module:: input_output
+
 IO module
 =========
 
