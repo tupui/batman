@@ -36,8 +36,9 @@ class MascaretApi(object):
             try:
                 self.libmascaret = ctypes.CDLL(libmascaret)
             except Exception as tb:
-                self.logger.exception('Unable to load: \
-        mascaret.so. Check the environment variable LIBMASCARET: {}'.format(tb))
+                self.logger.exception("Unable to load: mascaret.so. Check the "
+                                      "environment variable LIBMASCARET: {}"
+                                      .format(tb))
                 raise SystemExit
         else:
             self.logger.error('Unsupported OS: macOS or Unix')

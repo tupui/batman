@@ -5,7 +5,6 @@ batman/input_output/*.so
 *.log
 *.swp
 obj/
-lib/
 test_cases/*/output/*
 doc/_build/*
 build/

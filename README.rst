@@ -17,7 +17,7 @@ README
 What is BATMAN? 
 ---------------
 
-**BATMAN** stands for Baysian Analysis Tool for Modelling And uNcertainty quantification.
+**BATMAN** stands for Bayesian Analysis Tool for Modelling And uNcertainty quantification.
 It aims at:
 
 - Build a metamodel for design, optimization and database exchange (loads, MDO, identification),
