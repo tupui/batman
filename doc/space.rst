@@ -21,13 +21,55 @@ In Damblin et al. [Damblin2013]_ a comprehensive analysis of most common DOE is 
 Resampling the parameters space
 -------------------------------
 
+There are several methods for refining, resampling, the parameter space. In [Scheidt]_, the classical methods are reviewed and a framework combining several methods is proposed. In [Roy]_, we added some methods that peforme better in high dimentionnal cases.
+
+* Variance (:math:`\sigma`),
+  As stated in :ref:`Surrogate <surrogate>`, one of the main advantages of Gaussian processes over other surrogates is to provide an insight into the variance of the solution. The first method consists in using this data and weight it with the eigenvalues of the POD:
+
+  .. math:: \sum_{i=1}^k \sigma_i^2 \times \mathbb{V}[f(\mathbf{x}_*)]_{i}.
+
+  Global optimization on this indicator gives the new point to simulate.
+
+* Leave-One-Out (LOO) and :math:`\sigma`,
+  A LOO is performed on the POD and highlights the point where the model is the most sensitive. The strategy here is to add a new point around it. Within this hypercube, a global optimization over :math:`\sigma` is conduced giving the new point.
+
+* LOO-*Sobol'*,
+  Using the same steps as with the LOO - :math:`\sigma` method, the hypercube around the point is here truncated using prior information about *Sobol'* indices-see :ref:`UQ <uq>`. It requires that indices be close to convergence not to bias the result. Or the bias can be intentional depending on the insight we have about the case.
+
+* Extrema,
+  This method will add 4 points. First, it look for the point in the sample which has the min value of the QoI. Within an hypercube, it add the minimal and maximal predicted values. Then it do the same for the point of the sample which has the max value of the QoI. This method allows to capture the gradient around extrem values.
+
+* Hybrid.
+  This last method consists of a navigator composed by any combination of the previous methods.
+
+
+Hypercube
+.........
+
+The hypercube is defined by the cartesian product of the intervals of the :math:`n` parameters *i.e.* :math:`[a_i, b_i]^n`. The constrained optimization problem can hence be written as:
+
+.. math::
+   \left\{\begin{array}{rc} \max  &\parallel (\mathbf{b} - \mathbf{a}) \parallel_{2} \\\mathcal{P} &\notin [a_i, b_i]^n \\ p &\in [a_i, b_i]^n \end{array}\right. .
+
+Moreover, a maximum cube-volume aspect ratio is defined in order to preserve the locality. This gives the new constrain
+
+.. math::
+   C : \sqrt[n]{\frac{\max (\mathbf{b} - \mathbf{a})}{\displaystyle\prod_{i = 1}^n \max (b_i - a_i)}} < \epsilon ,
+
+with :math:`\epsilon = 1.5` is set arbitrarily to prevent too elongated hypercubes. The global optimum is found using a two-step strategy: first, a discrete optimization using :math:`\mathcal{P}` gives an initial solution; second a basin-hopping algorithm finds the optimum coordinates of the hypercube. In case of the LOO-*Sobol'* method, the hypercube is truncated using the total order *Sobol'* indices.
+
 
 References
-..........
+----------
 
-.. [Damblin2013] G. Damblin, M. Couplet, B. Iooss: Numerical studies of space filling designs : optimization of Latin Hypercube Samples and subprojection properties. Journal of Simulation. 2013.
+.. [Damblin2013] G. Damblin, M. Couplet, B. Iooss: Numerical studies of space filling designs : optimization of Latin Hypercube Samples and subprojection properties. Journal of Simulation. 2013
 
-.. [Sacks1989] J. Sacks et al.: “Design and Analysis of Computer Experiments”. Statistical Science 4.4. 1989. DOI: 10.1214/ss/1177012413
+.. [Sacks1989] J. Sacks et al.: Design and Analysis of Computer Experiments. Statistical Science 4.4. 1989. DOI: 10.1214/ss/1177012413
+
+.. [Scheidt] C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptative de réponses non régulières par Krigeage et plans d'expériences, Application à la quantification des incertitudes en ingénierie des réservoirs pétroliers. Université Louis Pasteur. 2006
+
+.. [Roy] P.T. Roy et al.: Resampling Strategies to Improve Surrogate Model-based Uncertainty Quantification - Application to LES of LS89. Computers & Fluids. 2017
+
 
 Space module
 ------------
