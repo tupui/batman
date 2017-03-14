@@ -1,7 +1,7 @@
 .DS_Store
 *.pyc
 *.jsonc
-*.so
+batman/input_output/*.so
 *.log
 *.swp
 obj/
@@ -10,10 +10,7 @@ test_cases/*/output/*
 doc/_build/*
 build/
 dist/
-jpod.egg-info/
-.eggs
+*eggs*
 .idea
-./jpod/__init__.py
-/.cache
-/jpod/input_output/ascii.mod
-/jpod/input_output/io_tools.mod
+batman/__init__.py
+.cache

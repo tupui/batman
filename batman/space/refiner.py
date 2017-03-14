@@ -23,11 +23,6 @@ It implements the following methods:
     >> resample = Refiner(pod, corners)
     >> new_point = resample.sigma()
 
-References
-----------
-
-C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptative de réponses non régulières par Krigeage et plans d'expériences, Application à la quantification des incertitudes en ingénierie des réservoirs pétroliers. Université Louis Pasteur. 2006
-
 """
 
 # Authors: Pamphile ROY <roy.pamphile@gmail.fr>
