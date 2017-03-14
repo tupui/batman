@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding:utf8
 #
-# JPOD documentation build configuration file, created by
+# BATMAN documentation build configuration file, created by
 # sphinx-quickstart on Sun Jul 10 20:33:31 2016.
 #
 # This file is execfile()d with the current directory set to its
@@ -40,11 +40,14 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
 
 intersphinx_mapping = {'openturns': ('http://doc.openturns.org/openturns-latest/sphinx/', None), 
                        'sklearn': ('http://scikit-learn.org/dev/', None),
+                       'python': ('https://docs.python.org/3.6', None)
 }
 
 
 def skip(app, what, name, obj, skip, options):
     if name == "__init__":
+        return False
+    if name == "__call__":
         return False
     return skip
 
@@ -176,7 +179,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
 #
-# html_title = 'JPOD v1.3'
+# html_title = 'BATMAN v1.3'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #

@@ -23,11 +23,6 @@ It implements the following methods:
     >> resample = Refiner(pod, corners)
     >> new_point = resample.sigma()
 
-References
-----------
-
-C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptative de réponses non régulières par Krigeage et plans d'expériences, Application à la quantification des incertitudes en ingénierie des réservoirs pétroliers. Université Louis Pasteur. 2006
-
 """
 
 # Authors: Pamphile ROY <roy.pamphile@gmail.fr>
@@ -436,8 +431,8 @@ class Refiner(object):
         Uses all methods one after another to add new points.
         It uses the navigator defined within settings file.
 
-        :param refined_pod_points: points not to consider for extrema
-        :param :class:`space.point.Point` point_loo:
+        :param lst(int) refined_pod_points: points' idx not to consider for extrema
+        :param :class:`batman.space.point.Point` point_loo: leave one out point
         :param str strategy: resampling method
         :return: The coordinate of the point to add
         :rtype: lst(float)

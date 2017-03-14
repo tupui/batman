@@ -120,8 +120,7 @@ class Ishigami(object):
 
     r"""[Ishigami]_ class.
 
-    .. math::
-    F = np.sin(X1)+7*np.sin(X2)**2+0.1*(X3**4)*np.sin(X1)
+    .. math:: F = \sin(X1)+7\sin(X2)^2+0.1X3^4\sin(X1)
 
     It exhibits strong nonlinearity and nonmonotonicity.
     Depending on `a` and `b`, emphasize the non-linearities.
@@ -177,8 +176,7 @@ class G_Function(object):
 
     r"""[G-Function]_ class.
 
-    .. math::
-    F = \Pi_{i=1}^d \frac{\lvert 4x_i - 2\rvert + a_i}{1 + a_i}
+    .. math:: F = \Pi_{i=1}^d \frac{\lvert 4x_i - 2\rvert + a_i}{1 + a_i}
 
     Depending on the coefficient :math:`a_i`, their is an impact on the impact
     on the output. The more the coefficient is for a parameter, the less the
@@ -227,10 +225,9 @@ class G_Function(object):
 
 class Channel_Flow(object):
 
-    """Channel Flow class.
+    r"""Channel Flow class.
 
-    .. math::
-        \frac{dh}{ds}=\mathcal{F}(h)=I\frac{1-(h/h_n)^{-10/3}}{1-(h/h_c)^{-3}}
+    .. math:: \frac{dh}{ds}=\mathcal{F}(h)=I\frac{1-(h/h_n)^{-10/3}}{1-(h/h_c)^{-3}}
 
     with :math:`h_c=\left(\frac{q^2}{g}\right)^{1/3}, h_n=\left(\frac{q^2}{IK_s^2}\right)^{3/10}`.
     """

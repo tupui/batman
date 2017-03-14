@@ -35,11 +35,11 @@ class Core(object):
         The decomposition of the snapshot matrix is stored as attributes
 
         - U: Singular vectors matrix, ndarray(nb of data, nb of snapshots),
-        after filtering ndarray(nb of data, nb of modes),
+          after filtering ndarray(nb of data, nb of modes),
         - S: Singular values matrix, ndarray(nb of modes, nb of snapshots),
-        only the diagonal is stored, of length (nb of modes),
+          only the diagonal is stored, of length (nb of modes),
         - V: ndarray(nb of snapshots, nb of snapshots),
-        after filtering (nb of snapshots, nb of modes).
+          after filtering (nb of snapshots, nb of modes).
 
         :param float tolerance: basis modes filtering criteria
         :param int dim_max: number of basis modes to keep

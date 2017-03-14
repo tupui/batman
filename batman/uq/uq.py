@@ -160,8 +160,8 @@ class UQ:
     def error_model(self, indices, function):
         r"""Compute the error between the POD and the analytic function.
 
-        .. warning:: For test purpose only. Choises are Ishigami, Rosenbrock
-        and Channel Flow test functions.
+        .. warning:: For test purpose only. Choises are `Ishigami`,
+           `Rosenbrock`, `Michalewicz`, `G_Function` and `Channel_Flow` test functions.
 
         From the surrogate of the function, evaluate the error
         using the analytical evaluation of the function on the sample points.

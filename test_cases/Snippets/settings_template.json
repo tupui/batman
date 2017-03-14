@@ -42,12 +42,9 @@
         # format: integer
         "dim_max": 100,
         # Tolerance of the modes to be kept.
-        # A percentage of the sum of the singular values, values that account for less than of this tolerance are ignored.
+        # A percentage of the sum of the singular values, values that account for less than this tolerance are ignored.
         # format: float
         "tolerance": 0.99,
-        # Otherwise the pod processing is run in another process or on another
-        # computer.
-        "server": null,
         # Type of pod to perform.
         # format: one of 'static', 'dynamic'
         "type": "static"
@@ -64,53 +61,52 @@
             # Names of the parameters
             # format: list of strings
             "parameter_names": ["x1", "x2"]
-            # Shapes of one variable for each file and each mpi cpu
-            # When ran on only 1 cpu, all shapes are gathered
+            # Shape per variable and per file.
             "shapes": {"0": [[1]]},
             # File format
-            # format: "npz", "fmt_tp_fortran" (JPOD) or all Antares formats if
-            # installed
+            # format: "npz", "fmt_tp_fortran" (BATMAN) or all Antares formats
+            # if installed
             "format": "fmt_tp_fortran",
             # Names of the variables contained in a snapshot
             # format: list of strings
             "variables": ["F"],
-            # Name of the file that contains the coordinates of a point in the space of parameters
+            # Name of the file that contains the coordinates of a point in the
+            # parameter space
             # format: string
             "point_filename": "header.py",
-            # File names for each mpi cpu
-            # When ran on only 1 cpu, all filenames are gathered
+            # Dictionary of list, if several filenames, several independant
+            # analysis are done. It contains the output variables of a
+            # snapshot to use by BATMAN,
             # format: list of strings
             "filenames": {"0": ["function.dat"]},
-            # Depreciated option
-            "template_directory": null,
+            # Used to restart from existing jobs not created with BATMAN
+            "template_directory": "output/snapshots/0/batman-data/header.py",
         },
         # Snapshot provider
-        # Could be a python function, a python list of directories or a python
-        # dictionary with settings for using an external program like
-        # submitting elsA jobs
+        # can also be a python function by setting a python function path
         "provider": {
-            # JPOD can run scripts or submit jobs
+            # Command to use to launch the script
             # format: string
             "command": "bash",
-            # Estimated duration of each jobs (or scripts) in seconds to test the completion
+            # Timeout of each jobs in seconds
             # format: integer
             "timeout": 50,
-            # Driectiory where the data for the JPOD computations are stored
+            # Directiory where the data for the BATMAN computations are stored
             # format: string
             "context": "data",
-            # Patch of the script or batch to run
+            # Path of the script or batch to run
             # format: string
             "script": "data/script.sh",
             # Delete after run all except what is inside private-directory
             # format: boolean
             "clean": false,
-            # Directory where the JPOD files are stored
+            # Folder containing the ``point_filename`` and the result of the snapshot
             # format: string
             "private-directory": "batman-data",
-            # Directory where CFD ouput dat are stored
+            # Output folder to store the ``filenames``
             # format string
             "data-directory": "cfd-output-data",
-            # Depreciated option
+            # Restart the computation if the job has failed
             "restart": "False"
         }
     },
@@ -120,7 +116,7 @@
     "surrogate": {
         # Set of points at which the predictions are made
         # format: list of tuples of floats
-        "predictions": [],
+        "predictions": [[1.0, 2.0], [2.0, 1.1]],
         # Method used to generate a snapshot
         # format: one of 'rbf' or 'kriging'
         "method": "kriging"
@@ -129,7 +125,11 @@
     # PARAMETERS FOR UNCERTAINTY QUANTIFICATION
     #
     "uq": {
-        # Number of samples for the UQ analysis
+        # Use a test method for indices comparison and quality calculation
+        # format: one of 'Rosenbrock', 'Michalewicz', 'Ishigami', 'G_Function',
+        # 'Channel_Flow'
+        "test": "Michalewicz",
+        # Number of points per sample to use for SA
         # format: integer > 0
         "sample": 1000,
         # Enter the PDF of the inputs: x1: Normal(mu, sigma), x2: Uniform(inf,

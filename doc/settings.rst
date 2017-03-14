@@ -1,20 +1,52 @@
-.. _settings:
+.. _cli:
+.. py:module:: ui
 
-Settings
-========
-
+Command Line Interface
+======================
 
 Introduction
-^^^^^^^^^^^^
+------------
 
+The file ``settings.py`` contains the configuration of BATMAN. It can be devided into 3 mandatory blocks and 2 optionnal block. Fields in brackets are optionnal and there is no specific order to respect.
 
-The file ``settings.py`` contains the configuration of JPOD. It can is devided into 5 blocks.
+.. note:: A prefilled example is shown in ``settings.json`` located in ``test_cases/Snippets``.
 
+Help of the CLI can be triggered with::
+    
+    batman -h
+
+    usage: BATMAN [-h] [--version] [-v] [-c] [-s] [-o OUTPUT] [-r] [-n] [-u] [-p]
+              [-q]
+              settings
+
+    BATMAN creates a surrogate model and perform UQ.
+
+    positional arguments:
+      settings              path to settings file
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --version             show program's version number and exit
+      -v, --verbose         set verbosity from WARNING to DEBUG, [default: False]
+      -c, --check           check settings, [default: False]
+      -s, --save-snapshots  save the snapshots to disk when using a function,
+                            [default: False]
+      -o OUTPUT, --output OUTPUT
+                            path to output directory, [default: ./output]
+      -r, --restart         restart pod, [default: False]
+      -n, --no-surrogate    do not compute surrogate but read it from disk,
+                            [default: False]
+      -u, --uq              Uncertainty Quantification study, [default: False].
+      -p, --pred            compute prediction and write it on disk, [default:
+                            False]
+      -q, --q2              estimate Q2 and find the point with max MSE, [default:
+                            False]    
+    
 
 Block 1 - Space of Parameters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------
 
-First of all, we define the space of parameters using an hypercube. Taking the minimal and the maximal value along all coordinates allow to describe it.
+First of all, we define the parameter space using an hypercube. Taking the minimal and the maximal value along all coordinates allow to describe it.
 
 .. figure:: fig/hypercube.pdf
 
@@ -23,56 +55,141 @@ First of all, we define the space of parameters using an hypercube. Taking the m
 .. code-block:: python
 
     "space": {
-        "corners": [[1.0, 1.0],[3.1415, 3.1415]],
-        "size_max": 15,
-        "delta_space": 0.01,
-        "provider": {
-        "method": "halton",
-        "size": 15
+        "corners": [
+            [15.0, 2500.0],
+            [60.0, 6000.0]
+        ],
+        "sampling": {
+            "init_size": 4,
+            "method": "halton"
+        },
+        "resampling":{
+            "delta_space": 0.08,
+            "resamp_size": 0,
+            "method": "sigma",
+            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
+            "q2_criteria": 0.9
         }
+    }
 
-+ ``corners``: define the space using corners of the hypercube,
-+ ``delta_space``: innerspace defined by corners for resampling,
-+ ``size_max``: maximum number of samples to be calculated: initial sampling + resampling,
-+ ``method``: method to create the DoE: *uniform*, *faure*, *halton*, *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling) or *lhsc* (Latin Hypercube  Sampling Centered),
-+ ``size``: initial size of the DoE.
++ ``corners``: define the space using the two corners of the hypercube ``[[min], [max]]``,
++ ``sampling``: define the configuration of the sample,
 
-The method used to create the DoE is paramount. It ensures that that the physics will be captured correclty all over the domain of interest, see :ref:`space`. All *faure*, *halton* and *sobol* methods are low discrepancy sequences with good filling properties.
+    * ``init_size``: define the initial number of snapshots,
+    * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*, *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling) or *lhsc* (Latin Hypercube  Sampling Centered),
 
++ [``resampling``]: to do resampling, fill this dictionary
+
+    * ``delta_space``
+    * ``resamp_size``
+    * ``method``: to be choosen from ``sigma``, ``loo_sigma``, ``loo_sobol``, ``hybrid``,
+    * [``hybrid``]: if method is ``hybrid``. You have to define a generator which is a list
+      ``[["method", n_snapshot]]``
+    * ``q2_criteria``: stopping criterion based on the quality estimation of the model.
+
+The method used to create the DoE is paramount. It ensures that that the physics will be captured correclty all over the domain of interest, see :ref:`Space <space>`. All *faure*, *halton* and *sobol* methods are low discrepancy sequences with good filling properties.
+
+Regarding the resampling, all methods need a good initial sample. Meanning that the quality is about :math:`Q_2\sim0.5`. ``loo_sigma, loo_sobol`` work better than ``sigma`` in high dimentionnal cases (>2).
 
 Block 2 - Snapshot provider
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 
-
-It could be *a python function*, *a python list of directories* or *a python dictionary* with settings for using *an external program* like submitting *elsA* jobs.
+A snapshot defines a simulation.
 
 .. code-block:: python
 
     "snapshot": {
-        "max_workers": 10,
+        "max_workers": 5,
         "io": {
-        "shapes": {"0": [[1]]},# mklj mlkj mlkj
-        "format": "fmt_tp_fortran",
-        "variables": ["F"],
-        "point_filename": "header.py",
-        "filenames": {"0": ["function.dat"]},
-        "template_directory": null,
-        "parameter_names": ["x1", "x2"]
+            "shapes": {
+                "0": [
+                    [400]
+                ]
+            },
+            "format": "fmt_tp_fortran",
+            "variables": ["X", "F"],
+            "point_filename": "header.py",
+            "filenames": {
+                "0": ["function.dat"]
+            },
+            "template_directory": "output/snapshots/0/batman-data/header.py",
+            "parameter_names": ["x1", "x2"]
+        },
+        "provider": {
+            "command": "bash",
+            "timeout": 20,
+            "context": "data",
+            "script": "data/script.sh",
+            "clean": false,
+            "private-directory": "batman-data",
+            "data-directory": "cfd-output-data",
+            "restart": "False"
         }
 
-+ ``max_workers``: maximum number of simultaneous running snapshot provider.
++ ``max_workers``: maximum number of simultaneous running snapshot,
++ ``shapes``: shape per variable and per file,
++ ``format``:  ``npz``, ``fmt_tp_fortran`` (BATMAN) or all Antares formats if installed,
++ ``variables``: names of the variables to treat and contained in a snapshot,
++ ``point_filename``: name of the file that contains the coordinates of a point in the parameter space,
++ ``filenames``: dictionary of list, if several filenames, several independant analysis are done. It contains the output ``variables`` of a snapshot to use by BATMAN,
++ ``template_directory``: path to the point file name of the first snapshot, used to restart from existing jobs not created with BATMAN,
 + ``parameter_names``: names of the parameters.
-+ ``format``:  *fmt_tp_fortran* (Tecplot 360) included in JPOD.
-+ ``filenames``: for each MPI CPU. When ran on only 1 CPU, all filenames are gathered.
-+ ``point_filename``: name of the file that contains the coordinates of a point in the space of parameters.
-+ ``template_directory``: depreciated option                             
-+ ``variables``: names of the variables contained in a snapshot.
-+ ``shapes``: shapes of 1 variable for each file and each MPI CPU. When ran on only 1 CPU, all shapes are gathered.
+
+The ``provider`` defines what is a simulation. If we simply want to evaluate a python function, we can pass the ``function_name`` as a string. ``function_name.py`` will be imported and the function named ``f`` will be used. Otherwize, for a complexe case, use a dictionary:
+
++ ``command``: command to use to launch the script,
++ ``timeout``: timeout of each jobs in seconds,
++ ``context``: directiory where the data for the BATMAN computations are stored,
++ ``script``: path of the script or batch to run,
++ ``clean``: delete after run all except what is inside ``private-directory``
++ ``private-directory``: folder containing the ``point_filename`` and the result of the snapshot
++ ``data-directory``: output folder to store the ``filenames``,
++ ``restart``: restart the computation if the job has failed.
+
+Block 3 - Surrogate
+-------------------
+
+Set up the surrogate model strategy to use. See :ref:`Surrogate <surrogate>`.
+
+.. code-block:: python
+
+    "prediction": {
+        "method": "kriging",
+        "predictions": [[30, 4000], [35, 3550]]
+    }
+
++ ``method``: method used to generate a snapshot one of *rbf* (Radial Basic Function), *kriging* or *pc* (polynomial chaos expension) method.
++ ``predictions``: set of points to predict.
+
+.. note:: We can fill *directly* the number of points into the brackets or *indirectly* using the script ``prediction.py`` located in ``test_cases/Snippets``.
 
 
-Block 3 - POD
-^^^^^^^^^^^^^
 
+Optionnal Block 4 - UQ
+----------------------
+
+Uncertainty Quantification (UQ), see :ref:`UQ <uq>`.
+
+.. code-block:: python
+
+    "uq": {
+        "test": "Channel_Flow"
+        "sample": 1000,
+        "method": "sobol"
+        "pdf": ["Normal(4035., 400)", "Uniform(15, 60)"],
+        "type": "aggregated",
+    }
+
++ ``test``: use a test method for indices comparison and quality calculation. Use one of: *Rosenbrock*, *Michalewicz*, *Ishigami*, *G_Function*, *Channel_Flow*,
++ ``sample``: number of points per sample to use for SA,
++ ``method``: type of Sobol analysis: *sobol*, *FAST* (Fourier Amplitude Sensitivity Testing) (if FAST, no second-order indices).
++ ``type``: type of indices: *aggregated* or *block*.
+
++ ``pdf`` *Probability density function* for uncertainty propagation. Enter the PDF of the inputs, ex: x1-Normal(mu, sigma), x2-Uniform(inf, sup).
+
+
+Optionnal Block 5 - POD
+-----------------------
 
 POD (or Proper Orthogonal Decomposition) is a approach to help reduce amount of data.
 
@@ -81,92 +198,22 @@ POD (or Proper Orthogonal Decomposition) is a approach to help reduce amount of 
      "pod": {
         "dim_max": 100,
         "tolerance": 0.99,
-        "resample": "MSE",
-        "strategy": [["MSE", 4]],
-        "quality": 0.8,
-        "server": null,
         "type": "static"
      }
 
-+ ``tolerance``: tolerance of the modes to be kept. A percentage of the sum of the singular values, values that account for less than of this tolerance are ignored.
-+ ``dim_max``: maximum number of modes to be kept.
-+ ``type``: type of POD to perform: *static*, *dynamic* or *auto*.
-+ ``resample``: type of resampling strategy: *None*, *MSE* (*Mean Squared Error*), *loo_mse* (*Leave-one-out* integrates *Mean Squared Error*), *loo_sobol* (*Leave-one-out* integrates *Sobol sequence*), *extrema* or *hybrid*.
-+ ``strategy``: **Only** meaningful if ``resample`` is set to *hybrid*.
-+ ``quality``: stopping criterion for automatic resampling. Here, if the value of error from approximating the surrogate model > 0,8 then the resampling will be stopped. 
-+ ``server``: depreciated option. 
++ ``tolerance``: tolerance of the modes to be kept. A percentage of the sum of the singular values, values that account for less than this tolerance are ignored,
++ ``dim_max``: maximum number of modes to be kept,
++ ``type``: type of POD to perform: *static* or *dynamic*.
+
+The dynamic POD allows to update the POD once a snapshot is availlable. Hence a POD can be restarted when doing resampling for example.
 
 
-Some useful information
-"""""""""""""""""""""""
+.. py:module:: driver
+.. py:currentmodule:: driver
 
-1. *Mean Squared Error (MSE)* of an estimator measures the average of the squares of the errors or deviations (so it also known as *Mean Squared Deviation (MSD)*). In other words, it means the difference between the estimator and what is estimated: :math:`MSE=\frac{1}{n} \sum_{i=1}^n (Y_i^{\hat} - Y_i)^2`.
+Driver module
+-------------
 
-2. *Leave-one-out (LOO)*: Assume that we are given a set of points in a space (for example, a surface).
-
-    + *Firstly*, we start by taking one data point out of this set.
-    
-    + *Secondly*, we train a classifier with the same algorithm but without this point.
-    
-    + *Thirdly*, we test the classifier on this point.
-    
-    + To complete the procedure, we repeat these steps for all the data points.
-    
-    + *In short*, compute the LOO estimate as the *sum of the errors* divided by the *number of data*.
-
-
-3. *Extrema*: i.e. *maxima*  and *minima* of a function.
-
-    + When these values can be achieved on *a given range* of a function, we have the *local* (or *relative*) extrema.
-    
-    + In the case that they are on the *entire domain* of a function, they called the *global* (or *absolute*) extrema.
-
-
-4. *Quatity*: i.e. predictive squared correlation coefficient: :math:`Q^2=1-\frac{\sum_{i=1}^n (Y_i^{\hat} - Y_i)^2}{\sum_{i=1}^n (Y_i^{\tilde} - Y_i)^2}=1-\frac{n\cdot MSE}{\sum_{i=1}^n (Y_i^{\tilde} - Y_i)^2}`.
-
-
-Block 4 - Prediction
-^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: python
-
-    "prediction": {
-        "points": [],
-        "method": "kriging"
-    }
-
-+ ``method``: method used to generate a snapshot one of *rbf* (*Radial Basic Function*) or *kriging* (*KGM*) method.
-+ ``points``: set of points at which the predictions are made.
-
-.. note:: We can fill *directly* the number of points into the brackets or *indirectly* via the script ``prediction.py``.
-
-
-Some useful information
-"""""""""""""""""""""""
-
-1. The *RBF* is a real-valued function whose value depends only on the distance from the origin, so that: :math:`\phi(x)=\phi(||x||)`.
-
-2. The *KGM* is a statistical prediction of a function at *untried inputs*. KGM is a flexible and robust technique to build fast *surrogate models* based on small experimental designs.
-
-
-Block 5 - UQ
-^^^^^^^^^^^^
-
-UQ (or *Uncertainty Quantification*) is used as a method to evaluate the results.
-
-.. code-block:: python
-
-    "uq": {
-        "sample": 1000,
-        "pdf": ["Uniform(1., 3.1415)", "Uniform(1., 3.1415)"],
-        "type": "aggregated",
-        "method": "sobol"
-    }
-
-+ ``method``: type of Sobol analysis: *sobol*, *FAST* (or *Fourier Amplitude Sensitivity Testing*) (if FAST, no second-order indices).
-+ ``type``: type of indices we want: *aggregated* or *block*.
-+ ``sample``: use a test method: *Ishigami*.
-+ ``pdf`` *Probability density function* for uncertainty propagation. Enter the PDF of the inputs: x1: Normal(mu, sigma), x2: Uniform(inf, sup).
-
-
-
+.. automodule:: batman.driver
+   :members:
+   :undoc-members:
