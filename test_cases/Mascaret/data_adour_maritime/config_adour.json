@@ -1,0 +1,39 @@
+{
+    "files": {
+        "xcas": "ParametresMascaret.xcas",
+        "geo": "Geometrie.geo",
+        "res": "ResultatsOpthyca.opt",
+        "listing": "ResultatsListing.lis",
+        "damocle": "listing.damoc",
+        "lig": "LigneEauInitiale.lig",
+        "loi": [
+            "Q9312510.loi",
+            "Q3120030.loi",
+            "Q5421020.loi",
+            "Q7412910.loi",
+            "Q935001001.loi"
+        ]
+    },
+    "init_lig": {
+        "Q_cst": 0.0,
+        "Z_cst": 10.0
+    },
+    "Q_BC": {
+        "idx": 0,
+        "value": 300.0
+    },
+    "Ks": {
+        "zone": false,
+        "idx": 1754,
+        "value": 50.0
+    },
+    "MLMC": {
+        "sigma": 2.0,
+        "simulations": 20
+    },
+    "misc": {
+        "bc": true,
+        "index_outstate": 1754,
+        "mu": 50.0
+    }
+}
