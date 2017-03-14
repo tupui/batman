@@ -1,4 +1,5 @@
 .. _pod:
+.. py:module:: pod
 
 POD for *Proper Orthogonal Decomposition*
 =========================================
@@ -26,12 +27,12 @@ The Singular Value Decomposition (SVD) is a factorization operation of a matrix 
 .. math::
    A = U \Sigma V^T,
 
-with $V$ diagonalizes :math:`A^TA`, :math:`U` diagonalizes :math:`AA^T` and :math:`\Sigma` is the singular value matrix which diagonal is composed by the singular values of :math:`A`. Knowing that a singular value is the square root of an eigen value. :math:`u_i` and :math:`v_i` are eigen vectors of respectively :math:`U` and :math:`V` which form an orthonormal basis. Thus, the initial matrix can be rewritten:
+with :math:`V` diagonalizes :math:`A^TA`, :math:`U` diagonalizes :math:`AA^T` and :math:`\Sigma` is the singular value matrix which diagonal is composed by the singular values of :math:`A`. Knowing that a singular value is the square root of an eigen value. :math:`u_i` and :math:`v_i` are eigen vectors of respectively :math:`U` and :math:`V` which form an orthonormal basis. Thus, the initial matrix can be rewritten:
 
 .. math::
    A = \sum_{i=1}^{r} \sigma_i u_i v_i^T,
 
-:math:`r being the rank of the matrix. If taken :math:`k < r`, an approximation of the initial matrix can be constructed. This allows to compress the data as only an extract of :math:`u` and :math:`v` need to be stored.
+:math:`r` being the rank of the matrix. If taken :math:`k < r`, an approximation of the initial matrix can be constructed. This allows to compress the data as only an extract of :math:`u` and :math:`v` need to be stored.
 
 References
 ..........
@@ -42,22 +43,10 @@ References
 Pod module
 ----------
 
-.. automodule:: jpod.pod.core
+.. automodule:: batman.pod.core
    :members:
    :undoc-members:
 
-.. automodule:: jpod.pod.pod
-   :members:
-   :undoc-members:
-
-.. automodule:: jpod.pod.predictor
-   :members:
-   :undoc-members:
-
-.. automodule:: jpod.pod.snapshot
-   :members:
-   :undoc-members:
-
-.. automodule:: jpod.pod.svd
+.. automodule:: batman.pod.pod
    :members:
    :undoc-members:

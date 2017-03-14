@@ -4,22 +4,21 @@
             [-3.1415, -3.1415, -3.1415],
             [3.1415, 3.1415, 3.1415]
         ],
-        "size_max": 50,
-        "delta_space": 0.01,
-        "provider": {
-            "method": "halton",
-            "size": 50
+        "sampling": {
+            "init_size": 4,
+            "method": "halton"
+        },
+        "resampling":{
+            "delta_space": 0.08,
+            "resamp_size": 0,
+            "method": "sigma",
+            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
+            "q2_criteria": 0.9
         }
     },
     "pod": {
         "dim_max": 100,
-        "quality": 0.8,
         "tolerance": 0.99,
-        "strategy": [
-            ["MSE", 4]
-        ],
-        "resample": "MSE",
-        "server": null,
         "type": "static"
     },
     "snapshot": {
@@ -30,32 +29,24 @@
                     [1]
                 ]
             },
-            "format": "fmt_tp",
+            "format": "numpy",
             "variables": ["F"],
             "point_filename": "header.py",
             "filenames": {
-                "0": ["function.dat"]
+                "0": ["function.npz"]
             },
             "template_directory": null,
             "parameter_names": ["x1", "x2", "x3"]
         },
-        "provider": {
-            "command": "bash",
-            "timeout": 3600,
-            "context": "data",
-            "script": "data/script.sh",
-            "clean": false,
-            "private-directory": "jpod-data",
-            "data-directory": "cfd-output-data",
-            "restart": "False"
-        }
+        "provider": "function"
     },
-    "prediction": {
-        "points": [],
+    "surrogate": {
+        "predictions": [[1, 1, 1]],
         "method": "kriging"
     },
     "uq": {
-        "sample": 1000,
+        "sample": 2000,
+        "test": "Ishigami",
         "pdf": ["Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)"],
         "type": "aggregated",
         "method": "sobol"

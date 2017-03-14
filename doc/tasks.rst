@@ -1,11 +1,12 @@
+.. py:module:: tasks
+
 Tasks module
-************
+============
 
-.. automodule:: jpod.tasks.task
+.. automodule:: batman.tasks.snapshot
    :members:
    :undoc-members:
 
-.. automodule:: jpod.tasks.snapshot
+.. automodule:: batman.tasks.snapshot_task
    :members:
    :undoc-members:
-

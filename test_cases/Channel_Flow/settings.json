@@ -1,36 +1,35 @@
 {
     "space": {
         "corners": [
-            [2500.0, 15.0],
-            [6000.0, 60.0]
+            [15.0, 2500.0],
+            [60.0, 6000.0]
         ],
-        "size_max": 50,
-        "delta_space": 0.01,
-        "provider": {
-            "method": "halton",
-            "size": 50
+        "sampling": {
+            "init_size": 4,
+            "method": "halton"
+        },
+        "resampling":{
+            "delta_space": 0.08,
+            "resamp_size": 0,
+            "method": "sigma",
+            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
+            "q2_criteria": 0.9
         }
     },
     "pod": {
         "dim_max": 100,
-        "quality": 0.8,
         "tolerance": 0.99,
-        "strategy": [
-            ["MSE", 4]
-        ],
-        "resample": "MSE",
-        "server": null,
         "type": "static"
     },
     "snapshot": {
-        "max_workers": 10,
+        "max_workers": 5,
         "io": {
             "shapes": {
                 "0": [
                     [400]
                 ]
             },
-            "format": "fmt_tp",
+            "format": "fmt_tp_fortran",
             "variables": ["X", "F"],
             "point_filename": "header.py",
             "filenames": {
@@ -41,24 +40,24 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 3600,
+            "timeout": 20,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
-            "private-directory": "jpod-data",
+            "private-directory": "batman-data",
             "data-directory": "cfd-output-data",
             "restart": "False"
         }
     },
-    "prediction": {
-        "points": [],
+    "surrogate": {
+        "predictions": [[30, 4000]],
         "method": "kriging"
     },
     "uq": {
         "sample": 1000,
         "test": "Channel_Flow",
-        "pdf": ["Normal(4035., 400.)", "Uniform(15., 60.)"],
+        "pdf": ["Uniform(15., 60.)", "Normal(4035., 400.)"],
         "type": "aggregated",
-        "method": "sobol"
+        "method": "FAST"
     }
 }

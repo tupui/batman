@@ -4,13 +4,63 @@
 Release history
 ===============
 
+Version 1.5
+===========
+
+New features
+------------
+
+    - Python3 support,
+    - Add :class:`batman.surrogate.surrogate_model`,
+    - Add progress bar during quality computation,
+    - Use pathos for multiprocessing during LOO and Kriging.
+      New :class:`batman.misc.nested_popl` allow nested pool.
+    - Unittests and functionnal tests using Pytest,
+    - Antares wrapper used for IO,
+    - OT1.8 support and use of new SA classes,
+    - Add plot of aggregated indices,
+    - Add *snipets*,
+    - Add correlation and covariance matrices,
+    - Add DoE visualization in *n-dimension*,
+    - Hypercube for refinement created using discrete and global optimization,
+    - Merge some ``PyUQ`` functions and add :class:`batman.surrogate.polynomial_chaos`.
+    
+
+Enhancements
+------------
+
+    - Refactor :mod:`batman.space`, :mod:`batman.predictor`, :mod:`batman.snapshots`, :mod:`batman.pod`,
+    - Rewrite ``settings.json``,
+    - POD is now optional,
+    - Use a wrapper for OT evaluations with ``otwrapy``,
+    - Comment capability to ``settings.json``,
+    - Doc cleanning,
+    - Use :mod:`batman.functions` to test model error,
+    - Remove some MPI functions,
+    - Simplify hybrid navigator using generator.
+
+Bug fixes
+---------
+
+    - Use of timeout option,
+    - Remove ``snapshots.tar``,
+    - FAST indices for aggregated indices,
+    - Update keyword for POD,
+    - Verbosity with quality,
+    - Setup dependencies,
+    - Some RBF cleanning,
+    - Term *MSE* changed to *sigma*,
+    - Snapshot ``repr``,
+    - Add *.so* when packaging.
+
+
 Version 1.4
 ===========
 
 New features
 ------------
 
-    - Enhance :class:`surrogate.kriging`: adimentionize input parameters,
+    - Enhance :class:`batman.surrogate.kriging`: adimentionize input parameters,
       use anisotropic kernel and use genetic algorithm for parameters optimization
     - Settings are now written in JSON and checked using a schema
     - Ask for confirmation of output if exists: if no, ask for restarting from files
@@ -43,7 +93,7 @@ Version 1.3
 New features
 ------------
 
-    - Add resampling strategies with :class:`space.refiner`. Possibilities are:
+    - Add resampling strategies with :class:`batman.space.refiner`. Possibilities are:
       ``None, MSE, loo_mse, loo_sobol, hybrid``
     - Computation of the error of the pod *Q2* with option ``-q2``. Uses *Kriging*
     - Aggregated and block *Sobol'* indices are computed using a set of keywords:
@@ -60,7 +110,7 @@ Enhancements
       Also  remove ``--plot`` option and add output default repository
     - Installation is more Pythonic has it uses now a ``setup.py`` script
     - The project can be imported: ``import jpod``
-    - Settings are defined ones as an attribute of :class:`Driver`
+    - Settings are defined ones as an attribute of :class:`batman.driver`
     - Logger is now simpler and configuration can be changed prior installation in: ``/misc/logging.json``
     - When defining a sample size for *UQ*, the value is used for indices and propagation
     - The keyword ``pod['quality']`` correspond now to the targeted *Q2*

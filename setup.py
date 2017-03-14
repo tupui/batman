@@ -1,3 +1,4 @@
+# coding: utf8
 """
 Setup script for JPOD
 =====================
@@ -17,6 +18,7 @@ Usage
 from setuptools import (setup, find_packages, Command)
 import re
 import os
+import sys
 import subprocess
 
 cmdclasses = dict()
@@ -37,8 +39,10 @@ class BuildSphinx(Command):
 
     def run(self):
         import sphinx
-        sphinx.build_main(['setup.py', '-b', 'html', './doc', './doc/_build/html'])
-        sphinx.build_main(['setup.py', '-b', 'man', './doc', './doc/_build/man'])
+        sphinx.build_main(
+            ['setup.py', '-b', 'html', './doc', './doc/_build/html'])
+        sphinx.build_main(
+            ['setup.py', '-b', 'man', './doc', './doc/_build/man'])
 
 
 class CompileSources(Command):
@@ -63,11 +67,41 @@ class CompileSources(Command):
 cmdclasses['build_sphinx'] = BuildSphinx
 cmdclasses['build_fortran'] = CompileSources
 
+# Check some import before starting build process.
 try:
-    import scipy
+    from mpi4py import MPI
 except ImportError:
-    import pip
-    pip.main(['install', 'scipy'])
+    try:
+        import pip
+        try:
+            pip.main(['install', 'mpi4py', '-U'])
+        except OSError:
+            pip.main(['install', 'mpi4py', '-U', '--user'])
+        from mpi4py import MPI
+    except ImportError:
+        print('You need to have a proper MPI installation')
+        raise SystemExit
+
+try:
+    import openturns
+    if float(openturns.__version__[0:3]) < 1.7:
+        raise ImportError
+except ImportError:
+    print('You need to install OpenTURNS >= 1.7')
+    raise SystemExit
+
+setup_requires = ['pytest-runner']
+tests_require = ['pytest', 'mock']
+install_requires = ['sphinx_rtd_theme',
+                    'sphinx>=1.4',
+                    'scipy>=0.15',
+                    'jsonschema',
+                    'pathos>=0.2',
+                    'otwrapy>=0.6',
+                    'scikit-learn>=0.18']
+
+if sys.version_info <= (3, 3):
+    install_requires.append('futures')
 
 
 def find_version(*file_paths):
@@ -80,14 +114,15 @@ def find_version(*file_paths):
     branch = subprocess.check_output("git describe --all",
                                      shell=True).rstrip()
     version_file = re.sub('(__commit__ = )(.*)',
-                          r'\g<1>' + "'" + commit + "'",
+                          r'\g<1>' + "'" + commit.decode('utf8') + "'",
                           version_file)
     version_file = re.sub('(__branch__ = )(.*)',
-                          r'\g<1>' + "'" + branch + "'",
+                          r'\g<1>' + "'" + branch.decode('utf8') + "'",
                           version_file)
+
     with open(os.path.join(os.path.dirname(__file__), *file_paths),
-              'w') as f:
-        f.write(version_file)
+              'wb') as f:
+        f.write(version_file.encode('utf8'))
     version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
                               version_file, re.M)
     if version_match:
@@ -96,24 +131,23 @@ def find_version(*file_paths):
 
 
 setup(
-    name='jpod',
-    version=find_version("jpod", "__init__.py"),
-    packages=find_packages(),
-    entry_points={'console_scripts': ['jpod=jpod.ui:main']},
+    name='batman',
+    version=find_version("batman", "__init__.py"),
+    packages=find_packages(exclude=['test_cases', 'doc']),
+    entry_points={'console_scripts': ['batman=batman.ui:main']},
+    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
     # Package requirements
-    install_requires=['sphinx_rtd_theme',
-                      'jsonschema',
-                      'futures',
-                      'rpyc',
-                      'mpi4py',
-                      'h5py',
-                      'scikit-learn>=0.18'],
+    setup_requires=setup_requires,
+    tests_require=tests_require,
+    install_requires=install_requires,
+    extras_require={'Antares': ["antares"]},
+    dependency_links=['https://github.com/felipeam86/otwrapy/tarball/master#egg=otwrapy-0.6',
+                      'git+ssh://dogon:/home/cfd2/aerodyn/TOOLS/ANTARES/Antares_v1.git#egg=Antares-1.8.2'],
     cmdclass=cmdclasses,
     # metadata
     maintainer="Pamphile ROY",
     maintainer_email="roy@cerfacs.fr",
-    description="JPOD creates a surrogate model using \
-        POD+Kriging and perform UQ.",
+    description="BATMAN creates a surrogate model and perform UQ.",
     long_description=open('./README.rst').read(),
     classifiers=['Development Status :: 5 - Production/Stable',
                  'Environment :: Console',
@@ -122,13 +156,15 @@ setup(
                  'Natural Language :: English',
                  'Operating System :: Unix',
                  'Programming Language :: Python :: 2.7',
-                 'Programming Language :: Python :: 3',
+                 'Programming Language :: Python :: 3.3',
                  'Topic :: Communications :: Email',
                  'Topic :: Documentation :: Sphinx',
                  'Topic :: Software Development',
                  'Topic :: Scientific/Engineering',
                  ],
     include_package_data=True,
+    zip_safe=False,
     license="CERFACS",
-    url="https://inle.cerfacs.fr/projects/jpod",
+    url=["https://inle.cerfacs.fr/projects/jpod",
+         "https://nitrox.cerfacs.fr/open-source/batman"],
 )

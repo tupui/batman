@@ -1,4 +1,5 @@
 .. _uq:
+.. py:module:: uq
 
-.. automodule:: jpod.uq
+.. automodule:: batman.uq
    :members:

@@ -1,5 +1,5 @@
-Welcome to JPOD's documentation!
-================================
+Welcome to BATMAN's documentation!
+==================================
 
 Contents:
 
@@ -7,23 +7,19 @@ Contents:
    :maxdepth: 2
 
    readme_link
-   CHANGES
+   changes_link
+   contributing_link
    introduction
-   tutorial
    settings
-   tasks
+   tutorial
    space
-   pod
+   tasks
    surrogate
+   pod
    uq
-
-.. .. autosummary::
-..    :toctree: _autosummary
-
-..    uq
-..    space.space
-..    space.point
-..    space.refiner
+   misc
+   io
+   functions
 
 Indices and tables
 ==================

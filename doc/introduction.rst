@@ -1,7 +1,7 @@
 .. _introduction:
 
-JPOD introduction
-=================
+BATMAN introduction
+===================
 
 A surrogate tool
 ----------------
@@ -12,7 +12,7 @@ The use of *Computational Fluid Dynamics* (CFD) has proven to be reliable, faste
     Generate a set of data from which to run the code. A solution is called a *snapshot*.
 
 * Learn the link between the input the output data:
-    From the previously generated set of data, we can compute a model also called a response surface. A model is build using gaussian process [Rasmussen2006]_.
+    From the previously generated set of data, we can compute a model also called a response surface. A model is build using gaussian process [Rasmussen2006]_ or polynomial chaos expansion [Najm2009]_.
 
 * Predict a solution from a new set of input data:
     The model can finaly be used to interpolate a new snapshot from a new set of input data.
@@ -23,31 +23,31 @@ The use of *Computational Fluid Dynamics* (CFD) has proven to be reliable, faste
 
 Once this model has been constructed, using *Monte Carlo* sampling we can compute Sobol' indices, etc. Indeed, this model is said to be costless to evaluate, this is why the use of the *Monte Carlo* sampling is feasible. To increase convergence, we can still use the same methods as for the DOE.
 
-Both *Proper Orthogonal Decomposition* (POD) and *Kriging* are techniques that can interpolate data using snapshots. The main difference being that POD compresses the data it uses to use only the relevant modes whereas Kriging method doesn't reduce the size of the used snapshots. On the other hand, POD cannot reconstruct data from a domain missing ones [Gunes2006]_. Thus, the strategy used by JPOD consists in:
+Both *Proper Orthogonal Decomposition* (POD) and *Kriging* (*PC*, *RBF*, etc.) are techniques that can interpolate data using snapshots. The main difference being that POD compresses the data it uses to use only the relevant modes whereas Kriging method doesn't reduce the size of the used snapshots. On the other hand, POD cannot reconstruct data from a domain missing ones [Gunes2006]_. Thus, the strategy used by BATMAN consists in:
 
-0. Create a Design Of Experiments,
-1. Use POD reconstruction in order to compress data,
-2. Use Kriging interpolation on POD's coefficients,
-3. Interpolate missing data.
+0. Create a Design of Experiments,
+1. Optionaly use POD reconstruction in order to compress data,
+2. Construct a surrogate model [on POD's coefficients],
+3. Interpolate new data.
 
 
-.. seealso:: More details about :ref:`space`, :ref:`pod` or :ref:`surrogate`.
+.. seealso:: More details about :ref:`Space <space>`, :ref:`POD <pod>` or :ref:`Surrogate <surrogate>`.
 
 
 Content of the package
 ----------------------
 
-The JPOD package includes 2 repository:
+The BATMAN package includes: 
 
 * ``doc`` contains the documentation,
-* ``jpod`` contains the module implementation,
+* ``batman`` contains the module implementation,
 * ``test_cases`` contains some example.
 
 
 General functionment
 ....................
 
-The package is composed of several python modules which are self contained within the directory ``jpod``.
+The package is composed of several python modules which are self contained within the directory ``batman``.
 Following is a quick reference:
 
 * :py:mod:`ui`: command line interface,
@@ -57,19 +57,26 @@ Following is a quick reference:
 * :py:mod:`space`: defines the (re)sampling space,
 * :py:mod:`pod`: constructs the POD,
 * :py:mod:`tasks`: defines the context to compute each snapshot from,
+* :py:mod:`functions`: defines usefull test functions,
 * :py:mod:`misc`: defines the logging configuration and the settings schema.
 
-After JPOD has been installed, ``jpod`` is available as a command and it can be imported in python. It is a link to :py:mod:`ui`. The module imports the package and use the function defined in :py:mod:`driver`.
+Using it
+........
 
-Thus JPOD is launched using::
+After BATMAN has been installed, ``batman`` is available as a command line tool or it can be imported in python. The CLI is defined in :py:mod:`ui`. The module imports the package and use the function defined in :py:mod:`driver`.
 
-    jpod settings.json
+Thus BATMAN is launched using::
 
-An ``output`` directory is created and it contains the results of the computations of all the *snapshots*, the *pod* and the *predictions*.
+    batman settings.json
 
+.. seealso:: The definition of the case is to be filled in ``settings.json``. Refer to :ref:`CLI <cli>`.
 
-.. image:: ./fig/UML.png
+An ``output`` directory is created and it contains the results of the computation splited across the following folders: 
 
+* ``snapshots``,
+* ``surrogate``,
+* [``predictions``],
+* [``uq``].
 
 Content of ``test_cases``
 .........................
@@ -79,16 +86,18 @@ This folder contains ready to launch examples:
 * ``Basic_function`` is a simple *1-input_parameter* function,
 * ``Michalewicz`` is a *2-input_parameters* non-linear function,
 * ``Ishigami`` is a *3-input_parameters*,
+* ``G_Function`` is a *4-input_parameters*,
 * ``Channel_Flow`` is a *2-input_parameters* with a functionnal output,
 * ``RAE2822`` is a *2-input_parameters* that launches an *elsA* case,
 * ``Flamme_1D`` is a *2-input_parameters* that launches an *AVBP* case.
 
-In every case, there is ``README.md`` file that summarize and explain it.
+In every case folder, there is ``README.rst`` file that summarizes and explains it.
 
 References
 ----------
 
 .. [Rasmussen2006] CE. Rasmussen and C. Williams: Gaussian processes for machine learning. MIT Press. 2006. ISBN: 026218253X
-.. [Gunes2006] H. Gunes, S. Sirisup and GE. Karniadakis: “Gappydata:ToKrigornottoKrig?”. Journal of Com putational Physics. 2006. DOI: 10. 1016/j.jcp.2005.06.023
+.. [Najm2009] H. N. Najm, Uncertainty Quantification and Polynomial Chaos Techniques in Computational Fluid Dynamics, Annual Review of Fluid Mechanics 41 (1) (2009) 35–52. DOI:10.1146/annurev.fluid.010908.165248.
+.. [Gunes2006] H. Gunes, S. Sirisup and GE. Karniadakis: “Gappydata:ToKrigornottoKrig?”. Journal of Com putational Physics. 2006. DOI:10.1016/j.jcp.2005.06.023
 .. [Draper1995] D. Draper: “Assessmentand Propagation ofModelUncertainty”. Journal of the Royal Statistical Society. 1995.
 

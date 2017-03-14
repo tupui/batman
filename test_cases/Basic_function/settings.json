@@ -1,25 +1,24 @@
 {
     "space": {
         "corners": [
-            [0.0],
-            [2.0]
+            [-4.0],
+            [4.0]
         ],
-        "size_max": 20,
-        "delta_space": 0.01,
-        "provider": {
-            "method": "halton",
-            "size": 20
+        "sampling": {
+            "init_size": 4,
+            "method": "halton"
+        },
+        "resampling":{
+            "delta_space": 0.08,
+            "resamp_size": 0,
+            "method": "sigma",
+            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
+            "q2_criteria": 0.9
         }
     },
     "pod": {
         "dim_max": 100,
-        "quality": 0.8,
         "tolerance": 0.99,
-        "strategy": [
-            ["MSE", 4]
-        ],
-        "resample": "MSE",
-        "server": null,
         "type": "static"
     },
     "snapshot": {
@@ -30,7 +29,7 @@
                     [1]
                 ]
             },
-            "format": "fmt_tp",
+            "format": "fmt_tp_fortran",
             "variables": ["F"],
             "point_filename": "header.py",
             "filenames": {
@@ -41,22 +40,22 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 3600,
+            "timeout": 20,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
-            "private-directory": "jpod-data",
+            "private-directory": "batman-data",
             "data-directory": "cfd-output-data",
             "restart": "False"
         }
     },
-    "prediction": {
-        "points": [],
+    "surrogate": {
+        "predictions": [2.2],
         "method": "kriging"
     },
     "uq": {
         "sample": 1000,
-        "pdf": ["Uniform(0., 2.)"],
+        "pdf": ["Normal(0., 4.)"],
         "type": "aggregated",
         "method": "sobol"
     }

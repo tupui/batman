@@ -1,7 +1,15 @@
 .. _surrogate:
+.. py:module:: surrogate
 
 Surrogate model
 ===============
+
+Generalities
+------------
+
+A common class is used to manage surrogate models. Hence, several kind of surrogate
+can be used. 
+
 
 From *Kriging* to *Gaussian Process*
 ------------------------------------
@@ -130,15 +138,23 @@ References
 Surrogate module
 ----------------
 
-.. automodule:: jpod.surrogate.kriging
+.. automodule:: batman.surrogate.surrogate_model
    :members:
    :undoc-members:
 
-.. automodule:: jpod.surrogate.RBFnet
+.. automodule:: batman.surrogate.kriging
    :members:
    :undoc-members:
 
-.. automodule:: jpod.surrogate.TreeCut
+.. automodule:: batman.surrogate.polynomial_chaos
+   :members:
+   :undoc-members:
+
+.. automodule:: batman.surrogate.RBFnet
+   :members:
+   :undoc-members:
+
+.. automodule:: batman.surrogate.TreeCut
    :members:
    :undoc-members:
 
