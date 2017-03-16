@@ -196,6 +196,8 @@ class MascaretApi(object):
         else:
             self.logger.debug('Running Mascaret OK')
 
+        self.state(self.settings['misc']['index_outstate'])
+
     def error_message(self):
         """Error message wrapper."""
         err_mess_c = ctypes.POINTER(ctypes.c_char_p)()
