@@ -165,6 +165,20 @@ class MascaretApi(object):
         new_tab_q_bc[self.settings['Q_BC']['idx'], :] = self.settings['Q_BC']['value']
         self.bc_qt = new_tab_q_bc
 
+        # Get idx zones Ks
+        if self.settings['Ks']['ind_zone'] == True:
+            l_Ind_DebZonesFrot, l_Ind_EndZonesFrot = self.ind_zone_frot
+        self.logger.info('l_Ind_DebZonesFrot = {}\nl_Ind_EndZonesFrot = {}'
+                         .format(l_Ind_DebZonesFrot, l_Ind_EndZonesFrot))
+
+        # Change Ks
+        idx = self.settings['Ks']['idx']
+        value = self.settings['Ks']['value']
+        if self.settings['Ks']['zone'] == False:
+            self.set_friction_minor(idx, value)
+        else:
+            self.set_zone_friction_minor(idx, value)
+
     def __del__(self):
         """Delete a model."""
         error = self.libmascaret.C_DELETE_MASCARET(self.id_masc)
@@ -179,6 +193,8 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error running Mascaret: {}"
                               .format(self.error_message()))
+        else:
+            self.logger.debug('Running Mascaret OK')
 
     def error_message(self):
         """Error message wrapper."""
@@ -247,8 +263,8 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error getting discharge: {}"
                               .format(self.error_message()))
-
-        self.logger.debug('Get BC Q(t) OK ')
+        else:
+            self.logger.debug('Get BC Q(t) OK ')
 
         if self.settings['misc']['bc'] is True:
             if self.nb_bc is None:
@@ -336,8 +352,10 @@ class MascaretApi(object):
             error = self.change_friction_minor(self.id_masc, index, newZoneCF1)
 
         if error != 0:
-            self.logger.error("Error setting friction minor: {}"
+            self.logger.error("Error setting friction minor on zone: {}"
                               .format(self.error_message()))
+        else:
+            self.logger.debug('Change Zone KS OK')
 
     def set_friction_minor(self, index, newCF1):
         """Change minor friction coefficient CF1 at given index."""
@@ -360,7 +378,12 @@ class MascaretApi(object):
         error = self.libmascaret.C_SET_DOUBLE_MASCARET(
             self.id_masc, var_name, index, 0, 0, newCF1_c)
 
-        return error
+        if error != 0:
+            self.logger.error("Error setting friction minor: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('Change KS OK')
+        
 
     def set_friction_major(self, index, newCF2):
         """Change major friction coefficient CF2 at given index."""

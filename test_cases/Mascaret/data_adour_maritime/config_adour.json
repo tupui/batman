@@ -25,7 +25,8 @@
     "Ks": {
         "zone": false,
         "idx": 1754,
-        "value": 50.0
+        "value": 50.0,
+        "ind_zone": true
     },
     "MLMC": {
         "sigma": 2.0,
