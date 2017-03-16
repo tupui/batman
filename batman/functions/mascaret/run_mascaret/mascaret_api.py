@@ -13,6 +13,7 @@ import json
 import ctypes
 import itertools
 import numpy as np
+logging.basicConfig(level=logging.DEBUG)
 
 
 class MascaretApi(object):
@@ -59,12 +60,14 @@ class MascaretApi(object):
         # Read settings
         with open(settings, 'rb') as file:
             file = file.read().decode('utf8')
-            settings = json.loads(file, encoding="utf-8")
+            self.settings = json.loads(file, encoding="utf-8")
+
+        self.nb_bc = None
 
         file_type = []
         file_name = []
 
-        for val in settings['files'].items():
+        for val in self.settings['files'].items():
             if not isinstance(val[1], list):
                 file_name.append(val[1].encode('utf8'))
                 file_type.append(val[0].encode('utf8'))
@@ -95,11 +98,14 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error while getting size var in model  #{}, {}"
                               .format(self.id_masc, self.error_message()))
+        else:
+            self.logger.debug('Get nb of nodes OK, size_X={}'
+                              .format(nb_nodes.value))
 
-        if 'init_lig' in settings:
+        if 'init_lig' in self.settings:
             # Initialize Mascaret Model from values
-            Q = settings['init_lig']['Q_cst'] * nb_nodes.value
-            Z = settings['init_lig']['Z_cst'] * nb_nodes.value
+            Q = self.settings['init_lig']['Q_cst'] * nb_nodes.value
+            Z = self.settings['init_lig']['Z_cst'] * nb_nodes.value
             Q_c = (ctypes.c_double * nb_nodes.value)(Q)
             Z_c = (ctypes.c_double * nb_nodes.value)(Z)
             error = self.libmascaret.C_INIT_LIGNE_MASCARET(
@@ -112,7 +118,7 @@ class MascaretApi(object):
                     'State constant initialisation successfull from constant value...OK')
         else:
             # Initialize Mascaret Model from file
-            init_file_name_c = (ctypes.c_char_p)(*settings['files']['lig'])
+            init_file_name_c = (ctypes.c_char_p)(*self.settings['files']['lig'])
             error = self.libmascaret.C_INIT_ETAT_MASCARET(
                 self.id_masc, init_file_name_c, self.iprint)
             if error != 0:
@@ -132,7 +138,7 @@ class MascaretApi(object):
             self.logger.error("Error while getting the value of the time step: {}"
                               .format(self.error_message()))
         else:
-            self.logger.debug('dt=', self.dt.value)
+            self.logger.debug('dt={}'.format(self.dt.value))
         # t0
         self.t0 = ctypes.c_double()
         var_name = ctypes.c_char_p(b'Model.InitTime')
@@ -142,7 +148,7 @@ class MascaretApi(object):
             self.logger.error("Error while getting the value of the initial time: {}"
                               .format(self.error_message()))
         else:
-            self.logger.debug('t0=', self.t0.value)
+            self.logger.debug('t0={}'.format(self.t0.value))
         # tend
         self.tend = ctypes.c_double()
         var_name = ctypes.c_char_p(b'Model.MaxCompTime')
@@ -152,7 +158,12 @@ class MascaretApi(object):
             self.logger.error("Error while getting the value of the final time: {}"
                               .format(self.error_message()))
         else:
-            self.logger.debug('tend=', self.tend.value)
+            self.logger.debug('tend={}'.format(self.tend.value))
+
+        # Change Q(t)
+        new_tab_q_bc = self.bc_qt
+        new_tab_q_bc[self.settings['Q_BC']['idx'], :] = self.settings['Q_BC']['value']
+        self.bc_qt = new_tab_q_bc
 
     def __del__(self):
         """Delete a model."""
@@ -171,7 +182,7 @@ class MascaretApi(object):
 
     def error_message(self):
         """Error message wrapper."""
-        err_mess_c = ctypes.POINTER(ctypes.ctypes.c_char_p)()
+        err_mess_c = ctypes.POINTER(ctypes.c_char_p)()
         error = self.libmascaret.C_GET_ERREUR_MASCARET(self.id_masc,
                                                        ctypes.byref(err_mess_c))
         if error != 0:
@@ -188,6 +199,8 @@ class MascaretApi(object):
             self.logger.error("Error getting the number of boundary conditions: {}"
                               .format(self.error_message()))
 
+        self.nb_bc = nb_bc.value
+
         l_name_all_bc = []
         l_num_all_bc = []
         for k in range(nb_bc.value):
@@ -202,7 +215,10 @@ class MascaretApi(object):
             l_name_all_bc.append(ctypes.string_at(NomCL))
             l_num_all_bc.append(NumLoi.value)
 
-        return error, nb_bc, l_name_all_bc, l_num_all_bc
+        self.l_name_all_bc = l_name_all_bc
+        self.l_num_all_bc = l_num_all_bc
+
+        return nb_bc, l_name_all_bc, l_num_all_bc
 
     @property
     def bc_qt(self):
@@ -216,8 +232,8 @@ class MascaretApi(object):
         size3 = ctypes.c_int()
         error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
-        self.logger.debug('size Model.Graph.Discharge= ',
-              size1.value, size2.value, size3.value)
+        self.logger.debug('size Model.Graph.Discharge= {} {} {}'
+                          .format(size1.value, size2.value, size3.value))
 
         bc_qt = np.ones((size1.value, size2.value), float)
         for k, kk in itertools.product(range(size1.value), range(size2.value)):
@@ -231,6 +247,16 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error getting discharge: {}"
                               .format(self.error_message()))
+
+        self.logger.debug('Get BC Q(t) OK ')
+
+        if self.settings['misc']['bc'] is True:
+            if self.nb_bc is None:
+                self.info_all_bc()
+            for k in range(self.nb_bc):
+                self.logger.info("Loi Q: {} {} {}".format(self.l_name_all_bc[k],
+                                                          self.l_num_all_bc[k],
+                                                          bc_qt[k, :]))
 
         return bc_qt
 
@@ -259,6 +285,8 @@ class MascaretApi(object):
             self.logger.error("Error setting discharge: {}"
                               .format(self.error_message()))
 
+        self.logger.debug('Change Q OK')
+
     @property
     def ind_zone_frot(self):
         size1 = ctypes.c_int()
@@ -268,7 +296,7 @@ class MascaretApi(object):
         var_name = ctypes.c_char_p(b'Model.FrictionZone.FirstNode')
         error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
-        self.logger.debug('Number of Friction Zones =', size1.value)
+        self.logger.debug('Number of Friction Zones = {}'.format(size1.value))
         l_ind_beg_zone = []
         for k in range(size1.value):
             ind_beg_zone_c = ctypes.c_int()
@@ -319,16 +347,16 @@ class MascaretApi(object):
         size3 = ctypes.c_int()
         error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
-        self.logger.debug('size Model.FricCoefMinCh = ',
-              size1.value, size2.value, size3.value)
+        self.logger.debug('size Model.FricCoefMinCh = {} {} {}'
+                          .format(size1.value, size2.value, size3.value))
         CF1_c = ctypes.c_double()
         error = self.libmascaret.C_GET_DOUBLE_MASCARET(
             self.id_masc, var_name, index, 0, 0, ctypes.byref(CF1_c))
 
-        self.logger.debug('CF1 old value=', CF1_c.value)
+        self.logger.debug('CF1 old value= {}'.format(CF1_c.value))
         newCF1_c = ctypes.c_double(newCF1)
-        self.logger.debug('newCF1_c = ', newCF1_c)
-        self.logger.debug('CF1 new value= ', newCF1_c.value)
+        self.logger.debug('newCF1_c = {}'.format(newCF1_c))
+        self.logger.debug('CF1 new value= {}'.format(newCF1_c.value))
         error = self.libmascaret.C_SET_DOUBLE_MASCARET(
             self.id_masc, var_name, index, 0, 0, newCF1_c)
 
@@ -346,10 +374,10 @@ class MascaretApi(object):
         error = self.libmascaret.C_GET_DOUBLE_MASCARET(
             self.id_masc, var_name, index, 0, 0, ctypes.byref(CF2_c))
 
-        self.logger.debug('CF2 old value=', CF2_c.value)
+        self.logger.debug('CF2 old value={}'.format(CF2_c.value))
         newCF2_c = ctypes.c_double(newCF2)
-        self.logger.debug('newCF2_c = ', newCF2_c)
-        self.logger.debug('CF2 new value= ', newCF2_c.value)
+        self.logger.debug('newCF2_c = {}'.format(newCF2_c))
+        self.logger.debug('CF2 new value= {}'.format(newCF2_c.value))
         error = self.libmascaret.C_SET_DOUBLE_MASCARET(
             self.id_masc, var_name, index, 0, 0, newCF2_c)
 
@@ -366,7 +394,8 @@ class MascaretApi(object):
         itemp2 = ctypes.c_int()
         error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(self.id_masc, var_name, 0, ctypes.byref(itemp0),
                                                            ctypes.byref(itemp1), ctypes.byref(itemp2))
-        self.logger.debug("itemp", itemp0.value, itemp1.value, itemp2.value)
+        self.logger.debug('itemp {} {} {}'
+                          .format(itemp0.value, itemp1.value, itemp2.value))
 
         Z_res_c = ctypes.c_double()
         error = self.libmascaret.C_GET_DOUBLE_MASCARET(
