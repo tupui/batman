@@ -28,13 +28,13 @@
         "value": 50.0,
         "ind_zone": true
     },
-    "MLMC": {
+    "MC": {
+        "mu": 50.0,
         "sigma": 2.0,
         "simulations": 20
     },
     "misc": {
         "bc": true,
         "index_outstate": 1754,
-        "mu": 50.0
     }
 }

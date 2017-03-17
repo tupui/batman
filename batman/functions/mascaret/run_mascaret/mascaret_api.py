@@ -114,7 +114,7 @@ class MascaretApi(object):
                 self.logger.error("Error while initialising the state of MASCARET: {}"
                                   .format(self.error_message()))
             else:
-                print(
+                self.logger.debug(
                     'State constant initialisation successfull from constant value...OK')
         else:
             # Initialize Mascaret Model from file
@@ -161,23 +161,20 @@ class MascaretApi(object):
             self.logger.debug('tend={}'.format(self.tend.value))
 
         # Change Q(t)
-        new_tab_q_bc = self.bc_qt
-        new_tab_q_bc[self.settings['Q_BC']['idx'], :] = self.settings['Q_BC']['value']
-        self.bc_qt = new_tab_q_bc
+        self.bc_qt = self.settings['Q_BC']
 
         # Get idx zones Ks
-        if self.settings['Ks']['ind_zone'] == True:
+        if self.settings['Ks']['ind_zone'] is True:
             l_Ind_DebZonesFrot, l_Ind_EndZonesFrot = self.ind_zone_frot
         self.logger.info('l_Ind_DebZonesFrot = {}\nl_Ind_EndZonesFrot = {}'
                          .format(l_Ind_DebZonesFrot, l_Ind_EndZonesFrot))
 
         # Change Ks
-        idx = self.settings['Ks']['idx']
-        value = self.settings['Ks']['value']
-        if self.settings['Ks']['zone'] == False:
-            self.set_friction_minor(idx, value)
+        self.ks_idx = self.settings['Ks']['idx']
+        if self.settings['Ks']['zone'] is False:
+            self.friction_minor = self.settings['Ks']
         else:
-            self.set_zone_friction_minor(idx, value)
+            self.zone_friction_minor = self.settings['Ks']
 
     def __del__(self):
         """Delete a model."""
@@ -279,8 +276,12 @@ class MascaretApi(object):
         return bc_qt
 
     @bc_qt.setter
-    def bc_qt(self, new_tab_q_bc):
+    def bc_qt(self, q_bc):
         """Wrapper setter Boundary condition Qt."""
+        new_tab_q_bc = self.bc_qt
+        idx, value = q_bc['idx'], q_bc['value']
+        new_tab_q_bc[idx, :] = value
+
         var_name = ctypes.c_char_p(b'Model.Graph.Discharge')
         # Nb of BC
         size1 = ctypes.c_int()
@@ -342,16 +343,39 @@ class MascaretApi(object):
 
         return l_ind_beg_zone, l_ind_end_zone
 
-    def set_zone_friction_minor(self, indexZone, newZoneCF1):
+    @property
+    def zone_friction_minor(self):
+        """Get minor friction coefficient CF1 at zone."""
+        error, l_ind_beg_zone, l_ind_end_zone = self.ind_zone_frot
+        Ind_BegZone = l_ind_beg_zone[self.ks_idx]
+        Ind_EndZone = l_ind_end_zone[self.ks_idx]
 
-        error, l_ind_beg_zone, l_ind_end_zone = self.get_indzonefrot(
-            self.id_masc)
-        Ind_BegZone = l_ind_beg_zone[indexZone]
-        Ind_EndZone = l_ind_end_zone[indexZone]
+        zone_friction = []
+
+        for index in range(Ind_BegZone, Ind_EndZone + 1):
+            zone_friction.append(self.friction_minor)
+
+        self.ks_idx = self.settings['Ks']['idx']
+
+        if error != 0:
+            self.logger.error("Error getting friction minor on zone: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('Get Zone KS OK')
+
+        return zone_friction
+
+    @zone_friction_minor.setter
+    def zone_friction_minor(self, cf_1):
+        """Change minor friction coefficient CF1 at zone."""
+        idx, value = cf_1['idx'], cf_1['value']
+        error, l_ind_beg_zone, l_ind_end_zone = self.get_indzonefrot
+        Ind_BegZone = l_ind_beg_zone[idx]
+        Ind_EndZone = l_ind_end_zone[idx]
 
         for index in range(Ind_BegZone, Ind_EndZone + 1):
             self.logger.debug(index)
-            error = self.change_friction_minor(self.id_masc, index, newZoneCF1)
+            self.friction_minor = {'idx': index, 'value': value}
 
         if error != 0:
             self.logger.error("Error setting friction minor on zone: {}"
@@ -359,52 +383,75 @@ class MascaretApi(object):
         else:
             self.logger.debug('Change Zone KS OK')
 
-    def set_friction_minor(self, index, newCF1):
-        """Change minor friction coefficient CF1 at given index."""
+    @property
+    def friction_minor(self):
+        """Change minor friction coefficient CF1 at index."""
         var_name = ctypes.c_char_p(b'Model.FricCoefMainCh')
         size1 = ctypes.c_int()
         size2 = ctypes.c_int()
         size3 = ctypes.c_int()
         error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
-            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
+            self.id_masc, var_name, 0, ctypes.byref(size1),
+            ctypes.byref(size2), ctypes.byref(size3))
         self.logger.debug('size Model.FricCoefMinCh = {} {} {}'
                           .format(size1.value, size2.value, size3.value))
         CF1_c = ctypes.c_double()
         error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-            self.id_masc, var_name, index, 0, 0, ctypes.byref(CF1_c))
+            self.id_masc, var_name, self.ks_idx, 0, 0, ctypes.byref(CF1_c))
+        if error != 0:
+            self.logger.error("Error setting friction minor: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('CF1 old value= {}'.format(CF1_c.value))
 
-        self.logger.debug('CF1 old value= {}'.format(CF1_c.value))
-        newCF1_c = ctypes.c_double(newCF1)
-        self.logger.debug('newCF1_c = {}'.format(newCF1_c))
-        self.logger.debug('CF1 new value= {}'.format(newCF1_c.value))
+        return CF1_c.value
+
+    @friction_minor.setter
+    def friction_minor(self, cf_1):
+        """Change minor friction coefficient CF1 at index."""
+        var_name = ctypes.c_char_p(b'Model.FricCoefMainCh')
+        cf_1_c = ctypes.c_double(cf_1)
+        self.logger.debug('cf_1_c = {}'.format(cf_1_c))
+        self.logger.debug('CF1 new value= {}'.format(cf_1_c.value))
         error = self.libmascaret.C_SET_DOUBLE_MASCARET(
-            self.id_masc, var_name, index, 0, 0, newCF1_c)
+            self.id_masc, var_name, self.ks_idx, 0, 0, cf_1_c)
 
         if error != 0:
             self.logger.error("Error setting friction minor: {}"
                               .format(self.error_message()))
         else:
             self.logger.debug('Change KS OK')
-        
 
-    def set_friction_major(self, index, newCF2):
-        """Change major friction coefficient CF2 at given index."""
+    @property
+    def friction_major(self):
+        """Get major friction coefficient cf_2 at index."""
         var_name = ctypes.c_char_p(b'Model.FricCoefFP')
         size1 = ctypes.c_int()
         size2 = ctypes.c_int()
         size3 = ctypes.c_int()
         error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
-        CF2_c = ctypes.c_double()
+        cf_2_c = ctypes.c_double()
         error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-            self.id_masc, var_name, index, 0, 0, ctypes.byref(CF2_c))
+            self.id_masc, var_name, self.ks_idx, 0, 0, ctypes.byref(cf_2_c))
+        if error != 0:
+            self.logger.error("Error getting friction major: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('cf_2 value={}'.format(cf_2_c.value))
 
-        self.logger.debug('CF2 old value={}'.format(CF2_c.value))
-        newCF2_c = ctypes.c_double(newCF2)
-        self.logger.debug('newCF2_c = {}'.format(newCF2_c))
-        self.logger.debug('CF2 new value= {}'.format(newCF2_c.value))
+        return cf_2_c.value
+
+    @friction_major.setter
+    def friction_major(self, cf_2):
+        """Change major friction coefficient cf_2 at index."""
+        idx, value = cf_2['idx'], cf_2['value']
+        var_name = ctypes.c_char_p(b'Model.FricCoefFP')
+        cf_2_c = ctypes.c_double(value)
+        self.logger.debug('cf_2_c = {}'.format(cf_2_c))
+        self.logger.debug('CF2 new value= {}'.format(cf_2_c.value))
         error = self.libmascaret.C_SET_DOUBLE_MASCARET(
-            self.id_masc, var_name, index, 0, 0, newCF2_c)
+            self.id_masc, var_name, idx, 0, 0, cf_2_c)
 
         if error != 0:
             self.logger.error("Error setting friction major: {}"
