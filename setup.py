@@ -97,6 +97,7 @@ install_requires = ['sphinx_rtd_theme',
                     'scipy>=0.15',
                     'jsonschema',
                     'pathos>=0.2',
+                    'matplotlib',
                     'otwrapy>=0.6',
                     'scikit-learn>=0.18']
 

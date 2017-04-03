@@ -276,9 +276,9 @@ class Space(list):
                                                                 next(self.hybrid))
 
         try:
-            point = [Point(point) for point in [new_point]]
+            point = (Point(point) for point in [new_point])
         except TypeError:
-            point = [Point(point) for point in new_point]
+            point = (Point(point) for point in new_point)
 
         self += point
 

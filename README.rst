@@ -11,7 +11,7 @@ README
     Melanie Rochoux,
     Sophie Ricci.
 
-:Version: 1.4   10/10/2016
+:Version: 1.5   14/03/2017
 
 
 What is BATMAN? 
@@ -40,8 +40,9 @@ The required dependencies are:
 - `OpenTURNS <http://www.openturns.org>`_ >= 1.7
 - `pathos <https://github.com/uqfoundation/pathos>`_ >= 0.2
 - `otwrapy <http://openturns.github.io/otwrapy/>`_ >= 0.6
+- matplotlib
 - `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_
-- mpi4py with proper ``MPI`` installation
+- mpi4py with proper ``MPI`` installation (depreciated)
 - `sphinx <http://www.sphinx-doc.org>`_ >= 1.4
 
 Optionnal dependencies are: 
