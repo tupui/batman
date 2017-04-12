@@ -1,0 +1,26 @@
+{
+    "init_cst": {
+        "Q_cst": 0.0,
+        "Z_cst": 10.0
+    },
+    "Q_BC": {
+        "idx": 0,
+        "value": 1000.0
+    },
+    "Ks": {
+        "zone": true,
+        "idx": 25,
+        "value": 35.0,
+        "ind_zone": 0
+    },
+    "MC": {
+        "distKs": "G",
+        "muKs": 35.0,
+        "sigmaKs": 2.0,
+        "Ne": 3 
+    },
+    "misc": {
+        "info_bc": true,
+        "index_outstate": 25
+    }
+}

@@ -16,7 +16,7 @@ import numpy as np
 from scipy.spatial import distance
 import os
 import logging
-from ..utils import multi_eval
+from ...utils import multi_eval
 
 
 class Mascaret(object):

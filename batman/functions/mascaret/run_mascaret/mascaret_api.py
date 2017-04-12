@@ -3,357 +3,669 @@
 MascaretAPI class
 =================
 
-Python Wrapper for Mascaret - Assim? - DAMP? - UQ? - ...
+Python Wrapper for Mascaret.
 
 """
-
 import sys
 import os
-from ctypes import *
+import logging
+import json
+from collections import OrderedDict
+import ctypes
+import itertools
 import numpy as np
-
+import matplotlib.pyplot as plt
+import matplotlib.ticker as tick
+from matplotlib.patches import Polygon
+from io import StringIO as cStringIO
+logging.basicConfig(level=logging.DEBUG) #.INFO
 
 class MascaretApi(object):
 
     """Mascaret API."""
 
-    def __init__(self):
-        """Loading the Mascaret library."""
+    logger = logging.getLogger(__name__)
+
+    def __init__(self, settings, user_settings):
+        """Constructor
+           1. Loads the Mascaret library with class method "load_mascaret".
+           2. Creates an instance of Mascaret with class method "create_model".
+           3. Reads model files from "settings" with class method "file_model".
+           4. Gets model size with class method "get_model_size".
+           5. Gets the simulation times with class method "get_simu_times".
+           6. Reads and applies user defined parameters from "user_settings".
+           7. Initializes the model with class method "init_model".
+        """
+
+        # Load the library mascaret.so
         path = os.path.dirname(os.path.realpath(__file__))
-        libmascaret = path + '/lib'
-        print(libmascaret)
-        if sys.platform.startswith('linux'):
+        libmascdir = os.path.join(path, 'lib')
+#        os.putenv("LD_LIBRARY_PATH",libmascdir + ":" + os.environ["LD_LIBRARY_PATH"]) 
+        os.system("export LD_LIBRARY_PATH=" + libmascdir + ":$LD_LIBRARY_PATH")
+        print ('toto',os.environ["LD_LIBRARY_PATH"])
+        self.load_mascaret(libmascdir)
+
+        # Create an instance of MASCARET
+        self.create_model()
+
+        # Read model files
+        self.file_model(settings)
+
+        # Get model size
+        self.get_model_size()
+
+        # Get the simulation times
+        self.get_simu_times() 
+
+        # Read and apply user defined parameters
+        self.user_defined(user_settings)
+
+        # Initialize model
+        self.init_model()
+
+    def load_mascaret(self, libmascdir):
+        """Loads the Mascaret library situated in the directory "libmascdir"
+        """
+        self.logger.info('Using MascaretApi')
+        libmascaret = libmascdir+'/mascaret.so'
+        self.logger.debug(libmascaret)
+        if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
             try:
-                self.libmascaret = CDLL(libmascaret + '/mascaret.so')
-            except Exception as e:
-                raise Exception('Unable to load : \
-        mascaret.so. Check the environment variable LIBMASCARET.', e)
+                self.libmascaret = ctypes.CDLL(libmascaret)
+            except Exception as tb:
+                self.logger.exception("Unable to load: mascaret.so. Check the "
+                                      "environment variable LIBMASCARET: {}"
+                                      .format(tb))
+                raise SystemExit
         else:
-            raise Exception(u'Unsupported OS')
+            self.logger.error('Unsupported OS: macOS or Unix')
+            raise SystemExit
 
-    def Read_FichiersTxt(self, myfile):
-        """Read parameter file."""
-        file = open(myfile, "r")
-        np_types, np_noms = np.loadtxt(
-            myfile, dtype=str, delimiter=' ', usecols=(0, 1), unpack=True)
-        file.close()
-        return np_types, np_noms
 
-    def Read_ParamTxt(self, myfile):
-        """Read parameter file."""
-        file = open(myfile, "r")
-        np_noms, np_values = np.loadtxt(
-            myfile, dtype=str, delimiter=' ', usecols=(0, 1), unpack=True)
-        file.close()
-        return np_noms, np_values
-
-    def create(self):
-        """wrapper 1 : create a model."""
-        id_masc = c_int()
-        error = self.libmascaret.C_CREATE_MASCARET(byref(id_masc))
+    def get_model_size(self):
+        '''Gets model size (number of nodes). 
+           Uses C_GET_TAILLE_VAR_MASCARET.'''
+        var_name = ctypes.c_char_p(b'Model.X')
+        nb_nodes = ctypes.c_int()
+        il_temp1 = ctypes.c_int()
+        il_temp2 = ctypes.c_int()
+        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(self.id_masc, var_name, 0,
+                                                       ctypes.byref(nb_nodes),
+                                                       ctypes.byref(il_temp1),
+                                                       ctypes.byref(il_temp2))
+        self.nb_nodes = nb_nodes
         if error != 0:
-            print('Error while creating a MASCARET model')
+            self.logger.error("Error while getting size var in model  #{}, {}"
+                              .format(self.id_masc, self.error_message()))
             return -1
         else:
-            return id_masc.value
-
-    def import_model(self, id_masc, file_name, file_type):
-        """wrapper 2 : import a model."""
-        if (type(file_name) != list) | (type(file_type) != list):
-            print('Arguments are not lists of files')
-            return -1
-        # .opt and .lis are writen only if iprint = 1 at the import AND the calcul steps
-        iprint = 1
-        idmasc = c_int(id_masc)
-        L_file = len(file_name)
-        file_name_c = (c_char_p * L_file)(*file_name)
-        file_type_c = (c_char_p * L_file)(*file_type)
-        error = self.libmascaret.C_IMPORT_MODELE_MASCARET(idmasc, file_name_c,
-                                                    file_type_c, L_file, iprint)
-        if error != 0:
-            print('Error while importing a MASCARET model')
-            return -1
-        return error
-
-    def delete(self, id_masc):
-        """wrapper 3 : delete a model."""
-        error = self.libmascaret.C_DELETE_MASCARET(id_masc)
-        if error != 0:
-            print('Error while deleting the instantiation #%d' % id_masc)
-            return -1
-        else:
-            return 0
-
-    def get_sizevar(self, id_masc, var_name):
-        """wrapper 4 : get a size of Mascaret var."""
-        idmasc = c_int(id_masc)
-        nb_nodes = c_int()
-        il_temp1 = c_int()
-        il_temp2 = c_int()
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(idmasc, var_name, 0, byref(nb_nodes),
-                                                     byref(il_temp1), byref(il_temp2))
-        if error != 0:
-            print('Error while getting size var in model  #%d' % id_masc)
-            return -1
-        else:
+            self.logger.debug('Get nb of nodes OK, size_X={}'
+                              .format(nb_nodes.value))
             return error, nb_nodes
 
-    def init_mascaret_constant(self, id_masc, nb_nodes, rl_Q, rl_Z):
-        """wrapper 5 : Initialize Mascaret Model from values."""
-        idmasc = c_int(id_masc)
-        Q = rl_Q * nb_nodes.value
-        Z = rl_Z * nb_nodes.value
-        Q_c = (c_double * nb_nodes.value)(*Q)
-        Z_c = (c_double * nb_nodes.value)(*Z)
-        error = self.libmascaret.C_INIT_LIGNE_MASCARET(
-            idmasc, byref(Q_c), byref(Z_c), nb_nodes)
-        if error != 0:
-            print('Error while initialising the state of MASCARET')
-        else:
-            print('State constant initialisation successfull from constant value...OK')
-        return error
-
-    def init_mascaret_file(self, id_masc, init_file_name):
-        """wrapper 6 : Initialize Mascaret Model from file."""
-        idmasc = c_int(id_masc)
-        iprint = 1
-        idmasc = c_int(id_masc)
-        init_file_name_c = (c_char_p)(*init_file_name)
-        error = self.libmascaret.C_INIT_ETAT_MASCARET(idmasc, init_file_name_c, iprint)
-        if error != 0:
-            print('Error while initialising the state of Mascaret from .lig')
-        else:
-            print('State constant initialisation successfull from lig...OK')
-        return error
-
-    def get_mascaret_times(self, id_masc):
-        """wrapper 7 : get the simulation times."""
-        idmasc = c_int(id_masc)
-        # dt
-        dt = c_double()
-        var_name = c_char_p('Model.DT')
-        error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-            idmasc, var_name, 0, 0, 0, byref(dt))
-        if error != 0:
-            print('Error while getting the value of the time step')
-        else:
-            print('dt=', dt.value)
-        # t0
-        t0 = c_double()
-        var_name = c_char_p('Model.InitTime')
-        error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-            idmasc, var_name, 0, 0, 0, byref(t0))
-        if error != 0:
-            print('Error while getting the value of the initial time')
-        else:
-            print('t0=', t0.value)
-        # tend
-        tend = c_double()
-        var_name = c_char_p('Model.MaxCompTime')
-        error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-            idmasc, var_name, 0, 0, 0, byref(tend))
-        if error != 0:
-            print('Error while getting the value of the final time')
-        else:
-            print('tend=', tend.value)
-        return error, dt, t0, tend
-
-    def run_mascaret(self, id_masc, dt, t0, tend):
-        """wrapper 8 : run Mascaret simulatic simulation."""
-        idmasc = c_int(id_masc)
-        # .opt and .lis are writen only if iprint = 1 at the import AND the calcul steps
-        iprint = 1
-        error = self.libmascaret.C_CALCUL_MASCARET(idmasc, t0, tend, dt, iprint)
-        if error != 0:
-            print('Error running Mascaret')
-#        else:
-#            print('Running Mascaret OK')
-        return error
-
-    # wrapper 8bis : run Mascaret simulation with specified BC
-    # TO DO avec CALCUL_MASCARET_CONDITION_LIMITE qui prend en argument
-    # les vecteurs decrivant les CL. La variable mascaret est
-    # Modele.Lois.Debit n'est pas utile avec cet appel lorsqu'on veut modifier
-    # la BC, contrairement à ce que fait Fabrice avec CALCUL_MASCARET
-
-    def error_message(self, id_masc):
-        """wrapper 9 : error message."""
-        idmasc = c_int(id_masc)
-        err_mess_c = POINTER(c_char_p)()
-        error = self.libmascaret.C_GET_ERREUR_MASCARET(idmasc, byref(err_mess_c))
-        if error != 0:
-            return -1
-        return string_at(err_mess_c)
-
-    def get_info_allBC(self, id_masc):
-        """wrapper 10 : nb conditions limites."""
-        # Rating curve do not count
-        idmasc = c_int(id_masc)
-        nbBC = c_int()
-        error = self.libmascaret.C_GET_NB_CONDITION_LIMITE_MASCARET(idmasc, byref(nbBC))
-        if error != 0:
-            print('Error getting the number of boundary conditions')
-
-        l_name_allBC = []
-        l_num_allBC = []
-        for k in range(nbBC.value):
-            NumCL = c_int(nbBC.value)
-            NomCL = POINTER(c_char_p)()
-            NumLoi = c_int()
-            error = self.libmascaret.C_GET_NOM_CONDITION_LIMITE_MASCARET(
-                idmasc, k + 1, byref(NomCL), byref(NumLoi))
+    def init_model(self):
+        '''Initializes the model from constant values ("init_cst" in "user_settings" 
+           along with "Q_cst" and "Z_cst" values) or from file.lig in "settings". 
+           Uses Mascaret Api C_INIT_LIGNE_MASCARET or C_INIT_ETAT_MASCARET.'''
+        if 'init_cst' in self.user_settings:
+            # Initialize Mascaret Model from values
+            Q = self.user_settings['init_cst']['Q_cst'] * self.nb_nodes.value
+            Z = self.user_settings['init_cst']['Z_cst'] * self.nb_nodes.value
+            Q_c = (ctypes.c_double * self.nb_nodes.value)(Q)
+            Z_c = (ctypes.c_double * self.nb_nodes.value)(Z)
+            error = self.libmascaret.C_INIT_LIGNE_MASCARET(
+                self.id_masc, ctypes.byref(Q_c), ctypes.byref(Z_c), self.nb_nodes)
             if error != 0:
-                print('Error getting the name of boundary conditions')
-            l_name_allBC.append(string_at(NomCL))
-            l_num_allBC.append(NumLoi.value)
+                self.logger.error("Error while initialising the state of MASCARET: {}"
+                                  .format(self.error_message()))
+            else:
+                self.logger.debug(
+                        'State constant initialisation successfull from constant value...OK')
+        else:
+            # Initialize Mascaret Model from file
+            print ('file lig', self.settings['files']['lig'])
+            print ('file lig', type(self.settings['files']['lig']) )
+            init_file_name_c = (ctypes.c_char_p)(*[self.settings['files']['lig']])
+            error = self.libmascaret.C_INIT_ETAT_MASCARET(
+                                      self.id_masc, init_file_name_c, self.iprint)
+            if error != 0:
+                self.logger.error("Error while initialising the state of Mascaret from .lig: {}"
+                                  .format(self.error_message()))
+            else:
+                self.logger.debug(
+                    'State initialisation successfull from lig...OK')
 
-        return error, nbBC, l_name_allBC, l_num_allBC
+    def get_simu_times(self):
+        '''Gets the simulation times from .xcas in "settings". 
+           Uses Mascaret Api C_GET_DOUBLE_MASCARET.'''
+        self.dt = ctypes.c_double()
+        var_name = ctypes.c_char_p(b'Model.DT')
+        error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+        self.id_masc, var_name, 0, 0, 0, ctypes.byref(self.dt))
+        if error != 0:
+            self.logger.error("Error while getting the value of the time step: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('dt={}'.format(self.dt.value))
+        # t0
+        self.t0 = ctypes.c_double()
+        var_name = ctypes.c_char_p(b'Model.InitTime')
+        error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+           self.id_masc, var_name, 0, 0, 0, ctypes.byref(self.t0))
+        if error != 0:
+            self.logger.error("Error while getting the value of the initial time: {}"
+                             .format(self.error_message()))
+        else:
+            self.logger.debug('t0={}'.format(self.t0.value))
+        # tend
+        self.tend = ctypes.c_double()
+        var_name = ctypes.c_char_p(b'Model.MaxCompTime')
+        error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+            self.id_masc, var_name, 0, 0, 0, ctypes.byref(self.tend))
+        if error != 0:
+            self.logger.error("Error while getting the value of the final time: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('tend={}'.format(self.tend.value))
+        
+    def create_model(self):       
+        '''Creates an instance of Mascaret. 
+           Uses Mascaret Api C_CREATE_MASCARET.''' 
+        id_masc = ctypes.c_int()
+        error = self.libmascaret.C_CREATE_MASCARET(ctypes.byref(id_masc))
+        if error != 0:
+            self.logger.error("Error while creating a MASCARET model: {}"
+                              .format(self.error_message()))
+        else:
+            self.id_masc = ctypes.c_int(id_masc.value)
+        # .opt and .lis are writen only if iprint = 1 at the import AND the calcul steps
+        self.iprint = 1
 
-    def get_BC_Qt(self, id_masc):
-        """wrapper 10 bis."""
-        idmasc = c_int(id_masc)
-        var_name = c_char_p('Model.Graph.Discharge')
-    # Nb of BC
-        size1 = c_int()
-    # Nb of time steps in BC
-        size2 = c_int()
-    # Not used (0)
-        size3 = c_int()
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
-            idmasc, var_name, 0, byref(size1), byref(size2), byref(size3))
-        print('size Model.Graph.Discharge= ', size1.value, size2.value, size3.value)
+    def file_model(self, settings):
+        '''Reads model files from "settings" which is a JSON file (.xcas, .geo, .lig, .loi, .dtd). 
+           Uses Mascaret Api C_IMPORT_MODELE_MASCARET.'''
+        with open(settings, 'rb') as file:
+            file = file.read().decode('utf8')
+            self.settings = json.loads(file, encoding="utf-8", object_pairs_hook=OrderedDict)
+        self.nb_bc = None
+        file_type = []
+        file_name = []
+        for val in self.settings['files'].items():
+            if not isinstance(val[1], list):
+                file_name.append(val[1].encode('utf8'))
+                self.settings['files'][val] = val[1].encode('utf8')
+                file_type.append(val[0].encode('utf8'))
+            else:
+                for sub in val[1]:
+                    file_name.append(sub.encode('utf8'))
+                    self.settings['files'][val] = val[1].encode('utf8')
+                    file_type.append(val[0].encode('utf8'))
+#        for val in self.settings['files'].items():
+#            if not isinstance(val[1], list):
+#                file_name.append(val[1].encode('utf8'))
+#                file_type.append(val[0].encode('utf8'))
+#            else:
+#                for sub in val[1]:
+#                    file_name.append(sub.encode('utf8'))
+#                    file_type.append(val[0].encode('utf8'))
 
-        tab_Q_BC = np.ones((size1.value, size2.value), float)
-        for k in range(size1.value):
-            for kk in range(size2.value):
-                Q_BC_c = c_double()
-                num_BC_c = c_int(k + 1)
-                indextime_BC_c = c_int(kk + 1)
-                error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-                    idmasc, var_name, num_BC_c, indextime_BC_c, 0, byref(Q_BC_c))
-                tab_Q_BC[k, kk] = Q_BC_c.value
-        return error, tab_Q_BC
+        # Import a model
+        L_file = len(file_name)
+        file_name_c = (ctypes.c_char_p * L_file)(*file_name)
+        file_type_c = (ctypes.c_char_p * L_file)(*file_type)
+        error = self.libmascaret.C_IMPORT_MODELE_MASCARET(self.id_masc, file_name_c,
+                                                  file_type_c, L_file, self.iprint)
+        if error != 0:
+            self.logger.error("Error while importing a MASCARET model: {}"
+                          .format(self.error_message()))
+        print(file_name)
+        print(file_type)
 
-    def set_BC_Qt(self, id_masc, new_tab_Q_BC):
-        """wrapper 10 ter."""
-        idmasc = c_int(id_masc)
-        var_name = c_char_p('Model.Graph.Discharge')
-    # Nb of BC
-        size1 = c_int()
-    # Nb of time steps in BC
-        size2 = c_int()
-    # Not used (0)
-        size3 = c_int()
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
-            idmasc, var_name, 0, byref(size1), byref(size2), byref(size3))
-    #    print 'size Model.Graph.Discharge= ' , size1.value, size2.value, size3.value
+    def __del__(self):
+        '''Deletes a model.'''
+        error = self.libmascaret.C_DELETE_MASCARET(self.id_masc)
+        if error != 0:
+            self.logger.error("Error while deleting the instantiation #{}"
+                              .format(self.id_masc, self.error_message()))
 
-        for k in range(size1.value):
-            for kk in range(size2.value):
-                Q_BC_c = c_double()
-                num_BC_c = c_int(k + 1)
-                indextime_BC_c = c_int(kk + 1)
-                Q_BC_c.value = new_tab_Q_BC[k, kk]
-                error = self.libmascaret.C_SET_DOUBLE_MASCARET(
-                    idmasc, var_name, num_BC_c, indextime_BC_c, 0, byref(Q_BC_c))
-        return error
+    def __repr__(self):
+        '''Framework for the method 'print' '''
+        string = 'MODEL FILES:\n'
+        string += ' -- xcas: {}\n'
+        string += ' -- geo: {}\n'
+        string += ' -- res: {}\n'
+        string += ' -- listing: {}\n'
+        string += ' -- damocle: {}\n'
+        string += ' -- lig: {}\n'
+        string += ' -- loi:\n'
+        for file1 in self.settings['files']['loi']:
+            string += '         {}\n'
+        string += '\nUSER SETTINGS:\n'
+        if 'Q_BC' in self.user_settings:
+            string += ' -- Change the upstream flow rate:\n'
+            string += '       > Index: {}\n'
+            string += '       > Value: {}\n'
+        if 'Ks' in self.user_settings:
+            string += ' -- Change the friction coefficient:\n'
+            string += '       > By zone: {}\n'
+            string += '       > Index: {}\n'
+            string += '       > Value: {}\n'
+            string += '       > Zone index: {}\n'
+        if 'MC' in self.user_settings:
+            string += ' -- Monte-Carlo settings:\n'
+            string += '       > Ks distribution: {}\n'
+            string += '       > Ks parameter 1: {}\n'
+            string += '       > Ks parameter 2: {}\n'
+            string += '       > Number of simulations: {}\n'
+        if 'misc' in self.user_settings:
+            string += ' -- Miscellaneous:\n'
+            string += '       > Print  boundary conditions: {}\n'
+            string += '       > Output index: {}'
 
-    def get_indzonefrot(self, id_masc):
-        idmasc = c_int(id_masc)
-        size1 = c_int()
-        size2 = c_int()
-        size3 = c_int()
+        src1 = list(itertools.chain.from_iterable([ v.values() if isinstance(v,dict) else [v] for v in self.settings['files'].values()]))
+        src2 = list(itertools.chain.from_iterable([ v.values() if isinstance(v,dict) else [v] for v in self.user_settings.values()]))
+        src = list(itertools.chain.from_iterable(v for v in [src1,src2]))
+        src_ = []
+        for v in src:
+            if isinstance(v, list):
+                for w in v:
+                    src_.append(w)
+            else:
+                src_.append(v)
+        return string.format(*src_)
+
+    def run_mascaret(self): 
+        """Runs Mascaret simulation. 
+           Uses Mascaret Api C_CALCUL_MASCARET."""
+
+        self.empty_opt()         
+
+        error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
+                                                   self.tend, self.dt, self.iprint)
+        if error != 0:
+            self.logger.error("Error running Mascaret: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('Running Mascaret OK')
+
+        return self.state(self.user_settings['misc']['index_outstate']).value
+
+    def __call__(self, saveall=False): 
+
+        '''Runs the application from "user_settings'''
+
+        settings = self.user_settings
+
+        if 'MC' in settings:
+
+            if 'Ne' in settings['MC']:
+                N = settings['MC']['Ne']
+            else:
+                N = 1
+
+            nx = ('distKs' in settings['MC']) + ('distQ' in settings['MC'])
     
-        var_name = c_char_p('Model.FrictionZone.FirstNode')
-        error =self.libmascaret.C_GET_TAILLE_VAR_MASCARET(idmasc, var_name, 0, byref(size1), byref(size2), byref(size3))
-        print('Number of Friction Zones =', size1.value)
+            X = np.zeros((settings['MC']['Ne'],nx))
+
+            h = []
+
+            for i in range(N):
+
+                j = -1
+            
+                if 'distKs' in settings['MC']:
+                    j += 1
+                    if settings['MC']['distKs'] == "G": 
+                        Ks = np.random.normal(settings['MC']['muKs'], settings['MC']['sigmaKs'])               
+                    elif settings['MC']['distKs'] == "U":
+                        Ks = np.random.uniform(settings['MC']['minKs'], settings['MC']['maxKs']) 
+                    X[i,j] = Ks
+                    if settings['Ks']['zone']:
+                        self.zone_friction_minor = {'ind_zone': settings['Ks']['ind_zone'], 'value': Ks}
+                    else:
+                        self.friction_minor = {'idx': settings['Ks']['idx'], 'value': Ks} 
+
+                if 'distQ' in settings['MC']:
+                    j += 1
+                    if settings['MC']['distQ'] == "G": 
+                        Q = np.random.normal(settings['MC']['muQ'], settings['MC']['sigmaQ'])               
+                    elif settings['MC']['distQ'] == "U":
+                        Q = np.random.uniform(settings['MC']['minQ'], settings['MC']['maxQ'])
+                    X[i,j] = Q
+                    self.bc_qt = {'idx': settings['Q_BC']['idx'], 'value': Q} 
+
+                h.append(self.run_mascaret())
+
+                if saveall:
+                   os.rename('ResultatsOpthyca.opt', 'ResultatsOpthyca_'+str(i)+'.opt')
+
+        else:
+
+            h = self.run_mascaret()
+
+        self.results = h
+        self.DOE = X
+
+        return h
+
+
+    def user_defined(self, user_settings):
+        '''Reads user parameters from "user_settings" and applies values for Q_BC ("Q_BC={'idx','value'}")
+            and Ks ("Ks={'zone','idx','value','ind_zone'}") (the Ks for 1 point or 1 zone). 
+            Uses the class methods "zone_friction_minor", "friction_minor" and "bc_qt".
+        '''
+        with open(user_settings, 'rb') as file:
+            file = file.read().decode('utf8')
+            self.user_settings = json.loads(file, encoding="utf-8", object_pairs_hook=OrderedDict)
+        print ('fichiers mascaret', self.user_settings)
+        if 'Q_BC' in self.user_settings:
+            self.bc_qt = self.user_settings['Q_BC']
+        if 'Ks' in self.user_settings:
+            if self.user_settings['Ks']['zone'] is True:
+                self.zone_friction_minor = self.user_settings['Ks']
+            else:
+                self.friction_minor = self.user_settings['Ks']
+
+    def error_message(self):
+        """Error message wrapper."""
+        err_mess_c = ctypes.POINTER(ctypes.c_char_p)()
+        error = self.libmascaret.C_GET_ERREUR_MASCARET(self.id_masc,
+                                                       ctypes.byref(err_mess_c))
+        if error != 0:
+            return 'Error could not be retrieved from MASCARET...'
+        return ctypes.string_at(err_mess_c)
+
+    def info_all_bc(self):
+        """Returns numbers and names of all boundary conditions. 
+           Uses Mascaret Api C_GET_NOM_CONDITION_LIMITE_MASCARET."""
+        # Rating curve do not count
+        nb_bc = ctypes.c_int()
+        error = self.libmascaret.C_GET_NB_CONDITION_LIMITE_MASCARET(
+            self.id_masc, ctypes.byref(nb_bc))
+        if error != 0:
+            self.logger.error("Error getting the number of boundary conditions: {}"
+                              .format(self.error_message()))
+
+        self.nb_bc = nb_bc.value
+
+        l_name_all_bc = []
+        l_num_all_bc = []
+        for k in range(nb_bc.value):
+            NumCL = ctypes.c_int(nb_bc.value)
+            NomCL = ctypes.POINTER(ctypes.c_char_p)()
+            NumLoi = ctypes.c_int()
+            error = self.libmascaret.C_GET_NOM_CONDITION_LIMITE_MASCARET(
+                self.id_masc, k + 1, ctypes.byref(NomCL), ctypes.byref(NumLoi))
+            if error != 0:
+                self.logger.error("Error getting the name of boundary conditions: {}"
+                                  .format(self.error_message()))
+            l_name_all_bc.append(ctypes.string_at(NomCL))
+            l_num_all_bc.append(NumLoi.value)
+
+        self.l_name_all_bc = l_name_all_bc
+        self.l_num_all_bc = l_num_all_bc
+
+        return nb_bc, l_name_all_bc, l_num_all_bc
+
+    @property
+    def bc_qt(self):
+        '''Gets boundary conditions Qt. 
+           Uses Mascaret Api C_GET_TAILLE_VAR_MASCARET and C_GET_DOUBLE_MASCARET.'''
+        var_name = ctypes.c_char_p(b'Model.Graph.Discharge')
+        # Nb of BC
+        size1 = ctypes.c_int()
+        # Nb of time steps in BC
+        size2 = ctypes.c_int()
+        # Not used (0)
+        size3 = ctypes.c_int()
+        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
+        self.logger.debug('size Model.Graph.Discharge= {} {} {}'
+                          .format(size1.value, size2.value, size3.value))
+
+        bc_qt = np.ones((size1.value, size2.value), float)
+        for k, kk in itertools.product(range(size1.value), range(size2.value)):
+            q_bc_c = ctypes.c_double()
+            num_bc_c = ctypes.c_int(k + 1)
+            indextime_bc_c = ctypes.c_int(kk + 1)
+            error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+                self.id_masc, var_name, num_bc_c, indextime_bc_c, 0, ctypes.byref(q_bc_c))
+            bc_qt[k, kk] = q_bc_c.value
+
+        if error != 0:
+            self.logger.error("Error getting discharge: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('Get BC Q(t) OK ')
+
+        if self.user_settings['misc']['info_bc'] is True:
+            if self.nb_bc is None:
+                self.info_all_bc()
+            for k in range(self.nb_bc):
+                self.logger.info("Loi Q: {} {} {}".format(self.l_name_all_bc[k],
+                                                          self.l_num_all_bc[k],
+                                                          bc_qt[k, :]))
+
+        return bc_qt
+
+    @bc_qt.setter
+    def bc_qt(self, q_bc):
+        '''Sets boundary condition Qt using "self.bc_qt={'idx','value'}". 
+           Uses Mascaret Api C_GET_TAILLE_VAR_MASCARET and C_SET_DOUBLE_MASCARET.'''
+        new_tab_q_bc = self.bc_qt
+        idx, value = q_bc['idx'], q_bc['value']
+        new_tab_q_bc[idx, :] = value
+
+        var_name = ctypes.c_char_p(b'Model.Graph.Discharge')
+        # Nb of BC
+        size1 = ctypes.c_int()
+        # Nb of time steps in BC
+        size2 = ctypes.c_int()
+        # Not used (0)
+        size3 = ctypes.c_int()
+        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
+
+        for k, kk in itertools.product(range(size1.value), range(size2.value)):
+            q_bc_c = ctypes.c_double()
+            num_bc_c = ctypes.c_int(k + 1)
+            indextime_bc_c = ctypes.c_int(kk + 1)
+            q_bc_c.value = new_tab_q_bc[k, kk]
+            error = self.libmascaret.C_SET_DOUBLE_MASCARET(
+                self.id_masc, var_name, num_bc_c, indextime_bc_c, 0, ctypes.byref(q_bc_c))
+
+        if error != 0:
+            self.logger.error("Error setting discharge: {}"
+                              .format(self.error_message()))
+
+        self.logger.debug('Change Q OK')
+
+    @property
+    def ind_zone_frot(self):
+        '''Gets indices of the beginning and end of all the friction zones. 
+           Uses Mascaret Api C_GET_TAILLE_VAR_MASCARET and C_GET_INT_MASCARET.
+        '''
+        size1 = ctypes.c_int()
+        size2 = ctypes.c_int()
+        size3 = ctypes.c_int()
+
+        var_name = ctypes.c_char_p(b'Model.FrictionZone.FirstNode')
+        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
+        self.logger.debug('Number of Friction Zones = {}'.format(size1.value))
         l_ind_beg_zone = []
         for k in range(size1.value):
-           ind_beg_zone_c = c_int()
-           error = self.libmascaret.C_GET_INT_MASCARET(idmasc, var_name, k+1, 0, 0, byref(ind_beg_zone_c))
-           l_ind_beg_zone.append(ind_beg_zone_c.value)
-    
-        var_name = c_char_p('Model.FrictionZone.LastNode')
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(idmasc, var_name, 0, byref(size1), byref(size2), byref(size3))
+            ind_beg_zone_c = ctypes.c_int()
+            error = self.libmascaret.C_GET_INT_MASCARET(
+                self.id_masc, var_name, k + 1, 0, 0, ctypes.byref(ind_beg_zone_c))
+            l_ind_beg_zone.append(ind_beg_zone_c.value)
+
+        if error != 0:
+            self.logger.error("Error getting first node friction zone: {}"
+                              .format(self.error_message()))
+
+        var_name = ctypes.c_char_p(b'Model.FrictionZone.LastNode')
+        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
         l_ind_end_zone = []
         for k in range(size1.value):
-           ind_end_zone_c = c_int()
-           error = self.libmascaret.C_GET_INT_MASCARET(idmasc, var_name, k+1, 0, 0, byref(ind_end_zone_c))
-           l_ind_end_zone.append(ind_end_zone_c.value)
-    
+            ind_end_zone_c = ctypes.c_int()
+            error = self.libmascaret.C_GET_INT_MASCARET(
+                self.id_masc, var_name, k + 1, 0, 0, ctypes.byref(ind_end_zone_c))
+            l_ind_end_zone.append(ind_end_zone_c.value)
+
+        if error != 0:
+            self.logger.error("Error getting last node friction zone: {}"
+                              .format(self.error_message()))
+
         return error, l_ind_beg_zone, l_ind_end_zone
-    
-    def change_zonefriction_minor(self, id_masc, indexZone, newZoneCF1):
-    
-        error, l_ind_beg_zone,l_ind_end_zone = self.get_indzonefrot(id_masc)
-        Ind_BegZone = l_ind_beg_zone[indexZone]
-        Ind_EndZone = l_ind_end_zone[indexZone]
-    
-        for index in range(Ind_BegZone, Ind_EndZone+1):
-            print(index)
-            error = self.change_friction_minor(id_masc,index,newZoneCF1)
-    
-        return error
 
+    @property
+    def zone_friction_minor(self):
+        '''Gets minor friction coefficient at zone "self.ind_zone". 
+           Uses class attributes "ind_zone_frot" and "friction_minor".'''
+        error, l_ind_beg_zone, l_ind_end_zone = self.ind_zone_frot
+        Ind_BegZone = l_ind_beg_zone[self.ind_zone]
+        Ind_EndZone = l_ind_end_zone[self.ind_zone]
 
-    def change_friction_minor(self, id_masc, index, newCF1):
-        """wrapper 11 : Change minor friction coefficient CF1 at given index."""
-        idmasc = c_int(id_masc)
-        var_name = c_char_p('Model.FricCoefMainCh')
-        size1 = c_int()
-        size2 = c_int()
-        size3 = c_int()
+        zone_friction = []
+
+        for index in range(Ind_BegZone, Ind_EndZone + 1):
+            zone_friction.append(self.friction_minor)
+
+        #self.ks_idx = self.user_settings['Ks']['idx']
+
+        if error != 0:
+            self.logger.error("Error getting friction minor on zone: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('Get Zone KS OK')
+
+        return zone_friction
+
+    @zone_friction_minor.setter
+    def zone_friction_minor(self, Ks):
+        '''Changes minor friction coefficient at zone "Ks['ind_zone']" using "Ks['value']". 
+           Uses class attribute "ind_zone_frot" and class method "friction_minor".'''
+        ind_zone, value = Ks['ind_zone'], Ks['value']
+        error, l_ind_beg_zone, l_ind_end_zone = self.ind_zone_frot#  self.get_indzonefrot
+        Ind_BegZone = l_ind_beg_zone[ind_zone]
+        Ind_EndZone = l_ind_end_zone[ind_zone]
+        self.ind_zone = ind_zone
+        for index in range(Ind_BegZone, Ind_EndZone + 1):
+            self.logger.debug(index)
+            self.friction_minor = {'idx': index, 'value': value}
+
+        if error != 0:
+            self.logger.error("Error setting friction minor on zone: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('Change Zone KS OK')
+
+    @property
+    def friction_minor(self):
+        """Gets minor friction coefficient at index "self.ks_idx". 
+           Uses Mascaret Api C_GET_TAILLE_VAR_MASCARET and C_GET_DOUBLE_MASCARET."""
+        var_name = ctypes.c_char_p(b'Model.FricCoefMainCh')
+        size1 = ctypes.c_int()
+        size2 = ctypes.c_int()
+        size3 = ctypes.c_int()
         error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
-            idmasc, var_name, 0, byref(size1), byref(size2), byref(size3))
-        print('size Model.FricCoefMinCh = ', size1.value, size2.value, size3.value)
-        CF1_c = c_double()
+            self.id_masc, var_name, 0, ctypes.byref(size1),
+            ctypes.byref(size2), ctypes.byref(size3))
+        self.logger.debug('size Model.FricCoefMinCh = {} {} {}'
+                          .format(size1.value, size2.value, size3.value))
+        Ks_c = ctypes.c_double()
         error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-            idmasc, var_name, index, 0, 0, byref(CF1_c))
+            self.id_masc, var_name, self.ks_idx, 0, 0, ctypes.byref(Ks_c))
+        if error != 0:
+            self.logger.error("Error setting friction minor: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('Ks old value= {}'.format(Ks_c.value))
 
-        print('CF1 old value=', CF1_c.value)
-        newCF1_c = c_double(newCF1)
-        print('newCF1_c = ', newCF1_c)
-        print('CF1 new value= ', newCF1_c.value)
+        return Ks_c.value
+
+    @friction_minor.setter
+    def friction_minor(self, Ks):
+        '''Changes minor friction coefficient Ks at index "Ks['idx']" with "Ks['value']". 
+           Uses Mascaret Api C_SET_DOUBLE_MASCARET.'''
+        var_name = ctypes.c_char_p(b'Model.FricCoefMainCh')
+        Ks_c = ctypes.c_double(Ks['value'])
+        self.logger.debug('Ks_c = {}'.format(Ks_c))
+        self.logger.debug('Ks new value= {}'.format(Ks_c.value))
+        self.ks_idx = Ks['idx']
         error = self.libmascaret.C_SET_DOUBLE_MASCARET(
-            idmasc, var_name, index, 0, 0, newCF1_c)
+            self.id_masc, var_name, self.ks_idx, 0, 0, Ks_c)
 
-        return error
+        if error != 0:
+            self.logger.error("Error setting friction minor: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('Change KS OK')
 
-    def change_friction_major(self, id_masc, index, newCF2):
-        """wrapper 11b : Change major friction coefficient CF2 at given index."""
-        idmasc = c_int(id_masc)
-        var_name = c_char_p('Model.FricCoefFP')
-        size1 = c_int()
-        size2 = c_int()
-        size3 = c_int()
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
-            idmasc, var_name, 0, byref(size1), byref(size2), byref(size3))
-        CF2_c = c_double()
+    def state(self, index):
+        '''Gets state at given index in "user_settings['misc']['index_outstate']". 
+           Uses Mascaret Api C_GET_TAILLE_VAR_MASCARET and C_GET_DOUBLE_MASCARET.'''
+        var_name = ctypes.c_char_p(b'State.Z')
+
+        itemp0 = ctypes.c_int()
+        itemp1 = ctypes.c_int()
+        itemp2 = ctypes.c_int()
+        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(self.id_masc, var_name, 0, ctypes.byref(itemp0),
+                                                           ctypes.byref(itemp1), ctypes.byref(itemp2))
+        self.logger.debug('itemp {} {} {}'
+                          .format(itemp0.value, itemp1.value, itemp2.value))
+
+        Z_res_c = ctypes.c_double()
         error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-            idmasc, var_name, index, 0, 0, byref(CF2_c))
+            self.id_masc, var_name, index, 0, 0, ctypes.byref(Z_res_c))
 
-        print('CF2 old value=', CF2_c.value)
-        newCF2_c = c_double(newCF2)
-        print('newCF2_c = ', newCF2_c)
-        print('CF2 new value= ', newCF2_c.value)
-        error = self.libmascaret.C_SET_DOUBLE_MASCARET(
-            idmasc, var_name, index, 0, 0, newCF2_c)
+        if error != 0:
+            self.logger.error("Error getting state: {}"
+                              .format(self.error_message()))
 
-        return error
+        return Z_res_c
 
-    def get_state(self, id_masc, index):
-        """wrapper 12 : Get State at given index."""
-        idmasc = c_int(id_masc)
-        var_name = c_char_p('State.Z')
+    def read_opt(self, filename='ResultatsOpthyca.opt'):
 
-        itemp0 = c_int()
-        itemp1 = c_int()
-        itemp2 = c_int()
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(idmasc, var_name, 0, byref(itemp0),
-                                                     byref(itemp1), byref(itemp2))
-        print("itemp", itemp0.value, itemp1.value, itemp2.value)
+        '''Reads the results file 'ResultatsOpthyca.opt' '''
 
-        Z_res_c = c_double()
-        error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-            idmasc, var_name, index, 0, 0, byref(Z_res_c))
-        return error, Z_res_c
+        with open(filename,'rb') as myfile:
+            data = myfile.read().replace('"', '')
+        data = np.genfromtxt(cStringIO.StringIO(data), delimiter=';', skip_header=14)
+        self.opt = data
+
+    def plot_opt(self, xlab='Curvilinear abscissa (m)', ylab1='Water level (m)', ylab2='Flow rate (m3/s)',
+                 title='Water level along the open-channel at final time'):
+        
+        '''Plots results contained in the results file 'ResultatsOpthyca.opt' '''
+ 
+        if not hasattr(self, 'opt'):
+            self.read_opt()
+
+        nb = int(max(self.opt[:,2]))
+        x = self.opt[-nb:-1,3]
+        level = self.opt[-nb:-1,5]
+        bathy = self.opt[-nb:-1,4]
+        flowrate = self.opt[-nb:-1,-1]
+
+        fig, ax1 = plt.subplots()
+        ax1.plot(x, bathy, color='black')
+        ax1.plot(x, level, color='blue')
+        ax1.fill_between(x, bathy, level, facecolor='blue', alpha=0.5)
+        ax1.set_xlabel(xlab)
+        ax1.set_ylabel(ylab1, color='blue')
+        ax1.tick_params('y', colors='blue')
+        y_formatter = tick.ScalarFormatter(useOffset=False)
+        ax1.yaxis.set_major_formatter(y_formatter)
+        ax2 = ax1.twinx()
+        ax2.plot(x, flowrate, color='red')
+        ax2.set_ylabel(ylab2, color='red')
+        ax2.tick_params('y', colors='red')
+        ax2.yaxis.set_major_formatter(y_formatter)
+        plt.title(title)
+        plt.show()
+
+    def empty_opt(self):
+        open("ResultatsOpthyca.opt", 'w').close()
