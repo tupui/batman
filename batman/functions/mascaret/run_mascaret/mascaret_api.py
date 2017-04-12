@@ -185,18 +185,21 @@ class MascaretApi(object):
             file = file.read().decode('utf8')
             self.settings = json.loads(file, encoding="utf-8", object_pairs_hook=OrderedDict)
         self.nb_bc = None
+        # Convert all values of settings from str to bytes
         file_type = []
         file_name = []
-        for val in self.settings['files'].items():
-            if not isinstance(val[1], list):
-                file_name.append(val[1].encode('utf8'))
-                self.settings['files'][val[0]] = val[1].encode('utf8')
-                file_type.append(val[0].encode('utf8'))
-            else:
-                for i, sub in enumerate(val[1]):
-                    file_name.append(sub.encode('utf8'))
-                    self.settings['files'][val[0]][i] = sub.encode('utf8')
-                    file_type.append(val[0].encode('utf8'))
+        for key_val in self.settings['files'].items():
+            try:
+                value = key_val[1].encode('utf8')
+                file_name.append(value)
+                self.settings['files'][key_val[0]] = value
+                file_type.append(key_val[0].encode('utf8'))
+            except AttributeError:  # In case of a list, loop over it
+                for i, sub in enumerate(key_val[1]):
+                    sub_value = sub.encode('utf8')
+                    file_name.append(sub_value)
+                    self.settings['files'][key_val[0]][i] = sub_value
+                    file_type.append(key_val[0].encode('utf8'))
 
         # Import a model
         L_file = len(file_name)
