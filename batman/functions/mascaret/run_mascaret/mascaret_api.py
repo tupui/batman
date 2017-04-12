@@ -40,9 +40,8 @@ class MascaretApi(object):
         # Load the library mascaret.so
         path = os.path.dirname(os.path.realpath(__file__))
         libmascdir = os.path.join(path, 'lib')
-#        os.putenv("LD_LIBRARY_PATH",libmascdir + ":" + os.environ["LD_LIBRARY_PATH"]) 
-        os.system("export LD_LIBRARY_PATH=" + libmascdir + ":$LD_LIBRARY_PATH")
-        print ('toto',os.environ["LD_LIBRARY_PATH"])
+        ld_library = os.environ['LD_LIBRARY_PATH']
+        self.logger.debug('LD_LIBRARY_PATH: {}'.format(ld_library))
         self.load_mascaret(libmascdir)
 
         # Create an instance of MASCARET
@@ -123,8 +122,6 @@ class MascaretApi(object):
                         'State constant initialisation successfull from constant value...OK')
         else:
             # Initialize Mascaret Model from file
-            print ('file lig', self.settings['files']['lig'])
-            print ('file lig', type(self.settings['files']['lig']) )
             init_file_name_c = (ctypes.c_char_p)(*[self.settings['files']['lig']])
             error = self.libmascaret.C_INIT_ETAT_MASCARET(
                                       self.id_masc, init_file_name_c, self.iprint)
@@ -193,21 +190,13 @@ class MascaretApi(object):
         for val in self.settings['files'].items():
             if not isinstance(val[1], list):
                 file_name.append(val[1].encode('utf8'))
-                self.settings['files'][val] = val[1].encode('utf8')
+                self.settings['files'][val[0]] = val[1].encode('utf8')
                 file_type.append(val[0].encode('utf8'))
             else:
-                for sub in val[1]:
+                for i, sub in enumerate(val[1]):
                     file_name.append(sub.encode('utf8'))
-                    self.settings['files'][val] = val[1].encode('utf8')
+                    self.settings['files'][val[0]][i] = sub.encode('utf8')
                     file_type.append(val[0].encode('utf8'))
-#        for val in self.settings['files'].items():
-#            if not isinstance(val[1], list):
-#                file_name.append(val[1].encode('utf8'))
-#                file_type.append(val[0].encode('utf8'))
-#            else:
-#                for sub in val[1]:
-#                    file_name.append(sub.encode('utf8'))
-#                    file_type.append(val[0].encode('utf8'))
 
         # Import a model
         L_file = len(file_name)
