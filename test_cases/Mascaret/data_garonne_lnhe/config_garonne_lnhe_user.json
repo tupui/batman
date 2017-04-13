@@ -1,20 +1,4 @@
 {
-    "Q_BC": {
-        "idx": 0,
-        "value": 3000.0
-    },
-    "Ks": {
-        "zone": true,
-        "idx": 220,
-        "value": 35.0,
-        "ind_zone": 2
-    },
-    "MC": {
-        "distKs": "G",
-        "muKs": 35.0,
-        "sigmaKs": 2.0,
-        "Ne": 10
-    },
     "misc": {
         "info_bc": true,
         "index_outstate": 220

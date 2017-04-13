@@ -1,4 +1,4 @@
-#!/bin/tcsh
+#!/bin/tc
 rm -rf *.loi *.xcas *.dtd *.geo *.lig dico.txt fort.22 *.damoc
 mv config_canal.json config_canal.json_old
 mv config_canal_user.json config_canal_user.json_old
