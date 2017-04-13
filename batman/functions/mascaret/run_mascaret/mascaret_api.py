@@ -372,7 +372,7 @@ class MascaretApi(object):
                 if 'distQ' in settings['MC']:
                     self.bc_qt = {'idx': settings['Q_BC']['idx'], 'value': q[i]}
 
-                h[0] = self.run_mascaret()
+                h[i] = self.run_mascaret()
 
                 if saveall:
                     os.rename('ResultatsOpthyca.opt',

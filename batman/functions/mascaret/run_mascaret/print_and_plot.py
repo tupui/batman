@@ -9,14 +9,14 @@ def print_statistics(results):
 
     :param np.array results: Results to process
     """
-    print("STATISTICS:\n"
-          "-- Mean: {}\n"
-          "-- Median: {}\n"
-          "-- Standard deviation {}\n"
-          "-- 0.05-quantile: {}\n"
-          "-- 0.95-quantile: {}\n")
-          .format(np.mean(results), np.median(results), np.std(results),
-                  np.percentile(results, 0.05), np.percentile(results, 0.95))
+    print(("STATISTICS:\n"
+           "-- Mean: {}\n"
+           "-- Median: {}\n"
+           "-- Standard deviation {}\n"
+           "-- 0.05-quantile: {}\n"
+           "-- 0.95-quantile: {}\n")
+           .format(np.mean(results), np.median(results), np.std(results),
+                   np.percentile(results, 0.05), np.percentile(results, 0.95)))
 
 
 def histogram(results, xlab='Quantity of interest', ylab='Density', title='Histogram with a kernel density estimator'):
