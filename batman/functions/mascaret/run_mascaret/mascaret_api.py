@@ -14,10 +14,10 @@ from collections import OrderedDict
 import ctypes
 import itertools
 import numpy as np
+from io import BytesIO
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tick
 from matplotlib.patches import Polygon
-from io import StringIO
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -356,6 +356,8 @@ class MascaretApi(object):
                 elif settings['MC']['distQ'] == "U":
                     q[:] = np.random.uniform(
                         settings['MC']['minQ'], settings['MC']['maxQ'], n)
+
+            self.logger.debug('Design of Experiment:\n{}'.format(self.doe))
 
             h = np.empty(n)
 
@@ -745,7 +747,7 @@ class MascaretApi(object):
         with open(filename, 'rb') as myfile:
             opt_data = myfile.read().decode('utf8').replace('"', '')
 
-        opt_data = np.genfromtxt(StringIO(opt_data),
+        opt_data = np.genfromtxt(BytesIO(opt_data.encode('utf8')),
                                  delimiter=';', skip_header=14)
 
         return opt_data
@@ -757,7 +759,7 @@ class MascaretApi(object):
 
     def plot_opt(self, xlab='Curvilinear abscissa (m)', ylab1='Water level (m)',
                  ylab2='Flow rate (m3/s)', title='Water level along the open-channel at final time'):
-        """Plots results contained in the results file ``ResultatsOpthyca.opt``.
+        """Plots results contained in the results file :file:`ResultatsOpthyca.opt`.
 
         :param str xlab: label x
         :param str ylab1: label y1
