@@ -115,22 +115,23 @@ class MascaretApi(object):
 
         ``init_cst`` in :attr:`user_settings` along with ``Q_cst`` and
         ``Z_cst`` values or from :file:`file.lig` in :attr:`settings`. Uses
-        Mascaret Api :meth:`C_INIT_LIGNE_MASCARET` or :meth:`C_INIT_ETAT_MASCARET`.
+        Mascaret Api :meth:`C_INIT_LIGNE_MASCARET` or
+        :meth:`C_INIT_ETAT_MASCARET`.
         """
         if 'init_cst' in self.user_settings:
             # Initialize Mascaret Model from values
-            Q = self.user_settings['init_cst']['Q_cst'] * self.nb_nodes.value
-            Z = self.user_settings['init_cst']['Z_cst'] * self.nb_nodes.value
-            Q_c = (ctypes.c_double * self.nb_nodes.value)(Q)
-            Z_c = (ctypes.c_double * self.nb_nodes.value)(Z)
+            q = self.user_settings['init_cst']['Q_cst'] * self.nb_nodes.value
+            z = self.user_settings['init_cst']['Z_cst'] * self.nb_nodes.value
+            q_c = (ctypes.c_double * self.nb_nodes.value)(q)
+            z_c = (ctypes.c_double * self.nb_nodes.value)(z)
             error = self.libmascaret.C_INIT_LIGNE_MASCARET(
-                self.id_masc, ctypes.byref(Q_c), ctypes.byref(Z_c), self.nb_nodes)
+                self.id_masc, ctypes.byref(q_c), ctypes.byref(z_c), self.nb_nodes)
             if error != 0:
                 self.logger.error("Error while initialising the state of MASCARET: {}"
                                   .format(self.error_message()))
             else:
                 self.logger.debug(
-                        'State constant initialisation successfull from constant value...OK')
+                    'State constant initialisation successfull from constant value...OK')
         else:
             # Initialize Mascaret Model from file
             init_file_name_c = (ctypes.c_char_p)(*[self.settings['files']['lig']])
@@ -230,11 +231,11 @@ class MascaretApi(object):
                     file_type.append(key_val[0].encode('utf8'))
 
         # Import a model
-        L_file = len(file_name)
-        file_name_c = (ctypes.c_char_p * L_file)(*file_name)
-        file_type_c = (ctypes.c_char_p * L_file)(*file_type)
+        len_file = len(file_name)
+        file_name_c = (ctypes.c_char_p * len_file)(*file_name)
+        file_type_c = (ctypes.c_char_p * len_file)(*file_type)
         error = self.libmascaret.C_IMPORT_MODELE_MASCARET(self.id_masc, file_name_c,
-                                                          file_type_c, L_file, self.iprint)
+                                                          file_type_c, len_file, self.iprint)
         if error != 0:
             self.logger.error("Error while importing a MASCARET model: {}"
                               .format(self.error_message()))
@@ -391,9 +392,10 @@ class MascaretApi(object):
     def user_defined(self, user_settings):
         """Read user parameters from :file:`user_settings`` and apply values.
 
-        Look for ``Q_BC`` (``Q_BC={'idx','value'}``) and ``Ks`` (``Ks={'zone','idx','value',
-        'ind_zone'}``) (the ``Ks`` for 1 point or 1 zone).
-        Use :meth:`zone_friction_minor`, :meth:`friction_minor` and :meth:`bc_qt`.
+        Look for ``Q_BC`` (``Q_BC={'idx','value'}``) and ``Ks``
+        (``Ks={'zone','idx','value', 'ind_zone'}``) (the ``Ks`` for 1 point or
+        1 zone). Use :meth:`zone_friction_minor`, :meth:`friction_minor` and
+        :meth:`bc_qt`.
 
         :param str user_settings: Path of the *JSON* settings file
         """
@@ -423,8 +425,8 @@ class MascaretApi(object):
         return ctypes.string_at(err_mess_c)
 
     def info_all_bc(self):
-        """Return numbers and names of all boundary conditions. 
-        
+        """Return numbers and names of all boundary conditions.
+
         Use Mascaret Api :meth:`C_GET_NOM_CONDITION_LIMITE_MASCARET`.
 
         :return:
@@ -445,16 +447,16 @@ class MascaretApi(object):
         l_name_all_bc = []
         l_num_all_bc = []
         for k in range(nb_bc.value):
-            NomCL = ctypes.POINTER(ctypes.c_char_p)()
-            NumLoi = ctypes.c_int()
+            name_all_bc = ctypes.POINTER(ctypes.c_char_p)()
+            n_law = ctypes.c_int()
             error = self.libmascaret.C_GET_NOM_CONDITION_LIMITE_MASCARET(
-                self.id_masc, k + 1, ctypes.byref(NomCL), ctypes.byref(NumLoi))
+                self.id_masc, k + 1, ctypes.byref(name_all_bc), ctypes.byref(n_law))
             if error != 0:
                 self.logger.error("Error at index {} getting the name of boundary conditions: {}"
                                   .format(k, self.error_message()))
                 errors = True
-            l_name_all_bc.append(ctypes.string_at(NomCL))
-            l_num_all_bc.append(NumLoi.value)
+            l_name_all_bc.append(ctypes.string_at(name_all_bc))
+            l_num_all_bc.append(n_law.value)
 
         if not errors:
             self.l_name_all_bc = l_name_all_bc
@@ -467,7 +469,8 @@ class MascaretApi(object):
     def bc_qt(self):
         """Get boundary conditions Qt.
 
-        Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET` and :meth:`C_GET_DOUBLE_MASCARET`.
+        Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET`
+        and :meth:`C_GET_DOUBLE_MASCARET`.
 
         :return: boundary conditions for Qt
         :rtype: list(float)
@@ -516,7 +519,8 @@ class MascaretApi(object):
     def bc_qt(self, q_bc):
         """Set boundary condition Qt.
 
-        Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET` and :meth:`C_SET_DOUBLE_MASCARET`.
+        Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET`
+        and :meth:`C_SET_DOUBLE_MASCARET`.
 
         :param dict q_bc: Boundary conditions on Qt ``{'idx','value'}``
         """
@@ -552,9 +556,10 @@ class MascaretApi(object):
 
     @property
     def ind_zone_frot(self):
-        """Get indices of the beginning and end of all the friction zones. 
-        
-        Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET` and :meth:`C_GET_INT_MASCARET`.
+        """Get indices of the beginning and end of all the friction zones.
+
+        Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET` and
+        :meth:`C_GET_INT_MASCARET`.
 
         :return: Index of beginning and end
         :rtype: list(int)
@@ -621,11 +626,12 @@ class MascaretApi(object):
         :rtype: list(float)
         """
         l_ind_beg_zone, l_ind_end_zone = self.ind_zone_frot
-        Ind_BegZone = l_ind_beg_zone[self.ind_zone]
-        Ind_EndZone = l_ind_end_zone[self.ind_zone]
+        idx_beg_zone = l_ind_beg_zone[self.ind_zone]
+        idx_end_zone = l_ind_end_zone[self.ind_zone]
 
         zone_friction = []
-        for index in range(Ind_BegZone, Ind_EndZone + 1):
+        for index in range(idx_beg_zone, idx_end_zone + 1):
+            self.ks_idx = index
             zone_friction.append(self.friction_minor)
 
         self.logger.debug('Get Zone KS OK')
@@ -633,19 +639,19 @@ class MascaretApi(object):
         return zone_friction
 
     @zone_friction_minor.setter
-    def zone_friction_minor(self, Ks):
+    def zone_friction_minor(self, ks):
         """Change minor friction coefficient at zone.
 
         Use :attr:`ind_zone_frot` and :meth:`friction_minor`.
 
-        :param dict Ks: Friction coeffcient at zone ``{'ind_zone','value'}``
+        :param dict ks: Friction coeffcient at zone ``{'ind_zone','value'}``
         """
-        ind_zone, value = Ks['ind_zone'], Ks['value']
+        ind_zone, value = ks['ind_zone'], ks['value']
         l_ind_beg_zone, l_ind_end_zone = self.ind_zone_frot
-        Ind_BegZone = l_ind_beg_zone[ind_zone]
-        Ind_EndZone = l_ind_end_zone[ind_zone]
+        idx_beg_zone = l_ind_beg_zone[ind_zone]
+        idx_end_zone = l_ind_end_zone[ind_zone]
         self.ind_zone = ind_zone
-        for index in range(Ind_BegZone, Ind_EndZone + 1):
+        for index in range(idx_beg_zone, idx_end_zone + 1):
             self.logger.debug(index)
             self.friction_minor = {'idx': index, 'value': value}
 
@@ -670,32 +676,32 @@ class MascaretApi(object):
             ctypes.byref(size2), ctypes.byref(size3))
         self.logger.debug('size Model.FricCoefMinCh = {} {} {}'
                           .format(size1.value, size2.value, size3.value))
-        Ks_c = ctypes.c_double()
+        ks_c = ctypes.c_double()
         error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-            self.id_masc, var_name, self.ks_idx, 0, 0, ctypes.byref(Ks_c))
+            self.id_masc, var_name, self.ks_idx, 0, 0, ctypes.byref(ks_c))
         if error != 0:
             self.logger.error("Error setting friction minor: {}"
                               .format(self.error_message()))
         else:
-            self.logger.debug('Ks old value= {}'.format(Ks_c.value))
+            self.logger.debug('Ks old value= {}'.format(ks_c.value))
 
-        return Ks_c.value
+        return ks_c.value
 
     @friction_minor.setter
-    def friction_minor(self, Ks):
+    def friction_minor(self, ks):
         """Changes minor friction coefficient.
 
         Use Mascaret Api :meth:`C_SET_DOUBLE_MASCARET`.
 
-        :param dict Ks: Minor friction coefficient ``{'idx','value'}``
+        :param dict ks: Minor friction coefficient ``{'idx','value'}``
         """
         var_name = ctypes.c_char_p(b'Model.FricCoefMainCh')
-        Ks_c = ctypes.c_double(Ks['value'])
-        self.logger.debug('Ks_c = {}'.format(Ks_c))
-        self.logger.debug('Ks new value= {}'.format(Ks_c.value))
-        self.ks_idx = Ks['idx']
+        ks_c = ctypes.c_double(ks['value'])
+        self.logger.debug('ks_c = {}'.format(ks_c))
+        self.logger.debug('Ks new value= {}'.format(ks_c.value))
+        self.ks_idx = ks['idx']
         error = self.libmascaret.C_SET_DOUBLE_MASCARET(
-            self.id_masc, var_name, self.ks_idx, 0, 0, Ks_c)
+            self.id_masc, var_name, self.ks_idx, 0, 0, ks_c)
         if error != 0:
             self.logger.error("Error setting friction minor: {}"
                               .format(self.error_message()))
@@ -726,16 +732,16 @@ class MascaretApi(object):
             self.logger.debug('itemp {} {} {}'
                               .format(itemp0.value, itemp1.value, itemp2.value))
 
-        Z_res_c = ctypes.c_double()
+        z_res_c = ctypes.c_double()
         error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-            self.id_masc, var_name, index, 0, 0, ctypes.byref(Z_res_c))
+            self.id_masc, var_name, index, 0, 0, ctypes.byref(z_res_c))
         if error != 0:
             self.logger.error("Error getting state: {}"
                               .format(self.error_message()))
         else:
             self.logger.debug('Get state OK')
 
-        return Z_res_c
+        return z_res_c
 
     def read_opt(self, filename='ResultatsOpthyca.opt'):
         """Read the results :file:`ResultatsOpthyca.opt`.
@@ -790,5 +796,5 @@ class MascaretApi(object):
         ax2.yaxis.set_major_formatter(y_formatter)
         plt.title(title)
         fig.tight_layout()
-        fig.savefig('./waterlevel.pdf', transparent = True, bbox_inches='tight')
+        fig.savefig('./waterlevel.pdf', transparent=True, bbox_inches='tight')
         plt.close('all')
