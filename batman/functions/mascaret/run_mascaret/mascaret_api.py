@@ -302,17 +302,21 @@ class MascaretApi(object):
     def run_mascaret(self):
         """Run Mascaret simulation.
 
-        Uses Mascaret Api :meth:`C_CALCUL_MASCARET`.
+        Use Mascaret Api :meth:`C_CALCUL_MASCARET`.
+
+        :return: water level at :attr:`index_outstate`
+        :rtype: double
         """
         self.empty_opt()
 
+        self.logger.info('Running Mascaret...')
         error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
                                                    self.tend, self.dt, self.iprint)
         if error != 0:
             self.logger.error("Error running Mascaret: {}"
                               .format(self.error_message()))
         else:
-            self.logger.debug('Running Mascaret OK')
+            self.logger.info('Running Mascaret OK')
 
         return self.state(self.user_settings['misc']['index_outstate']).value
 
@@ -324,50 +328,51 @@ class MascaretApi(object):
         settings = self.user_settings
 
         if 'MC' in settings:
-
             try:
                 n = settings['MC']['Ne']
             except KeyError:
                 n = 1
 
             nx = ('distKs' in settings['MC']) + ('distQ' in settings['MC'])
+            self.doe = np.empty((settings['MC']['Ne'], nx))
 
-            x = np.zeros((settings['MC']['Ne'], nx))
+            if 'distKs' in settings['MC']:
+                ks = self.doe[:, 0]
+                if settings['MC']['distKs'] == "G":
+                    ks[:] = np.random.normal(
+                        settings['MC']['muKs'], settings['MC']['sigmaKs'], n)
+                elif settings['MC']['distKs'] == "U":
+                    ks[:] = np.random.uniform(
+                        settings['MC']['minKs'], settings['MC']['maxKs'], n)
 
-            h = []
+            if 'distQ' in settings['MC']:
+                if 'distKs' in settings['MC']:
+                    q = self.doe[:, 1]
+                else:
+                    q = self.doe[:, 0]
+                if settings['MC']['distQ'] == "G":
+                    q[:] = np.random.normal(
+                        settings['MC']['muQ'], settings['MC']['sigmaQ'], n)
+                elif settings['MC']['distQ'] == "U":
+                    q[:] = np.random.uniform(
+                        settings['MC']['minQ'], settings['MC']['maxQ'], n)
+
+            h = np.empty(n)
 
             for i in range(n):
-
-                j = -1
-
+                self.logger.info('Iteration #{}'.format(n))
                 if 'distKs' in settings['MC']:
-                    j += 1
-                    if settings['MC']['distKs'] == "G":
-                        ks = np.random.normal(
-                            settings['MC']['muKs'], settings['MC']['sigmaKs'])
-                    elif settings['MC']['distKs'] == "U":
-                        ks = np.random.uniform(
-                            settings['MC']['minKs'], settings['MC']['maxKs'])
-                    x[i, j] = ks
                     if settings['Ks']['zone']:
                         self.zone_friction_minor = {
-                            'ind_zone': settings['Ks']['ind_zone'], 'value': ks}
+                            'ind_zone': settings['Ks']['ind_zone'], 'value': ks[i]}
                     else:
                         self.friction_minor = {
-                            'idx': settings['Ks']['idx'], 'value': ks}
+                            'idx': settings['Ks']['idx'], 'value': ks[i]}
 
                 if 'distQ' in settings['MC']:
-                    j += 1
-                    if settings['MC']['distQ'] == "G":
-                        q = np.random.normal(
-                            settings['MC']['muQ'], settings['MC']['sigmaQ'])
-                    elif settings['MC']['distQ'] == "U":
-                        q = np.random.uniform(
-                            settings['MC']['minQ'], settings['MC']['maxQ'])
-                    x[i, j] = q
-                    self.bc_qt = {'idx': settings['Q_BC']['idx'], 'value': q}
+                    self.bc_qt = {'idx': settings['Q_BC']['idx'], 'value': q[i]}
 
-                h.append(self.run_mascaret())
+                h[0] = self.run_mascaret()
 
                 if saveall:
                     os.rename('ResultatsOpthyca.opt',
@@ -378,7 +383,6 @@ class MascaretApi(object):
             h = self.run_mascaret()
 
         self.results = h
-        self.DOE = x
 
         return h
 
@@ -699,7 +703,8 @@ class MascaretApi(object):
     def state(self, index):
         """Get state at given index in :attr:`user_settings['misc']['index_outstate']`.
 
-        Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET` and :meth:`C_GET_DOUBLE_MASCARET`.
+        Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET` and
+        :meth:`C_GET_DOUBLE_MASCARET`.
 
         :param float index: Index to get the state from
         :return: State at a given index

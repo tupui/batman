@@ -9,17 +9,18 @@ def print_statistics(results):
 
     :param np.array results: Results to process
     """
-    print('STATISTICS:\n')
-    print('-- Mean: ' + str(np.mean(results)) + '\n')
-    print('-- Median: ' + str(np.median(results)) + '\n')
-    print('-- Standard deviation :' + str(np.std(results)) + '\n')
-    print('-- 0.05-quantile: ' + str(np.percentile(results, 0.05)) + '\n')
-    print('-- 0.95-quantile: ' + str(np.percentile(results, 0.95)) + '\n')
-    # skweness + kurtosis
+    print("STATISTICS:\n"
+          "-- Mean: {}\n"
+          "-- Median: {}\n"
+          "-- Standard deviation {}\n"
+          "-- 0.05-quantile: {}\n"
+          "-- 0.95-quantile: {}\n")
+          .format(np.mean(results), np.median(results), np.std(results),
+                  np.percentile(results, 0.05), np.percentile(results, 0.95))
 
 
 def histogram(results, xlab='Quantity of interest', ylab='Density', title='Histogram with a kernel density estimator'):
-    """Plot an Histogram.an
+    """Plot an Histogram.
 
     :param np.array results: Results to process
     :param str xlab: x label
@@ -39,10 +40,6 @@ def histogram(results, xlab='Quantity of interest', ylab='Density', title='Histo
     plt.xlabel(xlab, axis_font)
     plt.ylabel(ylab, axis_font)
     fig.tight_layout()
-    fig.savefig('./histo_waterlevel.pdf',
+    fig.savefig('./histogram.pdf',
                 transparent=True, bbox_inches='tight')
     plt.close('all')
-
-# def plotInOut(X,Y):
-#   df = DataFrame(np.concatenate(X,Y))
-#   scatter_matrix(df, alpha=0.2, figsize=(6, 6), diagonal='kde')
