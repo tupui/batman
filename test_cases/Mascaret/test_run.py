@@ -1,5 +1,5 @@
-from mascaret_api import MascaretApi
-from print_and_plot import *
+from batman.functions import MascaretApi
+from batman.functions.mascaret.run_mascaret import print_statistics, histogram
 
 # Create an instance of MascaretApi
 study = MascaretApi('config_garonne_lnhe.json','config_garonne_lnhe_user.json')
@@ -12,12 +12,12 @@ h = study.run_mascaret()
 print(h)
 
 # Realize the study with the user defined tasks (e.g. Monte-Carlo)
-#h = study()
-#print(h)
+h = study()
+print(h)
 
 # Print and plot statistics concerning the model output uncertainty
-#print_statistics(h)
-#histogram(h, xlab='Water level at Marmande', title='Distribution of the uncertainty')
+print_statistics(h)
+histogram(h, xlab='Water level at Marmande', title='Distribution of the uncertainty')
 
 # Plot the water level along the open-channel at final time
 #study.plot_opt()
