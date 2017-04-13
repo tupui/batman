@@ -13,5 +13,33 @@
             "Q7412910.loi",
             "Q935001001.loi"
         ]
+<<<<<<< HEAD
     }
 }
+=======
+    },
+    "init_lig": {
+        "Q_cst": 0.0,
+        "Z_cst": 10.0
+    },
+    "Q_BC": {
+        "idx": 0,
+        "value": 300.0
+    },
+    "Ks": {
+        "zone": false,
+        "idx": 1754,
+        "value": 50.0,
+        "ind_zone": true
+    },
+    "MC": {
+        "mu": 50.0,
+        "sigma": 2.0,
+        "simulations": 20
+    },
+    "misc": {
+        "bc": true,
+        "index_outstate": 1754,
+    }
+}
+>>>>>>> 110739f22aca872a6469a47f16363626cbba2e6f
