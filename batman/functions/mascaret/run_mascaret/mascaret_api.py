@@ -105,6 +105,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error while getting size var in model  #{}, {}"
                               .format(self.id_masc, self.error_message()))
+            raise SystemExit
         else:
             self.logger.debug('Get nb of nodes OK, size_X={}'
                               .format(nb_nodes.value))
@@ -129,6 +130,7 @@ class MascaretApi(object):
             if error != 0:
                 self.logger.error("Error while initialising the state of MASCARET: {}"
                                   .format(self.error_message()))
+                raise SystemExit
             else:
                 self.logger.debug(
                     'State constant initialisation successfull from constant value...OK')
@@ -140,6 +142,7 @@ class MascaretApi(object):
             if error != 0:
                 self.logger.error("Error while initialising the state of Mascaret from .lig: {}"
                                   .format(self.error_message()))
+                raise SystemExit
             else:
                 self.logger.debug(
                     'State initialisation successfull from lig...OK')
@@ -161,6 +164,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error while getting the value of the time step: {}"
                               .format(self.error_message()))
+            raise SystemExit
         else:
             self.logger.debug('dt={}'.format(self.dt.value))
         # t0
@@ -171,6 +175,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error while getting the value of the initial time: {}"
                               .format(self.error_message()))
+            raise SystemExit
         else:
             self.logger.debug('t0={}'.format(self.t0.value))
         # tend
@@ -181,6 +186,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error while getting the value of the final time: {}"
                               .format(self.error_message()))
+            raise SystemExit
         else:
             self.logger.debug('tend={}'.format(self.tend.value))
 
@@ -196,6 +202,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error while creating a MASCARET model: {}"
                               .format(self.error_message()))
+            raise SystemExit
         else:
             self.id_masc = ctypes.c_int(id_masc.value)
         # .opt and .lis written only if iprint = 1 at import AND calcul steps
@@ -239,6 +246,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error while importing a MASCARET model: {}"
                               .format(self.error_message()))
+            raise SystemExit
         else:
             self.logger.info("Model imported with:\n-> file_name: {}\n-> file_type: {}"
                              .format(file_name, file_type))
@@ -249,6 +257,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error while deleting the instantiation #{}:\n{}"
                               .format(self.id_masc, self.error_message()))
+            raise SystemExit
         else:
             self.logger.debug("Model #{} deleted.".format(self.id_masc))
 
@@ -316,6 +325,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error running Mascaret: {}"
                               .format(self.error_message()))
+            raise SystemExit
         else:
             self.logger.info('Running Mascaret OK')
 
@@ -434,13 +444,12 @@ class MascaretApi(object):
         """
         # Rating curve do not count
         nb_bc = ctypes.c_int()
-        errors = False
         error = self.libmascaret.C_GET_NB_CONDITION_LIMITE_MASCARET(
             self.id_masc, ctypes.byref(nb_bc))
         if error != 0:
             self.logger.error("Error getting the number of boundary conditions: {}"
                               .format(self.error_message()))
-            errors = True
+            raise SystemExit
         else:
             self.nb_bc = nb_bc.value
 
@@ -454,14 +463,13 @@ class MascaretApi(object):
             if error != 0:
                 self.logger.error("Error at index {} getting the name of boundary conditions: {}"
                                   .format(k, self.error_message()))
-                errors = True
+                raise SystemExit
             l_name_all_bc.append(ctypes.string_at(name_all_bc))
             l_num_all_bc.append(n_law.value)
 
-        if not errors:
-            self.l_name_all_bc = l_name_all_bc
-            self.l_num_all_bc = l_num_all_bc
-            self.logger.debug('Get BC info OK')
+        self.l_name_all_bc = l_name_all_bc
+        self.l_num_all_bc = l_num_all_bc
+        self.logger.debug('Get BC info OK')
 
         return nb_bc, l_name_all_bc, l_num_all_bc
 
@@ -484,11 +492,10 @@ class MascaretApi(object):
         size3 = ctypes.c_int()
         error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
-        self.logger.debug('size Model.Graph.Discharge= {} {} {}'
+        self.logger.debug('Size Model.Graph.Discharge= {} {} {}'
                           .format(size1.value, size2.value, size3.value))
 
         bc_qt = np.ones((size1.value, size2.value), float)
-        errors = False
         for k, kk in itertools.product(range(size1.value), range(size2.value)):
             q_bc_c = ctypes.c_double()
             num_bc_c = ctypes.c_int(k + 1)
@@ -498,12 +505,11 @@ class MascaretApi(object):
             if error != 0:
                 self.logger.error("Error at indices: ({}, {}) getting discharge: {}"
                                   .format(k, kk, self.error_message()))
-                errors = True
+                raise SystemExit
             else:
                 bc_qt[k, kk] = q_bc_c.value
 
-        if not errors:
-            self.logger.debug('Get BC Q(t) OK')
+        self.logger.debug('Get BC Q(t) OK')
 
         if self.user_settings['misc']['info_bc'] is True:
             if self.nb_bc is None:
@@ -538,7 +544,6 @@ class MascaretApi(object):
         error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
 
-        errors = False
         for k, kk in itertools.product(range(size1.value), range(size2.value)):
             q_bc_c = ctypes.c_double()
             num_bc_c = ctypes.c_int(k + 1)
@@ -549,10 +554,9 @@ class MascaretApi(object):
             if error != 0:
                 self.logger.error("Error at indices: ({}, {}) setting discharge: {}"
                                   .format(k, kk, self.error_message()))
-                errors = True
+                raise SystemExit
 
-        if not errors:
-            self.logger.debug('Change Q OK')
+        self.logger.debug('Change Q OK')
 
     @property
     def ind_zone_frot(self):
@@ -574,11 +578,11 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error getting number of friction zone at first node: {}"
                               .format(self.error_message()))
+            raise SystemExit
         else:
             self.logger.debug('Number of Friction Zones at first node: {}'.format(size1.value))
 
         l_ind_beg_zone = []
-        errors = False
         for k in range(size1.value):
             ind_beg_zone_c = ctypes.c_int()
             error = self.libmascaret.C_GET_INT_MASCARET(
@@ -586,7 +590,7 @@ class MascaretApi(object):
             if error != 0:
                 self.logger.error("Error at index: {} getting first node friction zone: {}"
                                   .format(k, self.error_message()))
-                errors = True
+                raise SystemExit
             else:
                 l_ind_beg_zone.append(ind_beg_zone_c.value)
 
@@ -596,6 +600,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error getting number friction zone at last node: {}"
                               .format(self.error_message()))
+            raise SystemExit
         else:
             self.logger.debug('Number of Friction Zones at last node: {}'.format(size1.value))
 
@@ -607,12 +612,11 @@ class MascaretApi(object):
             if error != 0:
                 self.logger.error("Error at index: {} getting last node friction zone: {}"
                                   .format(k, self.error_message()))
-                errors = True
+                raise SystemExit
             else:
                 l_ind_end_zone.append(ind_end_zone_c.value)
 
-        if not errors:
-            self.logger.debug('Get list index for all friction zones OK.')
+        self.logger.debug('Get list index for all friction zones OK.')
 
         return l_ind_beg_zone, l_ind_end_zone
 
@@ -682,6 +686,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error setting friction minor: {}"
                               .format(self.error_message()))
+            raise SystemExit
         else:
             self.logger.debug('Ks old value= {}'.format(ks_c.value))
 
@@ -705,6 +710,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error setting friction minor: {}"
                               .format(self.error_message()))
+            raise SystemExit
         else:
             self.logger.debug('Change KS OK')
 
@@ -728,6 +734,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error getting state: {}"
                               .format(self.error_message()))
+            raise SystemExit
         else:
             self.logger.debug('itemp {} {} {}'
                               .format(itemp0.value, itemp1.value, itemp2.value))
@@ -738,6 +745,7 @@ class MascaretApi(object):
         if error != 0:
             self.logger.error("Error getting state: {}"
                               .format(self.error_message()))
+            raise SystemExit
         else:
             self.logger.debug('Get state OK')
 
