@@ -8,7 +8,7 @@ import inspect
 
 def multi_eval(fun):
     """Decorator to detect space or unique point."""
-    def wrapper_fun(self, x):
+    def wrapper_fun(self, x, *args, **kwargs):
         """Get evaluation from space or point.
 
         If the function is a Kriging instance, get and returns the variance.
@@ -18,35 +18,32 @@ def multi_eval(fun):
         """
         try:
             x[0][0]
+            n_eval = len(x)
+            shape_eval = (n_eval, -1)
         except (TypeError, IndexError):
             x = [x]
+            n_eval = 1
+            shape_eval = (-1)
 
-        n_eval = len(x)
         f = [None] * n_eval
 
-        if n_eval != 1:
-            shape_eval = (n_eval, -1)
-        else:
-            shape_eval = (-1)
+        for i, x_i in enumerate(x):
+            f[i] = fun(self, x_i, *args, **kwargs)
 
         if 'kriging' in inspect.getmodule(fun).__name__:
             sigma = [None] * n_eval
-            for i, x_i in enumerate(x):
-                f[i], sigma[i] = fun(self, x_i)
+            for i, _ in enumerate(x):
+                f[i], sigma[i] = f[i]
             f = np.array(f).reshape(shape_eval)
             sigma = np.array(sigma).reshape(shape_eval)
             return f, sigma
-        else:
-            for i, x_i in enumerate(x):
-                f[i] = fun(self, x_i)
-
         f = np.array(f).reshape(shape_eval)
         return f
     return wrapper_fun
 
 
 def output_to_sequence(fun):
-    """Convert flot output to list."""
+    """Convert float output to list."""
     def wrapper_fun(x):
         return [fun(x)]
     return wrapper_fun
