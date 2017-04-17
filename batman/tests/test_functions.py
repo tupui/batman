@@ -1,6 +1,7 @@
 # coding: utf8
 import pytest
-from batman.functions import (Michalewicz, Rosenbrock, Ishigami, G_Function, Mascaret)
+from batman.functions import (Michalewicz, Rosenbrock, Ishigami, G_Function,
+                              Manning, Mascaret)
 from scipy.optimize import differential_evolution
 import numpy as np
 import numpy.testing as npt
@@ -26,7 +27,7 @@ def test_Rosenbrock():
 
 def test_Ishigami():
     f_3d = Ishigami()
-    assert f_3d([2, -3, 1]) == pytest.approx([1.1396], 0.01)
+    assert f_3d([2, -3, 1]) == pytest.approx(1.1396, 0.01)
     assert f_3d([0, 0, 0]) == 0.
 
 def test_G_Function():
@@ -47,3 +48,9 @@ def test_Mascaret():
                    1.7149e1, 1.446e1]
     test_output = npt.assert_almost_equal(f_out, f_data_base, decimal=2)
     assert True if test_output is None else False
+
+def test_Manning():
+    f = Manning()
+    assert f([20]) == pytest.approx(6.45195012, 0.01)
+    f2 = Manning(flag='2D')
+    assert f2([20, 3000]) == pytest.approx(12.47279413, 0.01)

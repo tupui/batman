@@ -12,7 +12,8 @@ It implements the following classes:
 - :class:`Rosenbrock`,
 - :class:`Ishigami`,
 - :class:`G_Function`,
-- :class:`Channel_Flow`.
+- :class:`Channel_Flow`,
+- :class:`Manning`.
 
 In each case, Sobol' indices are declared.
 
@@ -251,7 +252,7 @@ class Channel_Flow(object):
         self.d_in = 2
         self.dl = int(self.length // self.dx)
         self.hinit = 10.
-        self.Zref = - self.x * self.I
+        self.zref = - self.x * self.I
 
         # Sensitivity
         self.s_first = np.array([0.92925829, 0.05243018])
@@ -279,4 +280,46 @@ class Channel_Flow(object):
                 * ((1 - np.power(h[self.dl - i + 1] / hn, -10. / 3.))
                     / (1 - np.power(h[self.dl - i + 1] / hc, -3.)))
 
-        return self.Zref + h
+        return self.zref + h
+
+
+class Manning(object):
+
+    """Manning equation for rectangular channel class."""
+
+    logger = logging.getLogger(__name__)
+
+    def __init__(self, width=100., slope=5.e-4, inflow=1000, flag='1D'):
+        """Initialize the geometrical configuration.
+
+        :param float width: canal width
+        :param float slope: canal slope
+        :param float inflow: canal inflow (optional)
+        :param str flag: 1D (Ks) or 2D (Ks,Q)
+        """
+        self.w = width
+        self.slope = slope
+        self.inflow = inflow
+        self.flag = flag
+
+        self.logger.info("Using function Manning :  width={}, "
+                         "slope={}, inflow={}, flag={}".format(width, slope, inflow, flag))
+
+    @multi_eval
+    def __call__(self, x):
+        """Call function.
+
+        :param list x: inputs [Ks] or [Ks, Q] 
+        :return: Water height along the channel
+        :rtype: float
+        """
+        x = np.array(x)
+        if self.flag == '1D':
+           ks = x
+           q = self.inflow
+        else:
+           ks, q = x
+
+        h = q / (ks * self.w * np.sqrt(self.slope)) 
+        h = np.power(h, 3. / 5.)
+        return h    
