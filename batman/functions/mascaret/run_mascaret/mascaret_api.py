@@ -18,6 +18,7 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tick
 from matplotlib.patches import Polygon
+from ...utils import multi_eval
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -27,6 +28,21 @@ class MascaretApi(object):
     """Mascaret API."""
 
     logger = logging.getLogger(__name__)
+
+    def __setattr__(self, name, value):
+        """Detect errors.
+
+        Overwright attribute setter to detect API errors.
+        If :attr:`error` is not set null, an error is raised and the programme
+        is terminated.
+
+        :param str name: name of the attribute
+        :param ... value: value to assign
+        """
+        object.__setattr__(self, name, value) 
+        if (name is 'error') and (value is not 0):
+            self.logger.error("API error:\n{}".format(self.error_message()))
+            raise SystemExit
 
     def __init__(self, settings, user_settings):
         """Constructor.
@@ -98,18 +114,15 @@ class MascaretApi(object):
         nb_nodes = ctypes.c_int()
         il_temp1 = ctypes.c_int()
         il_temp2 = ctypes.c_int()
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(self.id_masc, var_name, 0,
+        self.logger.error("Getting size var in model  #{}..."
+                          .format(self.id_masc.value))
+        self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(self.id_masc, var_name, 0,
                                                            ctypes.byref(nb_nodes),
                                                            ctypes.byref(il_temp1),
                                                            ctypes.byref(il_temp2))
-        if error != 0:
-            self.logger.error("Error while getting size var in model  #{}, {}"
-                              .format(self.id_masc, self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.debug('Get nb of nodes OK, size_X={}'
+        self.logger.debug('Get nb of nodes: size_X={}.'
                               .format(nb_nodes.value))
-            return nb_nodes
+        return nb_nodes
 
     def init_model(self):
         """Initialize the model from constant values.
@@ -125,27 +138,18 @@ class MascaretApi(object):
             z = self.user_settings['init_cst']['Z_cst'] * self.nb_nodes.value
             q_c = (ctypes.c_double * self.nb_nodes.value)(q)
             z_c = (ctypes.c_double * self.nb_nodes.value)(z)
-            error = self.libmascaret.C_INIT_LIGNE_MASCARET(
+            self.logger.debug('Initilizing MASCARET from constant value...')
+            self.error = self.libmascaret.C_INIT_LIGNE_MASCARET(
                 self.id_masc, ctypes.byref(q_c), ctypes.byref(z_c), self.nb_nodes)
-            if error != 0:
-                self.logger.error("Error while initialising the state of MASCARET: {}"
-                                  .format(self.error_message()))
-                raise SystemExit
-            else:
-                self.logger.debug(
-                    'State constant initialisation successfull from constant value...OK')
+            self.logger.debug(
+                'State constant initialisation successfull from constant value.')
         else:
             # Initialize Mascaret Model from file
             init_file_name_c = (ctypes.c_char_p)(*[self.settings['files']['lig']])
-            error = self.libmascaret.C_INIT_ETAT_MASCARET(
+            self.logger.debug('Initializing MASCARET from lig...')
+            self.error = self.libmascaret.C_INIT_ETAT_MASCARET(
                 self.id_masc, init_file_name_c, self.iprint)
-            if error != 0:
-                self.logger.error("Error while initialising the state of Mascaret from .lig: {}"
-                                  .format(self.error_message()))
-                raise SystemExit
-            else:
-                self.logger.debug(
-                    'State initialisation successfull from lig...OK')
+            self.logger.debug('State initialisation successfull from lig.')
 
     @property
     def simu_times(self):
@@ -159,36 +163,24 @@ class MascaretApi(object):
         # dt
         self.dt = ctypes.c_double()
         var_name = ctypes.c_char_p(b'Model.DT')
-        error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+        self.logger.debug('Getting time step...')
+        self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
             self.id_masc, var_name, 0, 0, 0, ctypes.byref(self.dt))
-        if error != 0:
-            self.logger.error("Error while getting the value of the time step: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.debug('dt={}'.format(self.dt.value))
+        self.logger.debug('Time step: dt={}.'.format(self.dt.value))
         # t0
         self.t0 = ctypes.c_double()
         var_name = ctypes.c_char_p(b'Model.InitTime')
-        error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+        self.logger.debug('Getting initial time...')
+        self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
             self.id_masc, var_name, 0, 0, 0, ctypes.byref(self.t0))
-        if error != 0:
-            self.logger.error("Error while getting the value of the initial time: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.debug('t0={}'.format(self.t0.value))
+        self.logger.debug('Initial time: t0={}.'.format(self.t0.value))
         # tend
         self.tend = ctypes.c_double()
         var_name = ctypes.c_char_p(b'Model.MaxCompTime')
-        error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+        self.logger.debug('Getting end time...')
+        self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
             self.id_masc, var_name, 0, 0, 0, ctypes.byref(self.tend))
-        if error != 0:
-            self.logger.error("Error while getting the value of the final time: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.debug('tend={}'.format(self.tend.value))
+        self.logger.debug('End time: tend={}.'.format(self.tend.value))
 
         return (self.dt.value, self.t0.value, self.tend.value)
 
@@ -198,13 +190,10 @@ class MascaretApi(object):
         Uses Mascaret Api :meth:`C_CREATE_MASCARET`.
         """
         id_masc = ctypes.c_int()
-        error = self.libmascaret.C_CREATE_MASCARET(ctypes.byref(id_masc))
-        if error != 0:
-            self.logger.error("Error while creating a MASCARET model: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.id_masc = ctypes.c_int(id_masc.value)
+        self.logger.debug('Creating a model...')
+        self.error = self.libmascaret.C_CREATE_MASCARET(ctypes.byref(id_masc))
+        self.logger.debug('Model created.')
+        self.id_masc = ctypes.c_int(id_masc.value)
         # .opt and .lis written only if iprint = 1 at import AND calcul steps
         self.iprint = 1
 
@@ -241,25 +230,17 @@ class MascaretApi(object):
         len_file = len(file_name)
         file_name_c = (ctypes.c_char_p * len_file)(*file_name)
         file_type_c = (ctypes.c_char_p * len_file)(*file_type)
-        error = self.libmascaret.C_IMPORT_MODELE_MASCARET(self.id_masc, file_name_c,
+        self.logger.debug('Importing a model...')
+        self.error = self.libmascaret.C_IMPORT_MODELE_MASCARET(self.id_masc, file_name_c,
                                                           file_type_c, len_file, self.iprint)
-        if error != 0:
-            self.logger.error("Error while importing a MASCARET model: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.info("Model imported with:\n-> file_name: {}\n-> file_type: {}"
+        self.logger.info("Model imported with:\n-> file_name: {}\n-> file_type: {}."
                              .format(file_name, file_type))
 
     def __del__(self):
         """Delete a model."""
-        error = self.libmascaret.C_DELETE_MASCARET(self.id_masc)
-        if error != 0:
-            self.logger.error("Error while deleting the instantiation #{}:\n{}"
-                              .format(self.id_masc, self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.debug("Model #{} deleted.".format(self.id_masc))
+        self.logger.debug('Deleting instance #{}...'.format(self.id_masc.value))
+        self.error = self.libmascaret.C_DELETE_MASCARET(self.id_masc)
+        self.logger.debug("Model #{} deleted.".format(self.id_masc.value))
 
     def __repr__(self):
         """Class informations based on settings."""
@@ -309,91 +290,96 @@ class MascaretApi(object):
                 src_.append(v)
         return string.format(*src_)
 
-    def run_mascaret(self):
+    @multi_eval
+    def run_mascaret(self, x=None, flag=None, saveall=False):
         """Run Mascaret simulation.
 
         Use Mascaret Api :meth:`C_CALCUL_MASCARET`.
+        If :arg:`x` if not None, ``Ks`` and ``Q`` are modified before running.
+        When :attr:`flag` is None, both parameters are modified. Thus :arg:`x`
+        needs to be set accordingly. If the flag is set to ``Ks``, then only
+        this parameter is considered.
 
+        :param list x: inputs [Ks, Q]
+        :param str flag: None, 'Ks' or 'Q'
+        :param bool saveall: Change the default name of the Results file
         :return: water level at :attr:`index_outstate`
         :rtype: double
         """
-        self.empty_opt()
+        if x is not None:
+            if (flag is None) or (flag is 'Ks'):
+                if self.user_settings['Ks']['zone']:
+                    self.zone_friction_minor = {
+                        'ind_zone': self.user_settings['Ks']['ind_zone'],
+                            'value': x[0]}
+                else:
+                    self.friction_minor = {'idx': self.user_settings['Ks']['idx'],
+                                           'value': x[0]}
+            elif flag is 'Q':
+                self.bc_qt = {'idx': self.user_settings['Q_BC']['idx'],
+                              'value': x[0]}
 
+            if flag is None:
+                self.bc_qt = {'idx': self.user_settings['Q_BC']['idx'],
+                              'value': x[1]}
+
+        self.empty_opt()
         self.logger.info('Running Mascaret...')
-        error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
+        self.error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
                                                    self.tend, self.dt, self.iprint)
-        if error != 0:
-            self.logger.error("Error running Mascaret: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.info('Running Mascaret OK')
+        self.logger.info('Mascaret ran.')
+
+        if saveall:
+            os.rename('ResultatsOpthyca.opt',
+                      'ResultatsOpthyca_' + str(x).replace(' ', '-') + '.opt')
 
         return self.state(self.user_settings['misc']['index_outstate']).value
 
-    def __call__(self, saveall=False):
+    def __call__(self, x=None, saveall=False):
         """Run the application using :attr:`user_settings`.
 
+        :param list x: inputs [Ks, Q]
         :param bool saveall: Change the default name of the Results file
         """
-        settings = self.user_settings
-
-        if 'MC' in settings:
+        if 'MC' in self.user_settings:
             try:
-                n = settings['MC']['Ne']
+                n = self.user_settings['MC']['Ne']
             except KeyError:
                 n = 1
 
-            nx = ('distKs' in settings['MC']) + ('distQ' in settings['MC'])
-            self.doe = np.empty((settings['MC']['Ne'], nx))
+            nx = ('distKs' in self.user_settings['MC']) + ('distQ' in self.user_settings['MC'])
+            self.doe = np.empty((self.user_settings['MC']['Ne'], nx))
 
-            if 'distKs' in settings['MC']:
+            if 'distKs' in self.user_settings['MC']:
                 ks = self.doe[:, 0]
-                if settings['MC']['distKs'] == "G":
+                flag = 'Ks'
+                if self.user_settings['MC']['distKs'] == "G":
                     ks[:] = np.random.normal(
-                        settings['MC']['muKs'], settings['MC']['sigmaKs'], n)
-                elif settings['MC']['distKs'] == "U":
+                        self.user_settings['MC']['muKs'], self.user_settings['MC']['sigmaKs'], n)
+                elif self.user_settings['MC']['distKs'] == "U":
                     ks[:] = np.random.uniform(
-                        settings['MC']['minKs'], settings['MC']['maxKs'], n)
+                        self.user_settings['MC']['minKs'], self.user_settings['MC']['maxKs'], n)
 
-            if 'distQ' in settings['MC']:
-                if 'distKs' in settings['MC']:
+            if 'distQ' in self.user_settings['MC']:
+                if 'distKs' in self.user_settings['MC']:
                     q = self.doe[:, 1]
+                    flag = None
                 else:
                     q = self.doe[:, 0]
-                if settings['MC']['distQ'] == "G":
+                    flag='Q'
+                if self.user_settings['MC']['distQ'] == "G":
                     q[:] = np.random.normal(
-                        settings['MC']['muQ'], settings['MC']['sigmaQ'], n)
-                elif settings['MC']['distQ'] == "U":
+                        self.user_settings['MC']['muQ'], self.user_settings['MC']['sigmaQ'], n)
+                elif self.user_settings['MC']['distQ'] == "U":
                     q[:] = np.random.uniform(
-                        settings['MC']['minQ'], settings['MC']['maxQ'], n)
+                        self.user_settings['MC']['minQ'], self.user_settings['MC']['maxQ'], n)
 
             self.logger.debug('Design of Experiment:\n{}'.format(self.doe))
 
-            h = np.empty(n)
-
-            for i in range(n):
-                self.logger.info('Iteration #{}'.format(n))
-                if 'distKs' in settings['MC']:
-                    if settings['Ks']['zone']:
-                        self.zone_friction_minor = {
-                            'ind_zone': settings['Ks']['ind_zone'], 'value': ks[i]}
-                    else:
-                        self.friction_minor = {
-                            'idx': settings['Ks']['idx'], 'value': ks[i]}
-
-                if 'distQ' in settings['MC']:
-                    self.bc_qt = {'idx': settings['Q_BC']['idx'], 'value': q[i]}
-
-                h[i] = self.run_mascaret()
-
-                if saveall:
-                    os.rename('ResultatsOpthyca.opt',
-                              'ResultatsOpthyca_' + str(i) + '.opt')
+            h = self.run_mascaret(self.doe, flag=flag, saveall=True)
 
         else:
-
-            h = self.run_mascaret()
+            h = self.run_mascaret(x=x, saveall=saveall)
 
         self.results = h
 
@@ -416,7 +402,7 @@ class MascaretApi(object):
         if 'Q_BC' in self.user_settings:
             self.bc_qt = self.user_settings['Q_BC']
         if 'Ks' in self.user_settings:
-            if self.user_settings['Ks']['zone'] is True:
+            if self.user_settings['Ks']['zone']:
                 self.zone_friction_minor = self.user_settings['Ks']
             else:
                 self.friction_minor = self.user_settings['Ks']
@@ -444,32 +430,26 @@ class MascaretApi(object):
         """
         # Rating curve do not count
         nb_bc = ctypes.c_int()
-        error = self.libmascaret.C_GET_NB_CONDITION_LIMITE_MASCARET(
+        self.logger.debug('Getting the number of boundary conditions...')
+        self.error = self.libmascaret.C_GET_NB_CONDITION_LIMITE_MASCARET(
             self.id_masc, ctypes.byref(nb_bc))
-        if error != 0:
-            self.logger.error("Error getting the number of boundary conditions: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.nb_bc = nb_bc.value
+        self.nb_bc = nb_bc.value
+        self.logger.debug('Number of boundary conditions: {}.'.format(self.nb_bc))
 
         l_name_all_bc = []
         l_num_all_bc = []
+        self.logger.debug('Getting name of the boundary conditions...')
         for k in range(nb_bc.value):
             name_all_bc = ctypes.POINTER(ctypes.c_char_p)()
             n_law = ctypes.c_int()
-            error = self.libmascaret.C_GET_NOM_CONDITION_LIMITE_MASCARET(
+            self.error = self.libmascaret.C_GET_NOM_CONDITION_LIMITE_MASCARET(
                 self.id_masc, k + 1, ctypes.byref(name_all_bc), ctypes.byref(n_law))
-            if error != 0:
-                self.logger.error("Error at index {} getting the name of boundary conditions: {}"
-                                  .format(k, self.error_message()))
-                raise SystemExit
             l_name_all_bc.append(ctypes.string_at(name_all_bc))
             l_num_all_bc.append(n_law.value)
 
         self.l_name_all_bc = l_name_all_bc
         self.l_num_all_bc = l_num_all_bc
-        self.logger.debug('Get BC info OK')
+        self.logger.debug('BC info get.')
 
         return nb_bc, l_name_all_bc, l_num_all_bc
 
@@ -490,26 +470,23 @@ class MascaretApi(object):
         size2 = ctypes.c_int()
         # Not used (0)
         size3 = ctypes.c_int()
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+        self.logger.debug('Getting the size of Model.Graph.Discharge...')
+        self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
-        self.logger.debug('Size Model.Graph.Discharge= {} {} {}'
+        self.logger.debug('Size Model.Graph.Discharge= {} {} {}.'
                           .format(size1.value, size2.value, size3.value))
 
         bc_qt = np.ones((size1.value, size2.value), float)
+        self.logger.debug('Getting discharge values...')
         for k, kk in itertools.product(range(size1.value), range(size2.value)):
             q_bc_c = ctypes.c_double()
             num_bc_c = ctypes.c_int(k + 1)
             indextime_bc_c = ctypes.c_int(kk + 1)
-            error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+            self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
                 self.id_masc, var_name, num_bc_c, indextime_bc_c, 0, ctypes.byref(q_bc_c))
-            if error != 0:
-                self.logger.error("Error at indices: ({}, {}) getting discharge: {}"
-                                  .format(k, kk, self.error_message()))
-                raise SystemExit
-            else:
-                bc_qt[k, kk] = q_bc_c.value
+            bc_qt[k, kk] = q_bc_c.value
 
-        self.logger.debug('Get BC Q(t) OK')
+        self.logger.debug('BC Q(t) get.')
 
         if self.user_settings['misc']['info_bc'] is True:
             if self.nb_bc is None:
@@ -518,7 +495,6 @@ class MascaretApi(object):
                 self.logger.info("Loi Q: {} {} {}".format(self.l_name_all_bc[k],
                                                           self.l_num_all_bc[k],
                                                           bc_qt[k, :]))
-
         return bc_qt
 
     @bc_qt.setter
@@ -541,22 +517,22 @@ class MascaretApi(object):
         size2 = ctypes.c_int()
         # Not used (0)
         size3 = ctypes.c_int()
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+        self.logger.debug('Getting the size of Model.Graph.Discharge...')
+        self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
+        self.logger.debug('Size Model.Graph.Discharge= {} {} {}.'
+                          .format(size1.value, size2.value, size3.value))
 
+        self.logger.debug('Getting discharge values...')
         for k, kk in itertools.product(range(size1.value), range(size2.value)):
             q_bc_c = ctypes.c_double()
             num_bc_c = ctypes.c_int(k + 1)
             indextime_bc_c = ctypes.c_int(kk + 1)
             q_bc_c.value = new_tab_q_bc[k, kk]
-            error = self.libmascaret.C_SET_DOUBLE_MASCARET(
+            self.error = self.libmascaret.C_SET_DOUBLE_MASCARET(
                 self.id_masc, var_name, num_bc_c, indextime_bc_c, 0, ctypes.byref(q_bc_c))
-            if error != 0:
-                self.logger.error("Error at indices: ({}, {}) setting discharge: {}"
-                                  .format(k, kk, self.error_message()))
-                raise SystemExit
 
-        self.logger.debug('Change Q OK')
+        self.logger.debug('BC Q(t) set.')
 
     @property
     def ind_zone_frot(self):
@@ -573,48 +549,34 @@ class MascaretApi(object):
         size3 = ctypes.c_int()
 
         var_name = ctypes.c_char_p(b'Model.FrictionZone.FirstNode')
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+        self.logger.debug('Getting the size of Model.FrictionZone.FirstNode...')
+        self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
-        if error != 0:
-            self.logger.error("Error getting number of friction zone at first node: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.debug('Number of Friction Zones at first node: {}'.format(size1.value))
+        self.logger.debug('Number of Friction Zones at first node: {}.'.format(size1.value))
 
         l_ind_beg_zone = []
+        self.logger.debug('Getting friction indices at the beginning...')
         for k in range(size1.value):
             ind_beg_zone_c = ctypes.c_int()
-            error = self.libmascaret.C_GET_INT_MASCARET(
+            self.error = self.libmascaret.C_GET_INT_MASCARET(
                 self.id_masc, var_name, k + 1, 0, 0, ctypes.byref(ind_beg_zone_c))
-            if error != 0:
-                self.logger.error("Error at index: {} getting first node friction zone: {}"
-                                  .format(k, self.error_message()))
-                raise SystemExit
-            else:
-                l_ind_beg_zone.append(ind_beg_zone_c.value)
+            l_ind_beg_zone.append(ind_beg_zone_c.value)
+        self.logger.debug('Friction indices at the beginning get.')
 
         var_name = ctypes.c_char_p(b'Model.FrictionZone.LastNode')
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+        self.logger.debug('Getting the size of Model.FrictionZone.LastNode...')
+        self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
-        if error != 0:
-            self.logger.error("Error getting number friction zone at last node: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.debug('Number of Friction Zones at last node: {}'.format(size1.value))
+        self.logger.debug('Number of Friction Zones at last node: {}.'.format(size1.value))
 
         l_ind_end_zone = []
+        self.logger.debug('Getting friction indices at the end...')
         for k in range(size1.value):
             ind_end_zone_c = ctypes.c_int()
-            error = self.libmascaret.C_GET_INT_MASCARET(
+            self.error = self.libmascaret.C_GET_INT_MASCARET(
                 self.id_masc, var_name, k + 1, 0, 0, ctypes.byref(ind_end_zone_c))
-            if error != 0:
-                self.logger.error("Error at index: {} getting last node friction zone: {}"
-                                  .format(k, self.error_message()))
-                raise SystemExit
-            else:
-                l_ind_end_zone.append(ind_end_zone_c.value)
+            l_ind_end_zone.append(ind_end_zone_c.value)
+        self.logger.debug('Friction indices at the end get.')
 
         self.logger.debug('Get list index for all friction zones OK.')
 
@@ -638,7 +600,7 @@ class MascaretApi(object):
             self.ks_idx = index
             zone_friction.append(self.friction_minor)
 
-        self.logger.debug('Get Zone KS OK')
+        self.logger.debug('Zone Ks get.')
 
         return zone_friction
 
@@ -659,7 +621,7 @@ class MascaretApi(object):
             self.logger.debug(index)
             self.friction_minor = {'idx': index, 'value': value}
 
-        self.logger.debug('Change Zone KS OK')
+        self.logger.debug('Zone Ks set.')
 
     @property
     def friction_minor(self):
@@ -675,20 +637,17 @@ class MascaretApi(object):
         size1 = ctypes.c_int()
         size2 = ctypes.c_int()
         size3 = ctypes.c_int()
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+        self.logger.debug('Getting the size of Model.FricCoefMainCh...')
+        self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name, 0, ctypes.byref(size1),
             ctypes.byref(size2), ctypes.byref(size3))
-        self.logger.debug('size Model.FricCoefMinCh = {} {} {}'
+        self.logger.debug('Size of Model.FricCoefMinCh = {} {} {}.'
                           .format(size1.value, size2.value, size3.value))
         ks_c = ctypes.c_double()
-        error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+        self.logger.debug('Getting friction values.')
+        self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
             self.id_masc, var_name, self.ks_idx, 0, 0, ctypes.byref(ks_c))
-        if error != 0:
-            self.logger.error("Error setting friction minor: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.debug('Ks old value= {}'.format(ks_c.value))
+        self.logger.debug('Ks value= {}.'.format(ks_c.value))
 
         return ks_c.value
 
@@ -702,17 +661,13 @@ class MascaretApi(object):
         """
         var_name = ctypes.c_char_p(b'Model.FricCoefMainCh')
         ks_c = ctypes.c_double(ks['value'])
-        self.logger.debug('ks_c = {}'.format(ks_c))
-        self.logger.debug('Ks new value= {}'.format(ks_c.value))
+        self.logger.debug('ks_c = {}'.format(ks_c.value))
+        self.logger.debug('Ks new value= {}'.format(ks))
         self.ks_idx = ks['idx']
-        error = self.libmascaret.C_SET_DOUBLE_MASCARET(
+        self.logger.debug('Setting Ks value...')
+        self.error = self.libmascaret.C_SET_DOUBLE_MASCARET(
             self.id_masc, var_name, self.ks_idx, 0, 0, ks_c)
-        if error != 0:
-            self.logger.error("Error setting friction minor: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.debug('Change KS OK')
+        self.logger.debug('Ks changed.')
 
     def state(self, index):
         """Get state at given index in :attr:`user_settings['misc']['index_outstate']`.
@@ -729,25 +684,17 @@ class MascaretApi(object):
         itemp0 = ctypes.c_int()
         itemp1 = ctypes.c_int()
         itemp2 = ctypes.c_int()
-        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(self.id_masc, var_name, 0, ctypes.byref(itemp0),
-                                                           ctypes.byref(itemp1), ctypes.byref(itemp2))
-        if error != 0:
-            self.logger.error("Error getting state: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.debug('itemp {} {} {}'
-                              .format(itemp0.value, itemp1.value, itemp2.value))
+        self.logger.debug('Getting the size of State.Z...')
+        self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+            self.id_masc, var_name, 0, ctypes.byref(itemp0), ctypes.byref(itemp1), ctypes.byref(itemp2))
+        self.logger.debug('itemp= {} {} {}.'
+                          .format(itemp0.value, itemp1.value, itemp2.value))
 
         z_res_c = ctypes.c_double()
-        error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+        self.logger.debug('Getting the value of State.Z...')
+        self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
             self.id_masc, var_name, index, 0, 0, ctypes.byref(z_res_c))
-        if error != 0:
-            self.logger.error("Error getting state: {}"
-                              .format(self.error_message()))
-            raise SystemExit
-        else:
-            self.logger.debug('Get state OK')
+        self.logger.debug('State get.')
 
         return z_res_c
 
