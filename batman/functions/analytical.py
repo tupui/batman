@@ -309,17 +309,17 @@ class Manning(object):
     def __call__(self, x):
         """Call function.
 
-        :param list x: inputs [Ks] or [Ks, Q] 
+        :param list x: inputs [Ks] or [Ks, Q]
         :return: Water height along the channel
         :rtype: float
         """
         x = np.array(x)
         if self.flag == '1D':
-           ks = x
-           q = self.inflow
+            ks = x
+            q = self.inflow
         else:
-           ks, q = x
+            ks, q = x
 
-        h = q / (ks * self.w * np.sqrt(self.slope)) 
+        h = q / (ks * self.w * np.sqrt(self.slope))
         h = np.power(h, 3. / 5.)
-        return h    
+        return h

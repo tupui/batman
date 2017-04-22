@@ -31,7 +31,7 @@ def histogram(results, xlab='Quantity of interest', ylab='Density', title='Histo
                   'weight': 'normal', 'verticalalignment': 'bottom'}
     axis_font = {'fontname': 'sans-serif', 'size': '16'}
     # legend_font = fm.FontProperties(family='sans-serif', size=16)
-    my_pdf = gaussian_kde(results)
+    my_pdf = gaussian_kde(results.flatten())
     x = np.linspace(min(results), max(results), 100)
     fig = plt.figure()
     plt.plot(x, my_pdf(x), 'r')

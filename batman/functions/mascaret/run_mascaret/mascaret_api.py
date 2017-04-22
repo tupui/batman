@@ -39,7 +39,7 @@ class MascaretApi(object):
         :param str name: name of the attribute
         :param ... value: value to assign
         """
-        object.__setattr__(self, name, value) 
+        object.__setattr__(self, name, value)
         if (name is 'error') and (value is not 0):
             self.logger.error("API error:\n{}".format(self.error_message()))
             raise SystemExit
@@ -341,7 +341,8 @@ class MascaretApi(object):
         :param list x: inputs [Ks, Q]
         :param bool saveall: Change the default name of the Results file
         """
-        if 'MC' in self.user_settings:
+        if ('MC' in self.user_settings) and (x is None):
+            self.logger.info('Performing a Monte-Carlo analysis...')
             try:
                 n = self.user_settings['MC']['Ne']
             except KeyError:
@@ -379,6 +380,7 @@ class MascaretApi(object):
             h = self.run_mascaret(self.doe, flag=flag, saveall=True)
 
         else:
+            self.logger.info('Performing a single MASCARET simulation...')
             h = self.run_mascaret(x=x, saveall=saveall)
 
         self.results = h

@@ -7,8 +7,8 @@ study = MascaretApi('config_canal.json','config_canal_user.json')
 # Print informations concerning this study
 print(study)
 
-# Run Mascaret with the user defined parameters
-h = study.run_mascaret()
+# Perform a specific study
+h = study([30, 3000])
 print(h)
 
 # Realize the study with the user defined tasks (e.g. Monte-Carlo)
