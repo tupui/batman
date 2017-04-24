@@ -20,7 +20,8 @@ import matplotlib.ticker as tick
 from matplotlib.patches import Polygon
 from ...utils import multi_eval
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 class MascaretApi(object):
@@ -76,8 +77,14 @@ class MascaretApi(object):
         # Read and apply user defined parameters
         self.user_defined(user_settings)
 
+        # Get the curv abs for each index
+        self.curv_abs()
+
         # Initialize model
         self.init_model()
+
+       # Get Model.CrossSection
+        self.cross_section
 
     def load_mascaret(self, libmascaret):
         """Load Mascaret library.
@@ -242,6 +249,30 @@ class MascaretApi(object):
         self.error = self.libmascaret.C_DELETE_MASCARET(self.id_masc)
         self.logger.debug("Model #{} deleted.".format(self.id_masc.value))
 
+    def user_defined(self, user_settings=None):
+        """Read user parameters from :file:`user_settings`` and apply values.
+
+        Look for ``Q_BC`` (``Q_BC={'idx','value'}``) and ``Ks``
+        (``Ks={'zone','idx','value', 'ind_zone'}``) (the ``Ks`` for 1 point or
+        1 zone). Use :meth:`zone_friction_minor`, :meth:`friction_minor` and
+        :meth:`bc_qt`.
+
+        :param str user_settings: Path of the *JSON* settings file
+        """
+        if user_settings is not None:
+            with open(user_settings, 'rb') as file:
+                file = file.read().decode('utf8')
+                self.user_settings = json.loads(
+                    file, encoding="utf-8", object_pairs_hook=OrderedDict)
+        if 'Q_BC' in self.user_settings:
+            print ('IN CHANGE Q_BC')
+            self.bc_qt = self.user_settings['Q_BC']
+        if 'Ks' in self.user_settings:
+            if self.user_settings['Ks']['zone']:
+                self.zone_friction_minor = self.user_settings['Ks']
+            else:
+                self.friction_minor = self.user_settings['Ks']
+
     def __repr__(self):
         """Class informations based on settings."""
         string = ("MODEL FILES:\n"
@@ -323,6 +354,9 @@ class MascaretApi(object):
                 self.bc_qt = {'idx': self.user_settings['Q_BC']['idx'],
                               'value': x[1]}
 
+        else:
+            self.user_defined()
+
         self.empty_opt()
         self.logger.info('Running Mascaret...')
         self.error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
@@ -386,28 +420,6 @@ class MascaretApi(object):
         self.results = h
 
         return h
-
-    def user_defined(self, user_settings):
-        """Read user parameters from :file:`user_settings`` and apply values.
-
-        Look for ``Q_BC`` (``Q_BC={'idx','value'}``) and ``Ks``
-        (``Ks={'zone','idx','value', 'ind_zone'}``) (the ``Ks`` for 1 point or
-        1 zone). Use :meth:`zone_friction_minor`, :meth:`friction_minor` and
-        :meth:`bc_qt`.
-
-        :param str user_settings: Path of the *JSON* settings file
-        """
-        with open(user_settings, 'rb') as file:
-            file = file.read().decode('utf8')
-            self.user_settings = json.loads(
-                file, encoding="utf-8", object_pairs_hook=OrderedDict)
-        if 'Q_BC' in self.user_settings:
-            self.bc_qt = self.user_settings['Q_BC']
-        if 'Ks' in self.user_settings:
-            if self.user_settings['Ks']['zone']:
-                self.zone_friction_minor = self.user_settings['Ks']
-            else:
-                self.friction_minor = self.user_settings['Ks']
 
     def error_message(self):
         """Error message wrapper.
@@ -519,7 +531,7 @@ class MascaretApi(object):
         size2 = ctypes.c_int()
         # Not used (0)
         size3 = ctypes.c_int()
-        self.logger.debug('Getting the size of Model.Graph.Discharge...')
+        self.logger.debug('Setting the size of Model.Graph.Discharge...')
         self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
         self.logger.debug('Size Model.Graph.Discharge= {} {} {}.'
@@ -535,6 +547,7 @@ class MascaretApi(object):
                 self.id_masc, var_name, num_bc_c, indextime_bc_c, 0, ctypes.byref(q_bc_c))
 
         self.logger.debug('BC Q(t) set.')
+        print (self.bc_qt)
 
     @property
     def ind_zone_frot(self):
@@ -700,6 +713,71 @@ class MascaretApi(object):
 
         return z_res_c
 
+    def curv_abs(self):
+        """Get abscurv at given index in :attr:`user_settings['misc']['index_outstate']`.
+
+        Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET` and
+        :meth:`C_GET_DOUBLE_MASCARET`.
+
+        :param float index: Index to get the state from
+        :return: State at a given index
+        :rtype: float
+        """
+        var_name = ctypes.c_char_p(b'Model.X')
+
+        itemp0 = ctypes.c_int()
+        itemp1 = ctypes.c_int()
+        itemp2 = ctypes.c_int()
+        self.logger.debug('Getting the size of Model.X...')
+        self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+            self.id_masc, var_name, 0, ctypes.byref(itemp0), ctypes.byref(itemp1), ctypes.byref(itemp2))
+        self.logger.debug('itemp= {} {} {}.'
+                          .format(itemp0.value, itemp1.value, itemp2.value))
+        print('itemp= {} {} {}.'
+                          .format(itemp0.value, itemp1.value, itemp2.value))
+
+        x_res_c = ctypes.c_double()
+        self.logger.debug('Getting the value of Model.X...')
+        for k in range(1, itemp0.value+1):
+            self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+                self.id_masc, var_name, k, 0, 0, ctypes.byref(x_res_c))
+            print (x_res_c.value)
+
+        self.logger.debug('Model.X get.')
+
+        return x_res_c
+
+    @property
+    def cross_section(self):
+        """Get CrossSection everywhere. 
+        Uses Mascaret Api C_GET_TAILLE_VAR_MASCARET and C_GET_DOUBLE_MASCARET. PENSER A CREER ZBOT idx et ZBOT value dans user.json"""
+        var_name = ctypes.c_char_p(b'Model.CrossSection.Y')
+#        var_name = ctypes.c_char_p(b'Model.Zbot')
+        size1 = ctypes.c_int()
+        size2 = ctypes.c_int()
+        size3 = ctypes.c_int()
+        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+            self.id_masc, var_name, 0, ctypes.byref(size1),
+            ctypes.byref(size2), ctypes.byref(size3))
+        self.logger.debug('size Model.Zbot = {} {} {}'
+                          .format(size1.value, size2.value, size3.value))
+        Zbot_c = ctypes.c_double()
+        for k in range(size1.value):
+            for kk in range(size2.value):
+                print (k,kk)
+                error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+#                    self.id_masc, var_name, 1, self.Zbot_idx, 0, ctypes.byref(Zbot_c))
+                    self.id_masc, var_name, k+1, kk+1, 0, ctypes.byref(Zbot_c))
+                print (Zbot_c.value)
+# RANGER DANS UN TABLEAU ET RETOURNER  et printer LE TABLEUA 
+        if error != 0:
+            self.logger.error("Error getting cross section bathymetry: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('Cross section bathymetry value= {}'.format(Zbot_c.value))
+
+        return Zbot_c.value
+
     def read_opt(self, filename='ResultatsOpthyca.opt'):
         """Read the results :file:`ResultatsOpthyca.opt`.
 
@@ -720,7 +798,7 @@ class MascaretApi(object):
         with open("ResultatsOpthyca.opt", 'w'):
             self.logger.debug('Cleaning results to launch a new run.')
 
-    def plot_opt(self, xlab='Curvilinear abscissa (m)', ylab1='Water level (m)',
+    def plot_opt(self, filename='ResultatsOpthyca.opt', xlab='Curvilinear abscissa (m)', ylab1='Water level (m)',
                  ylab2='Flow rate (m3/s)', title='Water level along the open-channel at final time'):
         """Plots results contained in the results file :file:`ResultatsOpthyca.opt`.
 
@@ -729,7 +807,7 @@ class MascaretApi(object):
         :param str ylab2: label y2
         :param str title: Title
         """
-        opt_data = self.read_opt()
+        opt_data = self.read_opt(filename)
 
         nb = int(max(opt_data[:, 2]))
         x = opt_data[-nb:-1, 3]
