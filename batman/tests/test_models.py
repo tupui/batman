@@ -146,7 +146,6 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
 
 
 def test_evofusion(mufi_data):
-    print(mufi_data)
     _, _, dist, model, point, target_point, space, target_space = mufi_data
 
     surrogate = Evofusion(space, target_space)

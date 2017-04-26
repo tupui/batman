@@ -48,9 +48,9 @@ def test_Forrester():
     f_e = Forrester('e')
     f_c = Forrester('c')
     assert f_e([0.4]) == pytest.approx(0.11477697, 0.0001)
-    assert f_c([0.4]) == pytest.approx(-4.85223025, 0.0001)
+    assert f_c([0.4]) == pytest.approx(-5.94261151, 0.0001)
     assert f_e([0.6]) == pytest.approx(-0.14943781, 0.0001)
-    assert f_c([0.6]) == pytest.approx(-5.49437807, 0.0001)
+    assert f_c([0.6]) == pytest.approx(-4.0747189, 0.0001)
 
 
 def test_Mascaret():

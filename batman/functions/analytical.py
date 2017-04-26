@@ -269,7 +269,7 @@ class Forrester(object):
         if self.fidelity is 'e':
            return f_e 
         else:
-            f = 10 * f_e + 10 * (x - 0.5) - 5
+            f = 0.5 * f_e + 10 * (x - 0.5) - 5
 
         return f
 
