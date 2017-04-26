@@ -12,6 +12,7 @@ It implements the following classes:
 - :class:`Rosenbrock`,
 - :class:`Ishigami`,
 - :class:`G_Function`,
+- :class:`Forrester`,
 - :class:`Channel_Flow`,
 - :class:`Manning`.
 
@@ -29,6 +30,9 @@ References
 .. [Ishigami] Ishigami, T., & Homma, T. (1990, December): An importance quantification technique in uncertainty analysis for computer models. In Uncertainty Modeling and Analysis, 1990. Proceedings., First International Symposium on (pp. 398-403). IEEE.
 
 .. [G-Function] Saltelli, A., Chan, K., & Scott, E. M. (Eds.). (2000). Sensitivity analysis (Vol. 134). New York: Wiley.
+
+.. [Forrester] Forrester, Sobester. (2007). Multi-Fidelity Optimization via Surrogate Modelling. In Proceedings of the Royal Society A: Mathematical, Physical and Engineering Sciences.
+
 """
 import numpy as np
 import logging
@@ -148,7 +152,6 @@ class Ishigami(object):
         v12 = 0
         v13 = self.b ** 2 * np.pi ** 8 * 8 / 225
         v23 = 0
-        v123 = 0
 
         self.s_first = np.array([v1 / var, v2 / var, v3 / var])
         self.s_second = np.array([[0.       ,        0., v13 / var],
@@ -221,6 +224,53 @@ class G_Function(object):
         f = 1.
         for i in range(self.d_in):
             f *= (abs(4. * x[i] - 2) + self.a[i]) / (1. + self.a[i])
+        return f
+
+
+class Forrester(object):
+
+    r"""[Forrester]_ class.
+
+    .. math:: F_{e}(x) = (6x-2)^2\sin(12x-4), \\
+              F_{c}(x) = AF_e(x)+B(x-0.5)+C,
+
+    were :math:`x\in{0,1}` and :math:`A=0.5, B=10, C=-5`.
+
+    This set of two functions are used to represents a high an a low fidelity.
+
+    """
+
+    logger = logging.getLogger(__name__)
+
+    def __init__(self, fidelity='e'):
+        """Forrester-function definition.
+
+        ``e`` stands for expansive and ``c`` for cheap.
+
+        :param str fidelity: select the fidelity ``['e'|'f']``
+        """
+        self.d_in = 1
+        self.d_out = 1
+        self.fidelity = fidelity
+
+        self.logger.info('Using function Forrester with fidelity: {}'
+                         .format(self.fidelity))
+
+    @multi_eval
+    def __call__(self, x):
+        """Call function.
+
+        :param list x: inputs
+        :return: f(x)
+        :rtype: float
+        """
+        x = x[0]
+        f_e = (6 * x - 2) ** 2 * np.sin(12 * x - 4)
+        if self.fidelity is 'e':
+           return f_e 
+        else:
+            f = 10 * f_e + 10 * (x - 0.5) - 5
+
         return f
 
 

@@ -1,7 +1,7 @@
 # coding: utf8
 import pytest
 from batman.functions import (Michalewicz, Rosenbrock, Ishigami, G_Function,
-                              Manning, Mascaret)
+                              Forrester, Manning, Mascaret)
 from scipy.optimize import differential_evolution
 import numpy as np
 import numpy.testing as npt
@@ -17,6 +17,7 @@ def test_Michalewicz():
     f_obj_5d = results.fun
     assert f_obj_5d == pytest.approx(-4.687, 0.05)
 
+
 def test_Rosenbrock():
     f_2d = Rosenbrock()
     assert f_2d([1., 2.]) == 100.
@@ -25,10 +26,12 @@ def test_Rosenbrock():
     f_3d = Rosenbrock(d=3)
     assert f_3d([1., 1., 1]) == 0.
 
+
 def test_Ishigami():
     f_3d = Ishigami()
     assert f_3d([2, -3, 1]) == pytest.approx(1.1396, 0.01)
     assert f_3d([0, 0, 0]) == 0.
+
 
 def test_G_Function():
     f_6d = G_Function(d=6, a=np.array([78., 12., 0.5, 2., 97., 33.]))
@@ -40,6 +43,16 @@ def test_G_Function():
                                            decimal=2)
     assert True if test_indices is None else False
 
+
+def test_Forrester():
+    f_e = Forrester('e')
+    f_c = Forrester('c')
+    assert f_e([0.4]) == pytest.approx(0.11477697, 0.0001)
+    assert f_c([0.4]) == pytest.approx(-4.85223025, 0.0001)
+    assert f_e([0.6]) == pytest.approx(-0.14943781, 0.0001)
+    assert f_c([0.6]) == pytest.approx(-5.49437807, 0.0001)
+
+
 def test_Mascaret():
     f = Mascaret()
     f_out = f([31.54645246710516560, 4237.025232805773157])
@@ -48,6 +61,7 @@ def test_Mascaret():
                    1.7149e1, 1.446e1]
     test_output = npt.assert_almost_equal(f_out, f_data_base, decimal=2)
     assert True if test_output is None else False
+
 
 def test_Manning():
     f = Manning()
