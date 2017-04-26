@@ -4,7 +4,7 @@ import os
 import numpy as np
 import numpy.testing as npt
 import openturns as ot
-from batman.surrogate import (PC, Kriging, SurrogateModel)
+from batman.surrogate import (PC, Kriging, Evofusion, SurrogateModel)
 from batman.tasks import Snapshot
 from batman.tests.conftest import sklearn_q2
 
@@ -142,4 +142,28 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
         return [evaluation[0].data]
     surrogate_ot = ot.PythonFunction(3, 1, wrap_surrogate)
     q2 = sklearn_q2(dists, model, surrogate_ot)
+    assert q2 == pytest.approx(1, 0.1)
+
+
+def test_evofusion(mufi_data):
+    print(mufi_data)
+    _, _, dist, model, point, target_point, space, target_space = mufi_data
+
+    surrogate = Evofusion(space, target_space)
+
+    # Test one point evaluation
+    pred, _ = np.array(surrogate.evaluate(point))
+    assert pred == pytest.approx(target_point, 0.1)
+
+    # Test space evaluation
+    pred, _ = np.array(surrogate.evaluate(space[0]))
+    test_output = npt.assert_almost_equal(target_space[0], pred, decimal=1)
+    assert True if test_output is None else False
+
+    # Compute predictivity coefficient Q2
+    def wrap_surrogate(x):
+        evaluation, _ = surrogate.evaluate(x)
+        return [evaluation]
+    surrogate_ot = ot.PythonFunction(1, 1, wrap_surrogate)
+    q2 = sklearn_q2(dist, model, surrogate_ot)
     assert q2 == pytest.approx(1, 0.1)

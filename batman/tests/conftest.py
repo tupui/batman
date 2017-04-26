@@ -5,7 +5,7 @@ import numpy as np
 import copy
 from sklearn.metrics import r2_score
 import openturns as ot
-from batman.functions import (Ishigami, Mascaret)
+from batman.functions import (Ishigami, Mascaret, Forrester)
 from batman.functions import output_to_sequence
 from batman.space import (Space, Point)
 from batman import Driver
@@ -79,6 +79,27 @@ def mascaret_data(settings_ishigami):
     space.sampling(50)
     target_space = f(space)
     return (f, dists, model, point, target_point, space, target_space)
+
+
+@pytest.fixture(scope="session")
+def mufi_data(settings_ishigami):
+    f_e = Forrester('e')
+    f_c = Forrester('c')
+    dist = ot.Uniform(0.0, 1.0)
+    model = ot.PythonFunction(1, 1, output_to_sequence(f_e))
+    point = Point([0.4])
+    target_point = f_e(point)
+    test_settings = copy.deepcopy(settings_ishigami)
+    test_settings["space"]["corners"] = [[0.0], [1.0]]
+    test_settings["snapshot"]["io"]["parameter_names"] = ["x"]
+    space_e = Space(test_settings)
+    space_e.sampling(4)
+    space_c = Space(test_settings)
+    space_c.sampling(10)
+
+    space = [space_e, space_c]
+    target_space = [f_e(space_e), f_c(space_c)]
+    return (f_e, f_c, dist, model, point, target_point, space, target_space)
 
 
 def sklearn_q2(dists, model, surrogate):
