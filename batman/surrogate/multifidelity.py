@@ -63,7 +63,7 @@ class Evofusion(object):
         """
         f_c, sigma_c = self.model_c.evaluate(point)
         f_err, sigma_err = self.model_err.evaluate(point)
-        f = f_c + f_err
+        prediction = f_c + f_err
         sigma = sigma_c + sigma_err
 
-        return f, sigma
+        return prediction, sigma

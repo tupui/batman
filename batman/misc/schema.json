@@ -240,7 +240,7 @@
         "method": {
           "type": "string",
           "default": "kriging",
-          "enum": ["rbf", "kriging", "pc"]
+          "enum": ["rbf", "kriging", "pc", "evofusion"]
         }
       },
       "required": [

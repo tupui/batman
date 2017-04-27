@@ -30,7 +30,8 @@ def multi_eval(fun):
         for i, x_i in enumerate(x):
             f[i] = fun(self, x_i, *args, **kwargs)
 
-        if 'kriging' in inspect.getmodule(fun).__name__:
+        if any(method in inspect.getmodule(fun).__name__
+               for method in ['kriging', 'multifidelity']):
             sigma = [None] * n_eval
             for i, _ in enumerate(x):
                 f[i], sigma[i] = f[i]

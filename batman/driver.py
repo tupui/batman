@@ -182,7 +182,6 @@ class Driver(object):
         else:
             self.logger.info('No POD is computed.')
             if self.provider.is_job:
-                print("JOB")
                 _snapshots = []
                 for s in futures.as_completed(snapshots):
                     _snapshots += [s.result()]

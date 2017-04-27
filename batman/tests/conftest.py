@@ -85,17 +85,18 @@ def mascaret_data(settings_ishigami):
 def mufi_data(settings_ishigami):
     f_e = Forrester('e')
     f_c = Forrester('c')
-    dist = ot.Uniform(0.0, 1.0)
+    dist = [ot.Uniform(0.0, 1.0)]
     model = ot.PythonFunction(1, 1, output_to_sequence(f_e))
-    point = Point([0.4])
+    point = Point([0.65])
     target_point = f_e(point)
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings["space"]["corners"] = [[0.0], [1.0]]
     test_settings["snapshot"]["io"]["parameter_names"] = ["x"]
     space_e = Space(test_settings)
-    space_e.sampling(4)
+    space_e.sampling(10)
+    # space_e += [(0,), (1,)]
     space_c = Space(test_settings)
-    space_c.sampling(10)
+    space_c.sampling(15)
 
     space = [space_e, space_c]
     target_space = [f_e(space_e), f_c(space_c)]

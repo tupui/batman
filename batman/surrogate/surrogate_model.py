@@ -24,6 +24,7 @@ import logging
 from .kriging import Kriging
 from .polynomial_chaos import PC
 from .RBFnet import RBFnet
+from .multifidelity import Evofusion
 from ..tasks import Snapshot
 from ..space import Space
 import dill as pickle
@@ -75,6 +76,8 @@ class SurrogateModel(object):
             self.predictor = Kriging(points, data)
         elif self.kind == 'pc':
             self.predictor = PC(input=points, output=data)
+        elif self.kind == 'evofusion':
+            self.predictor = Evofusion(points, data)
 
         self.logger.info('Predictor created')
         self.update = False
@@ -107,7 +110,7 @@ class SurrogateModel(object):
 
         points = np.array(points)
         points = self.scaler.transform(points)
-        if self.kind == 'kriging':
+        if self.kind in ['kriging', 'evofusion']:
             results, sigma = self.predictor.evaluate(points)
         else:
             results = self.predictor.evaluate(points)
