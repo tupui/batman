@@ -75,7 +75,7 @@ class Pod(Core):
              "maximum number of modes: {}\n"
              "number of modes: {}\n"
              "modes: {}\n"
-             .format(self.tolerance, self.points.dim, self.points.size,
+             .format(self.tolerance, self.points.dim, len(self.points),
                      self.mean_snapshot.shape[0], self.dim_max,
                      self.S.shape[0], self.S))
         return s

@@ -249,7 +249,7 @@ class Driver(object):
         processed_points = self.surrogate.space
         self.snapshot_counter = len(processed_points)
 
-        if len(processed_points) < self.initial_points.size:
+        if len(processed_points) < len(self.initial_points):
             # static or dynamic pod is finished,
             # we add new points to be processed
             self.initial_points = [p for p in self.initial_points
