@@ -21,8 +21,8 @@
             "init_size": {
               "type": "integer",
               "default": 20,
-              "minimum": 0,
-              "exclusiveMinimum": true
+              "minimum": 4,
+              "exclusiveMinimum": false
             },
             "required": [
               "method",
@@ -241,6 +241,18 @@
           "type": "string",
           "default": "kriging",
           "enum": ["rbf", "kriging", "pc", "evofusion"]
+        },
+        "cost_ratio": {
+          "type": "number",
+          "default": 2.0,
+          "minimum": 1,
+          "exclusiveMinimum": true,
+        },
+        "grand_cost": {
+          "type": "integer",
+          "default": 30,
+          "minimum": 4,
+          "exclusiveMinimum": false,
         }
       },
       "required": [
