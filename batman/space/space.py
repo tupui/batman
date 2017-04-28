@@ -71,12 +71,24 @@ class Space(list):
             self.max_points_nb = settings['space']['resampling']['resamp_size'] + self.doe_init
         else:
             self.max_points_nb = self.doe_init
-        self.size = 0
         corners = settings['space']['corners']
         self.dim = len(corners[0])
+        self.multifidelity = False
 
+        # Multifidelity configuration
+        if settings['surrogate']['method'] is 'evofusion':
+            self.multifidelity = True
+            self.doe_cheap = self.cheap_doe_from_expensive(self.doe_init)
+            self.logger.info('Multifidelity with Ne: {} and Nc: {}'
+                             .format(self.doe_init, self.doe_cheap))
+
+        # create parameter list and omit fidelity if relevent
         try:
             self.p_lst = settings['snapshot']['io']['parameter_names']
+            try:
+                self.p_lst.remove('fidelity')
+            except ValueError:
+                pass
         except KeyError:
             self.p_lst = ["x" + str(i) for i in range(self.dim)]
 
@@ -99,7 +111,7 @@ class Space(list):
         s = ("Hypercube points: {}\n"
              "Number of points: {}\n"
              "Max number of points: {}").format([c for c in self.corners],
-                                                self.size,
+                                                len(self),
                                                 self.max_points_nb)
         return s
 
@@ -108,6 +120,24 @@ class Space(list):
              "Points:\n"
              "{}").format(str(self), super(Space, self).__repr__())
         return s
+
+    def cheap_doe_from_expensive(self, n):
+        """Compute the number of points required for the cheap DOE.
+
+        :param int n: size of the expensive design
+        :return: size of the cheap design
+        :rtype: int
+        """
+        doe_cheap = (self.settings['surrogate']['grand_cost'] - n)\
+            * self.settings['surrogate']['cost_ratio']
+        doe_cheap = int(doe_cheap)
+        self.logger.info('Multifidelity with Ne: {} and Nc: {}'
+                         .format(n, doe_cheap))
+        if doe_cheap / n <= 1:
+            self.logger.error('Nc/Ne must be positive')
+            raise SystemExit
+        self.max_points_nb = n + doe_cheap
+        return doe_cheap
 
     def is_full(self):
         """Return whether the maximum number of points is reached."""
@@ -189,7 +219,7 @@ class Space(list):
 
         for point in points:
             # check point dimension is correct
-            if len(point) != self.dim:
+            if (len(point) - 1 if self.multifidelity else len(point)) != self.dim:
                 self.logger.exception("Coordinates dimensions mismatch, should be {}"
                                       .format(self.dim))
                 raise SystemExit
@@ -211,7 +241,6 @@ class Space(list):
             # verify point is not already in space
             if point not in self:
                 self.append(point)
-                self.size += 1
             else:
                 raise UnicityError("Point {} already exists in the space"
                                    .format(point))
@@ -232,10 +261,18 @@ class Space(list):
         if kind is None:
             kind = self.doe_method
         if n is None:
-            n = self.doe_init
+            n = self.cheap_doe_from_expensive(self.doe_init)
+        else:
+            n = self.cheap_doe_from_expensive(n)
 
         bounds = np.array(self.corners)
         samples = sampling.doe(n, bounds, kind)
+
+        if self.multifidelity:
+            levels = np.vstack((np.zeros((self.doe_init, 1)),
+                                np.ones((self.doe_cheap, 1))))
+            samples = np.vstack((samples[0:self.doe_init, :], samples))
+            samples = np.hstack((levels, samples))
 
         self.empty()
         self += samples
@@ -272,8 +309,8 @@ class Space(list):
             new_point, self.refined_pod_points = self.refiner.extrema(self.refined_pod_points)
         elif method == 'hybrid':
             new_point, self.refined_pod_points = self.refiner.hybrid(self.refined_pod_points,
-                                                                point_loo,
-                                                                next(self.hybrid))
+                                                                     point_loo,
+                                                                     next(self.hybrid))
 
         try:
             point = [Point(point) for point in [new_point]]
