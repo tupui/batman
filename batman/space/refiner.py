@@ -24,10 +24,6 @@ It implements the following methods:
     >> new_point = resample.sigma()
 
 """
-
-# Authors: Pamphile ROY <roy.pamphile@gmail.fr>
-# Copyright: CERFACS
-
 import logging
 from scipy.optimize import (differential_evolution, minimize, basinhopping)
 import numpy as np
@@ -46,7 +42,7 @@ class Refiner(object):
         """Initialize the refiner with the Surrogate and space corners.
 
         Points data are scaled between ``[0, 1]`` based on the size of the
-        corners taking into account a ``delta_space`` factor.
+        corners taking into account a :param:``delta_space`` factor.
 
         :param class:`surrogate.surrogate_model.SurrogateModel`: Surrogate
         :param dict settings: parameters
@@ -91,15 +87,14 @@ class Refiner(object):
         f, _ = self.surrogate(coords)
         try:
             _, f = np.split(f[0].data, 2)
-        except:
+        except (ValueError, TypeError):
             f = f[0].data
-        # sum_f = np.sum(self.pod.S ** 2 * f)
         sum_f = np.sum(f)
 
         return sign * sum_f
 
     def func_sigma(self, coords):
-        r"""Get the MSE for a given point.
+        r"""Get the Sigma for a given point.
 
         Retrieve Gaussian Process estimation of sigma.
         A composite indicator is constructed using POD's modes.
@@ -122,9 +117,10 @@ class Refiner(object):
         """Get the distance of influence.
 
         Compute the distance, Linf norm between the anchor point and
-        every sampling points. Linf allows to add this lenght to all 
+        every sampling points. Linf allows to add this lenght to all
         coordinates and ensure that no points will be within this hypercube.
-        It returns the minimal distance. ``point`` needs to be scaled by ``self.corners`` so the returned distance is scaled.
+        It returns the minimal distance. :arg:`point` needs to be scaled by
+        :attr:`self.corners` so the returned distance is scaled.
 
         :param np.array point: Anchor point
         :return: The distance to the nearest point
@@ -145,8 +141,8 @@ class Refiner(object):
         """Get the hypercube to add a point in.
 
         Propagate the distance around the anchor.
-        ``point`` is scaled by ``self.corners`` and input distance has to be.
-        Ensure that new values are bounded by corners.
+        :arg:`point` is scaled by :attr:`self.corners` and input distance has
+        to be. Ensure that new values are bounded by corners.
 
         :param np.array point: Anchor point
         :param float distance: The distance of influence
@@ -170,8 +166,8 @@ class Refiner(object):
     def hypercube_optim(self, point):
         """Get the hypercube to add a point in.
 
-        Compute the largest hypercube around the point based on the `L2-norm`.
-        Ensure that only the `leave-one-out` point lies within it.
+        Compute the largest hypercube around the point based on the *L2-norm*.
+        Ensure that only the *leave-one-out* point lies within it.
         Ensure that new values are bounded by corners.
 
         :param np.array point: Anchor point
@@ -245,9 +241,9 @@ class Refiner(object):
         return hypercube
 
     def sigma(self, hypercube=None):
-        """Find the point at max MSE.
+        """Find the point at max Sigma.
 
-        It returns the point where the mean square error (sigma) is maximum.
+        It returns the point where the variance (sigma) is maximum.
         To do so, it uses Gaussian Process information.
         A genetic algorithm get the global maximum of the function.
 
@@ -258,13 +254,13 @@ class Refiner(object):
         """
         if hypercube is None:
             hypercube = self.corners
-        self.logger.debug("MSE strategy")
+        self.logger.debug("Sigma strategy")
         result = differential_evolution(self.func_sigma, hypercube)
 
         return result.x
 
     def leave_one_out_sigma(self, point_loo):
-        """Mixture of Leave-one-out and MSE.
+        """Mixture of Leave-one-out and Sigma.
 
         Estimate the quality of the POD by *leave-one-out cross validation*
         (LOOCV), and add a point arround the max error point.
@@ -277,7 +273,7 @@ class Refiner(object):
         :rtype: lst(float)
 
         """
-        self.logger.info("Leave-one-out + MSE strategy")
+        self.logger.info("Leave-one-out + Sigma strategy")
         # Get the point of max error by LOOCV
         point = np.array(point_loo)
 
@@ -337,7 +333,7 @@ class Refiner(object):
 
         Using an anchor point based on the extremum value at sample points,
         search the hypercube around it. If a new extremum is found,it uses
-        Nelder-Mead method to add a new point.
+        *Nelder-Mead* method to add a new point.
         The point is then bounded back by the hypercube.
 
         :return: The coordinate of the point to add

@@ -54,10 +54,6 @@ M. Baudin, A. Dutfoy, B. Iooss, A. Popelin: OpenTURNS: An industrial software fo
 
 
 """
-
-# Authors: Pamphile ROY <roy.pamphile@gmail.fr>
-# Copyright: CERFACS
-
 import logging
 import numpy as np
 import openturns as ot
@@ -65,15 +61,15 @@ import otwrapy as otw
 from sklearn.metrics import (r2_score, mean_squared_error)
 from multiprocessing import cpu_count
 from openturns.viewer import View
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib import cm
 from os import mkdir
 import itertools
 from .wrapper import Wrapper
 from ..input_output import (IOFormatSelector, Dataset)
 from .. import functions as func_ref
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib import cm
 
 
 class UQ:

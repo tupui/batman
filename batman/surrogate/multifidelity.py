@@ -24,29 +24,32 @@ class Evofusion(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, input, output):
+    def __init__(self, inputs, output):
         """Create the predictor.
 
-        Data are arranged as decreasing fidelity. Hence, ``input[0]``
+        Data are arranged as decreasing fidelity. Hence, ``inputs[0]``
         corresponds to the highest fidelity.
 
-        :param ndarray input: The input used to generate the output. (fidelity, nb snapshots, nb parameters)
+        :param ndarray inputs: The inputs used to generate the output. (fidelity, nb snapshots, nb parameters)
         :param ndarray output: The observed data. (fidelity, nb snapshots, [nb output dim])
 
         """
-        self.model_c = Kriging(input[1], output[1])
+
+        print(inputs[~inputs[:,0]==0])
+
+        self.model_c = Kriging(inputs[1], output[1])
         try:
-            input[0][0][0]
+            inputs[0][0][0]
         except (TypeError, IndexError):
             pass
         else:
-            input_array = np.array([np.array(input[0][:]).reshape(len(input[0]), -1),
-                                    np.array(input[1][:]).reshape(len(input[1]), -1)])
+            inputs_array = np.array([np.array(inputs[0][:]).reshape(len(inputs[0]), -1),
+                                    np.array(inputs[1][:]).reshape(len(inputs[1]), -1)])
 
-        idx_cross_doe = np.where(input_array[0].reshape(-1,1) == input_array[1].reshape(1,-1))[1]
+        idx_cross_doe = np.where(inputs_array[0].reshape(-1,1) == inputs_array[1].reshape(1,-1))[1]
         output_err = output[0] - output[1][idx_cross_doe]
 
-        self.model_err = Kriging(input[0], output_err)
+        self.model_err = Kriging(inputs[0], output_err)
 
     @multi_eval
     def evaluate(self, point):
