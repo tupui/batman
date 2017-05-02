@@ -87,19 +87,24 @@ def mufi_data(settings_ishigami):
     f_c = Forrester('c')
     dist = [ot.Uniform(0.0, 1.0)]
     model = ot.PythonFunction(1, 1, output_to_sequence(f_e))
-    point = Point([0.65])
-    target_point = f_e(point)
+    point = [0, 0.65]
+    target_point = f_e(point[1:])
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings["space"]["corners"] = [[0.0], [1.0]]
-    test_settings["snapshot"]["io"]["parameter_names"] = ["x"]
-    space_e = Space(test_settings)
-    space_e.sampling(10)
-    # space_e += [(0,), (1,)]
-    space_c = Space(test_settings)
-    space_c.sampling(15)
+    test_settings["space"]["sampling"]["init_size"] = 10
+    test_settings["snapshot"]["io"]["parameter_names"] = ["fidelity", "x"]
+    test_settings["surrogate"]["method"] = 'evofusion'
+    test_settings["surrogate"]["cost_ratio"] = 5.1
+    test_settings["surrogate"]["grand_cost"] = 13.0
 
-    space = [space_e, space_c]
-    target_space = [f_e(space_e), f_c(space_c)]
+    space = Space(test_settings)
+    space.sampling()
+
+    working_space = np.array(space)
+
+    target_space = np.vstack([f_e(working_space[working_space[:, 0] == 0][:, 1:]),
+                              f_c(working_space[working_space[:, 0] == 1][:, 1:])])
+
     return (f_e, f_c, dist, model, point, target_point, space, target_space)
 
 

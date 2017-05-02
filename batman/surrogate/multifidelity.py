@@ -34,8 +34,20 @@ class Evofusion(object):
         :param ndarray output: The observed data. (fidelity, nb snapshots, [nb output dim])
 
         """
+        inputs = np.array(inputs)
+        output = np.array(output)
 
-        print(inputs[~inputs[:,0]==0])
+        # Split into cheap and expensive arrays
+        inputs = [inputs[inputs[:, 0] == 0][:, 1:],
+                  inputs[inputs[:, 0] == 1][:, 1:]]
+
+        n_e = inputs[0].shape[0]
+        n_c = inputs[1].shape[0]
+
+        inputs = [inputs[0].reshape((n_e, -1)),
+                  inputs[1].reshape((n_c, -1))]
+        output = [output[:n_e].reshape((n_e, -1)),
+                  output[n_e:].reshape((n_c, -1))]
 
         self.model_c = Kriging(inputs[1], output[1])
         try:
@@ -64,6 +76,7 @@ class Evofusion(object):
         :rtype: lst
 
         """
+        point = point[1:]
         f_c, sigma_c = self.model_c.evaluate(point)
         f_err, sigma_err = self.model_err.evaluate(point)
         prediction = f_c + f_err

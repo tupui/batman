@@ -90,7 +90,7 @@ def test_GP_14d(mascaret_data):
 
     surrogate = Kriging(space, target_space)
 
-    # Test space evaluation
+    # Test point evaluation
     pred, _ = np.array(surrogate.evaluate(point))
     test_output = npt.assert_almost_equal(target_point, pred, decimal=1)
     assert True if test_output is None else False
@@ -155,28 +155,36 @@ def test_evofusion(mufi_data):
     pred, _ = np.array(surrogate.evaluate(point))
     assert pred == pytest.approx(target_point, 0.1)
 
-    # Test space evaluation
-    pred, _ = np.array(surrogate.evaluate(space[0]))
-    test_output = npt.assert_almost_equal(target_space[0], pred, decimal=1)
-    assert True if test_output is None else False
-
     # Compute predictivity coefficient Q2
     def wrap_surrogate(x):
-        evaluation, _ = surrogate.evaluate(x)
+        evaluation, _ = surrogate.evaluate([0, x])
         return [evaluation]
     surrogate_ot = ot.PythonFunction(1, 1, wrap_surrogate)
     q2 = sklearn_q2(dist, model, surrogate_ot)
     assert q2 == pytest.approx(1, 0.1)
 
-    # Plotting
-    x = np.linspace(0, 1, 200).reshape(-1, 1)
-    surrogate_e = Kriging(space[0], target_space[0])
-    surrogate_c = Kriging(space[1], target_space[1])
-    pred_evo, _ = np.array(surrogate.evaluate(x))
-    pred_e, _ = np.array(surrogate_e.evaluate(x))
-    pred_c, _ = np.array(surrogate_c.evaluate(x))
+    # # Plotting
+    # x = np.linspace(0, 1, 200).reshape(-1, 1)
+    # x_evo = np.hstack([np.zeros((200, 1)), x])
+    # space = np.array(space)
+    # target_space = np.array(target_space)
 
-    # Plotting
+    # # Split into cheap and expensive arrays
+    # space = [space[space[:, 0] == 0][:, 1],
+    #          space[space[:, 0] == 1][:, 1]]
+    # n_e = space[0].shape[0]
+    # n_c = space[1].shape[0]
+    # space = [space[0].reshape((n_e, -1)),
+    #          space[1].reshape((n_c, -1))]
+    # target_space = [target_space[:n_e].reshape((n_e, -1)),
+    #                 target_space[n_e:].reshape((n_c, -1))]
+
+    # surrogate_e = Kriging(space[0], target_space[0])
+    # surrogate_c = Kriging(space[1], target_space[1])
+    # pred_evo, _ = np.array(surrogate.evaluate(x_evo))
+    # pred_e, _ = np.array(surrogate_e.evaluate(x))
+    # pred_c, _ = np.array(surrogate_c.evaluate(x))
+
     # plt.figure("Evofusion on Forrester's functions")
     # plt.plot(space[0], target_space[0], 'o', label=r'$y_e$')
     # plt.plot(space[1], target_space[1], '^', label=r'$y_c$')
