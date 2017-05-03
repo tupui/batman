@@ -246,13 +246,13 @@
           "type": "number",
           "default": 2.0,
           "minimum": 1,
-          "exclusiveMinimum": true,
+          "exclusiveMinimum": true
         },
         "grand_cost": {
           "type": "integer",
           "default": 30,
           "minimum": 4,
-          "exclusiveMinimum": false,
+          "exclusiveMinimum": false
         }
       },
       "required": [

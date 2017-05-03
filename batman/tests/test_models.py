@@ -151,13 +151,13 @@ def test_evofusion(mufi_data):
 
     surrogate = Evofusion(space, target_space)
 
-    # # Test one point evaluation
+    # Test one point evaluation
     pred, _ = np.array(surrogate.evaluate(point))
     assert pred == pytest.approx(target_point, 0.1)
 
     # Compute predictivity coefficient Q2
     def wrap_surrogate(x):
-        evaluation, _ = surrogate.evaluate([0, x])
+        evaluation, _ = surrogate.evaluate([x])
         return [evaluation]
     surrogate_ot = ot.PythonFunction(1, 1, wrap_surrogate)
     q2 = sklearn_q2(dist, model, surrogate_ot)
@@ -165,7 +165,6 @@ def test_evofusion(mufi_data):
 
     # # Plotting
     # x = np.linspace(0, 1, 200).reshape(-1, 1)
-    # x_evo = np.hstack([np.zeros((200, 1)), x])
     # space = np.array(space)
     # target_space = np.array(target_space)
 
@@ -181,7 +180,7 @@ def test_evofusion(mufi_data):
 
     # surrogate_e = Kriging(space[0], target_space[0])
     # surrogate_c = Kriging(space[1], target_space[1])
-    # pred_evo, _ = np.array(surrogate.evaluate(x_evo))
+    # pred_evo, _ = np.array(surrogate.evaluate(x))
     # pred_e, _ = np.array(surrogate_e.evaluate(x))
     # pred_c, _ = np.array(surrogate_c.evaluate(x))
 

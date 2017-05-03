@@ -76,7 +76,6 @@ class Evofusion(object):
         :rtype: lst
 
         """
-        point = point[1:]
         f_c, sigma_c = self.model_c.evaluate(point)
         f_err, sigma_err = self.model_err.evaluate(point)
         prediction = f_c + f_err

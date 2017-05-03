@@ -87,8 +87,8 @@ def mufi_data(settings_ishigami):
     f_c = Forrester('c')
     dist = [ot.Uniform(0.0, 1.0)]
     model = ot.PythonFunction(1, 1, output_to_sequence(f_e))
-    point = [0, 0.65]
-    target_point = f_e(point[1:])
+    point = [0.65]
+    target_point = f_e(point)
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings["space"]["corners"] = [[0.0], [1.0]]
     test_settings["space"]["sampling"]["init_size"] = 10

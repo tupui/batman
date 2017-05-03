@@ -126,8 +126,9 @@ def import_config(path_config, path_schema):
 
         try:
             return json.loads('\n'.join(lines), encoding="utf-8", **kwargs)
-        except:
-            logger.exception("Connot load configuration file: json error")
+        except Exception as tb:
+            logger.exception("JSON error, cannot load configuration file: {}"
+                             .format(tb))
             raise SystemExit
 
     with open(path_config, 'rb') as file:
