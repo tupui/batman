@@ -54,7 +54,7 @@ class SurrogateModel(object):
                         "sampling": {"init_size": np.inf, "method": kind}}}
         self.space = Space(settings)
         self.pod = None
-        self.update = False  # update switch: update model if POD update
+        self.update = False  # switch: update model if POD update
         self.directories = {
             'surrogate': 'surrogate.dat',
             'space': 'space.dat',
@@ -63,9 +63,6 @@ class SurrogateModel(object):
 
     def fit(self, points, data, pod=None):
         """Construct the surrogate."""
-        self.pod = pod
-        self.space += points
-        self.space.doe_init = len(points)
         points = np.array(points)
         points = self.scaler.transform(points)
         # predictor object
@@ -78,6 +75,11 @@ class SurrogateModel(object):
             self.predictor = PC(input=points, output=data)
         elif self.kind == 'evofusion':
             self.predictor = Evofusion(points, data)
+            self.space.multifidelity = True
+
+        self.pod = pod
+        self.space += points
+        self.space.doe_init = len(points)
 
         self.logger.info('Predictor created')
         self.update = False

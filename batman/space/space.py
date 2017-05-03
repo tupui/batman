@@ -76,11 +76,14 @@ class Space(list):
         self.multifidelity = False
 
         # Multifidelity configuration
-        if settings['surrogate']['method'] is 'evofusion':
-            self.multifidelity = True
-            self.doe_cheap = self.cheap_doe_from_expensive(self.doe_init)
-            self.logger.info('Multifidelity with Ne: {} and Nc: {}'
-                             .format(self.doe_init, self.doe_cheap))
+        try:
+            if settings['surrogate']['method'] == 'evofusion':
+                self.multifidelity = True
+                self.doe_cheap = self.cheap_doe_from_expensive(self.doe_init)
+                self.logger.info('Multifidelity with Ne: {} and Nc: {}'
+                                 .format(self.doe_init, self.doe_cheap))
+        except KeyError:
+            pass
 
         # create parameter list and omit fidelity if relevent
         try:
@@ -131,8 +134,6 @@ class Space(list):
         doe_cheap = (self.settings['surrogate']['grand_cost'] - n)\
             * self.settings['surrogate']['cost_ratio']
         doe_cheap = int(doe_cheap)
-        self.logger.info('Multifidelity with Ne: {} and Nc: {}'
-                         .format(n, doe_cheap))
         if doe_cheap / n <= 1:
             self.logger.error('Nc/Ne must be positive')
             raise SystemExit
@@ -159,6 +160,8 @@ class Space(list):
         :param str path: folder to save the fig in
         """
         sample = np.array(self)
+        if self.multifidelity:
+            sample = sample[:, 1:]
         fig = plt.figure('Design of Experiment')
 
         if self.dim < 2:
@@ -220,14 +223,14 @@ class Space(list):
         for point in points:
             # check point dimension is correct
             if (len(point) - 1 if self.multifidelity else len(point)) != self.dim:
-                self.logger.exception("Coordinates dimensions mismatch, should be {}"
-                                      .format(self.dim))
+                self.logger.exception("Coordinates dimensions mismatch: is {},"
+                                      " should be {}"
+                                      .format(len(point), self.dim))
                 raise SystemExit
 
             # check space is full
             if self.is_full():
-                raise FullSpaceError("Space is full"
-                                     .format(point))
+                raise FullSpaceError('Cannot add Point {}'.format(point))
 
             point = Point(point)
 
@@ -236,7 +239,7 @@ class Space(list):
                 & (np.array(point) <= self.corners[1]).all()
             if not not_alien:
                 raise AlienPointError("Point {} is out of space"
-                                      .format(str(point)))
+                                      .format(point))
 
             # verify point is not already in space
             if point not in self:
@@ -260,14 +263,17 @@ class Space(list):
         """
         if kind is None:
             kind = self.doe_method
-        if n is None:
+        if self.multifidelity and n is None:
             n = self.cheap_doe_from_expensive(self.doe_init)
-        else:
+        elif self.multifidelity and n is not None:
             n = self.cheap_doe_from_expensive(n)
+        elif not self.multifidelity and n is None:
+            n = self.doe_init
 
         bounds = np.array(self.corners)
         samples = sampling.doe(n, bounds, kind)
 
+        # concatenate cheap and expensive space and add identifier 0 or 1
         if self.multifidelity:
             levels = np.vstack((np.zeros((self.doe_init, 1)),
                                 np.ones((self.doe_cheap, 1))))
