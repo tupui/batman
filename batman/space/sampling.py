@@ -26,7 +26,8 @@ def doe(n_sample, bounds, kind):
     elif kind == 'sobolscramble':
         pass
     elif kind == 'uniform':
-        n = [n_sample] * len(bounds[1])
+        n = int(np.floor(np.power(n_sample, 1 / len(bounds[1]))))
+        n = [n] * len(bounds[1])
         return uniform(dim, n, bounds)
     else:
         raise ValueError('Bad sampling method: ' + kind)
