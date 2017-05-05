@@ -64,17 +64,17 @@ class SurrogateModel(object):
     def fit(self, points, data, pod=None):
         """Construct the surrogate."""
         points = np.array(points)
-        points = self.scaler.transform(points)
+        points_scaled = self.scaler.transform(points)
         # predictor object
         self.logger.info('Creating predictor of kind {}...'.format(self.kind))
         if self.kind == 'rbf':
-            self.predictor = RBFnet(points, data)
+            self.predictor = RBFnet(points_scaled, data)
         elif self.kind == 'kriging':
-            self.predictor = Kriging(points, data)
+            self.predictor = Kriging(points_scaled, data)
         elif self.kind == 'pc':
-            self.predictor = PC(input=points, output=data)
+            self.predictor = PC(input=points_scaled, output=data)
         elif self.kind == 'evofusion':
-            self.predictor = Evofusion(points, data)
+            self.predictor = Evofusion(points_scaled, data)
             self.space.multifidelity = True
 
         self.pod = pod
