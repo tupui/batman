@@ -21,12 +21,11 @@ it can be resampled or points can be added manually.
 import logging
 import os
 import numpy as np
-from collections import OrderedDict
 import itertools
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from . import sampling
+from .sampling import Doe
 from .point import Point
 from .refiner import Refiner
 
@@ -271,7 +270,8 @@ class Space(list):
             n = self.doe_init
 
         bounds = np.array(self.corners)
-        samples = sampling.doe(n, bounds, kind)
+        doe = Doe(n, bounds, kind)
+        samples = doe.generate()
 
         # concatenate cheap and expensive space and add identifier 0 or 1
         if self.multifidelity:

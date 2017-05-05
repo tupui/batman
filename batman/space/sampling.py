@@ -1,132 +1,162 @@
 # coding: utf8
 from scipy import stats
+from scipy.stats import randint
 import numpy as np
 import openturns as ot
 
-def doe(n_sample, bounds, kind):
-    """Design of Experiment.
+class Doe():
 
-    :param int n_sample: number of samples
-    :param np.array bounds: Space's corners
-    :param str kind: Sampling Method
-    :return: Sampling
-    :rtype: lst(array)
-    """
-    dim = bounds.shape[1]
-    r = np.zeros([n_sample, dim])
-    if kind == 'halton':
-        sequence_type = ot.LowDiscrepancySequence(ot.HaltonSequence(dim))
-    elif kind == 'sobol':
-        sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(dim))
-    elif kind == 'faure':
-        sequence_type = ot.LowDiscrepancySequence(ot.FaureSequence(dim))
-    elif (kind == 'lhs') or (kind == 'lhsc'):
-        distribution = ot.ComposedDistribution([ot.Uniform(0, 1)] * dim)
-        sequence_type = ot.LHSExperiment(distribution, n_sample)
-    elif kind == 'sobolscramble':
-        pass
-    elif kind == 'uniform':
-        n = int(np.floor(np.power(n_sample, 1 / len(bounds[1]))))
-        n = [n] * len(bounds[1])
-        return uniform(dim, n, bounds)
-    else:
-        raise ValueError('Bad sampling method: ' + kind)
+    """DOE class."""
 
-    if (kind == 'lhs') or (kind == 'lhsc'):
-        sample = sequence_type.generate()
-    elif kind == 'sobolscramble':
-        sample = scrambled_sobol_generate(dim, n_sample)
-    else:
-        sample = sequence_type.generate(n_sample)
+    def __init__(self, n_sample, bounds, kind):
+        """Initialize the DOE generation.
 
-    if kind == 'lhsc':
-        for j in range(dim):
-            b = bounds[0, j]
-            a = bounds[1, j] - b
-            for i, p in enumerate(sample):
-                r[i, j] = a * ((p[j] // (1. / n_sample) + 1) - 0.5) / n_sample + b
-    else:
-        for j in range(dim):
-            b = bounds[0, j]
-            a = bounds[1, j] - b
-            for i, p in enumerate(sample):
-                r[i, j] = a * p[j] + b
-    return r
+        It uses design from class :class:`openturns.LowDiscrepancySequence`.
 
+        In case of :attr:`kind` is ``uniform``, :attr:`n_sample` is decimated in
+        order to have the same number of points in all dimensions.
 
-def uniform(dim, n_sample, bounds):
-    """Uniform sampling."""
-    n = np.product(n_sample)
-    h = []
-    for i in range(dim):
-        h1 = 1. / float(n_sample[i] - 1)
-        h.append(h1)
-    r = np.zeros([n, dim])
-    compt = np.zeros([1, dim], np.int)
-    for i in range(1, n):
-        compt[0, 0] = compt[0, 0] + 1
-        for j in range(dim - 1):
-            if compt[0, j] > n_sample[j] - 1:
-                compt[0, j] = 0
-                compt[0, j + 1] = compt[0, j + 1] + 1
-        for j in range(dim):
-            r[i, j] = float(compt[0, j]) * h[j]
-    for i in range(dim):
-        b = bounds[0, i]
-        a = bounds[1, i] - b
-        for j in range(n):
-            r[j, i] = a * r[j, i] + b
-    return r
+        If :attr:`kind` is ``discrete``, a join distribution between a discrete
+        uniform distribution is made with continuous distributions.
 
+        .. note:: Only the first parameter can be set discrete.
 
-def scrambled_sobol_generate(dim, n_sample):
-    """Scrambled Sobol.
+        :param int n_sample: number of samples
+        :param np.array bounds: Space's corners [[min, n dim], [max, n dim]]
+        :param str kind: Sampling Method ['halton', 'sobol', 'faure', 'lhs[c]',
+                                          'sobolscramble', 'uniform', discrete]
+        :return: Sampling
+        :rtype: lst(array)
+        """
+        self.n_sample = n_sample
+        self.bounds = bounds
+        self.kind = kind
+        self.dim = bounds.shape[1]
 
-    Scramble function as in Owen (1997)
+        if self.kind == 'halton':
+            self.sequence_type = ot.LowDiscrepancySequence(ot.HaltonSequence(self.dim))
+        elif self.kind == 'sobol':
+            self.sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(self.dim))
+        elif self.kind == 'faure':
+            self.sequence_type = ot.LowDiscrepancySequence(ot.FaureSequence(self.dim))
+        elif (self.kind == 'lhs') or (self.kind == 'lhsc'):
+            distribution = ot.ComposedDistribution([ot.Uniform(0, 1)] * self.dim)
+            self.sequence_type = ot.LHSExperiment(distribution, self.n_sample)
+        elif self.kind == 'discrete':
+            var = 0
+            rv = randint(bounds[0, var], bounds[1, var] + 1)
+            
+            points = ot.Sample(10000, 1)
+            for i in range(10000):
+                points[i] = (rv.rvs(),)
+            
+            discrete = ot.UserDefined(points)
+            
+            dists = [discrete, ot.Uniform(0, 1)]
+            distribution = ot.ComposedDistribution(dists)
+            self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
+                                                             distribution,
+                                                             self.n_sample)
 
-    Reference:
+    def generate(self):
+        """Generate the DOE."""
+        if self.kind in ['lhs', 'lhsc', 'discrete']:
+            sample = self.sequence_type.generate()
+        elif self.kind == 'sobolscramble':
+            sample = self.scrambled_sobol_generate()
+        elif self.kind == 'uniform':
+            sample = self.uniform()
+        else:
+            sample = self.sequence_type.generate(self.n_sample)
 
-    .. [1] Saltelli, A., Chan, K., Scott, E.M., "Sensitivity Analysis"
-    """
-    # Generate sobol sequence
-    sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(dim))
-    samples = sequence_type.generate(n_sample)
-    r = np.zeros([n_sample, dim])
+        # Scale the DOE from [0, 1] to bounds
+        r = np.empty_like(sample)
+        if self.kind == 'lhsc':
+            for j in range(self.dim):
+                b = self.bounds[0, j]
+                a = self.bounds[1, j] - b
+                for i, p in enumerate(sample):
+                    r[i, j] = a * ((p[j] // (1. / self.n_sample) + 1) - 0.5) / self.n_sample + b
+        else:
+            for j in range(self.dim):
+                b = self.bounds[0, j]
+                a = self.bounds[1, j] - b
+                for i, p in enumerate(sample):
+                    r[i, j] = a * p[j] + b
 
-    for i, p in enumerate(samples):
-        for j in range(dim):
-            r[i, j] = p[j]
+        if self.kind == 'discrete':
+            r[:, 0] = np.array(sample[:, 0]).flatten()
 
-    # Scramble the sequence
-    for col in range(0, dim):
-        r[:, col] = scramble(r[:, col])
+        return r
 
-    return r
+    def uniform(self):
+        """Uniform sampling."""
+        n_sample = int(np.floor(np.power(self.n_sample, 1 / len(self.bounds[1]))))
+        n_sample = [n_sample] * len(self.bounds[1])
+        n = np.product(n_sample)
+        h = []
+        for i in range(self.dim):
+            h1 = 1. / float(n_sample[i] - 1)
+            h.append(h1)
+        r = np.empty([n, self.dim])
+        compt = np.zeros([1, self.dim], np.int)
+        for i in range(1, n):
+            compt[0, 0] = compt[0, 0] + 1
+            for j in range(self.dim - 1):
+                if compt[0, j] > n_sample[j] - 1:
+                    compt[0, j] = 0
+                    compt[0, j + 1] = compt[0, j + 1] + 1
+            for j in range(self.dim):
+                r[i, j] = float(compt[0, j]) * h[j]
+        return r
 
+    def scrambled_sobol_generate(self):
+        """Scrambled Sobol.
 
-def scramble(x):
-    """Scramble function."""
-    Nt = len(x) - (len(x) % 2)
+        Scramble function as in Owen (1997)
 
-    idx = x[0:Nt].argsort()
-    iidx = idx.argsort()
+        Reference:
 
-    # Generate binomial values and switch position for the second half of the
-    # array
-    bi = stats.binom(1, 0.5).rvs(size=Nt / 2).astype(bool)
-    pos = stats.uniform.rvs(size=Nt / 2).argsort()
+        .. [1] Saltelli, A., Chan, K., Scott, E.M., "Sensitivity Analysis"
+        """
+        # Generate sobol sequence
+        self.sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(self.dim))
+        samples = self.sequence_type.generate(self.n_sample)
+        r = np.empty([self.n_sample, self.dim])
 
-    # Scramble the indexes
-    tmp = idx[0:Nt / 2][bi]
-    idx[0:Nt / 2][bi] = idx[Nt / 2:Nt][pos[bi]]
-    idx[Nt / 2:Nt][pos[bi]] = tmp
+        for i, p in enumerate(samples):
+            for j in range(self.dim):
+                r[i, j] = p[j]
 
-    # Apply the scrambling
-    x[0:Nt] = x[0:Nt][idx[iidx]]
+        # Scramble the sequence
+        for col in range(0, self.dim):
+            r[:, col] = self.scramble(r[:, col])
 
-    # Apply scrambling to sub intervals
-    if Nt > 2:
-        x[0:Nt / 2] = scramble(x[0:Nt / 2])
-        x[Nt / 2:Nt] = scramble(x[Nt / 2:Nt])
+        return r
 
-    return x
+    def scramble(self, x):
+        """Scramble function."""
+        Nt = len(x) - (len(x) % 2)
+    
+        idx = x[0:Nt].argsort()
+        iidx = idx.argsort()
+    
+        # Generate binomial values and switch position for the second half of the
+        # array
+        bi = stats.binom(1, 0.5).rvs(size=Nt // 2).astype(bool)
+        pos = stats.uniform.rvs(size=Nt // 2).argsort()
+    
+        # Scramble the indexes
+        tmp = idx[0:Nt // 2][bi]
+        idx[0:Nt // 2][bi] = idx[Nt // 2:Nt][pos[bi]]
+        idx[Nt // 2:Nt][pos[bi]] = tmp
+    
+        # Apply the scrambling
+        x[0:Nt] = x[0:Nt][idx[iidx]]
+    
+        # Apply scrambling to sub intervals
+        if Nt > 2:
+            x[0:Nt // 2] = self.scramble(x[0:Nt // 2])
+            x[Nt // 2:Nt] = self.scramble(x[Nt // 2:Nt])
+    
+        return x
