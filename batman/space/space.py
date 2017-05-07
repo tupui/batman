@@ -233,9 +233,10 @@ class Space(list):
 
             point = Point(point)
 
+            test_point = np.array(point)[1:] if self.multifidelity else np.array(point)
             # verify point is inside
-            not_alien = (self.corners[0] <= np.array(point)).all()\
-                & (np.array(point) <= self.corners[1]).all()
+            not_alien = (self.corners[0] <= test_point).all()\
+                & (test_point <= self.corners[1]).all()
             if not not_alien:
                 raise AlienPointError("Point {} is out of space"
                                       .format(point))
@@ -260,6 +261,7 @@ class Space(list):
         :return: List of points
         :rtype: self
         """
+        discrete_var = 1
         if kind is None:
             kind = self.doe_method
         if self.multifidelity and n is None:
@@ -268,9 +270,10 @@ class Space(list):
             n = self.cheap_doe_from_expensive(n)
         elif not self.multifidelity and n is None:
             n = self.doe_init
+            discrete_var = 0
 
         bounds = np.array(self.corners)
-        doe = Doe(n, bounds, kind)
+        doe = Doe(n, bounds, kind, discrete_var)
         samples = doe.generate()
 
         # concatenate cheap and expensive space and add identifier 0 or 1

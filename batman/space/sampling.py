@@ -8,7 +8,7 @@ class Doe():
 
     """DOE class."""
 
-    def __init__(self, n_sample, bounds, kind):
+    def __init__(self, n_sample, bounds, kind, var=0):
         """Initialize the DOE generation.
 
         It uses design from class :class:`openturns.LowDiscrepancySequence`.
@@ -25,6 +25,7 @@ class Doe():
         :param np.array bounds: Space's corners [[min, n dim], [max, n dim]]
         :param str kind: Sampling Method ['halton', 'sobol', 'faure', 'lhs[c]',
                                           'sobolscramble', 'uniform', discrete]
+        :param int var: Position of the discrete variable
         :return: Sampling
         :rtype: lst(array)
         """
@@ -43,7 +44,6 @@ class Doe():
             distribution = ot.ComposedDistribution([ot.Uniform(0, 1)] * self.dim)
             self.sequence_type = ot.LHSExperiment(distribution, self.n_sample)
         elif self.kind == 'discrete':
-            var = 0
             rv = randint(bounds[0, var], bounds[1, var] + 1)
             
             points = ot.Sample(10000, 1)
