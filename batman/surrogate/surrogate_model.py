@@ -64,7 +64,11 @@ class SurrogateModel(object):
     def fit(self, points, data, pod=None):
         """Construct the surrogate."""
         points = np.array(points)
-        points_scaled = self.scaler.transform(points)
+        try:
+            points_scaled = self.scaler.transform(points)
+        except ValueError:
+            points_scaled = self.scaler.transform(points[:, 1:])
+            points_scaled = np.hstack((points[:, 0].reshape(-1, 1), points_scaled))
         # predictor object
         self.logger.info('Creating predictor of kind {}...'.format(self.kind))
         if self.kind == 'rbf':

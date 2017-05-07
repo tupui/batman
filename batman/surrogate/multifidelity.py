@@ -9,7 +9,7 @@ Interpolation using Evofusion method.Evofusion
 Reference
 ---------
 
-Forrester, Sobester et al.: Multi-Fidelity Optimization via Surrogate Modelling. Proceedings of the Royal Society A: Mathematical, Physical and Engineering Sciences. 2007. DOI 10.1098/rspa.2007.1900
+Optimization using surrogate models and partially converged computational fluid dynamics simulations
 
 """
 import numpy as np
@@ -44,23 +44,18 @@ class Evofusion(object):
         n_e = inputs[0].shape[0]
         n_c = inputs[1].shape[0]
 
-        inputs = [inputs[0].reshape((n_e, -1)),
-                  inputs[1].reshape((n_c, -1))]
         output = [output[:n_e].reshape((n_e, -1)),
                   output[n_e:].reshape((n_c, -1))]
 
+        # Low fidelity model
         self.model_c = Kriging(inputs[1], output[1])
-        try:
-            inputs[0][0][0]
-        except (TypeError, IndexError):
-            pass
-        else:
-            inputs_array = np.array([np.array(inputs[0][:]).reshape(len(inputs[0]), -1),
-                                    np.array(inputs[1][:]).reshape(len(inputs[1]), -1)])
 
-        idx_cross_doe = np.where(inputs_array[0].reshape(-1,1) == inputs_array[1].reshape(1,-1))[1]
+        idx_cross_doe = np.where(inputs[0][:, None] == inputs[1][None, :])[0]
+        idx_cross_doe = np.unique(idx_cross_doe)
+
         output_err = output[0] - output[1][idx_cross_doe]
 
+        # Error model between high and low fidelity
         self.model_err = Kriging(inputs[0], output_err)
 
     @multi_eval

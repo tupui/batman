@@ -261,7 +261,6 @@ class Space(list):
         :return: List of points
         :rtype: self
         """
-        discrete_var = 1
         if kind is None:
             kind = self.doe_method
         if self.multifidelity and n is None:
@@ -270,10 +269,9 @@ class Space(list):
             n = self.cheap_doe_from_expensive(n)
         elif not self.multifidelity and n is None:
             n = self.doe_init
-            discrete_var = 0
 
         bounds = np.array(self.corners)
-        doe = Doe(n, bounds, kind, discrete_var)
+        doe = Doe(n, bounds, kind)
         samples = doe.generate()
 
         # concatenate cheap and expensive space and add identifier 0 or 1
@@ -284,6 +282,7 @@ class Space(list):
             samples = np.hstack((levels, samples))
 
         self.empty()
+        print(samples)
         self += samples
 
         self.logger.info("Created {} samples with the {} method"
