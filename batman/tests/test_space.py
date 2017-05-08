@@ -3,8 +3,8 @@
 import pytest
 import numpy as np
 import numpy.testing as npt
-from batman.space import (Point, Space,
-                        UnicityError, AlienPointError, FullSpaceError)
+from batman.space import (Point, Space, Doe,
+                          UnicityError, AlienPointError, FullSpaceError)
 from batman.functions import Ishigami
 
 settings = {
@@ -86,4 +86,31 @@ def test_space_evaluation():
 
     f_data_base = np.array([8.10060038,  5.18818004]).reshape(2, 1)
     test_output = npt.assert_almost_equal(targets_space, f_data_base)
+    assert True if test_output is None else False
+
+
+def test_doe():
+    bounds = np.array([[0, 2], [10, 5]])
+    discrete_var = 0
+    n = 5
+
+    kind = 'uniform'
+    doe = Doe(n, bounds, kind, discrete_var)
+    sample = doe.generate()
+    out = np.array([[0., 2.], [10., 2.], [0., 5.], [10., 5.]])
+    test_output = npt.assert_almost_equal(sample, out, decimal=1)
+    assert True if test_output is None else False
+
+    kind = 'discrete'
+    doe = Doe(n, bounds, kind, discrete_var)
+    sample = doe.generate()
+    out = np.array([[5., 3.], [2., 4.], [8., 2.3], [1., 3.3], [6., 4.3]])
+    test_output = npt.assert_almost_equal(sample, out, decimal=1)
+    assert True if test_output is None else False
+
+    kind = 'halton'
+    doe = Doe(n, bounds, kind, discrete_var)
+    sample = doe.generate()
+    out = np.array([[5., 3.], [2.5, 4.], [7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
+    test_output = npt.assert_almost_equal(sample, out, decimal=1)
     assert True if test_output is None else False
