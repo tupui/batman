@@ -10,7 +10,6 @@ Generalities
 A common class is used to manage surrogate models. Hence, several kind of surrogate
 can be used. 
 
-
 From *Kriging* to *Gaussian Process*
 ------------------------------------
 
@@ -135,8 +134,39 @@ References
 .. [Bohling2005] G. Bohling. "Kriging". Tech.rep. 2005.
 .. [Forrester2009] Forrester and A.J. Keane.“Recent advances in surrogate-based optimization”. Progress in Aerospace Sciences 2009. DOI: 10.1016/j.paerosci.2008.11.001
 
-Surrogate module
-----------------
+Multifidelity
+-------------
+
+It is possible to combine several level of fidelity in order to lower the computational cost of the surrogate
+building process. The fidelity can be either expressed as a mesh difference, a convergence difference, or even a
+different set of solvers. [Forrester2006]_ proposed a way of combining these fidelities by building a low
+fidelity model and correct it using a model of the error:
+
+.. math:: \hat{f}(x) = f_c(x) + \hat{f}_{\epsilon}(f_e(x), f_c(x)),
+
+with :math:`\hat{f}_{\epsilon}` the surrogate model representing the error between the two fidelity levels.
+This method needs nested design of experiments for the error model to be computed.
+
+Considering two levels of fidelity :math:`f_e` and :math:`f_c`, respectively an expensive and a cheap function expressed as a computational cost. A cost ratio :math:`\alpha` between the two can be defined as:
+
+.. math:: \alpha = \frac{f_e}{f_c}.
+
+Using this cost relationship an setting a computational budget :math:`C`, it is possible to get a relation between the number of cheap and expensive realizations:
+
+.. math:: C f_e &= N_e f_e + N_c f_c,\\
+          C f_e &= N_e f_e + N_c\frac{\alpha}{f_e},\\
+          C &= N_e + N_c\alpha, \\
+          N_c &= \frac{C - N_e}{\alpha}.
+
+As the design being nested, the number of cheap experiments must be strictly superior to the number or expensive ones. Indeed, the opposite would result in no additional information to the system.
+
+References
+..........
+
+.. [Forrester2006] Forrester, Alexander I.J, et al. "Optimization using surrogate models and partially converged computational fluid dynamics simulations". Proceedings of the Royal Society A: Mathematical, Physical and Engineering Science. 2006. DOI: 10.1098/rspa.2006.1679
+
+Sources
+-------
 
 .. automodule:: batman.surrogate.surrogate_model
    :members:
@@ -158,3 +188,6 @@ Surrogate module
    :members:
    :undoc-members:
 
+.. automodule:: batman.surrogate.multifidelity
+   :members:
+   :undoc-members:

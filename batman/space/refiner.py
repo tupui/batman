@@ -119,7 +119,7 @@ class Refiner(object):
         Compute the distance, Linf norm between the anchor point and
         every sampling points. Linf allows to add this lenght to all
         coordinates and ensure that no points will be within this hypercube.
-        It returns the minimal distance. :arg:`point` needs to be scaled by
+        It returns the minimal distance. :attr:`point` needs to be scaled by
         :attr:`self.corners` so the returned distance is scaled.
 
         :param np.array point: Anchor point
@@ -141,7 +141,7 @@ class Refiner(object):
         """Get the hypercube to add a point in.
 
         Propagate the distance around the anchor.
-        :arg:`point` is scaled by :attr:`self.corners` and input distance has
+        :attr:`point` is scaled by :attr:`self.corners` and input distance has
         to be. Ensure that new values are bounded by corners.
 
         :param np.array point: Anchor point

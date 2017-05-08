@@ -1,8 +1,8 @@
 {
     "space": {
         "corners": [
-            [0.0],
-            [1.0]
+            [0.0, 3.2],
+            [1.0, 8.1]
         ],
         "sampling": {
             "init_size": 10,
@@ -36,12 +36,12 @@
                 "0": ["function.npz"]
             },
             "template_directory": null,
-            "parameter_names": ["fidelity", "x1"]
+            "parameter_names": ["fidelity", "x1", "x2"]
         },
         "provider": "function"
     },
     "surrogate": {
-        "predictions": [[0.9]],
+        "predictions": [[0.9, 0.2]],
         "method": "evofusion",
         "cost_ratio": 5.1,
         "grand_cost": 13

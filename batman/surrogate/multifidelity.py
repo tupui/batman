@@ -3,14 +3,13 @@
 Evofusion Class
 ===============
 
-Interpolation using Evofusion method.Evofusion
+Interpolation using Evofusion method.
 
 
 Reference
 ---------
 
-Optimization using surrogate models and partially converged computational fluid dynamics simulations
-
+Forrester Alexander I.J, Bressloff Neil W, Keane Andy J.Optimization using surrogate models and partially converged computational fluid dynamics simulations. Proceedings of the Royal Society A: Mathematical, Physical and Engineering Sciences. 2006. DOI: 10.1098/rspa.2006.1679
 """
 import numpy as np
 import logging

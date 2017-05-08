@@ -18,6 +18,7 @@ As stated before, the golden standard would be to perform a *Monte Carlo* sampli
 
 In Damblin et al. [Damblin2013]_ a comprehensive analysis of most common DOE is found. In the end, the *Sobol'* or *Halton* DOE are sufficient when dealing with a small number of parameters (<5). With an increasing number of parameters, patterns start to appear.
 
+
 Resampling the parameters space
 -------------------------------
 
@@ -71,18 +72,18 @@ References
 .. [Roy] P.T. Roy et al.: Resampling Strategies to Improve Surrogate Model-based Uncertainty Quantification - Application to LES of LS89. Computers & Fluids. 2017
 
 
-Space module
-------------
+Sources
+-------
+
+.. automodule:: batman.space.point
+   :members:
+   :undoc-members:
 
 .. automodule:: batman.space.space
    :members:
    :undoc-members:
 
 .. automodule:: batman.space.sampling
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.space.point
    :members:
    :undoc-members:
 

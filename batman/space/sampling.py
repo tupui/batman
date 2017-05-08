@@ -1,8 +1,35 @@
 # coding: utf8
+"""
+Doe class
+=========
+
+It uses design from class :class:`openturns.LowDiscrepancySequence`.
+A sample is created according to the number of sample required, the boudaries
+and the method.
+
+:Example:
+
+::
+
+    >> from batman.space import Doe
+    >> bounds = np.array([[0, 2], [10, 5]])
+    >> kind = 'discrete'
+    >> discrete_var = 0
+    >> n = 5
+    >> doe = Doe(n, bounds, kind, discrete_var)
+    >> doe.generate()
+    array([[ 5.        ,  3.        ],
+       [ 2.        ,  4.        ],
+       [ 8.        ,  2.33333333],
+       [ 1.        ,  3.33333333],
+       [ 6.        ,  4.33333333]])
+
+"""
 from scipy import stats
 from scipy.stats import randint
 import numpy as np
 import openturns as ot
+
 
 class Doe():
 
@@ -11,15 +38,11 @@ class Doe():
     def __init__(self, n_sample, bounds, kind, var=0):
         """Initialize the DOE generation.
 
-        It uses design from class :class:`openturns.LowDiscrepancySequence`.
-
-        In case of :attr:`kind` is ``uniform``, :attr:`n_sample` is decimated in
-        order to have the same number of points in all dimensions.
+        In case of :attr:`kind` is ``uniform``, :attr:`n_sample` is decimated
+        in order to have the same number of points in all dimensions.
 
         If :attr:`kind` is ``discrete``, a join distribution between a discrete
         uniform distribution is made with continuous distributions.
-
-        .. note:: Only the first parameter can be set discrete.
 
         :param int n_sample: number of samples
         :param np.array bounds: Space's corners [[min, n dim], [max, n dim]]
@@ -45,13 +68,13 @@ class Doe():
             self.sequence_type = ot.LHSExperiment(distribution, self.n_sample)
         elif self.kind == 'discrete':
             rv = randint(bounds[0, var], bounds[1, var] + 1)
-            
+
             points = ot.Sample(10000, 1)
             for i in range(10000):
                 points[i] = (rv.rvs(),)
-            
+
             discrete = ot.UserDefined(points)
-            
+
             dists = [discrete, ot.Uniform(0, 1)]
             distribution = ot.ComposedDistribution(dists)
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
@@ -137,26 +160,26 @@ class Doe():
     def scramble(self, x):
         """Scramble function."""
         Nt = len(x) - (len(x) % 2)
-    
+
         idx = x[0:Nt].argsort()
         iidx = idx.argsort()
-    
-        # Generate binomial values and switch position for the second half of the
-        # array
+
+        # Generate binomial values and switch position for the second half of
+        # the array
         bi = stats.binom(1, 0.5).rvs(size=Nt // 2).astype(bool)
         pos = stats.uniform.rvs(size=Nt // 2).argsort()
-    
+
         # Scramble the indexes
         tmp = idx[0:Nt // 2][bi]
         idx[0:Nt // 2][bi] = idx[Nt // 2:Nt][pos[bi]]
         idx[Nt // 2:Nt][pos[bi]] = tmp
-    
+
         # Apply the scrambling
         x[0:Nt] = x[0:Nt][idx[iidx]]
-    
+
         # Apply scrambling to sub intervals
         if Nt > 2:
             x[0:Nt // 2] = self.scramble(x[0:Nt // 2])
             x[Nt // 2:Nt] = self.scramble(x[Nt // 2:Nt])
-    
+
         return x

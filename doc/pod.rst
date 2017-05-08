@@ -40,8 +40,8 @@ References
 .. [AnindyaChatterjee2000] Anindya Chatterjee. “An introduction to the proper orthogonal decomposition”. Current Science 78.7. 2000.
 .. [Cordier2006] L. Cordierand M. Bergmann. “Réduction de dynamique par décomposition orthogonale aux valeurs propres (POD)”. Ecole de printemps OCET. 2006.
 
-Pod module
-----------
+Sources
+-------
 
 .. automodule:: batman.pod.core
    :members:
