@@ -20,8 +20,8 @@ import matplotlib.ticker as tick
 from matplotlib.patches import Polygon
 from ...utils import multi_eval
 
-#logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.INFO)
 
 
 class MascaretApi(object):
@@ -265,7 +265,7 @@ class MascaretApi(object):
                 self.user_settings = json.loads(
                     file, encoding="utf-8", object_pairs_hook=OrderedDict)
         if 'Q_BC' in self.user_settings:
-            print ('IN CHANGE Q_BC')
+            print ('In user_defined for bc_qt')
             self.bc_qt = self.user_settings['Q_BC']
         if 'Ks' in self.user_settings:
             if self.user_settings['Ks']['zone']:
@@ -444,15 +444,15 @@ class MascaretApi(object):
         """
         # Rating curve do not count
         nb_bc = ctypes.c_int()
-        self.logger.debug('Getting the number of boundary conditions...')
+        self.logger.debug('Info all : Getting the number of boundary conditions...')
         self.error = self.libmascaret.C_GET_NB_CONDITION_LIMITE_MASCARET(
             self.id_masc, ctypes.byref(nb_bc))
         self.nb_bc = nb_bc.value
-        self.logger.debug('Number of boundary conditions: {}.'.format(self.nb_bc))
+        self.logger.debug(' Info all : Number of boundary conditions: {}.'.format(self.nb_bc))
 
         l_name_all_bc = []
         l_num_all_bc = []
-        self.logger.debug('Getting name of the boundary conditions...')
+        self.logger.debug('Info all Getting name of the boundary conditions...')
         for k in range(nb_bc.value):
             name_all_bc = ctypes.POINTER(ctypes.c_char_p)()
             n_law = ctypes.c_int()
@@ -463,7 +463,8 @@ class MascaretApi(object):
 
         self.l_name_all_bc = l_name_all_bc
         self.l_num_all_bc = l_num_all_bc
-        self.logger.debug('BC info get.')
+        print ('self.l_name_all_bc,self.l_num_all_bc',self.l_name_all_bc,self.l_num_all_bc) 
+        self.logger.debug('Info all : BC info get.')
 
         return nb_bc, l_name_all_bc, l_num_all_bc
 
@@ -494,7 +495,7 @@ class MascaretApi(object):
         self.logger.debug('Getting discharge values...')
         for k, kk in itertools.product(range(size1.value), range(size2.value)):
             q_bc_c = ctypes.c_double()
-            num_bc_c = ctypes.c_int(k + 1)
+            num_bc_c = ctypes.c_int(k +1)
             indextime_bc_c = ctypes.c_int(kk + 1)
             self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
                 self.id_masc, var_name, num_bc_c, indextime_bc_c, 0, ctypes.byref(q_bc_c))
@@ -502,11 +503,12 @@ class MascaretApi(object):
 
         self.logger.debug('BC Q(t) get.')
 
+#        print ('self.nb_bc',self.nb_bc)      
         if self.user_settings['misc']['info_bc'] is True:
             if self.nb_bc is None:
                 self.info_all_bc()
             for k in range(self.nb_bc):
-                self.logger.info("Loi Q: {} {} {}".format(self.l_name_all_bc[k],
+                self.logger.info("Info Getter Loi Q: {} {} {}".format(self.l_name_all_bc[k],
                                                           self.l_num_all_bc[k],
                                                           bc_qt[k, :]))
         return bc_qt
@@ -537,14 +539,14 @@ class MascaretApi(object):
         self.logger.debug('Size Model.Graph.Discharge= {} {} {}.'
                           .format(size1.value, size2.value, size3.value))
 
-        self.logger.debug('Getting discharge values...')
+        self.logger.debug('Setting discharge values...')
         for k, kk in itertools.product(range(size1.value), range(size2.value)):
             q_bc_c = ctypes.c_double()
             num_bc_c = ctypes.c_int(k + 1)
             indextime_bc_c = ctypes.c_int(kk + 1)
             q_bc_c.value = new_tab_q_bc[k, kk]
             self.error = self.libmascaret.C_SET_DOUBLE_MASCARET(
-                self.id_masc, var_name, num_bc_c, indextime_bc_c, 0, ctypes.byref(q_bc_c))
+                self.id_masc, var_name, num_bc_c, indextime_bc_c, 0, q_bc_c)
 
         self.logger.debug('BC Q(t) set.')
         print (self.bc_qt)
@@ -741,7 +743,7 @@ class MascaretApi(object):
         for k in range(1, itemp0.value+1):
             self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
                 self.id_masc, var_name, k, 0, 0, ctypes.byref(x_res_c))
-            print (x_res_c.value)
+            self.logger.debug('x_res_c.value= {}.' .format(x_res_c.value))
 
         self.logger.debug('Model.X get.')
 
@@ -764,11 +766,11 @@ class MascaretApi(object):
         Zbot_c = ctypes.c_double()
         for k in range(size1.value):
             for kk in range(size2.value):
-                print (k,kk)
+#                print (k,kk)
                 error = self.libmascaret.C_GET_DOUBLE_MASCARET(
 #                    self.id_masc, var_name, 1, self.Zbot_idx, 0, ctypes.byref(Zbot_c))
                     self.id_masc, var_name, k+1, kk+1, 0, ctypes.byref(Zbot_c))
-                print (Zbot_c.value)
+#                print (Zbot_c.value)
 # RANGER DANS UN TABLEAU ET RETOURNER  et printer LE TABLEUA 
         if error != 0:
             self.logger.error("Error getting cross section bathymetry: {}"
