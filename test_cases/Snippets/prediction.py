@@ -24,7 +24,8 @@ y = np.linspace(settings['space']['corners'][0][1],
 points = []
 for i, j in itertools.product(x, y):
     points += [(float(i), float(j))]
-    settings['surrogate']['predictions'] = points
+
+settings['surrogate']['predictions'] = points
 
 with open(settings_path + 'settings-prediction.json', 'w') as f:
     json.dump(settings, f, indent=4)

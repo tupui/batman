@@ -319,6 +319,8 @@ class Space(list):
             new_point, self.refined_pod_points = self.refiner.hybrid(self.refined_pod_points,
                                                                      point_loo,
                                                                      next(self.hybrid))
+        elif method == 'optimization':
+            new_point = self.refiner.optimization()
 
         try:
             point = [Point(point) for point in [new_point]]

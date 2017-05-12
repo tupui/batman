@@ -9,6 +9,7 @@ It implements the following methods:
 
 - :func:`Refiner.func`
 - :func:`Refiner.func_sigma`
+- :func:`Refiner.pred_sigma`
 - :func:`Refiner.distance_min`
 - :func:`Refiner.hypercube`
 - :func:`Refiner.sigma`
@@ -16,6 +17,7 @@ It implements the following methods:
 - :func:`Refiner.leave_one_out_sobol`
 - :func:`Refiner.extrema`
 - :func:`Refiner.hybrid`
+- :func:`Refiner.optimization`
 
 :Example::
 
@@ -26,6 +28,7 @@ It implements the following methods:
 """
 import logging
 from scipy.optimize import (differential_evolution, minimize, basinhopping)
+from scipy.stats import norm
 import numpy as np
 from sklearn import preprocessing
 import copy
@@ -71,7 +74,7 @@ class Refiner(object):
         self.scaler.fit(self.corners.T)
         self.points = self.scaler.transform(self.points)
 
-    def func(self, coords, sign):
+    def func(self, coords, sign=1):
         r"""Get the prediction for a given point.
 
         Retrieve Gaussian Process estimation. The function returns plus or
@@ -82,7 +85,6 @@ class Refiner(object):
         :param float sign: -1. or 1.
         :return: L2 norm of the function at the point
         :rtype: float
-
         """
         f, _ = self.surrogate(coords)
         try:
@@ -113,6 +115,21 @@ class Refiner(object):
 
         return - sum_sigma
 
+    def pred_sigma(self, coords):
+        """Prediction and sigma.
+
+        Same as :func:`Refiner.func` and :func:`Refiner.func_sigma`.
+
+        :param lst(float) coords: coordinate of the point
+        :returns: sum_f and sum_sigma
+        :rtype: floats
+        """
+        f, sigma = self.surrogate(coords, snapshots=False)
+        sum_f = np.sum(f)
+        sum_sigma = np.sum(self.pod_S ** 2 * sigma)
+
+        return sum_f, sum_sigma
+
     def distance_min(self, point):
         """Get the distance of influence.
 
@@ -125,7 +142,6 @@ class Refiner(object):
         :param np.array point: Anchor point
         :return: The distance to the nearest point
         :rtype: float
-
         """
         point = self.scaler.transform(point.reshape(1, -1))[0]
         distances = np.array([np.linalg.norm(pod_point - point)
@@ -148,7 +164,6 @@ class Refiner(object):
         :param float distance: The distance of influence
         :return: The hypercube around the point
         :rtype: np.array
-
         """
         point = self.scaler.transform(point.reshape(1, -1))[0]
         hypercube = np.array([point - distance, point + distance])
@@ -173,7 +188,6 @@ class Refiner(object):
         :param np.array point: Anchor point
         :return: The hypercube around the point (a point per column)
         :rtype: np.array
-
         """
         distance = self.distance_min(point) / 3
         x0 = self.hypercube_distance(point, distance).flatten('F')
@@ -250,7 +264,6 @@ class Refiner(object):
         :param np.array hypercube: Corners of the hypercube
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         if hypercube is None:
             hypercube = self.corners
@@ -271,7 +284,6 @@ class Refiner(object):
         :param tuple point_loo: leave-one-out point
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         self.logger.info("Leave-one-out + Sigma strategy")
         # Get the point of max error by LOOCV
@@ -297,7 +309,6 @@ class Refiner(object):
         :param tuple point_loo: leave-one-out point
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         self.logger.info("Leave-one-out + Sobol strategy")
         # Get the point of max error by LOOCV
@@ -338,7 +349,6 @@ class Refiner(object):
 
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         self.logger.info("Extrema strategy")
         points = np.delete(self.points, refined_pod_points, 0)
@@ -432,7 +442,6 @@ class Refiner(object):
         :param str strategy: resampling method
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         self.logger.info(">>---Hybrid strategy---<<")
 
@@ -449,3 +458,26 @@ class Refiner(object):
             raise SystemExit
 
         return new_point, refined_pod_points
+
+    def optimization(self):
+        """Optimization using Probability of Expected Improvement.
+
+        :return: The coordinate of the point to add
+        :rtype: lst(float)
+        """
+        min_value = differential_evolution(self.func, self.corners)
+        min_value = min_value.fun
+        T = min_value - 0.25 * np.abs(min_value)
+
+        def expected_improvement(x):
+            """Probability of expected improvement."""
+            pred, sigma = self.pred_sigma(x)
+            ei = norm.cdf(T - pred) / sigma
+
+            return - ei
+
+        results = differential_evolution(expected_improvement, self.corners)
+        arg_max = results.x
+        func_min = results.fun
+
+        return arg_max
