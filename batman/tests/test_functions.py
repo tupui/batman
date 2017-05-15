@@ -1,10 +1,13 @@
 # coding: utf8
 import pytest
 from batman.functions import (Michalewicz, Rosenbrock, Ishigami, G_Function,
-                              Forrester, Manning, Mascaret)
+                              Forrester, Branin, Manning, Mascaret)
 from scipy.optimize import differential_evolution
 import numpy as np
 import numpy.testing as npt
+import itertools
+import matplotlib.pyplot as plt
+from matplotlib import cm
 
 
 def test_Michalewicz():
@@ -53,6 +56,16 @@ def test_Forrester():
     assert f_c([0.6]) == pytest.approx(-4.0747189, 0.0001)
 
 
+def test_Branin():
+    f = Branin()
+    assert f([2.20, 1.57]) == pytest.approx(17.76357802, 0.0001)
+
+    bounds = [[-5, 10], [0, 15]]
+    results = differential_evolution(f, bounds, tol=0.001, popsize=20)
+    f_obj = results.fun
+    assert f_obj == pytest.approx(-16.64402157, 0.05)
+
+
 def test_Mascaret():
     f = Mascaret()
     f_out = f([31.54645246710516560, 4237.025232805773157])
@@ -63,8 +76,33 @@ def test_Mascaret():
     assert True if test_output is None else False
 
 
-def test_Manning():
-    f = Manning()
-    assert f([20]) == pytest.approx(6.45195012, 0.01)
-    f2 = Manning(flag='2D')
-    assert f2([20, 3000]) == pytest.approx(12.47279413, 0.01)
+def test_Plot():
+    f = Branin()
+
+    num = 25
+    x = np.linspace(-5, 10, num=num)
+    y = np.linspace(0, 15, num=num)
+    points = []
+    for i, j in itertools.product(x, y):
+        points += [(float(i), float(j))]
+    pred = f(points)
+    points = np.array(points)
+    x = points[:, 0].flatten()
+    y = points[:, 1].flatten()
+    pred = np.array(pred).flatten()
+
+    # Plotting
+    color = True
+    c_map = cm.viridis if color else cm.gray
+    plt.figure("Expected Improvement")
+    bounds = np.linspace(-17, 300., 30, endpoint=True)
+    plt.tricontourf(x, y, pred, bounds,
+                    antialiased=True, cmap=c_map)
+    cbar = plt.colorbar()
+    cbar.set_label('f', fontsize=28)
+    plt.xlabel(r'$x_1$', fontsize=28)
+    plt.ylabel(r'$x_2$', fontsize=28)
+    plt.tick_params(axis='x', labelsize=26)
+    plt.tick_params(axis='y', labelsize=26)
+    plt.legend(fontsize=26, loc='upper left')
+    # plt.show()

@@ -36,7 +36,7 @@
           "properties": {
             "method": {
               "type": "string",
-              "enum": ["None", "sigma", "loo_sigma", "loo_sobol", "extrema", "hybrid"],
+              "enum": ["None", "sigma", "loo_sigma", "loo_sobol", "extrema", "hybrid", "optimization"],
               "default": "sigma"
             },
             "resamp_size": {

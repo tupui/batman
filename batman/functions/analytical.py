@@ -13,6 +13,7 @@ It implements the following classes:
 - :class:`Ishigami`,
 - :class:`G_Function`,
 - :class:`Forrester`,
+- :class:`Branin`,
 - :class:`Channel_Flow`,
 - :class:`Manning`.
 
@@ -33,6 +34,7 @@ References
 
 .. [Forrester] Forrester, Sobester. (2007). Multi-Fidelity Optimization via Surrogate Modelling. In Proceedings of the Royal Society A: Mathematical, Physical and Engineering Sciences.
 
+.. [Branin] Forrester, A., Sobester, A., & Keane, A. (2008). Engineering design via surrogate modelling: a practical guide. Wiley.
 """
 import numpy as np
 import logging
@@ -267,9 +269,41 @@ class Forrester(object):
         x = x[0]
         f_e = (6 * x - 2) ** 2 * np.sin(12 * x - 4)
         if self.fidelity is 'e':
-           return f_e 
+            return f_e
         else:
             f = 0.5 * f_e + 10 * (x - 0.5) - 5
+
+        return f
+
+
+class Branin(object):
+
+    r"""[Branin]_ class.
+
+    .. math:: f(x) = \left( x_2 - \frac{5.1}{4\pi^2}x_1^2 + \frac{5}{\pi}x_1 - 6
+              \right)^2 + 10 \left[ \left( 1 - \frac{1}{8\pi} \right) \cos(x_1)
+              + 1 \right] + 5x_1, x_1 \in [-5, 10], x_2 \in [0, 15].
+
+    The function has two local minima and one global minimum. It is a modified
+    version of the original Branin function that seek to be representative of
+    engineering functions.
+    """
+
+    logger = logging.getLogger(__name__)
+
+    def __init__(self):
+        self.logger.info('Using function Branin')
+
+    @multi_eval
+    def __call__(self, x):
+        """Call function.
+
+        :param list x: inputs
+        :return: f(x)
+        :rtype: float
+        """
+        f = (x[1] - 5.1 / (4 * np.pi ** 2) * x[0] ** 2 + 5 / np.pi * x[0] - 6) ** 2\
+            + 10 * ((1 - 1 / (8 * np.pi)) * np.cos(x[0]) + 1) + 5 * x[0]
 
         return f
 

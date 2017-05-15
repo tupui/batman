@@ -161,7 +161,7 @@ class Driver(object):
 
         # Fit the Surrogate [and POD]
         if update:
-                self.surrogate.space.empty()
+            self.surrogate.space.empty()
         if self.pod is not None:
             if update:
                 if self.provider.is_job:
