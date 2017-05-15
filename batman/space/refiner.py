@@ -88,9 +88,9 @@ class Refiner(object):
         """
         f, _ = self.surrogate(coords)
         try:
-            _, f = np.split(f[0].data, 2)
+            _, f = np.split(f, 2)
         except (ValueError, TypeError):
-            f = f[0].data
+            pass
         sum_f = np.sum(f)
 
         return sign * sum_f
@@ -124,7 +124,7 @@ class Refiner(object):
         :returns: sum_f and sum_sigma
         :rtype: floats
         """
-        f, sigma = self.surrogate(coords, snapshots=False)
+        f, sigma = self.surrogate(coords)
         sum_f = np.sum(f)
         sum_sigma = np.sum(self.pod_S ** 2 * sigma)
 
@@ -246,7 +246,7 @@ class Refiner(object):
         results = basinhopping(min_norm, x0, niter=1000, minimizer_kwargs=minimizer_kwargs)
         hypercube = results.x.reshape(2, self.dim)
         for i in range(self.dim):
-                hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
+            hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
         hypercube = hypercube.T
 
         self.logger.debug("Corners:\n{}".format(self.corners))

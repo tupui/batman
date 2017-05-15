@@ -136,7 +136,7 @@ class UQ:
         # Get discretization if functionnal output
         try:
             f_eval, _ = self.surrogate(self.sample[0])
-            self.f_input, _ = np.split(f_eval[0].data, 2)
+            self.f_input, _ = np.split(f_eval, 2)
         except:
             self.f_input = None
 

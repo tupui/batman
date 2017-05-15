@@ -262,7 +262,15 @@ class Driver(object):
             self.space += processed_points
 
     def prediction(self, write=False, points=None):
-        """Perform a prediction."""
+        """Perform a prediction.
+
+        :param bool write: write a snapshot or not
+        :param :class:`space.point.Point` points: point(s) to predict
+        :return: Result
+        :rtype: lst(:class:`tasks.snapshot.Snapshot`) or np.array(n_points, n_features)
+        :return: Standard deviation
+        :rtype: lst(np.array)
+        """
         if write:
             output = os.path.join(self.output, self.output_tree['predictions'])
         else:
