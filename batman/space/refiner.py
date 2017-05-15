@@ -465,19 +465,23 @@ class Refiner(object):
         :return: The coordinate of the point to add
         :rtype: lst(float)
         """
-        min_value = differential_evolution(self.func, self.corners)
-        min_value = min_value.fun
-        T = min_value - 0.25 * np.abs(min_value)
+        gen = [self.func(x) for x in self.points]
+        arg_min = np.argmin(gen)
+        min_value = gen[arg_min]
+        self.logger.info('Current minimal value is: f(x)={} for x={}'
+                         .format(min_value, arg_min))
+
+        target = min_value - 0.25 * np.abs(min_value)
 
         def expected_improvement(x):
             """Probability of expected improvement."""
             pred, sigma = self.pred_sigma(x)
-            ei = norm.cdf(T - pred) / sigma
+            standard_dev = np.sqrt(sigma)
+            ei = norm.cdf((target - pred) / standard_dev)
 
             return - ei
 
         results = differential_evolution(expected_improvement, self.corners)
         arg_max = results.x
-        func_min = results.fun
 
         return arg_max

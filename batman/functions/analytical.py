@@ -292,6 +292,11 @@ class Branin(object):
     logger = logging.getLogger(__name__)
 
     def __init__(self):
+        self.d_in = 2
+        self.d_out = 1
+        self.s_first = np.array([0.7108, 0.2256])
+        self.s_second = np.array([[0., 0.0882], [0.0882, 0.]])
+        self.s_total = np.array([0.7942, 0.2797])
         self.logger.info('Using function Branin')
 
     @multi_eval
@@ -381,6 +386,8 @@ class Manning(object):
         :param float inflow: canal inflow (optional)
         :param str flag: 1D (Ks) or 2D (Ks,Q)
         """
+        self.d_in = 1 if self.flag == '1D' else 2
+        self.d_out = 1
         self.w = width
         self.slope = slope
         self.inflow = inflow

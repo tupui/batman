@@ -282,7 +282,6 @@ class Space(list):
             samples = np.hstack((levels, samples))
 
         self.empty()
-        print(samples)
         self += samples
 
         self.logger.info("Created {} samples with the {} method"
@@ -290,12 +289,12 @@ class Space(list):
         self.logger.debug("Points are:\n{}".format(samples))
         return self
 
-    def refine(self, surrogate, point_loo):
+    def refine(self, surrogate, point_loo=None):
         """Refine the sample, update space points and return the new point(s).
 
         :param :class:`surrogate.surrogate_model.SurrogateModel` surrogate: surrogate
         :return: List of points to add
-        :rtype: space.point.Point -> lst(tuple(float))
+        :rtype: :class:`space.point.Point` -> lst(tuple(float))
         """
         # Refinement strategy
         if self.refiner is None:

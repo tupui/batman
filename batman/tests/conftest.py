@@ -5,7 +5,8 @@ import numpy as np
 import copy
 from sklearn.metrics import r2_score
 import openturns as ot
-from batman.functions import (Ishigami, Mascaret, Forrester)
+from batman.functions import (Ishigami, Michalewicz, Branin,
+                              Mascaret, Forrester)
 from batman.functions import output_to_sequence
 from batman.space import (Space, Point)
 from batman import Driver
@@ -61,6 +62,23 @@ def ishigami_data(settings_ishigami):
     space.sampling(150)
     target_space = f_3d(space)
     return (f_3d, dists, model, point, target_point, space, target_space)
+
+
+@pytest.fixture(scope="session")
+def branin_data(settings_ishigami):
+    f_2d = Branin()
+    dists = [ot.Uniform(-5, 10), ot.Uniform(0, 15)]
+    model = ot.PythonFunction(2, 1, output_to_sequence(f_2d))
+    point = Point([2., 2.])
+    target_point = f_2d(point)
+    test_settings = copy.deepcopy(settings_ishigami)
+    test_settings = copy.deepcopy(settings_ishigami)
+    test_settings["space"]["corners"] = [[-5, 10], [0, 15]]
+    test_settings["snapshot"]["io"]["parameter_names"] = ["x1", "x2"]
+    space = Space(test_settings)
+    space.sampling(10)
+    target_space = f_2d(space)
+    return (f_2d, dists, model, point, target_point, space, target_space)
 
 
 @pytest.fixture(scope="session")
