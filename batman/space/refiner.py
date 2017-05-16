@@ -91,7 +91,8 @@ class Refiner(object):
             _, f = np.split(f, 2)
         except (ValueError, TypeError):
             pass
-        sum_f = np.sum(f)
+        modes_weights = np.array(self.pod_S ** 2).reshape(-1, 1)
+        sum_f = np.average(f, weights=modes_weights)
 
         return sign * sum_f
 
@@ -119,14 +120,16 @@ class Refiner(object):
         """Prediction and sigma.
 
         Same as :func:`Refiner.func` and :func:`Refiner.func_sigma`.
+        Function prediction and sigma are weighted using POD modes.
 
         :param lst(float) coords: coordinate of the point
         :returns: sum_f and sum_sigma
         :rtype: floats
         """
         f, sigma = self.surrogate(coords)
-        sum_f = np.sum(f)
-        sum_sigma = np.sum(self.pod_S ** 2 * sigma)
+        modes_weights = np.array(self.pod_S ** 2).reshape(-1, 1)
+        sum_f = np.average(f, weights=modes_weights)
+        sum_sigma = np.average(sigma, weights=modes_weights)
 
         return sum_f, sum_sigma
 
@@ -195,7 +198,7 @@ class Refiner(object):
         point = np.maximum(point, self.corners[:, 0])
         point = self.scaler.transform(point.reshape(1, -1))[0]
 
-        gen = [p for p in self.points if not np.allclose(p, point)]
+        gen = (p for p in self.points if not np.allclose(p, point))
 
         def min_norm(hypercube):
             """Compute euclidean distance.
@@ -216,10 +219,11 @@ class Refiner(object):
 
             hypercube = hypercube.T
 
-            n = - np.linalg.norm(hypercube[:, 1] - hypercube[:, 0])
+            diff = hypercube[:, 1] - hypercube[:, 0]
+            n = - np.linalg.norm(diff)
 
             # Check aspect ratio
-            aspect = abs(hypercube[:, 1] - hypercube[:, 0])
+            aspect = abs(diff)
             aspect = np.power(np.max(aspect), self.dim) / np.prod(aspect)
             aspect = np.power(aspect, 1 / self.dim)
             if not (aspect <= 1.5):
@@ -472,10 +476,16 @@ class Refiner(object):
         self.logger.info('Current minimal value is: f(x)={} for x={}'
                          .format(min_value, min_x))
 
-        target = min_value - 0.25 * np.abs(min_value)
+        target = min_value - 0.1 * np.abs(min_value)
 
         def expected_improvement(x):
             """Probability of expected improvement."""
+            # Ensure minimal distance between point and actual min
+            # x_scaled = self.scaler.transform(x.reshape(1, -1))[0]
+            # min_x_scaled = self.scaler.transform(min_x.reshape(1, -1))[0]
+            # if np.linalg.norm(min_x_scaled - x_scaled) < 0.1:
+            #     return np.inf
+
             pred, sigma = self.pred_sigma(x)
             standard_dev = np.sqrt(sigma)
             ei = norm.cdf((target - pred) / standard_dev)

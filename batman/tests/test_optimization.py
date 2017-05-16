@@ -25,36 +25,52 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     driver.sampling()
     driver.resampling()
 
-    # [ -3.68928528  13.62998774]
-
     num = 25
     x = np.linspace(-5, 10, num=num)
     y = np.linspace(0, 15, num=num)
     points = []
     for i, j in itertools.product(x, y):
         points += [(float(i), float(j))]
-    pred, _ = driver.prediction(points=points)
+    pred, sigma = driver.prediction(points=points)
     points = np.array(points)
 
     x = points[:,0].flatten()
     y = points[:,1].flatten()
     pred = np.array(pred).flatten()
+    sigma = np.array(sigma).flatten()
     space = np.array(driver.space[:])
 
     # Plotting
     color = True
     c_map = cm.viridis if color else cm.gray
-    plt.figure("Expected Improvement")
+    plt.figure("Expected Improvement predictions")
     plt.plot(space[:init_size, 0], space[:init_size, 1], 'ko')
-    plt.plot(space[init_size:, 0], space[init_size:, 1], 'r^')
+    plt.plot(space[init_size:, 0], space[init_size:, 1], 'm^')
+    plt.plot(-3.68928528, 13.62998774, 'r<')
     bounds = np.linspace(-17, 300., 30, endpoint=True)
     plt.tricontourf(x, y, pred, bounds,
                     antialiased=True, cmap=c_map)
     cbar = plt.colorbar()
-    cbar.set_label('f', fontsize=28)
-    plt.xlabel('x1', fontsize=28)
-    plt.ylabel('x2', fontsize=28)
+    cbar.set_label(r'$f(x_1, x_2)$', fontsize=28)
+    plt.xlabel(r'$x_1$', fontsize=28)
+    plt.ylabel(r'$x_2$', fontsize=28)
     plt.tick_params(axis='x', labelsize=26)
     plt.tick_params(axis='y', labelsize=26)
     plt.legend(fontsize=26, loc='upper left')
-    # plt.show()
+    plt.show()
+
+    plt.figure("Expected Improvement sigma")
+    plt.plot(space[:init_size, 0], space[:init_size, 1], 'ko')
+    plt.plot(space[init_size:, 0], space[init_size:, 1], 'm^')
+    plt.plot(-3.68928528, 13.62998774, 'r<')
+    plt.tricontourf(x, y, sigma,
+                    antialiased=True, cmap=c_map)
+    cbar = plt.colorbar()
+    cbar.set_label(r'$\sigma(x_1, x_2)$', fontsize=28)
+    plt.xlabel(r'$x_1$', fontsize=28)
+    plt.ylabel(r'$x_2$', fontsize=28)
+    plt.tick_params(axis='x', labelsize=26)
+    plt.tick_params(axis='y', labelsize=26)
+    plt.legend(fontsize=26, loc='upper left')
+    plt.show()
+    raise
