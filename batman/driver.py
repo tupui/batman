@@ -204,7 +204,7 @@ class Driver(object):
             if self.pod is not None:
                 quality, point_loo = self.pod.estimate_quality()
                 # quality = 0.5
-                # point_loo = [-1.1780625, -0.8144629629629629, -2.63886]
+                # point_loo = [-1.1780625, -0.8144629629629629]
                 if quality >= self.settings['space']['resampling']['q2_criteria']:
                     break
             else:
@@ -217,6 +217,9 @@ class Driver(object):
                 break
 
             self.sampling(new_point, update=True)
+
+            if self.settings['space']['resampling']['method'] == 'optimization':
+                self.space.optimization_results()
 
     def write(self):
         """Write Surrogate [and POD] to disk."""

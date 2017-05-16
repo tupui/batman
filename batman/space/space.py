@@ -21,6 +21,7 @@ it can be resampled or points can be added manually.
 import logging
 import os
 import numpy as np
+from scipy.optimize import differential_evolution
 import itertools
 import matplotlib
 matplotlib.use('Agg')
@@ -332,3 +333,18 @@ class Space(list):
                          .format(str(point)))
 
         return point
+
+    def optimization_results(self):
+        """Compute the optimal value."""
+        gen = [self.refiner.func(x) for x in self]
+        arg_min = np.argmin(gen)
+        min_value = gen[arg_min]
+        min_x = self[arg_min]
+        self.logger.info('New minimal value is: f(x)={} for x={}'
+                         .format(min_value, min_x))
+
+        results = differential_evolution(self.refiner.func, self.corners)
+        min_value = results.fun
+        min_x = results.x
+        self.logger.info('Optimization with surrogate: f(x)={} for x={}'
+                         .format(min_value, min_x))

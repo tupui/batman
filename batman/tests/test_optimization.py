@@ -43,7 +43,7 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     # Plotting
     color = True
     c_map = cm.viridis if color else cm.gray
-    plt.figure("Expected Improvement predictions")
+    fig = plt.figure("Expected Improvement predictions")
     plt.plot(space[:init_size, 0], space[:init_size, 1], 'ko')
     plt.plot(space[init_size:, 0], space[init_size:, 1], 'm^')
     plt.plot(-3.68928528, 13.62998774, 'r<')
@@ -57,6 +57,11 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     plt.tick_params(axis='x', labelsize=26)
     plt.tick_params(axis='y', labelsize=26)
     plt.legend(fontsize=26, loc='upper left')
+
+    ax = fig.add_subplot(111)
+    for txt, point in enumerate(space):
+        ax.annotate(txt, point, textcoords='offset points')
+
     plt.show()
 
     plt.figure("Expected Improvement sigma")
