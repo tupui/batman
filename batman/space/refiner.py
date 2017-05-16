@@ -478,17 +478,20 @@ class Refiner(object):
 
         target = min_value - 0.1 * np.abs(min_value)
 
-        def expected_improvement(x):
-            """Probability of expected improvement."""
-            # Ensure minimal distance between point and actual min
-            # x_scaled = self.scaler.transform(x.reshape(1, -1))[0]
-            # min_x_scaled = self.scaler.transform(min_x.reshape(1, -1))[0]
-            # if np.linalg.norm(min_x_scaled - x_scaled) < 0.1:
-            #     return np.inf
-
+        def probability_improvement(x):
+            """Probability of improvement."""
             pred, sigma = self.pred_sigma(x)
-            standard_dev = np.sqrt(sigma)
-            ei = norm.cdf((target - pred) / standard_dev)
+            std_dev = np.sqrt(sigma)
+            pi = norm.cdf((target - pred) / std_dev)
+
+            return - pi
+
+        def expected_improvement(x):
+            """Expected improvement."""
+            pred, sigma = self.pred_sigma(x)
+            std_dev = np.sqrt(sigma)
+            ei = (min_value - pred) * norm.cdf((min_value - pred) / std_dev)\
+                + std_dev * norm.pdf((min_value - pred) / std_dev)
 
             return - ei
 

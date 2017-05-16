@@ -2,6 +2,7 @@
 import pytest
 import copy
 import numpy as np
+from scipy.stats import norm
 import itertools
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -15,7 +16,7 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     init_size = len(space)
     test_settings['space']['sampling']['init_size'] = init_size
     test_settings['space']['resampling']['method'] = 'optimization'
-    test_settings['space']['resampling']['resamp_size'] = 5
+    test_settings['space']['resampling']['resamp_size'] = 1
     test_settings["space"]["corners"] = space.corners
     test_settings["snapshot"]["io"]["parameter_names"] = ["x1", "x2"]
     f_obj = Branin()
@@ -27,6 +28,7 @@ def test_optimization(tmp, branin_data, settings_ishigami):
 
     num = 25
     x = np.linspace(-5, 10, num=num)
+    x = np.linspace(-7, 10, num=num)
     y = np.linspace(0, 15, num=num)
     points = []
     for i, j in itertools.product(x, y):
@@ -40,10 +42,78 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     sigma = np.array(sigma).flatten()
     space = np.array(driver.space[:])
 
+    arg_min = np.argmin(target_space)
+    min_value = target_space[arg_min]
+
+    ei = np.empty_like(pred)
+    for i, p, s in zip(range(num * num), pred, sigma):
+        ei[i] = (min_value - p) * norm.cdf((min_value - p) / s)\
+            + s * norm.pdf((min_value - p) / s)
+
     # Plotting
     color = True
     c_map = cm.viridis if color else cm.gray
-    fig = plt.figure("Expected Improvement predictions")
+    # fig = plt.figure("predictions")
+    # plt.plot(space[:init_size, 0], space[:init_size, 1], 'ko')
+    # plt.plot(space[init_size:, 0], space[init_size:, 1], 'm^')
+    # plt.plot(-3.68928528, 13.62998774, 'r<')
+    # bounds = np.linspace(-17, 300., 30, endpoint=True)
+    # plt.tricontourf(x, y, pred, bounds,
+    #                 antialiased=True, cmap=c_map)
+    # cbar = plt.colorbar()
+    # cbar.set_label(r'$f(x_1, x_2)$', fontsize=28)
+    # plt.xlabel(r'$x_1$', fontsize=28)
+    # plt.ylabel(r'$x_2$', fontsize=28)
+    # plt.tick_params(axis='x', labelsize=26)
+    # plt.tick_params(axis='y', labelsize=26)
+    # plt.legend(fontsize=26, loc='upper left')
+    # for txt, point in enumerate(space):
+    #     plt.annotate(txt, point, textcoords='offset points')
+    # fig.tight_layout()
+    # fig.savefig('pred.pdf', transparent=True, bbox_inches='tight')
+    # plt.show()
+
+    # fig = plt.figure("sigma")
+    # plt.plot(space[:init_size, 0], space[:init_size, 1], 'ko')
+    # plt.plot(space[init_size:, 0], space[init_size:, 1], 'm^')
+    # plt.plot(-3.68928528, 13.62998774, 'r<')
+    # plt.tricontourf(x, y, sigma,
+    #                 antialiased=True, cmap=c_map)
+    # cbar = plt.colorbar()
+    # cbar.set_label(r'$\sigma(x_1, x_2)$', fontsize=28)
+    # plt.xlabel(r'$x_1$', fontsize=28)
+    # plt.ylabel(r'$x_2$', fontsize=28)
+    # plt.tick_params(axis='x', labelsize=26)
+    # plt.tick_params(axis='y', labelsize=26)
+    # plt.legend(fontsize=26, loc='upper left')
+    # for txt, point in enumerate(space):
+    #     plt.annotate(txt, point, textcoords='offset points')
+    # fig.tight_layout()
+    # fig.savefig('sigma.pdf', transparent=True, bbox_inches='tight')
+    # plt.show()
+
+    # fig = plt.figure("Expected Improvement")
+    # plt.plot(space[:init_size, 0], space[:init_size, 1], 'ko')
+    # plt.plot(space[init_size:, 0], space[init_size:, 1], 'm^')
+    # plt.plot(-3.68928528, 13.62998774, 'r<')
+    # plt.tricontourf(x, y, ei,
+    #                 antialiased=True, cmap=c_map)
+    # cbar = plt.colorbar()
+    # cbar.set_label(r'$\sigma(x_1, x_2)$', fontsize=28)
+    # plt.xlabel(r'$x_1$', fontsize=28)
+    # plt.ylabel(r'$x_2$', fontsize=28)
+    # plt.tick_params(axis='x', labelsize=26)
+    # plt.tick_params(axis='y', labelsize=26)
+    # plt.legend(fontsize=26, loc='upper left')
+    # for txt, point in enumerate(space):
+    #     plt.annotate(txt, point, textcoords='offset points')
+    # fig.tight_layout()
+    # fig.savefig('expected_improvement.pdf',
+    #             transparent=True, bbox_inches='tight')
+    # plt.show()
+
+    fig = plt.figure('Efficient Global Optimization')
+    plt.subplot(131)
     plt.plot(space[:init_size, 0], space[:init_size, 1], 'ko')
     plt.plot(space[init_size:, 0], space[init_size:, 1], 'm^')
     plt.plot(-3.68928528, 13.62998774, 'r<')
@@ -51,31 +121,36 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     plt.tricontourf(x, y, pred, bounds,
                     antialiased=True, cmap=c_map)
     cbar = plt.colorbar()
-    cbar.set_label(r'$f(x_1, x_2)$', fontsize=28)
-    plt.xlabel(r'$x_1$', fontsize=28)
-    plt.ylabel(r'$x_2$', fontsize=28)
-    plt.tick_params(axis='x', labelsize=26)
-    plt.tick_params(axis='y', labelsize=26)
-    plt.legend(fontsize=26, loc='upper left')
-
-    ax = fig.add_subplot(111)
+    cbar.set_label(r'$f(x_1, x_2)$')
+    plt.ylabel(r'$x_2$')
+    plt.tick_params(axis='y')
     for txt, point in enumerate(space):
-        ax.annotate(txt, point, textcoords='offset points')
+        plt.annotate(txt, point, textcoords='offset points')
 
-    plt.show()
-
-    plt.figure("Expected Improvement sigma")
+    plt.subplot(132)
     plt.plot(space[:init_size, 0], space[:init_size, 1], 'ko')
     plt.plot(space[init_size:, 0], space[init_size:, 1], 'm^')
     plt.plot(-3.68928528, 13.62998774, 'r<')
     plt.tricontourf(x, y, sigma,
                     antialiased=True, cmap=c_map)
     cbar = plt.colorbar()
-    cbar.set_label(r'$\sigma(x_1, x_2)$', fontsize=28)
-    plt.xlabel(r'$x_1$', fontsize=28)
-    plt.ylabel(r'$x_2$', fontsize=28)
-    plt.tick_params(axis='x', labelsize=26)
-    plt.tick_params(axis='y', labelsize=26)
-    plt.legend(fontsize=26, loc='upper left')
-    plt.show()
-    raise
+    cbar.set_label(r'$\sigma(x_1, x_2)$')
+    plt.xlabel(r'$x_1$')
+    for txt, point in enumerate(space):
+        plt.annotate(txt, point, textcoords='offset points')
+
+    plt.subplot(133)
+    plt.plot(space[:init_size, 0], space[:init_size, 1], 'ko')
+    plt.plot(space[init_size:, 0], space[init_size:, 1], 'm^')
+    plt.plot(-3.68928528, 13.62998774, 'r<')
+    plt.tricontourf(x, y, ei,
+                    antialiased=True, cmap=c_map)
+    cbar = plt.colorbar()
+    cbar.set_label(r'$\mathbb{E}[I(x_1, x_2)]$')
+    for txt, point in enumerate(space):
+        plt.annotate(txt, point, textcoords='offset points')
+
+    fig.tight_layout()
+    fig.savefig('/Users/roy/Desktop/expected_improvement.pdf',
+                transparent=True, bbox_inches='tight')
+    # plt.show()
