@@ -460,7 +460,7 @@ class Refiner(object):
         return new_point, refined_pod_points
 
     def optimization(self):
-        """Optimization using Probability of Expected Improvement.
+        """Optimization using Probability of Improvement.
 
         :return: The coordinate of the point to add
         :rtype: lst(float)
@@ -468,8 +468,9 @@ class Refiner(object):
         gen = [self.func(x) for x in self.points]
         arg_min = np.argmin(gen)
         min_value = gen[arg_min]
+        min_x = self.points[arg_min]
         self.logger.info('Current minimal value is: f(x)={} for x={}'
-                         .format(min_value, arg_min))
+                         .format(min_value, min_x))
 
         target = min_value - 0.25 * np.abs(min_value)
 

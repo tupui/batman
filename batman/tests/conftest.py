@@ -73,7 +73,8 @@ def branin_data(settings_ishigami):
     target_point = f_2d(point)
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings["space"]["corners"] = [[-5, 10], [0, 15]]
+    test_settings["space"]["corners"] = [[-5, 0], [10, 15]]
+    test_settings["space"]["sampling"]["method"] = 'lhsc'
     test_settings["snapshot"]["io"]["parameter_names"] = ["x1", "x2"]
     space = Space(test_settings)
     space.sampling(10)

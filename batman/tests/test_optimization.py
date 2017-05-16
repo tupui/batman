@@ -12,7 +12,8 @@ from batman.functions import Branin
 def test_optimization(tmp, branin_data, settings_ishigami):
     f_2d, dists, model, point, target_point, space, target_space = branin_data
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['space']['sampling']['init_size'] = len(space)
+    init_size = len(space)
+    test_settings['space']['sampling']['init_size'] = init_size
     test_settings['space']['resampling']['method'] = 'optimization'
     test_settings['space']['resampling']['resamp_size'] = 5
     test_settings["space"]["corners"] = space.corners

@@ -62,8 +62,10 @@ def test_Branin():
 
     bounds = [[-5, 10], [0, 15]]
     results = differential_evolution(f, bounds, tol=0.001, popsize=20)
-    f_obj = results.fun
-    assert f_obj == pytest.approx(-16.64402157, 0.05)
+    assert results.fun == pytest.approx(-16.64402157, 0.05)
+    x_target = [-3.68928528, 13.62998774]
+    test_x = npt.assert_almost_equal(results.x, x_target, decimal=2)
+    assert True if test_x is None else False
 
 
 def test_Mascaret():
