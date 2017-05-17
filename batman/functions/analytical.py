@@ -13,6 +13,7 @@ It implements the following classes:
 - :class:`Ishigami`,
 - :class:`G_Function`,
 - :class:`Forrester`,
+- :class:`Branin`,
 - :class:`Channel_Flow`,
 - :class:`Manning`.
 
@@ -21,18 +22,12 @@ In each case, Sobol' indices are declared.
 References
 ----------
 
-.. [Oakley] Oakley, J., & O'Hagan, A. (2002). Bayesian inference for the uncertainty distribution of computer model outputs. Biometrika, 89(4), 769-784.
-
-.. [Michalewicz] Molga, M., & Smutnicki, C. Test functions for optimization needs (2005).
-
-.. [Rosenbrock] Dixon, L. C. W., & Szego, G. P. (1978). The global optimization problem: an introduction. Towards global optimization, 2, 1-15.
-
-.. [Ishigami] Ishigami, T., & Homma, T. (1990, December): An importance quantification technique in uncertainty analysis for computer models. In Uncertainty Modeling and Analysis, 1990. Proceedings., First International Symposium on (pp. 398-403). IEEE.
-
-.. [G-Function] Saltelli, A., Chan, K., & Scott, E. M. (Eds.). (2000). Sensitivity analysis (Vol. 134). New York: Wiley.
-
-.. [Forrester] Forrester, Sobester. (2007). Multi-Fidelity Optimization via Surrogate Modelling. In Proceedings of the Royal Society A: Mathematical, Physical and Engineering Sciences.
-
+.. [Molga2005] Molga, M., & Smutnicki, C. Test functions for optimization needs (2005).
+.. [Dixon1978] Dixon, L. C. W., & Szego, G. P. (1978). The global optimization problem: an introduction. Towards global optimization, 2, 1-15.
+.. [Ishigami1990] Ishigami, T., & Homma, T. (1990, December): An importance quantification technique in uncertainty analysis for computer models. In Uncertainty Modeling and Analysis, 1990. Proceedings., First International Symposium on (pp. 398-403). IEEE.
+.. [Saltelli2000] Saltelli, A., Chan, K., & Scott, E. M. (Eds.). (2000). Sensitivity analysis (Vol. 134). New York: Wiley.
+.. [Forrester2007] Forrester, Sobester. (2007). Multi-Fidelity Optimization via Surrogate Modelling. In Proceedings of the Royal Society A: Mathematical, Physical and Engineering Sciences.
+.. [Forrester2008] Forrester, A., Sobester, A., & Keane, A. (2008). Engineering design via surrogate modelling: a practical guide. Wiley.
 """
 import numpy as np
 import logging
@@ -41,7 +36,7 @@ from .utils import multi_eval
 
 class Michalewicz(object):
 
-    r"""[Michalewicz]_ class.
+    r"""Michalewicz class [Molga2005]_.
 
     It is a multimodal *d*-dimensional function which has :math:`d!`
     local minima
@@ -85,7 +80,7 @@ class Michalewicz(object):
 
 class Rosenbrock(object):
 
-    r"""[Rosenbrock]_ class.
+    r"""Rosenbrock class [Dixon1978]_.
 
     .. math:: f(x)=\sum_{i=1}^{d-1}[100(x_{i+1}-x_i^2)^2+(x_i-1)^2]
 
@@ -123,7 +118,7 @@ class Rosenbrock(object):
 
 class Ishigami(object):
 
-    r"""[Ishigami]_ class.
+    r"""Ishigami class [Ishigami1990]_.
 
     .. math:: F = \sin(X1)+7\sin(X2)^2+0.1X3^4\sin(X1)
 
@@ -178,7 +173,7 @@ class Ishigami(object):
 
 class G_Function(object):
 
-    r"""[G-Function]_ class.
+    r"""G_Function class [Saltelli2000]_.
 
     .. math:: F = \Pi_{i=1}^d \frac{\lvert 4x_i - 2\rvert + a_i}{1 + a_i}
 
@@ -229,7 +224,7 @@ class G_Function(object):
 
 class Forrester(object):
 
-    r"""[Forrester]_ class.
+    r"""Forrester class [Forrester2007]_.
 
     .. math:: F_{e}(x) = (6x-2)^2\sin(12x-4), \\
               F_{c}(x) = AF_e(x)+B(x-0.5)+C,
@@ -267,9 +262,46 @@ class Forrester(object):
         x = x[0]
         f_e = (6 * x - 2) ** 2 * np.sin(12 * x - 4)
         if self.fidelity is 'e':
-           return f_e 
+            return f_e
         else:
             f = 0.5 * f_e + 10 * (x - 0.5) - 5
+
+        return f
+
+
+class Branin(object):
+
+    r"""Branin class [Forrester2008]_.
+
+    .. math:: f(x) = \left( x_2 - \frac{5.1}{4\pi^2}x_1^2 + \frac{5}{\pi}x_1 - 6
+              \right)^2 + 10 \left[ \left( 1 - \frac{1}{8\pi} \right) \cos(x_1)
+              + 1 \right] + 5x_1, x_1 \in [-5, 10], x_2 \in [0, 15].
+
+    The function has two local minima and one global minimum. It is a modified
+    version of the original Branin function that seek to be representative of
+    engineering functions.
+    """
+
+    logger = logging.getLogger(__name__)
+
+    def __init__(self):
+        self.d_in = 2
+        self.d_out = 1
+        self.s_first = np.array([0.7108, 0.2256])
+        self.s_second = np.array([[0., 0.0882], [0.0882, 0.]])
+        self.s_total = np.array([0.7942, 0.2797])
+        self.logger.info('Using function Branin')
+
+    @multi_eval
+    def __call__(self, x):
+        """Call function.
+
+        :param list x: inputs
+        :return: f(x)
+        :rtype: float
+        """
+        f = (x[1] - 5.1 / (4 * np.pi ** 2) * x[0] ** 2 + 5 / np.pi * x[0] - 6) ** 2\
+            + 10 * ((1 - 1 / (8 * np.pi)) * np.cos(x[0]) + 1) + 5 * x[0]
 
         return f
 
@@ -347,6 +379,8 @@ class Manning(object):
         :param float inflow: canal inflow (optional)
         :param str flag: 1D (Ks) or 2D (Ks,Q)
         """
+        self.d_in = 1 if self.flag == '1D' else 2
+        self.d_out = 1
         self.w = width
         self.slope = slope
         self.inflow = inflow

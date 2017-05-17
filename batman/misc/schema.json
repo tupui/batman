@@ -36,7 +36,7 @@
           "properties": {
             "method": {
               "type": "string",
-              "enum": ["None", "sigma", "loo_sigma", "loo_sobol", "extrema", "hybrid"],
+              "enum": ["None", "sigma", "loo_sigma", "loo_sobol", "extrema", "hybrid", "optimization"],
               "default": "sigma"
             },
             "resamp_size": {
@@ -269,7 +269,7 @@
         },
         "test": {
           "type": "string",
-          "enum": ["Ishigami", "Michalewicz", "Channel_Flow", "Rosenbrock", "G_Function", "Forrester"]
+          "enum": ["Ishigami", "Michalewicz", "Channel_Flow", "Rosenbrock", "G_Function", "Forrester", "Branin"]
         },
         "pdf": {
           "type": "array",

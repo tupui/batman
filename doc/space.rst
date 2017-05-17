@@ -22,7 +22,7 @@ In Damblin et al. [Damblin2013]_ a comprehensive analysis of most common DOE is 
 Resampling the parameters space
 -------------------------------
 
-There are several methods for refining, resampling, the parameter space. In [Scheidt]_, the classical methods are reviewed and a framework combining several methods is proposed. In [Roy]_, we added some methods that peforme better in high dimentionnal cases.
+There are several methods for refining, resampling, the parameter space. In [Scheidt]_, the classical methods are reviewed and a framework combining several methods is proposed. In [Roy2017]_, we added some methods that peforme better in high dimentionnal cases.
 
 * Variance (:math:`\sigma`),
   As stated in :ref:`Surrogate <surrogate>`, one of the main advantages of Gaussian processes over other surrogates is to provide an insight into the variance of the solution. The first method consists in using this data and weight it with the eigenvalues of the POD:
@@ -60,17 +60,26 @@ Moreover, a maximum cube-volume aspect ratio is defined in order to preserve the
 with :math:`\epsilon = 1.5` is set arbitrarily to prevent too elongated hypercubes. The global optimum is found using a two-step strategy: first, a discrete optimization using :math:`\mathcal{P}` gives an initial solution; second a basin-hopping algorithm finds the optimum coordinates of the hypercube. In case of the LOO-*Sobol'* method, the hypercube is truncated using the total order *Sobol'* indices.
 
 
+Efficient Global Optimization (EGO)
+-----------------------------------
+
+In the case of a surrogate model based on a gaussian process, Efficient Global Optimization (EGO) [Jones1998]_ algorithm can be used to resample the parameter space in directive to an optimization. It comprises as a tradeoff between the actual minimal value :math:`f_{min}` and an expected value given by the standard error :math:`s` for a given prediction :math:`\hat{y}`. The expected improvement is defined as:
+
+.. math:: \mathbb{E}[I(x)] = (f_{min} - \hat{y})\Phi \left( \frac{f_{min} - \hat{y}}{s} \right) + s\phi \left( \frac{f_{min} - \hat{y}}{s} \right),
+
+with :math:`\phi(.), \Phi(.)` the standard normal density and distribution function. Using the fact that this quantify is monotonic in :math:`\hat{y}` and :math:`s`, it reduces to the probability of improvement:
+
+.. math:: \frac{\partial \mathbb{E}[I(x)]}{\partial \hat{y}} &= - \Phi \left( \frac{f_{min} - \hat{y}}{s} \right) < 0, \\
+          \frac{\partial \mathbb{E}[I(x)]}{\partial s} &= \phi \left( \frac{f_{min} - \hat{y}}{s} \right) > 0.
+
 References
 ----------
 
-.. [Damblin2013] G. Damblin, M. Couplet, B. Iooss: Numerical studies of space filling designs : optimization of Latin Hypercube Samples and subprojection properties. Journal of Simulation. 2013
-
-.. [Sacks1989] J. Sacks et al.: Design and Analysis of Computer Experiments. Statistical Science 4.4. 1989. DOI: 10.1214/ss/1177012413
-
-.. [Scheidt] C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptative de réponses non régulières par Krigeage et plans d'expériences, Application à la quantification des incertitudes en ingénierie des réservoirs pétroliers. Université Louis Pasteur. 2006
-
-.. [Roy] P.T. Roy et al.: Resampling Strategies to Improve Surrogate Model-based Uncertainty Quantification - Application to LES of LS89. Computers & Fluids. 2017
-
+.. [Damblin2013] G. Damblin, M. Couplet, B. Iooss: Numerical studies of space filling designs : optimization of Latin Hypercube Samples and subprojection properties. Journal of Simulation. 2013 :download:`pdf <ref/Damblin2013.pdf>`
+.. [Sacks1989] J. Sacks et al.: Design and Analysis of Computer Experiments. Statistical Science 4.4. 1989. DOI: 10.1214/ss/1177012413 :download:`pdf <ref/Sacks1989.pdf>`
+.. [Scheidt] C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptative de réponses non régulières par Krigeage et plans d'expériences, Application à la quantification des incertitudes en ingénierie des réservoirs pétroliers. Université Louis Pasteur. 2006 :download:`pdf <ref/Scheidt2006.pdf>`
+.. [Roy2017] P.T. Roy et al.: Resampling Strategies to Improve Surrogate Model-based Uncertainty Quantification - Application to LES of LS89. Computers & Fluids. 2017 :download:`pdf <ref/Roy2017.pdf>`
+.. [Jones1998] D. Jones et al.: Efficient Global Optimization of Expensive Black-Box Functions. Journal of Global Optimization 1998. DOI: 10.1023/a:1008306431147 :download:`pdf <ref/Jones1998.pdf>`
 
 Sources
 -------

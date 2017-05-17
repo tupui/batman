@@ -55,10 +55,10 @@ class SurrogateModel(object):
         self.space = Space(settings)
         self.pod = None
         self.update = False  # switch: update model if POD update
-        self.directories = {
+        self.dir = {
             'surrogate': 'surrogate.dat',
             'space': 'space.dat',
-            'snapshot': 'Newsnap%04d'
+            'snapshot': 'Newsnap{}'
         }
 
     def fit(self, points, data, pod=None):
@@ -93,13 +93,12 @@ class SurrogateModel(object):
         self.update = True
         self.logger.info('got update notification')
 
-    def __call__(self, points, path=None, snapshots=True):
+    def __call__(self, points, path=None):
         """Predict snapshots.
 
         :param :class:`space.point.Point` points: point(s) to predict
         :param str path: if not set, will return a list of predicted snapshots
         instances, otherwise write them to disk.
-        :param bool snapshots: whether or not to return a Snapshot object
         :return: Result
         :rtype: lst(:class:`tasks.snapshot.Snapshot`) or np.array(n_points, n_features)
         :return: Standard deviation
@@ -131,16 +130,13 @@ class SurrogateModel(object):
 
             results = np.atleast_2d(pred)
 
-        if snapshots:
+        if path is not None:
             points = self.scaler.inverse_transform(points)
             snapshots = [None] * len(points)
             for i, point in enumerate(points):
                 snapshots[i] = Snapshot(point, results[i])
-
-            if path is not None:
-                for i, s in enumerate(snapshots):
-                    s_path = os.path.join(path, self.directories['snapshot'] % i)
-                    s.write(s_path)
+                s_path = os.path.join(path, self.dir['snapshot'].format(i))
+                snapshots[i].write(s_path)
         else:
             return results, sigma
 
@@ -154,13 +150,13 @@ class SurrogateModel(object):
 
             :param str path: path to a directory.
             """
-            path_model = os.path.join(path, self.directories['surrogate'])
+            path_model = os.path.join(path, self.dir['surrogate'])
             with open(path_model, 'wb') as f:
                 pickler = pickle.Pickler(f)
                 pickler.dump(self.predictor)
             self.logger.debug('Wrote model to {}'.format(path_model))
 
-            path_space = os.path.join(path, self.directories['space'])
+            path_space = os.path.join(path, self.dir['space'])
             self.space.write(path_space)
             self.logger.debug('Wrote space to {}'.format(path_space))
 
@@ -171,13 +167,13 @@ class SurrogateModel(object):
 
         :param str path: path to a output/surrogate directory.
         """
-        path_model = os.path.join(path, self.directories['surrogate'])
+        path_model = os.path.join(path, self.dir['surrogate'])
         with open(path_model, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.predictor = unpickler.load()
         self.logger.debug('Read model from {}'.format(path_model))
 
-        path_space = os.path.join(path, self.directories['space'])
+        path_space = os.path.join(path, self.dir['space'])
         self.space.read(path_space)
         self.logger.debug('Read space from {}'.format(path_space))
 

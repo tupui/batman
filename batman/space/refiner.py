@@ -9,6 +9,7 @@ It implements the following methods:
 
 - :func:`Refiner.func`
 - :func:`Refiner.func_sigma`
+- :func:`Refiner.pred_sigma`
 - :func:`Refiner.distance_min`
 - :func:`Refiner.hypercube`
 - :func:`Refiner.sigma`
@@ -16,6 +17,7 @@ It implements the following methods:
 - :func:`Refiner.leave_one_out_sobol`
 - :func:`Refiner.extrema`
 - :func:`Refiner.hybrid`
+- :func:`Refiner.optimization`
 
 :Example::
 
@@ -26,6 +28,7 @@ It implements the following methods:
 """
 import logging
 from scipy.optimize import (differential_evolution, minimize, basinhopping)
+from scipy.stats import norm
 import numpy as np
 from sklearn import preprocessing
 import copy
@@ -71,7 +74,7 @@ class Refiner(object):
         self.scaler.fit(self.corners.T)
         self.points = self.scaler.transform(self.points)
 
-    def func(self, coords, sign):
+    def func(self, coords, sign=1):
         r"""Get the prediction for a given point.
 
         Retrieve Gaussian Process estimation. The function returns plus or
@@ -82,14 +85,14 @@ class Refiner(object):
         :param float sign: -1. or 1.
         :return: L2 norm of the function at the point
         :rtype: float
-
         """
         f, _ = self.surrogate(coords)
         try:
-            _, f = np.split(f[0].data, 2)
+            _, f = np.split(f, 2)
         except (ValueError, TypeError):
-            f = f[0].data
-        sum_f = np.sum(f)
+            pass
+        modes_weights = np.array(self.pod_S ** 2).reshape(-1, 1)
+        sum_f = np.average(f, weights=modes_weights)
 
         return sign * sum_f
 
@@ -113,6 +116,23 @@ class Refiner(object):
 
         return - sum_sigma
 
+    def pred_sigma(self, coords):
+        """Prediction and sigma.
+
+        Same as :func:`Refiner.func` and :func:`Refiner.func_sigma`.
+        Function prediction and sigma are weighted using POD modes.
+
+        :param lst(float) coords: coordinate of the point
+        :returns: sum_f and sum_sigma
+        :rtype: floats
+        """
+        f, sigma = self.surrogate(coords)
+        modes_weights = np.array(self.pod_S ** 2).reshape(-1, 1)
+        sum_f = np.average(f, weights=modes_weights)
+        sum_sigma = np.average(sigma, weights=modes_weights)
+
+        return sum_f, sum_sigma
+
     def distance_min(self, point):
         """Get the distance of influence.
 
@@ -125,7 +145,6 @@ class Refiner(object):
         :param np.array point: Anchor point
         :return: The distance to the nearest point
         :rtype: float
-
         """
         point = self.scaler.transform(point.reshape(1, -1))[0]
         distances = np.array([np.linalg.norm(pod_point - point)
@@ -148,7 +167,6 @@ class Refiner(object):
         :param float distance: The distance of influence
         :return: The hypercube around the point
         :rtype: np.array
-
         """
         point = self.scaler.transform(point.reshape(1, -1))[0]
         hypercube = np.array([point - distance, point + distance])
@@ -173,7 +191,6 @@ class Refiner(object):
         :param np.array point: Anchor point
         :return: The hypercube around the point (a point per column)
         :rtype: np.array
-
         """
         distance = self.distance_min(point) / 3
         x0 = self.hypercube_distance(point, distance).flatten('F')
@@ -181,7 +198,7 @@ class Refiner(object):
         point = np.maximum(point, self.corners[:, 0])
         point = self.scaler.transform(point.reshape(1, -1))[0]
 
-        gen = [p for p in self.points if not np.allclose(p, point)]
+        gen = (p for p in self.points if not np.allclose(p, point))
 
         def min_norm(hypercube):
             """Compute euclidean distance.
@@ -202,10 +219,11 @@ class Refiner(object):
 
             hypercube = hypercube.T
 
-            n = - np.linalg.norm(hypercube[:, 1] - hypercube[:, 0])
+            diff = hypercube[:, 1] - hypercube[:, 0]
+            n = - np.linalg.norm(diff)
 
             # Check aspect ratio
-            aspect = abs(hypercube[:, 1] - hypercube[:, 0])
+            aspect = abs(diff)
             aspect = np.power(np.max(aspect), self.dim) / np.prod(aspect)
             aspect = np.power(aspect, 1 / self.dim)
             if not (aspect <= 1.5):
@@ -232,7 +250,7 @@ class Refiner(object):
         results = basinhopping(min_norm, x0, niter=1000, minimizer_kwargs=minimizer_kwargs)
         hypercube = results.x.reshape(2, self.dim)
         for i in range(self.dim):
-                hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
+            hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
         hypercube = hypercube.T
 
         self.logger.debug("Corners:\n{}".format(self.corners))
@@ -250,7 +268,6 @@ class Refiner(object):
         :param np.array hypercube: Corners of the hypercube
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         if hypercube is None:
             hypercube = self.corners
@@ -271,7 +288,6 @@ class Refiner(object):
         :param tuple point_loo: leave-one-out point
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         self.logger.info("Leave-one-out + Sigma strategy")
         # Get the point of max error by LOOCV
@@ -297,7 +313,6 @@ class Refiner(object):
         :param tuple point_loo: leave-one-out point
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         self.logger.info("Leave-one-out + Sobol strategy")
         # Get the point of max error by LOOCV
@@ -338,7 +353,6 @@ class Refiner(object):
 
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         self.logger.info("Extrema strategy")
         points = np.delete(self.points, refined_pod_points, 0)
@@ -432,7 +446,6 @@ class Refiner(object):
         :param str strategy: resampling method
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         self.logger.info(">>---Hybrid strategy---<<")
 
@@ -449,3 +462,40 @@ class Refiner(object):
             raise SystemExit
 
         return new_point, refined_pod_points
+
+    def optimization(self):
+        """Optimization using Probability of Improvement.
+
+        :return: The coordinate of the point to add
+        :rtype: lst(float)
+        """
+        gen = [self.func(x) for x in self.points]
+        arg_min = np.argmin(gen)
+        min_value = gen[arg_min]
+        min_x = self.points[arg_min]
+        self.logger.info('Current minimal value is: f(x)={} for x={}'
+                         .format(min_value, min_x))
+
+        target = min_value - 0.1 * np.abs(min_value)
+
+        def probability_improvement(x):
+            """Probability of improvement."""
+            pred, sigma = self.pred_sigma(x)
+            std_dev = np.sqrt(sigma)
+            pi = norm.cdf((target - pred) / std_dev)
+
+            return - pi
+
+        def expected_improvement(x):
+            """Expected improvement."""
+            pred, sigma = self.pred_sigma(x)
+            std_dev = np.sqrt(sigma)
+            ei = (min_value - pred) * norm.cdf((min_value - pred) / std_dev)\
+                + std_dev * norm.pdf((min_value - pred) / std_dev)
+
+            return - ei
+
+        results = differential_evolution(expected_improvement, self.corners)
+        arg_max = results.x
+
+        return arg_max

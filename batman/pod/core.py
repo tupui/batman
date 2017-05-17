@@ -246,10 +246,10 @@ class Core(object):
             # New prediction with points_nb - 1
             surrogate.fit(new_pod.points, new_pod.V * new_pod.S)
 
-            prediction, _ = surrogate(points[i], snapshots=False)
+            prediction, _ = surrogate(points[i])
 
             # MSE on the missing point
-            error = np.sum((np.dot(Urot, prediction[0]) - float(points_nb)
+            error = np.sum((np.dot(Urot, prediction) - float(points_nb)
                             / float(points_nb - 1) * self.V[i] * self.S)
                            ** 2)
 

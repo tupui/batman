@@ -127,20 +127,20 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     assert surrogate.space == space
 
     pred, _ = surrogate(point)
-    assert pred[0].data == pytest.approx(target_point, 0.1)
+    assert pred == pytest.approx(target_point, 0.1)
 
-    pred, _ = surrogate(point, snapshots=False)
+    pred, _ = surrogate(point)
     assert pred == pytest.approx(target_point, 0.1)
 
     pred, _ = surrogate(point, path=tmp)
     assert pred[0].data == pytest.approx(target_point, 0.1)
-    if not os.path.isdir(os.path.join(tmp, 'Newsnap0000')):
+    if not os.path.isdir(os.path.join(tmp, 'Newsnap0')):
         assert False
 
     # Compute predictivity coefficient Q2
     def wrap_surrogate(x):
         evaluation, _ = surrogate(x)
-        return [evaluation[0].data]
+        return [evaluation]
     surrogate_ot = ot.PythonFunction(3, 1, wrap_surrogate)
     q2 = sklearn_q2(dists, model, surrogate_ot)
     assert q2 == pytest.approx(1, 0.1)
@@ -163,38 +163,38 @@ def test_evofusion(mufi_data):
     q2 = sklearn_q2(dist, model, surrogate_ot)
     assert q2 == pytest.approx(1, 0.1)
 
-    # # Plotting
-    # x = np.linspace(0, 1, 200).reshape(-1, 1)
-    # space = np.array(space)
-    # target_space = np.array(target_space)
+    # Plotting
+    x = np.linspace(0, 1, 200).reshape(-1, 1)
+    space = np.array(space)
+    target_space = np.array(target_space)
 
-    # # Split into cheap and expensive arrays
-    # space = [space[space[:, 0] == 0][:, 1],
-    #          space[space[:, 0] == 1][:, 1]]
-    # n_e = space[0].shape[0]
-    # n_c = space[1].shape[0]
-    # space = [space[0].reshape((n_e, -1)),
-    #          space[1].reshape((n_c, -1))]
-    # target_space = [target_space[:n_e].reshape((n_e, -1)),
-    #                 target_space[n_e:].reshape((n_c, -1))]
+    # Split into cheap and expensive arrays
+    space = [space[space[:, 0] == 0][:, 1],
+             space[space[:, 0] == 1][:, 1]]
+    n_e = space[0].shape[0]
+    n_c = space[1].shape[0]
+    space = [space[0].reshape((n_e, -1)),
+             space[1].reshape((n_c, -1))]
+    target_space = [target_space[:n_e].reshape((n_e, -1)),
+                    target_space[n_e:].reshape((n_c, -1))]
 
-    # surrogate_e = Kriging(space[0], target_space[0])
-    # surrogate_c = Kriging(space[1], target_space[1])
-    # pred_evo, _ = np.array(surrogate.evaluate(x))
-    # pred_e, _ = np.array(surrogate_e.evaluate(x))
-    # pred_c, _ = np.array(surrogate_c.evaluate(x))
+    surrogate_e = Kriging(space[0], target_space[0])
+    surrogate_c = Kriging(space[1], target_space[1])
+    pred_evo, _ = np.array(surrogate.evaluate(x))
+    pred_e, _ = np.array(surrogate_e.evaluate(x))
+    pred_c, _ = np.array(surrogate_c.evaluate(x))
 
-    # plt.figure("Evofusion on Forrester's functions")
-    # plt.plot(space[0], target_space[0], 'o', label=r'$y_e$')
-    # plt.plot(space[1], target_space[1], '^', label=r'$y_c$')
-    # plt.plot(x, f_e(x), ls='-', label=r'$f_e$')
-    # plt.plot(x, f_c(x), ls='--', label=r'$f_c$')
-    # plt.plot(x, pred_evo, ls='-.', label=r'$evofusion$')
-    # plt.plot(x, pred_e, '>', markevery=20, ls=':', label=r'kriging through $y_e$')
-    # plt.plot(x, pred_c, '<', markevery=20, ls=':', label=r'kriging through $y_c$')
-    # plt.xlabel('x', fontsize=28)
-    # plt.ylabel('y', fontsize=28)
-    # plt.tick_params(axis='x', labelsize=26)
-    # plt.tick_params(axis='y', labelsize=26)
-    # plt.legend(fontsize=26, loc='upper left')
+    plt.figure("Evofusion on Forrester's functions")
+    plt.plot(space[0], target_space[0], 'o', label=r'$y_e$')
+    plt.plot(space[1], target_space[1], '^', label=r'$y_c$')
+    plt.plot(x, f_e(x), ls='-', label=r'$f_e$')
+    plt.plot(x, f_c(x), ls='--', label=r'$f_c$')
+    plt.plot(x, pred_evo, ls='-.', label=r'$evofusion$')
+    plt.plot(x, pred_e, '>', markevery=20, ls=':', label=r'kriging through $y_e$')
+    plt.plot(x, pred_c, '<', markevery=20, ls=':', label=r'kriging through $y_c$')
+    plt.xlabel('x', fontsize=28)
+    plt.ylabel('y', fontsize=28)
+    plt.tick_params(axis='x', labelsize=26)
+    plt.tick_params(axis='y', labelsize=26)
+    plt.legend(fontsize=26, loc='upper left')
     # plt.show()

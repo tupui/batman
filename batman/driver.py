@@ -161,7 +161,7 @@ class Driver(object):
 
         # Fit the Surrogate [and POD]
         if update:
-                self.surrogate.space.empty()
+            self.surrogate.space.empty()
         if self.pod is not None:
             if update:
                 if self.provider.is_job:
@@ -204,7 +204,7 @@ class Driver(object):
             if self.pod is not None:
                 quality, point_loo = self.pod.estimate_quality()
                 # quality = 0.5
-                # point_loo = [-1.1780625, -0.8144629629629629, -2.63886]
+                # point_loo = [-1.1780625, -0.8144629629629629]
                 if quality >= self.settings['space']['resampling']['q2_criteria']:
                     break
             else:
@@ -217,6 +217,9 @@ class Driver(object):
                 break
 
             self.sampling(new_point, update=True)
+
+            if self.settings['space']['resampling']['method'] == 'optimization':
+                self.space.optimization_results()
 
     def write(self):
         """Write Surrogate [and POD] to disk."""
@@ -262,7 +265,15 @@ class Driver(object):
             self.space += processed_points
 
     def prediction(self, write=False, points=None):
-        """Perform a prediction."""
+        """Perform a prediction.
+
+        :param bool write: write a snapshot or not
+        :param :class:`space.point.Point` points: point(s) to predict
+        :return: Result
+        :rtype: lst(:class:`tasks.snapshot.Snapshot`) or np.array(n_points, n_features)
+        :return: Standard deviation
+        :rtype: lst(np.array)
+        """
         if write:
             output = os.path.join(self.output, self.output_tree['predictions'])
         else:

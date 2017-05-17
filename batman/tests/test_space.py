@@ -3,9 +3,13 @@
 import pytest
 import numpy as np
 import numpy.testing as npt
+import copy
 from batman.space import (Point, Space, Doe,
                           UnicityError, AlienPointError, FullSpaceError)
-from batman.functions import Ishigami
+from batman.functions import (Ishigami, Branin)
+from batman.tasks import Snapshot
+from batman.surrogate import SurrogateModel
+from batman.space.refiner import Refiner
 
 settings = {
     "space": {
@@ -114,3 +118,30 @@ def test_doe():
     out = np.array([[5., 3.], [2.5, 4.], [7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
     test_output = npt.assert_almost_equal(sample, out, decimal=1)
     assert True if test_output is None else False
+
+
+def test_resampling(tmp, branin_data, settings_ishigami):
+    f_2d, dists, model, point, target_point, space, target_space = branin_data
+    test_settings = copy.deepcopy(settings_ishigami)
+    test_settings['space']['sampling']['init_size'] = len(space)
+    test_settings['space']['resampling']['method'] = 'sigma'
+    test_settings['space']['resampling']['resamp_size'] = 1
+    test_settings['space']['corners'] = space.corners
+    test_settings['space']['corners'] = space.corners
+    test_settings['uq']['test'] = 'Branin'
+    test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2']
+    f_obj = Branin()
+    test_settings['snapshot']['provider'] = f_obj
+    
+    Snapshot.initialize(test_settings['snapshot']['io'])
+    surrogate = SurrogateModel('kriging', space.corners)
+    surrogate.fit(space, target_space)
+
+    out = space.refine(surrogate)
+    assert len(space) == 11
+    
+    refiner = Refiner(surrogate, test_settings)
+    new_point = refiner.sigma()
+    point_loo = refiner.points[0]
+    new_point = refiner.leave_one_out_sigma(point_loo)
+    new_point = refiner.leave_one_out_sobol(point_loo)
