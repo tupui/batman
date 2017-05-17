@@ -298,13 +298,13 @@ class Space(list):
         :rtype: :class:`space.point.Point` -> lst(tuple(float))
         """
         # Refinement strategy
-        if self.refiner is None:
-            self.refiner = Refiner(surrogate, self.settings)
-            if self.settings['space']['resampling']['method'] == 'hybrid':
-                strategy = []
-                for method in self.settings['space']['resampling']['hybrid']:
-                    strategy.append([method[0]] * method[1])
-                self.hybrid = itertools.cycle(itertools.chain.from_iterable(strategy))
+        if (self.refiner is None) and (self.settings['space']['resampling']['method'] == 'hybrid'):
+            strategy = []
+            for method in self.settings['space']['resampling']['hybrid']:
+                strategy.append([method[0]] * method[1])
+            self.hybrid = itertools.cycle(itertools.chain.from_iterable(strategy))
+
+        self.refiner = Refiner(surrogate, self.settings)
 
         method = self.settings['space']['resampling']['method']
         if method == 'sigma':
@@ -329,8 +329,7 @@ class Space(list):
 
         self += point
 
-        self.logger.info('Refined sampling with new point: {}'
-                         .format(str(point)))
+        self.logger.info('Refined sampling with new point: {}'.format(point))
 
         return point
 
