@@ -14,9 +14,10 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     f_2d, dists, model, point, target_point, space, target_space = branin_data
     test_settings = copy.deepcopy(settings_ishigami)
     init_size = len(space)
+    res_size = 0
     test_settings['space']['sampling']['init_size'] = init_size
     test_settings['space']['resampling']['method'] = 'optimization'
-    test_settings['space']['resampling']['resamp_size'] = 1
+    test_settings['space']['resampling']['resamp_size'] = res_size
     test_settings["space"]["corners"] = space.corners
     test_settings["snapshot"]["io"]["parameter_names"] = ["x1", "x2"]
     f_obj = Branin()
@@ -112,17 +113,16 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     #             transparent=True, bbox_inches='tight')
     # plt.show()
 
-    fig = plt.figure('Efficient Global Optimization')
+    fig = plt.figure('Efficient Global Optimization', figsize=(20,5))
     plt.subplot(131)
     plt.plot(space[:init_size, 0], space[:init_size, 1], 'ko')
     plt.plot(space[init_size:, 0], space[init_size:, 1], 'm^')
     plt.plot(-3.68928528, 13.62998774, 'r<')
     bounds = np.linspace(-17, 300., 30, endpoint=True)
-    plt.tricontourf(x, y, pred, bounds,
-                    antialiased=True, cmap=c_map)
+    plt.tricontourf(x, y, pred, bounds, antialiased=True, cmap=c_map)
     cbar = plt.colorbar()
     cbar.set_label(r'$f(x_1, x_2)$')
-    plt.ylabel(r'$x_2$')
+    plt.ylabel(r'$x_2$', fontsize=24)
     plt.tick_params(axis='y')
     for txt, point in enumerate(space):
         plt.annotate(txt, point, textcoords='offset points')
@@ -131,11 +131,10 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     plt.plot(space[:init_size, 0], space[:init_size, 1], 'ko')
     plt.plot(space[init_size:, 0], space[init_size:, 1], 'm^')
     plt.plot(-3.68928528, 13.62998774, 'r<')
-    plt.tricontourf(x, y, sigma,
-                    antialiased=True, cmap=c_map)
+    plt.tricontourf(x, y, sigma, antialiased=True, cmap=c_map)
     cbar = plt.colorbar()
     cbar.set_label(r'$\sigma(x_1, x_2)$')
-    plt.xlabel(r'$x_1$')
+    plt.xlabel(r'$x_1$', fontsize=24)
     for txt, point in enumerate(space):
         plt.annotate(txt, point, textcoords='offset points')
 
@@ -143,14 +142,13 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     plt.plot(space[:init_size, 0], space[:init_size, 1], 'ko')
     plt.plot(space[init_size:, 0], space[init_size:, 1], 'm^')
     plt.plot(-3.68928528, 13.62998774, 'r<')
-    plt.tricontourf(x, y, ei,
-                    antialiased=True, cmap=c_map)
+    plt.tricontourf(x, y, ei, antialiased=True, cmap=c_map)
     cbar = plt.colorbar()
     cbar.set_label(r'$\mathbb{E}[I(x_1, x_2)]$')
     for txt, point in enumerate(space):
         plt.annotate(txt, point, textcoords='offset points')
 
     fig.tight_layout()
-    fig.savefig('/Users/roy/Desktop/expected_improvement.pdf',
-                transparent=True, bbox_inches='tight')
+    path = 'expected_improvement_' + str(res_size) + '.pdf'
+    fig.savefig(path, transparent=True, bbox_inches='tight')
     # plt.show()
