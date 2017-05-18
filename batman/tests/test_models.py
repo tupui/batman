@@ -197,4 +197,8 @@ def test_evofusion(mufi_data):
     plt.tick_params(axis='x', labelsize=26)
     plt.tick_params(axis='y', labelsize=26)
     plt.legend(fontsize=26, loc='upper left')
+    fig.tight_layout()
+    path = 'evofusion_forrester.pdf'
+    fig.savefig(path, transparent=True, bbox_inches='tight')
     # plt.show()
+    plt.close('all')

@@ -74,7 +74,7 @@ def branin_data(settings_ishigami):
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings["space"]["corners"] = [[-7, 0], [10, 15]]
-    test_settings["space"]["sampling"]["method"] = 'halton'
+    test_settings["space"]["sampling"]["method"] = 'discrete'
     test_settings["snapshot"]["io"]["parameter_names"] = ["x1", "x2"]
     space = Space(test_settings)
     space.sampling(10)

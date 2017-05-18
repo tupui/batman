@@ -33,8 +33,7 @@ import numpy as np
 from sklearn import preprocessing
 import copy
 from ..uq import UQ
-from ..misc import NestedPool
-from pathos.multiprocessing import cpu_count
+from ..misc import optimization
 
 
 class Refiner(object):
@@ -97,26 +96,6 @@ class Refiner(object):
         sum_f = np.average(f, weights=modes_weights)
 
         return sign * sum_f
-
-    def func_sigma(self, coords):
-        r"""Get the Sigma for a given point.
-
-        Retrieve Gaussian Process estimation of sigma.
-        A composite indicator is constructed using POD's modes.
-
-        .. math:: \sum S_i^2 \times \sigma_i
-
-        Function returns `- sum_sigma` in order to have a minimization problem.
-
-        :param lst(float) coords: coordinate of the point
-        :return: - sum_sigma
-        :rtype: float
-
-        """
-        _, sigma = self.surrogate(coords)
-        sum_sigma = np.sum(self.pod_S ** 2 * sigma)
-
-        return - sum_sigma
 
     def pred_sigma(self, coords):
         """Prediction and sigma.
@@ -274,9 +253,33 @@ class Refiner(object):
         if hypercube is None:
             hypercube = self.corners
         self.logger.debug("Sigma strategy")
-        result = differential_evolution(self.func_sigma, hypercube)
 
-        return result.x
+        @optimization(self.settings["sampling"]["method"], hypercube)
+        def func_sigma(coords):
+            r"""Get the Sigma for a given point.
+
+            Retrieve Gaussian Process estimation of sigma.
+            A composite indicator is constructed using POD's modes.
+
+            .. math:: \sum S_i^2 \times \sigma_i
+
+            Function returns `- sum_sigma` in order to have a minimization problem.
+
+            :param lst(float) coords: coordinate of the point
+            :return: - sum_sigma
+            :rtype: float
+            """
+            _, sigma = self.surrogate(coords)
+            sum_sigma = np.sum(self.pod_S ** 2 * sigma)
+    
+            return - sum_sigma
+
+        # result = differential_evolution(self.func_sigma, hypercube)
+
+        min_x, _ = func_sigma()
+
+        return min_x
+        # return result.x
 
     def leave_one_out_sigma(self, point_loo):
         """Mixture of Leave-one-out and Sigma.
@@ -478,22 +481,27 @@ class Refiner(object):
         self.logger.info('Current minimal value is: f(x)={} for x={}'
                          .format(min_value, min_x))
 
-        # target = min_value - 0.1 * np.abs(min_value)
+        target = min_value - 0.1 * np.abs(min_value)
 
+        @optimization(self.settings["sampling"]["method"], self.corners)
         def probability_improvement(x):
             """Probability of improvement."""
+            x_scaled = self.scaler.transform(x.reshape(1, -1))
+            too_close = np.array([True if np.linalg.norm(x_scaled - p) < 0.02
+                                  else False for p in self.points]).any()
+
             pred, sigma = self.pred_sigma(x)
             std_dev = np.sqrt(sigma)
             pi = norm.cdf((target - pred) / std_dev)
 
             return - pi
 
+        @optimization(self.settings["sampling"]["method"], self.corners)
         def expected_improvement(x):
             """Expected improvement."""
-
             x_scaled = self.scaler.transform(x.reshape(1, -1))
-            too_close = np.array([True if np.linalg.norm(x_scaled - p) < 0.05
-                else False for p in self.points]).any()
+            too_close = np.array([True if np.linalg.norm(x_scaled - p) < 0.02
+                                  else False for p in self.points]).any()
 
             if too_close:
                 return np.inf
@@ -505,40 +513,6 @@ class Refiner(object):
 
             return - ei
 
-        if self.settings["sampling"]["method"] == 'discrete':
-            # max_ei = np.array([np.round(max_ei[0]), max_ei[1:]])
-
-            def fork_optimizer(i):
-                bounds = np.vstack([[i, i], self.corners[1:]])
-                results = differential_evolution(expected_improvement, bounds)
-                min_x = results.x
-                min_value = results.fun
-                return min_x, min_value
-
-            start = int(np.ceil(self.corners[0, 0]))
-            end = int(np.ceil(self.corners[0, 1]))
-            n_results = end - start
-            discrete_range = range(start, end)
-
-            pool = NestedPool(cpu_count())
-            results = pool.imap(fork_optimizer, discrete_range)
-    
-            # Gather results
-            results = list(results)
-            pool.terminate()
-    
-            min_x = [None] * n_results
-            min_value = [None] * n_results
-
-            for i in range(n_results):
-                min_x[i], min_value[i] = results[i]
-
-            # Find best results
-            min_idx = np.argmin(min_value)
-            min_value = min_value[min_idx]
-            max_ei = min_x[min_idx]
-        else:
-            results = differential_evolution(expected_improvement, self.corners)
-            max_ei = results.x
+        max_ei, _ = expected_improvement()
 
         return max_ei
