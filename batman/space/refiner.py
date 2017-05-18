@@ -216,10 +216,11 @@ class Refiner(object):
                 return np.inf
 
             # Verify that no other point is inside
-            for p in gen:
-                insiders = (hypercube[:, 0] <= p).all() & (p <= hypercube[:, 1]).all()
-                if insiders:
-                    return np.inf
+            insiders = np.array([True if (hypercube[:, 0] <= p).all() &
+                                 (p <= hypercube[:, 1]).all() else False
+                                 for p in gen]).any()
+            if insiders:
+                return np.inf
 
             return n
 
