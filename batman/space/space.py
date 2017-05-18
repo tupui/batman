@@ -23,12 +23,11 @@ import os
 import numpy as np
 from scipy.optimize import differential_evolution
 import itertools
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from .sampling import Doe
 from .point import Point
 from .refiner import Refiner
+plt.switch_backend('Agg')
 
 
 class UnicityError(Exception):
