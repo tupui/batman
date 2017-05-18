@@ -184,7 +184,8 @@ def test_evofusion(mufi_data):
     pred_e, _ = np.array(surrogate_e.evaluate(x))
     pred_c, _ = np.array(surrogate_c.evaluate(x))
 
-    plt.figure("Evofusion on Forrester's functions")
+    # Plotting
+    fig = plt.figure("Evofusion on Forrester's functions")
     plt.plot(space[0], target_space[0], 'o', label=r'$y_e$')
     plt.plot(space[1], target_space[1], '^', label=r'$y_c$')
     plt.plot(x, f_e(x), ls='-', label=r'$f_e$')

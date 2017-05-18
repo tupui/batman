@@ -121,7 +121,7 @@ class Doe():
         for i in range(self.dim):
             h1 = 1. / float(n_sample[i] - 1)
             h.append(h1)
-        r = np.empty([n, self.dim])
+        r = np.zeros([n, self.dim])
         compt = np.zeros([1, self.dim], np.int)
         for i in range(1, n):
             compt[0, 0] = compt[0, 0] + 1
