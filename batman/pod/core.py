@@ -232,8 +232,8 @@ class Core(object):
 
             (Urot, S_1, V_1) = self.downgrade(self.S, V_1)
             (Urot, S_1, V_1) = self.filtering(Urot, S_1, V_1,
-                                              self.tolerance,
-                                              self.dim_max)
+                                              1.,
+                                              len(self.S))
 
             points_1 = points[:]
             points_1.pop(i)
@@ -249,7 +249,7 @@ class Core(object):
             prediction, _ = surrogate(points[i])
 
             # MSE on the missing point
-            error = np.sum((np.dot(Urot, prediction) - float(points_nb)
+            error = np.sum((np.dot(Urot, prediction[0]) - float(points_nb)
                             / float(points_nb - 1) * self.V[i] * self.S)
                            ** 2)
 
