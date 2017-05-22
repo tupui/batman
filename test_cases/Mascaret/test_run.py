@@ -10,14 +10,15 @@ print(study)
 
 # Perform a specific study
 #h = study([30, 3000])
-#print('test1',h)
+#print('Water level computed with Ks = 30, Q = 3000',h)
 
 # Plot the water level along the open-channel at final time
 #study.plot_opt('ResultatsOpthyca.opt')
 
 # Realize the study with the user defined tasks 
 h = study()
-print('water level',h)
+print('Water level computed with json user defined values', h)
+study.plot_opt('ResultatsOpthyca.opt')
 
 # Print and plot statistics concerning the model output uncertainty
 #print_statistics(h)

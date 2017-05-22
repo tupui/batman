@@ -5,19 +5,7 @@
     },
     "Q_BC": {
         "idx": 0,
-        "value": 1000.0
-    },
-    "Ks": {
-        "zone": true,
-        "idx": 25,
-        "value": 35.0,
-        "ind_zone": 0
-    },
-    "MC": {
-        "distKs": "G",
-        "muKs": 35.0,
-        "sigmaKs": 2.0,
-        "Ne": 3 
+        "value": 2345.0
     },
     "misc": {
         "info_bc": true,
