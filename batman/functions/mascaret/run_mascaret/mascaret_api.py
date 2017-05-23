@@ -29,21 +29,26 @@ class MascaretApi(object):
     """Mascaret API."""
 
     logger = logging.getLogger(__name__)
+    _error = 0
 
-    def __setattr__(self, name, value):
+    @property
+    def error(self):
+        return self._error
+
+    @error.setter
+    def error(self, value):
         """Detect errors.
 
         Overwright attribute setter to detect API errors.
         If :attr:`error` is not set null, an error is raised and the programme
         is terminated.
 
-        :param str name: name of the attribute
-        :param ... value: value to assign
+        :param int value: value to assign
         """
-        object.__setattr__(self, name, value)
-        if (name is 'error') and (value is not 0):
+        if value != 0:
             self.logger.error("API error:\n{}".format(self.error_message()))
             raise SystemExit
+        self._error = 0
 
     def __init__(self, settings, user_settings):
         """Constructor.
