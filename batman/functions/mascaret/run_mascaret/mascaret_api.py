@@ -20,8 +20,8 @@ import matplotlib.ticker as tick
 from matplotlib.patches import Polygon
 from ...utils import multi_eval
 
-logging.basicConfig(level=logging.DEBUG)
-#logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 class MascaretApi(object):
@@ -309,13 +309,12 @@ class MascaretApi(object):
         if 'misc' in self.user_settings:
             string += (" -- Miscellaneous:\n"
                        "       > Print  boundary conditions: {}\n"
-                       "       > Output index: {}")
-
+                       "       > Output index: {}\n")
         if 'bathy' in self.user_settings:
             string += (" -- Change bathymetry:\n"
-                       "       > Shift all bathy dz: {}\n"
-                       "       > Shift Index: {}\n"
-                       "       > Shift all by dz: {}")
+                       "       > Flag shift all bathy by dz: {}\n"
+                       "       > Shift Index Profil: {}\n"
+                       "       > Shift by dz: {}")
 
         src1 = list(itertools.chain.from_iterable([v.values() if isinstance(
             v, dict) else [v] for v in self.settings['files'].values()]))
@@ -332,7 +331,7 @@ class MascaretApi(object):
         return string.format(*src_)
 
     @multi_eval
-    def run_mascaret(self, x=None, flag=None, saveall=False):
+    def run_mascaret(self, x=None, Qtime=None, flag=None, saveall=False):
         """Run Mascaret simulation.
 
         Use Mascaret Api :meth:`C_CALCUL_MASCARET`.
@@ -340,7 +339,7 @@ class MascaretApi(object):
         When :attr:`flag` is None, both parameters are modified. Thus :arg:`x`
         needs to be set accordingly. If the flag is set to ``Ks``, then only
         this parameter is considered.
-
+        If :arg:`y` if not None, the BC are provided in .csv
         :param list x: inputs [Ks, Q]
         :param str flag: None, 'Ks' or 'Q'
         :param bool saveall: Change the default name of the Results file
@@ -348,7 +347,7 @@ class MascaretApi(object):
         :rtype: double
         """
         if x is not None:
-            if (flag is None) or (flag is 'Ks'):
+            if (flag is None) or (flag == 'Ks'):
                 if self.user_settings['Ks']['zone']:
                     self.zone_friction_minor = {
                         'ind_zone': self.user_settings['Ks']['ind_zone'],
@@ -356,21 +355,32 @@ class MascaretApi(object):
                 else:
                     self.friction_minor = {'idx': self.user_settings['Ks']['idx'],
                                            'value': x[0]}
-            elif flag is 'Q':
+            elif flag == 'Q':
                 self.bc_qt = {'idx': self.user_settings['Q_BC']['idx'],
                               'value': x[0]}
 
             if flag is None:
                 self.bc_qt = {'idx': self.user_settings['Q_BC']['idx'],
                               'value': x[1]}
+            self.empty_opt()
+            self.logger.info('Running Mascaret...')
+            self.error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
+                self.tend, self.dt, self.iprint)
 
+        elif Qtime is not None:
+            nb_timebc, tab_timebc_c, tab_CL1_c, tab_CL2_c = Qtime 
+            self.error = self.libmascaret.C_CALCUL_MASCARET_CONDITION_LIMITE(self.id_masc, self.t0,
+                self.tend, self.dt, ctypes.byref(tab_timebc_c),
+                nb_timebc, ctypes.byref(tab_CL1_c), ctypes.byref(tab_CL2_c),
+                self.iprint)
+            
         else:
             self.user_defined()
+            self.empty_opt()
+            self.logger.info('Running Mascaret...')
+            self.error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
+                self.tend, self.dt, self.iprint)
 
-        self.empty_opt()
-        self.logger.info('Running Mascaret...')
-        self.error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
-                                                   self.tend, self.dt, self.iprint)
         self.logger.info('Mascaret ran.')
 
         if saveall:
@@ -394,7 +404,7 @@ class MascaretApi(object):
             return self.state(self.user_settings['misc']['index_outstate']).value
 
 
-    def __call__(self, x=None, saveall=False):
+    def __call__(self, x=None, Qtime=None, saveall=False):
         """Run the application using :attr:`user_settings`.
 
         :param list x: inputs [Ks, Q]
@@ -426,7 +436,7 @@ class MascaretApi(object):
                     flag = None
                 else:
                     q = self.doe[:, 0]
-                    flag='Q'
+                    flag = 'Q'
                 if self.user_settings['MC']['distQ'] == "G":
                     q[:] = np.random.normal(
                         self.user_settings['MC']['muQ'], self.user_settings['MC']['sigmaQ'], n)
@@ -440,7 +450,7 @@ class MascaretApi(object):
 
         else:
             self.logger.info('Performing a single MASCARET simulation...')
-            h = self.run_mascaret(x=x, saveall=saveall)
+            h = self.run_mascaret(x=x, Qtime=Qtime, saveall=saveall)
 
         self.results = h
 
@@ -812,8 +822,9 @@ class MascaretApi(object):
         else:
             self.logger.debug('Cross section bathymetry value= {}'.format(Zbot_c.value))
 
-        print('In Getter Cross Section, tableau Z bot', res_Zbot)
-        print('In Getter Cross Section, tableau X bot', res_Xbot)
+        self.logger.info('In Getter Cross Section, tableau Z bot = {}'.format(res_Zbot))
+        self.logger.info('In Getter Cross Section, tableau X bot = {}'.format(res_Xbot))
+
         return res_Zbot, res_Xbot
 
     @cross_section.setter
