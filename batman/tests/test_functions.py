@@ -41,10 +41,9 @@ def test_G_Function():
     assert f_6d([0., 2./3., 1., 0., 0., 1./3.]) == pytest.approx(2.193, 0.01)
 
     f_5d = G_Function(d=5)
-    test_indices = npt.assert_almost_equal(f_5d.s_first,
-                                           [0.48, 0.21, 0.12, 0.08, 0.05],
-                                           decimal=2)
-    assert True if test_indices is None else False
+    npt.assert_almost_equal(f_5d.s_first,
+                            [0.48, 0.21, 0.12, 0.08, 0.05],
+                            decimal=2)
 
 
 def test_Forrester():
@@ -64,8 +63,7 @@ def test_Branin():
     results = differential_evolution(f, bounds, tol=0.001, popsize=20)
     assert results.fun == pytest.approx(-16.64402157, 0.05)
     x_target = [-3.68928528, 13.62998774]
-    test_x = npt.assert_almost_equal(results.x, x_target, decimal=2)
-    assert True if test_x is None else False
+    npt.assert_almost_equal(results.x, x_target, decimal=2)
 
 
 def test_Mascaret():
@@ -74,8 +72,7 @@ def test_Mascaret():
     f_data_base = [2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
                    2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
                    1.7149e1, 1.446e1]
-    test_output = npt.assert_almost_equal(f_out, f_data_base, decimal=2)
-    assert True if test_output is None else False
+    npt.assert_almost_equal(f_out, f_data_base, decimal=2)
 
 
 def test_Plot():

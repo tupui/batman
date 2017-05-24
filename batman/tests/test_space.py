@@ -89,8 +89,7 @@ def test_space_evaluation():
     targets_space = f_3d(space)
 
     f_data_base = np.array([8.10060038,  5.18818004]).reshape(2, 1)
-    test_output = npt.assert_almost_equal(targets_space, f_data_base)
-    assert True if test_output is None else False
+    npt.assert_almost_equal(targets_space, f_data_base)
 
 
 def test_doe():
@@ -102,22 +101,19 @@ def test_doe():
     doe = Doe(n, bounds, kind, discrete_var)
     sample = doe.generate()
     out = np.array([[0., 2.], [10., 2.], [0., 5.], [10., 5.]])
-    test_output = npt.assert_almost_equal(sample, out, decimal=1)
-    assert True if test_output is None else False
+    npt.assert_almost_equal(sample, out, decimal=1)
 
     kind = 'discrete'
     doe = Doe(n, bounds, kind, discrete_var)
     sample = doe.generate()
     out = np.array([[5., 3.], [2., 4.], [8., 2.3], [1., 3.3], [6., 4.3]])
-    test_output = npt.assert_almost_equal(sample, out, decimal=1)
-    assert True if test_output is None else False
+    npt.assert_almost_equal(sample, out, decimal=1)
 
     kind = 'halton'
     doe = Doe(n, bounds, kind, discrete_var)
     sample = doe.generate()
     out = np.array([[5., 3.], [2.5, 4.], [7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
-    test_output = npt.assert_almost_equal(sample, out, decimal=1)
-    assert True if test_output is None else False
+    npt.assert_almost_equal(sample, out, decimal=1)
 
 
 def test_resampling(tmp, branin_data, settings_ishigami):
@@ -132,14 +128,14 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2']
     f_obj = Branin()
     test_settings['snapshot']['provider'] = f_obj
-    
+
     Snapshot.initialize(test_settings['snapshot']['io'])
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
 
     out = space.refine(surrogate)
     assert len(space) == 11
-    
+
     refiner = Refiner(surrogate, test_settings)
     new_point = refiner.sigma()
     point_loo = refiner.points[0]

@@ -341,7 +341,8 @@ class Space(list):
         self.logger.info('New minimal value is: f(x)={} for x={}'
                          .format(min_value, min_x))
 
-        results = differential_evolution(self.refiner.func, self.corners)
+        bounds = np.array(self.corners).T
+        results = differential_evolution(self.refiner.func, bounds)
         min_value = results.fun
         min_x = results.x
         self.logger.info('Optimization with surrogate: f(x)={} for x={}'

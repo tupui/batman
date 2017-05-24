@@ -25,8 +25,7 @@ def test_PC_1d(ishigami_data):
 
     # Test space evaluation
     pred = np.array(surrogate.evaluate(space))
-    test_output = npt.assert_almost_equal(target_space, pred, decimal=1)
-    assert True if test_output is None else False
+    npt.assert_almost_equal(target_space, pred, decimal=1)
 
     # Compute predictivity coefficient Q2
     surrogate = ot.PythonFunction(3, 1, surrogate.evaluate)
@@ -45,8 +44,7 @@ def test_GP_1d(ishigami_data):
 
     # Test space evaluation
     pred, _ = np.array(surrogate.evaluate(space))
-    test_output = npt.assert_almost_equal(target_space, pred, decimal=1)
-    assert True if test_output is None else False
+    npt.assert_almost_equal(target_space, pred, decimal=1)
 
     # Compute predictivity coefficient Q2
     def wrap_surrogate(x):
@@ -63,21 +61,18 @@ def test_PC_14d(mascaret_data):
     surrogate = PC(function=f, input_dists=dists,
                    out_dim=14, n_sample=300, total_deg=10,  strategy='LS')
     pred = np.array(surrogate.evaluate(point)).reshape(14)
-    test_output = npt.assert_almost_equal(target_point, pred, decimal=2)
-    assert True if test_output is None else False
+    npt.assert_almost_equal(target_point, pred, decimal=2)
 
     surrogate = PC(function=f, input_dists=dists,
                    out_dim=14, total_deg=11,  strategy='Quad')
 
     # Test point evaluation
     pred = np.array(surrogate.evaluate(point)).reshape(14)
-    test_output = npt.assert_almost_equal(target_point, pred, decimal=2)
-    assert True if test_output is None else False
+    npt.assert_almost_equal(target_point, pred, decimal=2)
 
     # Test space evaluation
     pred = np.array(surrogate.evaluate(space))
-    test_output = npt.assert_almost_equal(target_space, pred, decimal=0)
-    assert True if test_output is None else False
+    npt.assert_almost_equal(target_space, pred, decimal=0)
 
     # Compute predictivity coefficient Q2
     surrogate_ot = ot.PythonFunction(2, 14, surrogate.evaluate)
@@ -92,13 +87,11 @@ def test_GP_14d(mascaret_data):
 
     # Test point evaluation
     pred, _ = np.array(surrogate.evaluate(point))
-    test_output = npt.assert_almost_equal(target_point, pred, decimal=1)
-    assert True if test_output is None else False
+    npt.assert_almost_equal(target_point, pred, decimal=1)
 
     # Test space evaluation
     pred, _ = np.array(surrogate.evaluate(space))
-    test_output = npt.assert_almost_equal(target_space, pred, decimal=1)
-    assert True if test_output is None else False
+    npt.assert_almost_equal(target_space, pred, decimal=1)
 
     # Compute predictivity coefficient Q2
     model = ot.PythonFunction(2, 14, f)

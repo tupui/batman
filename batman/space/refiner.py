@@ -490,6 +490,8 @@ class Refiner(object):
             x_scaled = self.scaler.transform(x.reshape(1, -1))
             too_close = np.array([True if np.linalg.norm(x_scaled - p) < 0.02
                                   else False for p in self.points]).any()
+            if too_close:
+                return np.inf
 
             pred, sigma = self.pred_sigma(x)
             std_dev = np.sqrt(sigma)

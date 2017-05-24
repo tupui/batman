@@ -74,8 +74,8 @@ class Doe():
                 points[i] = (rv.rvs(),)
 
             discrete = ot.UserDefined(points)
-
-            dists = [discrete, ot.Uniform(0, 1)]
+            dists = [discrete]
+            dists.extend([ot.Uniform(0, 1)] * (self.dim - 1))
             distribution = ot.ComposedDistribution(dists)
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
                                                              distribution,
