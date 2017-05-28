@@ -1,13 +1,37 @@
 # coding: utf8
 import pytest
-from batman.functions import (Michalewicz, Rosenbrock, Ishigami, G_Function,
-                              Forrester, Branin, Manning, Mascaret)
+from batman.functions import (SixHumpCamel, Branin, Michalewicz, Rosenbrock,
+                              Rastrigin, Ishigami, G_Function,
+                              Forrester,  Manning, Mascaret)
 from scipy.optimize import differential_evolution
 import numpy as np
 import numpy.testing as npt
 import itertools
 import matplotlib.pyplot as plt
 from matplotlib import cm
+plt.switch_backend('Qt5Agg')
+
+
+def test_SixHumpCamel():
+    f_2d = SixHumpCamel()
+    assert f_2d([0.0898, -0.7126]) == pytest.approx(-1.0316, 0.01)
+    assert f_2d([-0.0898, 0.7126]) == pytest.approx(-1.0316, 0.01)
+
+    bounds = [[-3, 3], [-2, 2]]
+    results = differential_evolution(f_2d, bounds, tol=0.001, popsize=20)
+    f_obj = results.fun
+    assert f_obj == pytest.approx(-1.0316, 0.05)
+
+
+def test_Branin():
+    f = Branin()
+    assert f([2.20, 1.57]) == pytest.approx(17.76357802, 0.0001)
+
+    bounds = [[-5, 10], [0, 15]]
+    results = differential_evolution(f, bounds, tol=0.001, popsize=20)
+    assert results.fun == pytest.approx(-16.64402157, 0.05)
+    x_target = [-3.68928528, 13.62998774]
+    npt.assert_almost_equal(results.x, x_target, decimal=2)
 
 
 def test_Michalewicz():
@@ -28,6 +52,11 @@ def test_Rosenbrock():
 
     f_3d = Rosenbrock(d=3)
     assert f_3d([1., 1., 1]) == 0.
+
+
+def test_Rastrigin():
+    f_2d = Rastrigin()
+    assert f_2d([0., 0.]) == 0.
 
 
 def test_Ishigami():
@@ -53,17 +82,6 @@ def test_Forrester():
     assert f_c([0.4]) == pytest.approx(-5.94261151, 0.0001)
     assert f_e([0.6]) == pytest.approx(-0.14943781, 0.0001)
     assert f_c([0.6]) == pytest.approx(-4.0747189, 0.0001)
-
-
-def test_Branin():
-    f = Branin()
-    assert f([2.20, 1.57]) == pytest.approx(17.76357802, 0.0001)
-
-    bounds = [[-5, 10], [0, 15]]
-    results = differential_evolution(f, bounds, tol=0.001, popsize=20)
-    assert results.fun == pytest.approx(-16.64402157, 0.05)
-    x_target = [-3.68928528, 13.62998774]
-    npt.assert_almost_equal(results.x, x_target, decimal=2)
 
 
 def test_Mascaret():

@@ -268,8 +268,7 @@
           "minimum": 1000
         },
         "test": {
-          "type": "string",
-          "enum": ["Ishigami", "Michalewicz", "Channel_Flow", "Rosenbrock", "G_Function", "Forrester", "Branin"]
+          "type": "string"
         },
         "pdf": {
           "type": "array",
