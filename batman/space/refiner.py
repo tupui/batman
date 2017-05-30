@@ -484,11 +484,17 @@ class Refiner(object):
 
         target = min_value - 0.1 * np.abs(min_value)
 
+        if self.settings["sampling"]["method"] == 'discrete':
+            discrete = 1
+        else:
+            discrete = 0
+
+
         @optimization(self.settings["sampling"]["method"], self.corners)
         def probability_improvement(x):
             """Probability of improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
-            too_close = np.array([True if np.linalg.norm(x_scaled - p) < 0.02
+            too_close = np.array([True if np.linalg.norm(x_scaled[0][discrete:] - p[discrete:], -1) < 0.02
                                   else False for p in self.points]).any()
             if too_close:
                 return np.inf
@@ -503,9 +509,8 @@ class Refiner(object):
         def expected_improvement(x):
             """Expected improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
-            too_close = np.array([True if np.linalg.norm(x_scaled - p) < 0.02
+            too_close = np.array([True if np.linalg.norm(x_scaled[0][discrete:] - p[discrete:], -1) < 0.02
                                   else False for p in self.points]).any()
-
             if too_close:
                 return np.inf
 

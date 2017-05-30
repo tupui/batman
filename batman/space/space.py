@@ -298,9 +298,7 @@ class Space(list):
         """
         # Refinement strategy
         if (self.refiner is None) and (self.settings['space']['resampling']['method'] == 'hybrid'):
-            strategy = []
-            for method in self.settings['space']['resampling']['hybrid']:
-                strategy.append([method[0]] * method[1])
+            strategy = [[m[0]] * m[1] for m in self.settings['space']['resampling']['hybrid']]
             self.hybrid = itertools.cycle(itertools.chain.from_iterable(strategy))
 
         self.refiner = Refiner(surrogate, self.settings)

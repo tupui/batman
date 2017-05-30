@@ -408,11 +408,10 @@ class UQ:
                               dataset)
 
                 # Plot indices and confidence intervals
-                objects = []
-                color = []
-                for i, p in enumerate(self.p_lst):
-                    objects.append([r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"])
-                    color.append([cm.Pastel1(i), cm.Pastel1(i)])
+                objects = [[r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"]
+                           for i, p in enumerate(self.p_lst)]
+                color = [[cm.Pastel1(i), cm.Pastel1(i)]
+                         for i, p in enumerate(self.p_lst)]
 
                 objects = [item for sublist in objects for item in sublist]
                 color = [item for sublist in color for item in sublist]
