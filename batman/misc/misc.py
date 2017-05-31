@@ -49,8 +49,8 @@ def check_yes_no(prompt, default):
             continue
 
         value = value.lower()
-        if not all(x in "yesno " for x in value.lower()):
-            logger.error("Sorry, your response must be yes, or no.")
+        if not all(x in 'yesno ' for x in value.lower()):
+            logger.error('Sorry, your response must be yes, or no.')
             continue
         elif value is '':
             value = default
@@ -87,7 +87,7 @@ def ask_path(prompt, default, root):
             path = default
 
         if not os.path.isdir(os.path.join(root, path)):
-            logger.error("Output folder not found: ".format(path))
+            logger.error("Output folder not found: {}".format(path))
             continue
         else:
             break
@@ -151,9 +151,9 @@ def import_config(path_config, path_schema):
         logger.exception(e.message)
 
     if not error:
-        logger.info("Settings successfully imported and checked")
+        logger.info('Settings successfully imported and checked')
     else:
-        logger.error("Error were found in configuration file")
+        logger.error('Error were found in configuration file: JSON syntax...')
         raise SystemExit
 
     return settings
