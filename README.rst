@@ -11,7 +11,7 @@ README
     Melanie Rochoux,
     Sophie Ricci.
 
-:Version: 1.4   10/10/2016
+:Version: 1.6 - Selina 01/06/2017
 
 
 What is BATMAN? 
@@ -41,7 +41,6 @@ The required dependencies are:
 - `pathos <https://github.com/uqfoundation/pathos>`_ >= 0.2
 - `otwrapy <http://openturns.github.io/otwrapy/>`_ >= 0.6
 - `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_
-- mpi4py with proper ``MPI`` installation
 - `sphinx <http://www.sphinx-doc.org>`_ >= 1.4
 
 Optionnal dependencies are: 
@@ -53,14 +52,9 @@ Appart from OpenTURNS and Antares, dependencies are satisfied by the installer.
 How to get it?
 --------------
 
-The simplest way is to use the *GitLab* server: 
+The sources are located on the *GitLab* server: 
 
     https://nitrox.cerfacs.fr/open-source/batman
-
-Otherwize, you can clone the repository from *dogon*.
-You must belong to the ``uqs`` Unix group::
-
-    git clone ssh://dogon.cerfacs.fr/home/jpod_home/jpod/JPOD BATMAN
 
 How to Install?
 ---------------
@@ -107,7 +101,7 @@ If BATMAN has been correctly installed, you should be able to call it simply::
 
         wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
         bash Miniconda3-latest-Linux-x86_64.sh
-        conda create -n bat_env -c conda-forge openturns
+        conda create -n bat_env -c conda-forge openturns numpy scipy scikit-learn pathos jsonschema sphinx sphinx_rtd_theme otwrapy pytest pytest-runner mock
 
     Then you can install all packages without ``root`` access.
 
