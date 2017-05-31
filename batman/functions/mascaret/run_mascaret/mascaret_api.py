@@ -29,21 +29,26 @@ class MascaretApi(object):
     """Mascaret API."""
 
     logger = logging.getLogger(__name__)
+    _error = 0
 
-    def __setattr__(self, name, value):
+    @property
+    def error(self):
+        return self._error
+
+    @error.setter
+    def error(self, value):
         """Detect errors.
 
         Overwright attribute setter to detect API errors.
         If :attr:`error` is not set null, an error is raised and the programme
         is terminated.
 
-        :param str name: name of the attribute
-        :param ... value: value to assign
+        :param int value: value to assign
         """
-        object.__setattr__(self, name, value)
-        if (name is 'error') and (value is not 0):
+        if value != 0:
             self.logger.error("API error:\n{}".format(self.error_message()))
             raise SystemExit
+        self._error = 0
 
     def __init__(self, settings, user_settings):
         """Constructor.
@@ -265,13 +270,17 @@ class MascaretApi(object):
                 self.user_settings = json.loads(
                     file, encoding="utf-8", object_pairs_hook=OrderedDict)
         if 'Q_BC' in self.user_settings:
-            print ('IN CHANGE Q_BC')
+            print ('In user_defined for bc_qt')
             self.bc_qt = self.user_settings['Q_BC']
         if 'Ks' in self.user_settings:
+            print ('In user_defined for ks')
             if self.user_settings['Ks']['zone']:
                 self.zone_friction_minor = self.user_settings['Ks']
             else:
                 self.friction_minor = self.user_settings['Ks']
+        if 'bathy' in self.user_settings:
+            print ('In user_defined for bathy')
+            self.cross_section = self.user_settings['bathy']
 
     def __repr__(self):
         """Class informations based on settings."""
@@ -305,7 +314,12 @@ class MascaretApi(object):
         if 'misc' in self.user_settings:
             string += (" -- Miscellaneous:\n"
                        "       > Print  boundary conditions: {}\n"
-                       "       > Output index: {}")
+                       "       > Output index: {}\n")
+        if 'bathy' in self.user_settings:
+            string += (" -- Change bathymetry:\n"
+                       "       > Flag shift all bathy by dz: {}\n"
+                       "       > Shift Index Profil: {}\n"
+                       "       > Shift by dz: {}")
 
         src1 = list(itertools.chain.from_iterable([v.values() if isinstance(
             v, dict) else [v] for v in self.settings['files'].values()]))
@@ -322,7 +336,7 @@ class MascaretApi(object):
         return string.format(*src_)
 
     @multi_eval
-    def run_mascaret(self, x=None, flag=None, saveall=False):
+    def run_mascaret(self, x=None, Qtime=None, flag=None, saveall=False):
         """Run Mascaret simulation.
 
         Use Mascaret Api :meth:`C_CALCUL_MASCARET`.
@@ -330,7 +344,7 @@ class MascaretApi(object):
         When :attr:`flag` is None, both parameters are modified. Thus :arg:`x`
         needs to be set accordingly. If the flag is set to ``Ks``, then only
         this parameter is considered.
-
+        If :arg:`y` if not None, the BC are provided in .csv
         :param list x: inputs [Ks, Q]
         :param str flag: None, 'Ks' or 'Q'
         :param bool saveall: Change the default name of the Results file
@@ -338,7 +352,7 @@ class MascaretApi(object):
         :rtype: double
         """
         if x is not None:
-            if (flag is None) or (flag is 'Ks'):
+            if (flag is None) or (flag == 'Ks'):
                 if self.user_settings['Ks']['zone']:
                     self.zone_friction_minor = {
                         'ind_zone': self.user_settings['Ks']['ind_zone'],
@@ -346,30 +360,56 @@ class MascaretApi(object):
                 else:
                     self.friction_minor = {'idx': self.user_settings['Ks']['idx'],
                                            'value': x[0]}
-            elif flag is 'Q':
+            elif flag == 'Q':
                 self.bc_qt = {'idx': self.user_settings['Q_BC']['idx'],
                               'value': x[0]}
 
             if flag is None:
                 self.bc_qt = {'idx': self.user_settings['Q_BC']['idx'],
                               'value': x[1]}
+            self.empty_opt()
+            self.logger.info('Running Mascaret...')
+            self.error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
+                self.tend, self.dt, self.iprint)
 
+        elif Qtime is not None:
+            nb_timebc, tab_timebc_c, tab_CL1_c, tab_CL2_c = Qtime 
+            self.error = self.libmascaret.C_CALCUL_MASCARET_CONDITION_LIMITE(self.id_masc, self.t0,
+                self.tend, self.dt, ctypes.byref(tab_timebc_c),
+                nb_timebc, ctypes.byref(tab_CL1_c), ctypes.byref(tab_CL2_c),
+                self.iprint)
+            
         else:
             self.user_defined()
+            self.empty_opt()
+            self.logger.info('Running Mascaret...')
+            self.error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
+                self.tend, self.dt, self.iprint)
 
-        self.empty_opt()
-        self.logger.info('Running Mascaret...')
-        self.error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
-                                                   self.tend, self.dt, self.iprint)
         self.logger.info('Mascaret ran.')
 
         if saveall:
             os.rename('ResultatsOpthyca.opt',
                       'ResultatsOpthyca_' + str(x).replace(' ', '-') + '.opt')
 
-        return self.state(self.user_settings['misc']['index_outstate']).value
+        if 'curv_abs' in self.user_settings['misc']:
+            ticks = self.curv_abs()
+            i = 0
+            for tick in ticks:
+                if tick >= self.user_settings['misc']['curv_abs']:
+                    id_tick = i
+                    break
+                else:
+                    i += 1
+            y1 = self.state(id_tick).value
+            y2 = self.state(id_tick+1).value
+            output = ( y2 * (self.user_settings['misc']['curv_abs']-ticks[id_tick]) + y1 * (ticks[id_tick+1]-self.user_settings['misc']['curv_abs']) ) / (ticks[id_tick+1]-ticks[id_tick])
+            return output
+        else:
+            return self.state(self.user_settings['misc']['index_outstate']).value
 
-    def __call__(self, x=None, saveall=False):
+
+    def __call__(self, x=None, Qtime=None, saveall=False):
         """Run the application using :attr:`user_settings`.
 
         :param list x: inputs [Ks, Q]
@@ -401,7 +441,7 @@ class MascaretApi(object):
                     flag = None
                 else:
                     q = self.doe[:, 0]
-                    flag='Q'
+                    flag = 'Q'
                 if self.user_settings['MC']['distQ'] == "G":
                     q[:] = np.random.normal(
                         self.user_settings['MC']['muQ'], self.user_settings['MC']['sigmaQ'], n)
@@ -415,7 +455,7 @@ class MascaretApi(object):
 
         else:
             self.logger.info('Performing a single MASCARET simulation...')
-            h = self.run_mascaret(x=x, saveall=saveall)
+            h = self.run_mascaret(x=x, Qtime=Qtime, saveall=saveall)
 
         self.results = h
 
@@ -444,15 +484,15 @@ class MascaretApi(object):
         """
         # Rating curve do not count
         nb_bc = ctypes.c_int()
-        self.logger.debug('Getting the number of boundary conditions...')
+        self.logger.debug('Info all : Getting the number of boundary conditions...')
         self.error = self.libmascaret.C_GET_NB_CONDITION_LIMITE_MASCARET(
             self.id_masc, ctypes.byref(nb_bc))
         self.nb_bc = nb_bc.value
-        self.logger.debug('Number of boundary conditions: {}.'.format(self.nb_bc))
+        self.logger.debug(' Info all : Number of boundary conditions: {}.'.format(self.nb_bc))
 
         l_name_all_bc = []
         l_num_all_bc = []
-        self.logger.debug('Getting name of the boundary conditions...')
+        self.logger.debug('Info all Getting name of the boundary conditions...')
         for k in range(nb_bc.value):
             name_all_bc = ctypes.POINTER(ctypes.c_char_p)()
             n_law = ctypes.c_int()
@@ -463,7 +503,8 @@ class MascaretApi(object):
 
         self.l_name_all_bc = l_name_all_bc
         self.l_num_all_bc = l_num_all_bc
-        self.logger.debug('BC info get.')
+        print ('In info_all_bc, _allself.l_name_all_bc,self.l_num_all_bc',self.l_name_all_bc,self.l_num_all_bc) 
+        self.logger.debug('Info all : BC info get.')
 
         return nb_bc, l_name_all_bc, l_num_all_bc
 
@@ -477,6 +518,7 @@ class MascaretApi(object):
         :return: boundary conditions for Qt
         :rtype: list(float)
         """
+        print ('In bc_qt Getter')
         var_name = ctypes.c_char_p(b'Model.Graph.Discharge')
         # Nb of BC
         size1 = ctypes.c_int()
@@ -494,7 +536,7 @@ class MascaretApi(object):
         self.logger.debug('Getting discharge values...')
         for k, kk in itertools.product(range(size1.value), range(size2.value)):
             q_bc_c = ctypes.c_double()
-            num_bc_c = ctypes.c_int(k + 1)
+            num_bc_c = ctypes.c_int(k +1)
             indextime_bc_c = ctypes.c_int(kk + 1)
             self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
                 self.id_masc, var_name, num_bc_c, indextime_bc_c, 0, ctypes.byref(q_bc_c))
@@ -502,11 +544,12 @@ class MascaretApi(object):
 
         self.logger.debug('BC Q(t) get.')
 
+#        print ('self.nb_bc',self.nb_bc)      
         if self.user_settings['misc']['info_bc'] is True:
             if self.nb_bc is None:
                 self.info_all_bc()
             for k in range(self.nb_bc):
-                self.logger.info("Loi Q: {} {} {}".format(self.l_name_all_bc[k],
+                self.logger.info("Info Getter Loi Q: {} {} {}".format(self.l_name_all_bc[k],
                                                           self.l_num_all_bc[k],
                                                           bc_qt[k, :]))
         return bc_qt
@@ -520,6 +563,7 @@ class MascaretApi(object):
 
         :param dict q_bc: Boundary conditions on Qt ``{'idx','value'}``
         """
+        print ('In bc_qt Setter')
         new_tab_q_bc = self.bc_qt
         idx, value = q_bc['idx'], q_bc['value']
         new_tab_q_bc[idx, :] = value
@@ -537,17 +581,16 @@ class MascaretApi(object):
         self.logger.debug('Size Model.Graph.Discharge= {} {} {}.'
                           .format(size1.value, size2.value, size3.value))
 
-        self.logger.debug('Getting discharge values...')
+        self.logger.debug('Setting discharge values...')
         for k, kk in itertools.product(range(size1.value), range(size2.value)):
             q_bc_c = ctypes.c_double()
             num_bc_c = ctypes.c_int(k + 1)
             indextime_bc_c = ctypes.c_int(kk + 1)
             q_bc_c.value = new_tab_q_bc[k, kk]
             self.error = self.libmascaret.C_SET_DOUBLE_MASCARET(
-                self.id_masc, var_name, num_bc_c, indextime_bc_c, 0, ctypes.byref(q_bc_c))
+                self.id_masc, var_name, num_bc_c, indextime_bc_c, 0, q_bc_c)
 
-        self.logger.debug('BC Q(t) set.')
-        print (self.bc_qt)
+        print('BC Q(t) set',self.bc_qt)
 
     @property
     def ind_zone_frot(self):
@@ -714,14 +757,13 @@ class MascaretApi(object):
         return z_res_c
 
     def curv_abs(self):
-        """Get abscurv at given index in :attr:`user_settings['misc']['index_outstate']`.
+        """Get abscurv over entire domain
 
         Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET` and
         :meth:`C_GET_DOUBLE_MASCARET`.
 
-        :param float index: Index to get the state from
-        :return: State at a given index
-        :rtype: float
+        :return: curv_abs list
+        :rtype: list of float
         """
         var_name = ctypes.c_char_p(b'Model.X')
 
@@ -733,26 +775,73 @@ class MascaretApi(object):
             self.id_masc, var_name, 0, ctypes.byref(itemp0), ctypes.byref(itemp1), ctypes.byref(itemp2))
         self.logger.debug('itemp= {} {} {}.'
                           .format(itemp0.value, itemp1.value, itemp2.value))
-        print('itemp= {} {} {}.'
-                          .format(itemp0.value, itemp1.value, itemp2.value))
 
+        res = []
         x_res_c = ctypes.c_double()
         self.logger.debug('Getting the value of Model.X...')
         for k in range(1, itemp0.value+1):
             self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
                 self.id_masc, var_name, k, 0, 0, ctypes.byref(x_res_c))
-            print (x_res_c.value)
+            self.logger.debug('x_res_c.value= {}.' .format(x_res_c.value))
+            res.append(x_res_c.value)
 
         self.logger.debug('Model.X get.')
 
-        return x_res_c
+        return res
 
     @property
     def cross_section(self):
         """Get CrossSection everywhere. 
         Uses Mascaret Api C_GET_TAILLE_VAR_MASCARET and C_GET_DOUBLE_MASCARET. PENSER A CREER ZBOT idx et ZBOT value dans user.json"""
         var_name = ctypes.c_char_p(b'Model.CrossSection.Y')
-#        var_name = ctypes.c_char_p(b'Model.Zbot')
+        var_name_X = ctypes.c_char_p(b'Model.CrossSection.X')
+        size1 = ctypes.c_int()
+        size2 = ctypes.c_int()
+        size3 = ctypes.c_int()
+        error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+            self.id_masc, var_name, 0, ctypes.byref(size1),
+            ctypes.byref(size2), ctypes.byref(size3))
+        self.logger.debug('size Model.CrossSection = {} {} {}'
+                          .format(size1.value, size2.value, size3.value))
+        res_Zbot = []
+        Zbot_c = ctypes.c_double()
+        res_Xbot = []
+        Xbot_c = ctypes.c_double()
+# Loop on number of section
+        for k in range(size1.value):
+# Loop on number of point by section
+            for kk in range(size2.value):
+                self.logger.debug('In Getter Cross Section, loop = {}{}'.format(k,kk))
+                self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+                    self.id_masc, var_name, k+1, kk+1, 0, ctypes.byref(Zbot_c))
+                self.logger.debug('In Getter Cross Section, Zbot = {}'.format(Zbot_c.value))
+                res_Zbot.append(Zbot_c.value)
+                self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+                    self.id_masc, var_name_X, k+1, kk+1, 0, ctypes.byref(Xbot_c))
+                self.logger.debug('In Getter Cross Section, Xbot ={}'.format(Xbot_c.value))
+                res_Xbot.append(Xbot_c.value)
+# RANGER DANS UN TABLEAU ET RETOURNER  et printer LE TABLEUA  au lieu d un liste
+        if error != 0:
+            self.logger.error("Error getting cross section bathymetry: {}"
+                              .format(self.error_message()))
+        else:
+            self.logger.debug('Cross section bathymetry value= {}'.format(Zbot_c.value))
+
+        self.logger.info('In Getter Cross Section, tableau Z bot = {}'.format(res_Zbot))
+        self.logger.info('In Getter Cross Section, tableau X bot = {}'.format(res_Xbot))
+
+        return res_Zbot, res_Xbot
+
+    @cross_section.setter
+    def cross_section(self, bathy):
+        """Changes cross section z by +dz everywhere.
+
+        Use Mascaret Api :meth:`C_GET_DOUBLE_MASCARET` and `C_SET_DOUBLE_MASCARET`.
+
+        :param dict dz: Displacement of all bathymetry ``{'bathy','all_bathy','idx','dz'}``
+        """
+        shift_dz = bathy['dz']
+        var_name = ctypes.c_char_p(b'Model.CrossSection.Y')
         size1 = ctypes.c_int()
         size2 = ctypes.c_int()
         size3 = ctypes.c_int()
@@ -762,21 +851,39 @@ class MascaretApi(object):
         self.logger.debug('size Model.Zbot = {} {} {}'
                           .format(size1.value, size2.value, size3.value))
         Zbot_c = ctypes.c_double()
-        for k in range(size1.value):
+# Loop on number of section
+        if self.user_settings['bathy']['all_bathy'] is True:
+            for k in range(size1.value):
+# Loop on number of point by section
+                for kk in range(size2.value):
+                    self.logger.debug('In Setter Cross Section, loop = {}{}'.format(k,kk))
+                    error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+                        self.id_masc, var_name, k+1, kk+1, 0, ctypes.byref(Zbot_c))
+                    self.logger.debug('In Setter Cross Section, Zbot = {}'.format(Zbot_c.value))
+                    new_Zbot_c = ctypes.c_double()
+                    new_Zbot_c.value = Zbot_c.value + shift_dz
+                    self.error = self.libmascaret.C_SET_DOUBLE_MASCARET(
+                         self.id_masc, var_name, k+1, kk+1, 0, new_Zbot_c)
+        else:
+            idx = bathy['idx']
             for kk in range(size2.value):
-                print (k,kk)
+                self.logger.debug('In Setter Cross Section, profil idx and loop = {}'.format(idx, kk))
                 error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-#                    self.id_masc, var_name, 1, self.Zbot_idx, 0, ctypes.byref(Zbot_c))
-                    self.id_masc, var_name, k+1, kk+1, 0, ctypes.byref(Zbot_c))
-                print (Zbot_c.value)
-# RANGER DANS UN TABLEAU ET RETOURNER  et printer LE TABLEUA 
+                    self.id_masc, var_name, idx+1, kk+1, 0, ctypes.byref(Zbot_c))
+                self.logger.debug('In Setter Cross Section, Zbot = {}'.format(Zbot_c.value))
+                new_Zbot_c = ctypes.c_double()
+                new_Zbot_c.value = Zbot_c.value + shift_dz
+                self.error = self.libmascaret.C_SET_DOUBLE_MASCARET(
+                     self.id_masc, var_name, idx+1, kk+1, 0, new_Zbot_c)
+
+
         if error != 0:
-            self.logger.error("Error getting cross section bathymetry: {}"
+            self.logger.error("Error Setting cross section bathymetry: {}"
                               .format(self.error_message()))
         else:
-            self.logger.debug('Cross section bathymetry value= {}'.format(Zbot_c.value))
+            self.logger.debug('BC Q(t) set.')
+            self.logger.debug('Cross section bathymetry shifted by dz= {}'.format(shift_dz))
 
-        return Zbot_c.value
 
     def read_opt(self, filename='ResultatsOpthyca.opt'):
         """Read the results :file:`ResultatsOpthyca.opt`.
