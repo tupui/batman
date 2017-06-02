@@ -32,6 +32,8 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     x = np.linspace(-7, 10, num=num)
     y = np.linspace(0, 15, num=num)
     points = np.array([(float(i), float(j)) for i, j in itertools.product(x, y)])
+    x = points[:, 0].flatten()
+    y = points[:, 1].flatten()
     pred, sigma = driver.prediction(points=points)
     pred = np.array(pred).flatten()
     sigma = np.array(sigma).flatten()

@@ -4,8 +4,42 @@
 Release history
 ===============
 
-Version 1.5
-===========
+Version 1.6 - Selina
+====================
+
+New features
+------------
+
+    - Add :class:`batman.functions.run_mascaret`,
+    - Add *Evofusion* with :class:`batman.surrogate.multifidelity`,
+    - Add *Expected Improvement* with :func:`batman.space.refiner.optimization`,
+    - Be able to have a discrete parameter.
+
+Enhancements
+------------
+
+    - Allow ``*args`` and ``**kwargs`` in ``@multi_eval``,
+    - Add some analytical functions for optimization and multifidelity tests,
+    - Do not use anymore ``.size`` for space sizing,
+    - Add test for DoE,
+    - Add PDFs of references to doc,
+    - Refinements methods work with discrete values using an optimizer decorator,
+    - Changed some loops in favor of list comprehensions,
+    - Clean UI by removing prediction option,
+    - Remove MPI dependencie.
+
+Bug fixes
+---------
+
+    - Sensitivity indices with n-dimensional output changing ``Martinez``,
+    - A copy of the space is done for scaled points for surrogate fitting,
+    - Uniform sampling was not set properly,
+    - Backend for ``matplotlib`` is now properly switched,
+    - POD quality was not computed in case of varying number of modes.
+
+
+Version 1.5 - Oswald
+====================
 
 New features
 ------------
@@ -25,7 +59,6 @@ New features
     - Hypercube for refinement created using discrete and global optimization,
     - Merge some ``PyUQ`` functions and add :class:`batman.surrogate.polynomial_chaos`.
     
-
 Enhancements
 ------------
 
@@ -65,7 +98,6 @@ New features
     - Settings are now written in JSON and checked using a schema
     - Ask for confirmation of output if exists: if no, ask for restarting from files
     - Add post-treatment example scripts in ``test_cases/Post-treatment``
-    
 
 Enhancements
 ------------
@@ -101,7 +133,6 @@ New features
     - Add the possibility to chose the *PDF* for propagation. (settings)
     - *Sobol'* map are computed using the keyword ``aggregated``
     - A *Sphinx* documentation is available in: ``/doc``
-    
 
 Enhancements
 ------------
@@ -138,7 +169,6 @@ New features
     - New test case ``Function_3D`` used to demonstrate *UQ* capabilities of the tool
     - Sampling is now done using the package *OpenTURNS*
     - New test case ``Channel_Flow`` used to demonstrate *1D vector* output capabilities
-
 
 Enhancements
 ------------
