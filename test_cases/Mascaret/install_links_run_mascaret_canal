@@ -1,0 +1,14 @@
+rm -rf *.loi *.xcas *.dtd *.geo *.lig dico.txt fort.22 *.damoc
+mv config_canal.json config_canal.json_old
+mv config_canal_user.json config_canal_user.json_old
+mv ResultatsListing.lis ResultatsListing.lis_old
+mv ResultatsOpthyca.opt ResultatsOpthyca.opt_old
+ln -s data_canal/mascaret0.xcas mascaret0.xcas
+ln -s data_canal/mascaret-1.0.dtd mascaret-1.0.dtd
+ln -s data_canal/mascaret0.geo mascaret0.geo
+ln -s data_canal/LigneEauInitiale.lig LigneEauInitiale.lig
+ln -s data_canal/mascaret0_0.loi mascaret0_0.loi
+ln -s data_canal/mascaret0_1.loi mascaret0_1.loi
+ln -s data_canal/config_canal.json config_canal.json
+ln -s data_canal/config_canal_user.json config_canal_user.json
+

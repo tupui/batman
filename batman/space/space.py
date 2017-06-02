@@ -21,14 +21,13 @@ it can be resampled or points can be added manually.
 import logging
 import os
 import numpy as np
-from collections import OrderedDict
+from scipy.optimize import differential_evolution
 import itertools
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from . import sampling
+from .sampling import Doe
 from .point import Point
 from .refiner import Refiner
+plt.switch_backend('Agg')
 
 
 class UnicityError(Exception):
@@ -71,12 +70,27 @@ class Space(list):
             self.max_points_nb = settings['space']['resampling']['resamp_size'] + self.doe_init
         else:
             self.max_points_nb = self.doe_init
-        self.size = 0
         corners = settings['space']['corners']
         self.dim = len(corners[0])
+        self.multifidelity = False
 
+        # Multifidelity configuration
+        try:
+            if settings['surrogate']['method'] == 'evofusion':
+                self.multifidelity = True
+                self.doe_cheap = self.cheap_doe_from_expensive(self.doe_init)
+                self.logger.info('Multifidelity with Ne: {} and Nc: {}'
+                                 .format(self.doe_init, self.doe_cheap))
+        except KeyError:
+            pass
+
+        # create parameter list and omit fidelity if relevent
         try:
             self.p_lst = settings['snapshot']['io']['parameter_names']
+            try:
+                self.p_lst.remove('fidelity')
+            except ValueError:
+                pass
         except KeyError:
             self.p_lst = ["x" + str(i) for i in range(self.dim)]
 
@@ -99,7 +113,7 @@ class Space(list):
         s = ("Hypercube points: {}\n"
              "Number of points: {}\n"
              "Max number of points: {}").format([c for c in self.corners],
-                                                self.size,
+                                                len(self),
                                                 self.max_points_nb)
         return s
 
@@ -108,6 +122,22 @@ class Space(list):
              "Points:\n"
              "{}").format(str(self), super(Space, self).__repr__())
         return s
+
+    def cheap_doe_from_expensive(self, n):
+        """Compute the number of points required for the cheap DOE.
+
+        :param int n: size of the expensive design
+        :return: size of the cheap design
+        :rtype: int
+        """
+        doe_cheap = (self.settings['surrogate']['grand_cost'] - n)\
+            * self.settings['surrogate']['cost_ratio']
+        doe_cheap = int(doe_cheap)
+        if doe_cheap / n <= 1:
+            self.logger.error('Nc/Ne must be positive')
+            raise SystemExit
+        self.max_points_nb = n + doe_cheap
+        return doe_cheap
 
     def is_full(self):
         """Return whether the maximum number of points is reached."""
@@ -129,6 +159,8 @@ class Space(list):
         :param str path: folder to save the fig in
         """
         sample = np.array(self)
+        if self.multifidelity:
+            sample = sample[:, 1:]
         fig = plt.figure('Design of Experiment')
 
         if self.dim < 2:
@@ -189,29 +221,29 @@ class Space(list):
 
         for point in points:
             # check point dimension is correct
-            if len(point) != self.dim:
-                self.logger.exception("Coordinates dimensions mismatch, should be {}"
-                                      .format(self.dim))
+            if (len(point) - 1 if self.multifidelity else len(point)) != self.dim:
+                self.logger.exception("Coordinates dimensions mismatch: is {},"
+                                      " should be {}"
+                                      .format(len(point), self.dim))
                 raise SystemExit
 
             # check space is full
             if self.is_full():
-                raise FullSpaceError("Space is full"
-                                     .format(point))
+                raise FullSpaceError('Cannot add Point {}'.format(point))
 
             point = Point(point)
 
+            test_point = np.array(point)[1:] if self.multifidelity else np.array(point)
             # verify point is inside
-            not_alien = (self.corners[0] <= np.array(point)).all()\
-                & (np.array(point) <= self.corners[1]).all()
+            not_alien = (self.corners[0] <= test_point).all()\
+                & (test_point <= self.corners[1]).all()
             if not not_alien:
                 raise AlienPointError("Point {} is out of space"
-                                      .format(str(point)))
+                                      .format(point))
 
             # verify point is not already in space
             if point not in self:
                 self.append(point)
-                self.size += 1
             else:
                 raise UnicityError("Point {} already exists in the space"
                                    .format(point))
@@ -231,11 +263,23 @@ class Space(list):
         """
         if kind is None:
             kind = self.doe_method
-        if n is None:
+        if self.multifidelity and n is None:
+            n = self.cheap_doe_from_expensive(self.doe_init)
+        elif self.multifidelity and n is not None:
+            n = self.cheap_doe_from_expensive(n)
+        elif not self.multifidelity and n is None:
             n = self.doe_init
 
         bounds = np.array(self.corners)
-        samples = sampling.doe(n, bounds, kind)
+        doe = Doe(n, bounds, kind)
+        samples = doe.generate()
+
+        # concatenate cheap and expensive space and add identifier 0 or 1
+        if self.multifidelity:
+            levels = np.vstack((np.zeros((self.doe_init, 1)),
+                                np.ones((self.doe_cheap, 1))))
+            samples = np.vstack((samples[0:self.doe_init, :], samples))
+            samples = np.hstack((levels, samples))
 
         self.empty()
         self += samples
@@ -245,21 +289,19 @@ class Space(list):
         self.logger.debug("Points are:\n{}".format(samples))
         return self
 
-    def refine(self, surrogate, point_loo):
+    def refine(self, surrogate, point_loo=None):
         """Refine the sample, update space points and return the new point(s).
 
         :param :class:`surrogate.surrogate_model.SurrogateModel` surrogate: surrogate
         :return: List of points to add
-        :rtype: space.point.Point -> lst(tuple(float))
+        :rtype: :class:`space.point.Point` -> lst(tuple(float))
         """
         # Refinement strategy
-        if self.refiner is None:
-            self.refiner = Refiner(surrogate, self.settings)
-            if self.settings['space']['resampling']['method'] == 'hybrid':
-                strategy = []
-                for method in self.settings['space']['resampling']['hybrid']:
-                    strategy.append([method[0]] * method[1])
-                self.hybrid = itertools.cycle(itertools.chain.from_iterable(strategy))
+        if (self.refiner is None) and (self.settings['space']['resampling']['method'] == 'hybrid'):
+            strategy = [[m[0]] * m[1] for m in self.settings['space']['resampling']['hybrid']]
+            self.hybrid = itertools.cycle(itertools.chain.from_iterable(strategy))
+
+        self.refiner = Refiner(surrogate, self.settings)
 
         method = self.settings['space']['resampling']['method']
         if method == 'sigma':
@@ -272,8 +314,10 @@ class Space(list):
             new_point, self.refined_pod_points = self.refiner.extrema(self.refined_pod_points)
         elif method == 'hybrid':
             new_point, self.refined_pod_points = self.refiner.hybrid(self.refined_pod_points,
-                                                                point_loo,
-                                                                next(self.hybrid))
+                                                                     point_loo,
+                                                                     next(self.hybrid))
+        elif method == 'optimization':
+            new_point = self.refiner.optimization()
 
         try:
             point = (Point(point) for point in [new_point])
@@ -282,7 +326,22 @@ class Space(list):
 
         self += point
 
-        self.logger.info('Refined sampling with new point: {}'
-                         .format(str(point)))
+        self.logger.info('Refined sampling with new point: {}'.format(point))
 
         return point
+
+    def optimization_results(self):
+        """Compute the optimal value."""
+        gen = [self.refiner.func(x) for x in self]
+        arg_min = np.argmin(gen)
+        min_value = gen[arg_min]
+        min_x = self[arg_min]
+        self.logger.info('New minimal value is: f(x)={} for x={}'
+                         .format(min_value, min_x))
+
+        bounds = np.array(self.corners).T
+        results = differential_evolution(self.refiner.func, bounds)
+        min_value = results.fun
+        min_x = results.x
+        self.logger.info('Optimization with surrogate: f(x)={} for x={}'
+                         .format(min_value, min_x))

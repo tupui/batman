@@ -15,14 +15,14 @@
           "properties": {
             "method": {
               "type": "string",
-              "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform"],
+              "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", "discrete"],
               "default": "halton"
             },
             "init_size": {
               "type": "integer",
               "default": 20,
-              "minimum": 0,
-              "exclusiveMinimum": true
+              "minimum": 4,
+              "exclusiveMinimum": false
             },
             "required": [
               "method",
@@ -36,7 +36,7 @@
           "properties": {
             "method": {
               "type": "string",
-              "enum": ["None", "sigma", "loo_sigma", "loo_sobol", "extrema", "hybrid"],
+              "enum": ["None", "sigma", "loo_sigma", "loo_sobol", "extrema", "hybrid", "optimization"],
               "default": "sigma"
             },
             "resamp_size": {
@@ -240,7 +240,19 @@
         "method": {
           "type": "string",
           "default": "kriging",
-          "enum": ["rbf", "kriging", "pc"]
+          "enum": ["rbf", "kriging", "pc", "evofusion"]
+        },
+        "cost_ratio": {
+          "type": "number",
+          "default": 2.0,
+          "minimum": 1,
+          "exclusiveMinimum": true
+        },
+        "grand_cost": {
+          "type": "integer",
+          "default": 30,
+          "minimum": 4,
+          "exclusiveMinimum": false
         }
       },
       "required": [
@@ -256,8 +268,7 @@
           "minimum": 1000
         },
         "test": {
-          "type": "string",
-          "enum": ["Ishigami", "Michalewicz", "Channel_Flow", "Rosenbrock", "G_Function"]
+          "type": "string"
         },
         "pdf": {
           "type": "array",

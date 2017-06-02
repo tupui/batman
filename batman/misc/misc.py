@@ -19,6 +19,9 @@ import json
 import jsonschema
 import numpy as np
 import time
+from scipy.optimize import (differential_evolution, basinhopping)
+from .nested_pool import NestedPool
+from pathos.multiprocessing import cpu_count
 
 
 def clean_path(path):
@@ -46,8 +49,8 @@ def check_yes_no(prompt, default):
             continue
 
         value = value.lower()
-        if not all(x in "yesno " for x in value.lower()):
-            logger.error("Sorry, your response must be yes, or no.")
+        if not all(x in 'yesno ' for x in value.lower()):
+            logger.error('Sorry, your response must be yes, or no.')
             continue
         elif value is '':
             value = default
@@ -63,7 +66,7 @@ def check_yes_no(prompt, default):
 def ask_path(prompt, default, root):
     """Ask user for a folder path.
 
-    :param str prompt: Ask 
+    :param str prompt: Ask
     :param str default: default value
     :param str root: root path
     :returns: path if folder exists
@@ -84,7 +87,7 @@ def ask_path(prompt, default, root):
             path = default
 
         if not os.path.isdir(os.path.join(root, path)):
-            logger.error("Output folder not found: ".format(path))
+            logger.error("Output folder not found: {}".format(path))
             continue
         else:
             break
@@ -126,8 +129,9 @@ def import_config(path_config, path_schema):
 
         try:
             return json.loads('\n'.join(lines), encoding="utf-8", **kwargs)
-        except:
-            logger.exception("Connot load configuration file: json error")
+        except Exception as tb:
+            logger.exception("JSON error, cannot load configuration file: {}"
+                             .format(tb))
             raise SystemExit
 
     with open(path_config, 'rb') as file:
@@ -147,9 +151,9 @@ def import_config(path_config, path_schema):
         logger.exception(e.message)
 
     if not error:
-        logger.info("Settings successfully imported and checked")
+        logger.info('Settings successfully imported and checked')
     else:
-        logger.error("Error were found in configuration file")
+        logger.error('Error were found in configuration file: JSON syntax...')
         raise SystemExit
 
     return settings
@@ -220,3 +224,62 @@ class ProgressBar(object):
             sys.stdout.write("| ETA: " + eta + " (at " + vel + " it/s) ")
 
         sys.stdout.flush()
+
+
+def optimization(method, bounds):
+    """Perform a discret or a continuous/discrete optimization.
+
+    If a variable is discrete, the decorator allows to find the optimum by
+    doing an optimization per discrete value and then returns the optimum.
+
+    :param str method: if 'discrete' perform a discrete optimization
+    :param ndarray bounds: bounds for optimization (nb param, (min, max))
+    """
+    def optimize(fun):
+        """Compute several optimizations."""
+        def combinatory_optimization(i, bounds=bounds):
+            """One optimization.
+
+            Use a fixed discrete value for the first parameter.
+
+            :param int i: discrete value
+            :param bounds: bounds
+            :returns: min_x, min_fun
+            :rtype: floats
+            """
+            bounds = np.vstack([[i, i], bounds[1:]])
+            results = differential_evolution(fun, bounds)
+            min_x = results.x
+            min_fun = results.fun
+            return min_x, min_fun
+        def wrapper_fun_obj():
+            if method == 'discrete':
+                start = int(np.ceil(bounds[0, 0]))
+                end = int(np.ceil(bounds[0, 1]))
+                n_results = end - start
+                discrete_range = range(start, end)
+
+                pool = NestedPool(cpu_count())
+                results = pool.imap(combinatory_optimization, discrete_range)
+
+                # Gather results
+                results = list(results)
+                pool.terminate()
+
+                min_x = [None] * n_results
+                min_fun = [None] * n_results
+
+                for i in range(n_results):
+                    min_x[i], min_fun[i] = results[i]
+
+                # Find best results
+                min_idx = np.argmin(min_fun)
+                min_fun = min_fun[min_idx]
+                min_x = min_x[min_idx]
+            else:
+                results = differential_evolution(fun, bounds)
+                min_x = results.x
+                min_fun = results.fun
+            return min_x, min_fun
+        return wrapper_fun_obj
+    return optimize

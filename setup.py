@@ -69,20 +69,6 @@ cmdclasses['build_fortran'] = CompileSources
 
 # Check some import before starting build process.
 try:
-    from mpi4py import MPI
-except ImportError:
-    try:
-        import pip
-        try:
-            pip.main(['install', 'mpi4py', '-U'])
-        except OSError:
-            pip.main(['install', 'mpi4py', '-U', '--user'])
-        from mpi4py import MPI
-    except ImportError:
-        print('You need to have a proper MPI installation')
-        raise SystemExit
-
-try:
     import openturns
     if float(openturns.__version__[0:3]) < 1.7:
         raise ImportError
@@ -95,6 +81,7 @@ tests_require = ['pytest', 'mock']
 install_requires = ['sphinx_rtd_theme',
                     'sphinx>=1.4',
                     'scipy>=0.15',
+                    'numpy',
                     'jsonschema',
                     'pathos>=0.2',
                     'matplotlib',
@@ -142,8 +129,8 @@ setup(
     tests_require=tests_require,
     install_requires=install_requires,
     extras_require={'Antares': ["antares"]},
-    dependency_links=['https://github.com/felipeam86/otwrapy/tarball/master#egg=otwrapy-0.6',
-                      'git+ssh://dogon:/home/cfd2/aerodyn/TOOLS/ANTARES/Antares_v1.git#egg=Antares-1.8.2'],
+    dependency_links=['https://github.com/openturns/otwrapy/tarball/master#egg=otwrapy-0.7',
+                      'git+ssh://git@nitrox.cerfacs.fr:cfd-apps/antares.git#egg=Antares-1.9.0'],
     cmdclass=cmdclasses,
     # metadata
     maintainer="Pamphile ROY",
@@ -166,6 +153,5 @@ setup(
     include_package_data=True,
     zip_safe=False,
     license="CERFACS",
-    url=["https://inle.cerfacs.fr/projects/jpod",
-         "https://nitrox.cerfacs.fr/open-source/batman"],
+    url=["https://nitrox.cerfacs.fr/open-source/batman"],
 )

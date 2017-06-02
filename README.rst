@@ -11,13 +11,13 @@ README
     Melanie Rochoux,
     Sophie Ricci.
 
-:Version: 1.5   14/03/2017
+:Version: 1.6 - Selina 01/06/2017
 
 
 What is BATMAN? 
 ---------------
 
-**BATMAN** stands for Baysian Analysis Tool for Modelling And uNcertainty quantification.
+**BATMAN** stands for Bayesian Analysis Tool for Modelling And uNcertainty quantification.
 It aims at:
 
 - Build a metamodel for design, optimization and database exchange (loads, MDO, identification),
@@ -42,7 +42,6 @@ The required dependencies are:
 - `otwrapy <http://openturns.github.io/otwrapy/>`_ >= 0.6
 - matplotlib
 - `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_
-- mpi4py with proper ``MPI`` installation (depreciated)
 - `sphinx <http://www.sphinx-doc.org>`_ >= 1.4
 
 Optionnal dependencies are: 
@@ -54,14 +53,9 @@ Appart from OpenTURNS and Antares, dependencies are satisfied by the installer.
 How to get it?
 --------------
 
-The simplest way is to use the *GitLab* server: 
+The sources are located on the *GitLab* server: 
 
     https://nitrox.cerfacs.fr/open-source/batman
-
-Otherwize, you can clone the repository from *dogon*.
-You must belong to the ``uqs`` Unix group::
-
-    git clone ssh://dogon.cerfacs.fr/home/jpod_home/jpod/JPOD BATMAN
 
 How to Install?
 ---------------
@@ -75,7 +69,7 @@ Then to install::
     python setup.py build_sphinx
 
 The latter is optionnal as it build the documentation.
-The testing part is also optionnal but is recommanded. (<15mins).
+The testing part is also optionnal but is recommanded. (~15mins).
 
 .. note:: If you don't have install priviledge, add ``--user`` option after install.
 
@@ -108,7 +102,7 @@ If BATMAN has been correctly installed, you should be able to call it simply::
 
         wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
         bash Miniconda3-latest-Linux-x86_64.sh
-        conda create -n bat_env -c conda-forge openturns
+        conda create -n bat_env -c conda-forge openturns numpy scipy scikit-learn pathos jsonschema sphinx sphinx_rtd_theme otwrapy pytest pytest-runner mock
 
     Then you can install all packages without ``root`` access.
 

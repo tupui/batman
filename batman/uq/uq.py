@@ -54,10 +54,6 @@ M. Baudin, A. Dutfoy, B. Iooss, A. Popelin: OpenTURNS: An industrial software fo
 
 
 """
-
-# Authors: Pamphile ROY <roy.pamphile@gmail.fr>
-# Copyright: CERFACS
-
 import logging
 import numpy as np
 import openturns as ot
@@ -65,15 +61,14 @@ import otwrapy as otw
 from sklearn.metrics import (r2_score, mean_squared_error)
 from multiprocessing import cpu_count
 from openturns.viewer import View
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib import cm
 from os import mkdir
 import itertools
 from .wrapper import Wrapper
 from ..input_output import (IOFormatSelector, Dataset)
 from .. import functions as func_ref
+import matplotlib.pyplot as plt
+from matplotlib import cm
+plt.switch_backend('Agg')
 
 
 class UQ:
@@ -140,7 +135,7 @@ class UQ:
         # Get discretization if functionnal output
         try:
             f_eval, _ = self.surrogate(self.sample[0])
-            self.f_input, _ = np.split(f_eval[0].data, 2)
+            self.f_input, _ = np.split(f_eval[0], 2)
         except:
             self.f_input = None
 
@@ -291,9 +286,9 @@ class UQ:
                 input_design = ot.SobolIndicesAlgorithmImplementation.Generate(
                     self.distribution, self.points_sample, True)
                 output_design = sobol_model(input_design)
-                # Saltelli, MauntzKucherenko, Jansen
+                # Martinez, Saltelli, MauntzKucherenko, Jansen
                 ot.ResourceMap.SetAsBool('MartinezSensitivityAlgorithm-UseAsmpytoticInterval', True)
-                sobol = ot.MartinezSensitivityAlgorithm(input_design,
+                sobol = ot.SaltelliSensitivityAlgorithm(input_design,
                                                         output_design,
                                                         self.points_sample)
 
@@ -310,6 +305,7 @@ class UQ:
             sobol.setBlockSize(self.n_cpus)
             self.logger.warn("No Second order indices with FAST")
 
+        # try block used to handle boundary conditions with fixed values
         for i in range(sobol_len):
             try:
                 indices[1].append(np.array(sobol.getFirstOrderIndices(i)))
@@ -391,12 +387,11 @@ class UQ:
                     i2_max = np.array(indices_conf[1].getUpperBound()).flatten('F')
 
                     data = np.append([i1_min], [i1, i1_max, i2_min, i2, i2_max])
-                    names = []
-
-                    for i, p in itertools.product(['S_min_', 'S_', 'S_max_',
-                                                   'S_T_min_', 'S_T_', 'S_T_max_'],
-                                                   self.p_lst):
-                        names += [i + str(p)]
+                    
+                    names = [i + str(p) for i, p in 
+                             itertools.product(['S_min_', 'S_', 'S_max_',
+                                                'S_T_min_', 'S_T_', 'S_T_max_'],
+                                                self.p_lst)]
 
                     conf1 = np.vstack((i1_min, i2_min)).flatten('F')
                     conf1 = ind_total_first - conf1
@@ -413,11 +408,10 @@ class UQ:
                               dataset)
 
                 # Plot indices and confidence intervals
-                objects = []
-                color = []
-                for i, p in enumerate(self.p_lst):
-                    objects.append([r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"])
-                    color.append([cm.Pastel1(i), cm.Pastel1(i)])
+                objects = [[r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"]
+                           for i, p in enumerate(self.p_lst)]
+                color = [[cm.Pastel1(i), cm.Pastel1(i)]
+                         for i, p in enumerate(self.p_lst)]
 
                 objects = [item for sublist in objects for item in sublist]
                 color = [item for sublist in color for item in sublist]

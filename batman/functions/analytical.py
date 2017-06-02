@@ -6,37 +6,115 @@ Analytical module
 Defines analytical Uncertainty Quantification oriented functions for test and
 model evaluation purpose.
 
+.. seealso:: `Virtual Library <https://www.sfu.ca/~ssurjano/index.html>`_
+
 It implements the following classes:
 
+- :class:`SixHumpCamel`,
+- :class:`Branin`,
 - :class:`Michalewicz`,
 - :class:`Rosenbrock`,
+- :class:`Rastrigin`,
 - :class:`Ishigami`,
 - :class:`G_Function`,
-- :class:`Channel_Flow`.
+- :class:`Forrester`,
+- :class:`Channel_Flow`,
+- :class:`Manning`.
 
 In each case, Sobol' indices are declared.
 
 References
 ----------
 
-.. [Oakley] Oakley, J., & O'Hagan, A. (2002). Bayesian inference for the uncertainty distribution of computer model outputs. Biometrika, 89(4), 769-784.
-
-.. [Michalewicz] Molga, M., & Smutnicki, C. Test functions for optimization needs (2005).
-
-.. [Rosenbrock] Dixon, L. C. W., & Szego, G. P. (1978). The global optimization problem: an introduction. Towards global optimization, 2, 1-15.
-
-.. [Ishigami] Ishigami, T., & Homma, T. (1990, December): An importance quantification technique in uncertainty analysis for computer models. In Uncertainty Modeling and Analysis, 1990. Proceedings., First International Symposium on (pp. 398-403). IEEE.
-
-.. [G-Function] Saltelli, A., Chan, K., & Scott, E. M. (Eds.). (2000). Sensitivity analysis (Vol. 134). New York: Wiley.
+.. [Molga2005] Molga, M., & Smutnicki, C. Test functions for optimization needs (2005).
+.. [Dixon1978] Dixon, L. C. W., & Szego, G. P. (1978). The global optimization problem: an introduction. Towards global optimization, 2, 1-15.
+.. [Ishigami1990] Ishigami, T., & Homma, T. (1990, December): An importance quantification technique in uncertainty analysis for computer models. In Uncertainty Modeling and Analysis, 1990. Proceedings., First International Symposium on (pp. 398-403). IEEE.
+.. [Saltelli2000] Saltelli, A., Chan, K., & Scott, E. M. (Eds.). (2000). Sensitivity analysis (Vol. 134). New York: Wiley.
+.. [Forrester2007] Forrester, Sobester. (2007). Multi-Fidelity Optimization via Surrogate Modelling. In Proceedings of the Royal Society A: Mathematical, Physical and Engineering Sciences.
+.. [Forrester2008] Forrester, A., Sobester, A., & Keane, A. (2008). Engineering design via surrogate modelling: a practical guide. Wiley.
 """
 import numpy as np
 import logging
 from .utils import multi_eval
 
 
+class SixHumpCamel(object):
+
+    r"""SixHumpCamel class [Molga2005]_.
+
+    .. math:: \left(4-2.1x_1^2+\frac{x_1^4}{3}\right)x_1^2+x_1x_2+(-4+4x_2^2)x_2^2
+
+    The function has six local minima, two of which are global.
+
+    .. math:: f(x^*) = -1.0316, x^* = (0.0898, -0.7126), (-0.0898,0.7126), x_1 \in [-3, 3], x_2 \in [-2, 2]
+    """
+
+    logger = logging.getLogger(__name__)
+
+    def __init__(self):
+        self.d_in = 2
+        self.d_out = 1
+        if self.d_in == 2:
+            self.s_first = np.array([0.775,  0.232])
+            self.s_second = np.array([[0., 0.], [0., 0.]])
+            self.s_total = np.array([0.774, 0.229])
+        self.logger.info('Using function Six Hump Camel')
+
+    @multi_eval
+    def __call__(self, x):
+        """Call function.
+
+        :param list x: inputs
+        :return: f(x)
+        :rtype: float
+        """
+        f = ((4 - 2.1 * x[0] ** 2 + x[0] ** 4 / 3) * x[0] ** 2 + x[0] * x[1]
+            + (- 4 + 4 * x[1] ** 2) * x[1] ** 2)
+        return f
+
+
+class Branin(object):
+
+    r"""Branin class [Forrester2008]_.
+
+    .. math:: f(x) = \left( x_2 - \frac{5.1}{4\pi^2}x_1^2 + \frac{5}{\pi}x_1 - 6
+              \right)^2 + 10 \left[ \left( 1 - \frac{1}{8\pi} \right) \cos(x_1)
+              + 1 \right] + 5x_1.
+
+    The function has two local minima and one global minimum. It is a modified
+    version of the original Branin function that seek to be representative of
+    engineering functions.
+
+    .. math:: f(x^*) = -15,310076, x^* = (-\pi, 12.275), x_1 \in [-5, 10], x_2 \in [0, 15]
+    """
+
+    logger = logging.getLogger(__name__)
+
+    def __init__(self):
+        self.d_in = 2
+        self.d_out = 1
+        self.s_first = np.array([0.291, 0.216])
+        self.s_second = np.array([[0., 0.442], [0.442, 0.]])
+        self.s_total = np.array([0.793, 0.704])
+        self.logger.info('Using function Branin')
+
+    @multi_eval
+    def __call__(self, x):
+        """Call function.
+
+        :param list x: inputs
+        :return: f(x)
+        :rtype: float
+        """
+        f = (x[1] - 5.1 / (4 * np.pi ** 2) * x[0] ** 2 + 5 / np.pi * x[0] - 6) ** 2\
+            + 10 * ((1 - 1 / (8 * np.pi)) * np.cos(x[0]) + 1) + 5 * x[0]
+
+        return f
+
+
 class Michalewicz(object):
 
-    r"""[Michalewicz]_ class.
+    r"""Michalewicz class [Molga2005]_.
 
     It is a multimodal *d*-dimensional function which has :math:`d!`
     local minima
@@ -47,6 +125,8 @@ class Michalewicz(object):
 
     It is to difficult to search a global minimum when :math:`m`
     reaches large value. Therefore, it is recommended to have :math:`m < 10`.
+
+    .. math:: f(x^*) = -1.8013, x^* = (2.20, 1.57), x \in [0, \pi]^d
     """
 
     logger = logging.getLogger(__name__)
@@ -80,12 +160,14 @@ class Michalewicz(object):
 
 class Rosenbrock(object):
 
-    r"""[Rosenbrock]_ class.
+    r"""Rosenbrock class [Dixon1978]_.
 
     .. math:: f(x)=\sum_{i=1}^{d-1}[100(x_{i+1}-x_i^2)^2+(x_i-1)^2]
 
     The function is unimodal, and the global minimum lies in a narrow,
     parabolic valley.
+
+    .. math:: f(x^*) = 0, x^* = (1, ..., 1), x \in [-2.048, 2.048]^d
 
     """
 
@@ -96,9 +178,9 @@ class Rosenbrock(object):
         self.d_in = d
         self.d_out = 1
         if self.d_in == 2:
-            self.s_first = np.array([0.229983, 0.4855])
-            self.s_second = np.array([[0., 0.0920076], [0.0935536, 0.]])
-            self.s_total = np.array([0.324003, 0.64479])
+            self.s_first = np.array([0.577, 0.258])
+            self.s_second = np.array([[0., 0.304], [0.304, 0.]])
+            self.s_total = np.array([0.741, 0.509])
         self.logger.info("Using function Rosenbrock with d={}"
                          .format(self.d_in))
 
@@ -116,15 +198,55 @@ class Rosenbrock(object):
         return f
 
 
+class Rastrigin(object):
+
+    r"""Rastrigin class [Molga2005]_.
+
+    It is a multimodal *d*-dimensional function which has regularly distributed
+    local minima.
+
+    .. math:: f(x)=10d+\sum_{i=1}^d [x_i^2-10\cos(2\pi x_i)]
+
+    .. math:: f(x^*) = 0, x^* = (0, ..., 0), x \in [-5.12, 5.12]^d
+    """
+
+    logger = logging.getLogger(__name__)
+
+    def __init__(self, d=2):
+        """Set up dimension."""
+        self.d_in = d
+        self.d_out = 1
+        if self.d_in == 2:
+            self.s_first = np.array([0.22772082, 0.59709422])
+            self.s_second = np.array([[0., 0.16719219], [0., 0.16719219]])
+            self.s_total = np.array([0.46693546, 0.7761338])
+        self.logger.info("Using function Rastrigin with d={}"
+                         .format(self.d_in))
+
+    @multi_eval
+    def __call__(self, x):
+        """Call function.
+
+        :param list x: inputs
+        :return: f(x)
+        :rtype: float
+        """
+        f = 10. * self.d_in
+        for i in range(self.d_in):
+            f += x[i] ** 2 - 10 * np.cos(2 * np.pi * x[i])
+
+        return f
+
+
 class Ishigami(object):
 
-    r"""[Ishigami]_ class.
+    r"""Ishigami class [Ishigami1990]_.
 
-    .. math:: F = \sin(X1)+7\sin(X2)^2+0.1X3^4\sin(X1)
+    .. math:: F = \sin(x_1)+7\sin(x_2)^2+0.1x_3^4\sin(x_1), x\in [-\pi, \pi]^3
 
     It exhibits strong nonlinearity and nonmonotonicity.
     Depending on `a` and `b`, emphasize the non-linearities.
-    It also has a dependence on x3 due to second order interactions (F13).
+    It also has a dependence on X3 due to second order interactions (F13).
 
     """
 
@@ -147,7 +269,6 @@ class Ishigami(object):
         v12 = 0
         v13 = self.b ** 2 * np.pi ** 8 * 8 / 225
         v23 = 0
-        v123 = 0
 
         self.s_first = np.array([v1 / var, v2 / var, v3 / var])
         self.s_second = np.array([[0.       ,        0., v13 / var],
@@ -174,7 +295,7 @@ class Ishigami(object):
 
 class G_Function(object):
 
-    r"""[G-Function]_ class.
+    r"""G_Function class [Saltelli2000]_.
 
     .. math:: F = \Pi_{i=1}^d \frac{\lvert 4x_i - 2\rvert + a_i}{1 + a_i}
 
@@ -223,6 +344,53 @@ class G_Function(object):
         return f
 
 
+class Forrester(object):
+
+    r"""Forrester class [Forrester2007]_.
+
+    .. math:: F_{e}(x) = (6x-2)^2\sin(12x-4), \\
+              F_{c}(x) = AF_e(x)+B(x-0.5)+C,
+
+    were :math:`x\in{0,1}` and :math:`A=0.5, B=10, C=-5`.
+
+    This set of two functions are used to represents a high an a low fidelity.
+
+    """
+
+    logger = logging.getLogger(__name__)
+
+    def __init__(self, fidelity='e'):
+        """Forrester-function definition.
+
+        ``e`` stands for expansive and ``c`` for cheap.
+
+        :param str fidelity: select the fidelity ``['e'|'f']``
+        """
+        self.d_in = 1
+        self.d_out = 1
+        self.fidelity = fidelity
+
+        self.logger.info('Using function Forrester with fidelity: {}'
+                         .format(self.fidelity))
+
+    @multi_eval
+    def __call__(self, x):
+        """Call function.
+
+        :param list x: inputs
+        :return: f(x)
+        :rtype: float
+        """
+        x = x[0]
+        f_e = (6 * x - 2) ** 2 * np.sin(12 * x - 4)
+        if self.fidelity is 'e':
+            return f_e
+        else:
+            f = 0.5 * f_e + 10 * (x - 0.5) - 5
+
+        return f
+
+
 class Channel_Flow(object):
 
     r"""Channel Flow class.
@@ -251,7 +419,7 @@ class Channel_Flow(object):
         self.d_in = 2
         self.dl = int(self.length // self.dx)
         self.hinit = 10.
-        self.Zref = - self.x * self.I
+        self.zref = - self.x * self.I
 
         # Sensitivity
         self.s_first = np.array([0.92925829, 0.05243018])
@@ -279,4 +447,48 @@ class Channel_Flow(object):
                 * ((1 - np.power(h[self.dl - i + 1] / hn, -10. / 3.))
                     / (1 - np.power(h[self.dl - i + 1] / hc, -3.)))
 
-        return self.Zref + h
+        return self.zref + h
+
+
+class Manning(object):
+
+    """Manning equation for rectangular channel class."""
+
+    logger = logging.getLogger(__name__)
+
+    def __init__(self, width=100., slope=5.e-4, inflow=1000, flag='1D'):
+        """Initialize the geometrical configuration.
+
+        :param float width: canal width
+        :param float slope: canal slope
+        :param float inflow: canal inflow (optional)
+        :param str flag: 1D (Ks) or 2D (Ks,Q)
+        """
+        self.d_in = 1 if self.flag == '1D' else 2
+        self.d_out = 1
+        self.w = width
+        self.slope = slope
+        self.inflow = inflow
+        self.flag = flag
+
+        self.logger.info("Using function Manning :  width={}, "
+                         "slope={}, inflow={}, flag={}".format(width, slope, inflow, flag))
+
+    @multi_eval
+    def __call__(self, x):
+        """Call function.
+
+        :param list x: inputs [Ks] or [Ks, Q]
+        :return: Water height along the channel
+        :rtype: float
+        """
+        x = np.array(x)
+        if self.flag == '1D':
+            ks = x
+            q = self.inflow
+        else:
+            ks, q = x
+
+        h = q / (ks * self.w * np.sqrt(self.slope))
+        h = np.power(h, 3. / 5.)
+        return h

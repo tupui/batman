@@ -15,8 +15,7 @@ Help of the CLI can be triggered with::
     
     batman -h
 
-    usage: BATMAN [-h] [--version] [-v] [-c] [-s] [-o OUTPUT] [-r] [-n] [-u] [-p]
-              [-q]
+    usage: BATMAN [-h] [--version] [-v] [-c] [-s] [-o OUTPUT] [-r] [-n] [-u] [-q]
               settings
 
     BATMAN creates a surrogate model and perform UQ.
@@ -37,8 +36,6 @@ Help of the CLI can be triggered with::
       -n, --no-surrogate    do not compute surrogate but read it from disk,
                             [default: False]
       -u, --uq              Uncertainty Quantification study, [default: False].
-      -p, --pred            compute prediction and write it on disk, [default:
-                            False]
       -q, --q2              estimate Q2 and find the point with max MSE, [default:
                             False]    
     

@@ -31,7 +31,6 @@ import logging
 from scipy.optimize import differential_evolution
 from pathos.multiprocessing import cpu_count
 from ..misc import NestedPool
-from ..space import Space
 from ..functions import multi_eval
 import os
 
@@ -49,7 +48,7 @@ class Kriging(object):
         Input is to be normalized before and depending on the number of
         parameters, the kernel is adapted to be anisotropic.
 
-        `self.data` contains the predictors as a list(array) of the size
+        :attr:`self.data` contains the predictors as a list(array) of the size
         of the `ouput`. A predictor per line of `output` is created. This leads
         to a line of predictors that predicts a new column of `output`.
 

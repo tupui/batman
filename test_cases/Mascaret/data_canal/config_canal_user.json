@@ -1,0 +1,14 @@
+{
+    "init_cst": {
+        "Q_cst": 0.0,
+        "Z_cst": 10.0
+    },
+    "Q_BC": {
+        "idx": 0,
+        "value": 2345.0
+    },
+    "misc": {
+        "info_bc": true,
+        "index_outstate": 25
+    }
+}
