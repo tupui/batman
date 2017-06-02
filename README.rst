@@ -68,7 +68,7 @@ Then to install::
     python setup.py build_sphinx
 
 The latter is optionnal as it build the documentation.
-The testing part is also optionnal but is recommanded. (<15mins).
+The testing part is also optionnal but is recommanded. (~15mins).
 
 .. note:: If you don't have install priviledge, add ``--user`` option after install.
 

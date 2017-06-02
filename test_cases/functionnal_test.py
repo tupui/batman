@@ -55,7 +55,7 @@ def test_no_pod(tmp, case='Michalewicz'):
 
 def test_no_model_pred(tmp, case='Michalewicz'):
     init_case(tmp, case)
-    sys.argv = ['batman', 'settings.json', '-ps', '-o', tmp]
+    sys.argv = ['batman', 'settings.json', '-ns', '-o', tmp]
     batman.ui.main()
     check_output(tmp)
     if not os.path.isdir(os.path.join(tmp, 'predictions')):
@@ -64,14 +64,14 @@ def test_no_model_pred(tmp, case='Michalewicz'):
 
 def test_quality(tmp, case='Michalewicz'):
     init_case(tmp, case)
-    sys.argv = ['batman', 'settings.json', '-pq', '-o', tmp]
+    sys.argv = ['batman', 'settings.json', '-nq', '-o', tmp]
     batman.ui.main()
     check_output(tmp)
 
 
 def test_uq(tmp, case='Michalewicz'):
     init_case(tmp, case)
-    sys.argv = ['batman', 'settings.json', '-pu', '-o', tmp]
+    sys.argv = ['batman', 'settings.json', '-nu', '-o', tmp]
     batman.ui.main()
     check_output(tmp)
     if not os.path.isdir(os.path.join(tmp, 'uq')):
