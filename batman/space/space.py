@@ -23,6 +23,7 @@ import os
 import numpy as np
 from scipy.optimize import differential_evolution
 import itertools
+from sklearn import preprocessing
 import matplotlib.pyplot as plt
 from .sampling import Doe
 from .point import Point
@@ -289,6 +290,35 @@ class Space(list):
         min_x = results.x
         self.logger.info('Optimization with surrogate: f(x)={} for x={}'
                          .format(min_value, min_x))
+
+    def discrepancy(self):
+        """Compute the centered discrepancy.
+
+        :return: Centered discrepancy
+        :rtype: float
+        """
+        scaler = preprocessing.MinMaxScaler()
+        scaler.fit(self.corners)
+        sample = scaler.transform(self)
+
+        disc1 = 0
+        disc2 = 0
+        n_s = len(self)
+
+        abs_ = abs(sample - 0.5)
+        disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
+
+        prod_arr = 1
+        for i in range(self.dim):
+            s0 = sample[:, i]
+            prod_arr *= (1 +
+                         0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5) -
+                         0.5 * abs(s0[:, None] - s0))
+        disc2 = prod_arr.sum()
+
+        c2 = (13 / 12) ** self.dim - 2 / n_s * disc1 + 1 / (n_s ** 2) * disc2
+
+        return c2
 
     def plot_space(self, path):
         """Plot the space of parameters 2d-by-2d.
