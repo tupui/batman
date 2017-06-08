@@ -96,7 +96,7 @@ class UQ:
         :param dict settings: The settings file.
 
         """
-        self.logger.info("UQ module")
+        self.logger.info("\n----- UQ module -----")
         try:
             self.test = settings['uq']['test']
         except:
@@ -146,7 +146,10 @@ class UQ:
                                       backend='pathos', n_cpus=self.n_cpus)
 
         self.snapshots = settings['space']['sampling']['init_size']
-        self.resamp_size = settings['space']['resampling']['resamp_size']
+        try:
+            self.resamp_size = settings['space']['resampling']['resamp_size']
+        except KeyError:
+            self.resamp_size = 0
 
     def __repr__(self):
         """Information about object."""
@@ -199,10 +202,10 @@ class UQ:
         # MSE computation
         mse = mean_squared_error(y_ref, y_pred, multioutput='uniform_average')
 
-        self.logger.info("\n----- Surrogate Model Error -----")
-        self.logger.info("\nQ2: {}"
-                         "\nMSE: {}"
-                         "\nL2(sobol 2nd, 1st and total order indices error): "
+        self.logger.info("\n----- Surrogate Model Error -----\n"
+                         "Q2: {}\n"
+                         "MSE: {}\n"
+                         "L2(sobol 2nd, 1st and total order indices error): "
                          "{}, {}, {}"
                          .format(err_q2, mse, s_l2_2nd, s_l2_1st, s_l2_total))
 

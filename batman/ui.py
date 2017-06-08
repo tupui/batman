@@ -23,7 +23,7 @@ banner = r"""
 | $$  \ $$| $$  | $$   | $$   | $$\  $ | $$| $$  | $$| $$\  $$$
 | $$$$$$$/| $$  | $$   | $$   | $$ \/  | $$| $$  | $$| $$ \  $$
 |_______/ |__/  |__/   |__/   |__/     |__/|__/  |__/|__/  \__/
-Baysian Analysis Tool for Modelling And uNcertainty quantification
+Bayesian Analysis Tool for Modelling And uNcertainty quantification
 """
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -89,6 +89,8 @@ def run(settings, options):
 
     if 'pod' in settings:
         update = True if settings['pod']['type'] != 'static' else False
+    else:
+        update = None
 
     if not options.no_surrogate:
         # the surrogate [and POD] will be computed

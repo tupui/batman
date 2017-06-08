@@ -110,7 +110,8 @@ class Space(list):
                 raise ValueError('%dth corners coordinate are equal' % (i + 1))
 
     def __str__(self):
-        s = ("Hypercube points: {}\n"
+        s = ("Space summary:\n"
+             "Hypercube points: {}\n"
              "Number of points: {}\n"
              "Max number of points: {}").format([c for c in self.corners],
                                                 len(self),
@@ -287,6 +288,7 @@ class Space(list):
         self.logger.info("Created {} samples with the {} method"
                          .format(len(self), kind))
         self.logger.debug("Points are:\n{}".format(samples))
+        self.logger.info("Discrepancy is {}".format(self.discrepancy()))
         return self
 
     def refine(self, surrogate, point_loo=None):
@@ -327,6 +329,7 @@ class Space(list):
         self += point
 
         self.logger.info('Refined sampling with new point: {}'.format(point))
+        self.logger.info("New discrepancy is {}".format(self.discrepancy()))
 
         return point
 
