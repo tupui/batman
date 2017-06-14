@@ -129,8 +129,7 @@ class PC(object):
                 output = output[0].reshape((len(input), 1))
                 results = [model_fitting(output)]
 
-            for i in range(self.model_len):
-                self.pc[i], self.pc_result[i] = results[i]
+            self.pc, self.pc_result = zip(*results)
             self.logger.info("Done")
 
     @multi_eval
