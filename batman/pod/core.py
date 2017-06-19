@@ -14,7 +14,6 @@ M. Brand: Fast low-rank modifications of the thin singular value decomposition. 
 import numpy as np
 import copy
 from ..surrogate import SurrogateModel
-# from .. import mpi
 from ..misc import ProgressBar, NestedPool
 from pathos.multiprocessing import cpu_count
 

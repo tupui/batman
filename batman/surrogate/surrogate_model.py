@@ -27,9 +27,14 @@ from .RBFnet import RBFnet
 from .multifidelity import Evofusion
 from ..tasks import Snapshot
 from ..space import Space
+from ..misc import ProgressBar, NestedPool
 import dill as pickle
 import numpy as np
 from sklearn import preprocessing
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import LeaveOneOut
+import copy
+from pathos.multiprocessing import cpu_count
 import os
 
 
@@ -63,6 +68,7 @@ class SurrogateModel(object):
 
     def fit(self, points, data, pod=None):
         """Construct the surrogate."""
+        self.data = data
         points = np.array(points)
         try:
             points_scaled = self.scaler.transform(points)
@@ -141,6 +147,62 @@ class SurrogateModel(object):
             return results, sigma
 
         return snapshots, sigma
+
+    def estimate_quality(self, method='LOO'):
+        """Estimate quality of the model.
+
+        :param str method: method to compute quality ['LOO', 'ValidationSet']
+        :return: Q2 error
+        :rtype: float
+        :return: Max MSE point
+        :rtype: lst(float)
+        """
+        # Get rid of predictor creation messages
+        level_init = copy.copy(self.logger.getEffectiveLevel())
+        logging.getLogger().setLevel(logging.WARNING)
+
+        loo = LeaveOneOut()
+        loo_split = list(loo.split(self.space[:]))
+        points_nb = len(self.space)
+
+        # Multi-threading strategy
+        n_cpu_system = cpu_count()
+        n_cpu = n_cpu_system // 3
+        if n_cpu < 1:
+            n_cpu = 1
+        elif n_cpu > points_nb:
+            n_cpu = points_nb
+
+        def loo_quality(i):
+
+            train, test = loo_split[i]
+
+            train_pred = copy.deepcopy(self)
+            train_pred.space.empty()
+            sample = np.array(self.space)
+
+            train_pred.fit(sample[train], self.data[train])
+
+            train_pred, _ = train_pred(sample[test])
+            test_pred = self.data[test]
+
+            return np.linalg.norm(train_pred - test_pred)
+
+        pool = NestedPool(n_cpu)
+        progress = ProgressBar(points_nb)
+        results = pool.imap(loo_quality, range(points_nb))
+
+        error = np.empty(points_nb)
+        for i in range(points_nb):
+            error[i] = results.next()
+            progress()
+
+        loo = np.sum(error) / len(self.space)
+
+        logging.getLogger().setLevel(level_init)
+
+        print(np.sum(error))
+
 
     def write(self, path):
             """Save model to disk.
