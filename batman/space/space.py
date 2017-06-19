@@ -226,6 +226,8 @@ class Space(list):
         method = self.settings['space']['resampling']['method']
         if method == 'sigma':
             new_point = self.refiner.sigma()
+        elif method == 'discrepancy':
+            new_point = self.refiner.discrepancy()
         elif method == 'loo_sigma':
             new_point = self.refiner.leave_one_out_sigma(point_loo)
         elif method == 'loo_sobol':
@@ -291,7 +293,7 @@ class Space(list):
         self.logger.info('Optimization with surrogate: f(x)={} for x={}'
                          .format(min_value, min_x))
 
-    def discrepancy(self):
+    def discrepancy(self, sample=None):
         """Compute the centered discrepancy.
 
         :return: Centered discrepancy
@@ -299,10 +301,11 @@ class Space(list):
         """
         scaler = preprocessing.MinMaxScaler()
         scaler.fit(self.corners)
-        sample = scaler.transform(self)
+        if sample is None:
+            sample = scaler.transform(self)
+        else:
+            sample = scaler.transform(sample)
 
-        disc1 = 0
-        disc2 = 0
         n_s = len(self)
 
         abs_ = abs(sample - 0.5)
@@ -344,18 +347,17 @@ class Space(list):
             fig = plt.figure('Design of Experiment')
             plt.tick_params(axis='both', labelsize=8)
 
-            for i in range(0, self.dim - 1):
-                for j in range(i + 1, self.dim):
-                    ax = plt.subplot2grid((self.dim, self.dim), (j, i))
-                    ax.scatter(sample[0:self.doe_init, i], sample[
-                        0:self.doe_init, j], s=5, c='k', marker='o')
-                    ax.scatter(sample[self.doe_init:, i], sample[
-                        self.doe_init:, j], s=5, c='r', marker='^')
-                    ax.tick_params(axis='both', labelsize=(10 - self.dim))
-                    if i == 0:
-                        ax.set_ylabel(self.p_lst[j])
-                    if j == (self.dim - 1):
-                        ax.set_xlabel(self.p_lst[i])
+            for i, j in itertools.combinations(range(0, self.dim), 2):
+                ax = plt.subplot2grid((self.dim, self.dim), (j, i))
+                ax.scatter(sample[0:self.doe_init, i], sample[
+                    0:self.doe_init, j], s=5, c='k', marker='o')
+                ax.scatter(sample[self.doe_init:, i], sample[
+                    self.doe_init:, j], s=5, c='r', marker='^')
+                ax.tick_params(axis='both', labelsize=(10 - self.dim))
+                if i == 0:
+                    ax.set_ylabel(self.p_lst[j])
+                if j == (self.dim - 1):
+                    ax.set_xlabel(self.p_lst[i])
 
         fig.tight_layout()
         path = os.path.join(os.path.dirname(os.path.abspath(path)), 'DOE.pdf')
