@@ -203,7 +203,6 @@ class Driver(object):
         while len(self.pod.points) < max_points:
             if self.pod is not None:
                 quality, point_loo = self.surrogate.estimate_quality()
-                print(self.pod.estimate_quality())
                 # quality = 0.5
                 # point_loo = [-1.1780625, -0.8144629629629629]
                 if quality >= self.settings['space']['resampling']['q2_criteria']:

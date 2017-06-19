@@ -33,6 +33,7 @@ import numpy as np
 from sklearn import preprocessing
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import LeaveOneOut
+from sklearn.metrics import r2_score
 import copy
 from pathos.multiprocessing import cpu_count
 import os
@@ -63,6 +64,7 @@ class SurrogateModel(object):
         self.dir = {
             'surrogate': 'surrogate.dat',
             'space': 'space.dat',
+            'data': 'data.dat',
             'snapshot': 'Newsnap{}'
         }
 
@@ -157,6 +159,10 @@ class SurrogateModel(object):
         :return: Max MSE point
         :rtype: lst(float)
         """
+        if self.pod is not None:
+            return self.pod.estimate_quality()
+
+        self.logger.info('Estimating Surrogate quality...')
         # Get rid of predictor creation messages
         level_init = copy.copy(self.logger.getEffectiveLevel())
         logging.getLogger().setLevel(logging.WARNING)
@@ -173,70 +179,85 @@ class SurrogateModel(object):
         elif n_cpu > points_nb:
             n_cpu = points_nb
 
+        train_pred = copy.deepcopy(self)
+        train_pred.space.empty()
+        sample = np.array(self.space)
+
         def loo_quality(i):
+            """Error at a point.
 
+            :param int i: point iterator
+            :return: prediction
+            :rtype: np.array(n_points, n_features)
+            """
             train, test = loo_split[i]
-
-            train_pred = copy.deepcopy(self)
-            train_pred.space.empty()
-            sample = np.array(self.space)
-
             train_pred.fit(sample[train], self.data[train])
+            pred, _ = train_pred(sample[test])
 
-            train_pred, _ = train_pred(sample[test])
-            test_pred = self.data[test]
-
-            return np.linalg.norm(train_pred - test_pred)
+            return pred
 
         pool = NestedPool(n_cpu)
         progress = ProgressBar(points_nb)
         results = pool.imap(loo_quality, range(points_nb))
 
-        error = np.empty(points_nb)
+        y_pred = np.empty_like(self.data)
         for i in range(points_nb):
-            error[i] = results.next()
+            y_pred[i] = results.next()
             progress()
 
-        loo = np.sum(error) / len(self.space)
+        q2_loo = r2_score(self.data, y_pred)
+        index = np.argmax(self.data - y_pred)
 
         logging.getLogger().setLevel(level_init)
+        point = self.space[index]
 
-        print(np.sum(error))
+        self.logger.info('Surrogate quality: {}, max error location at {}'
+                         .format(q2_loo, point))
 
+        return q2_loo, point
 
-    def write(self, path):
-            """Save model to disk.
-
-            Write a file containing information on the model.
-            And write another one containing the associated space.
+    def write(self, dir_path):
+            """Save model, data and space to disk.
 
             :param str path: path to a directory.
             """
-            path_model = os.path.join(path, self.dir['surrogate'])
-            with open(path_model, 'wb') as f:
+            path = os.path.join(dir_path, self.dir['surrogate'])
+            with open(path, 'wb') as f:
                 pickler = pickle.Pickler(f)
                 pickler.dump(self.predictor)
-            self.logger.debug('Wrote model to {}'.format(path_model))
+            self.logger.debug('Wrote model to {}'.format(path))
 
-            path_space = os.path.join(path, self.dir['space'])
-            self.space.write(path_space)
-            self.logger.debug('Wrote space to {}'.format(path_space))
+            path = os.path.join(dir_path, self.dir['space'])
+            self.space.write(path)
+            self.logger.debug('Wrote space to {}'.format(path))
 
-            self.logger.debug('Wrote model and space.')
+            path = os.path.join(dir_path, self.dir['data'])
+            with open(path, 'wb') as f:
+                pickler = pickle.Pickler(f)
+                pickler.dump(self.data)
+            self.logger.debug('Wrote data to {}'.format(path))
 
-    def read(self, path):
-        """Load model and space from disk.
+            self.logger.info('Wrote model, data and space.')
+
+    def read(self, dir_path):
+        """Load model, data and space from disk.
 
         :param str path: path to a output/surrogate directory.
         """
-        path_model = os.path.join(path, self.dir['surrogate'])
-        with open(path_model, 'rb') as f:
+        path = os.path.join(dir_path, self.dir['surrogate'])
+        with open(path, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.predictor = unpickler.load()
-        self.logger.debug('Read model from {}'.format(path_model))
+        self.logger.debug('Read model from {}'.format(path))
 
-        path_space = os.path.join(path, self.dir['space'])
-        self.space.read(path_space)
-        self.logger.debug('Read space from {}'.format(path_space))
+        path = os.path.join(dir_path, self.dir['space'])
+        self.space.read(path)
+        self.logger.debug('Read space from {}'.format(path))
 
-        self.logger.info('Model and space loaded.')
+        path = os.path.join(dir_path, self.dir['data'])
+        with open(path, 'rb') as f:
+            unpickler = pickle.Unpickler(f)
+            self.data = unpickler.load()
+        self.logger.debug('Read data from {}'.format(path))
+
+        self.logger.info('Model, data and space loaded.')
