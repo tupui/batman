@@ -104,8 +104,8 @@ class Pod(Core):
         snapshot = Snapshot.convert(snapshot)
         super(Pod, self).update(snapshot.data)
         self.points += snapshot.point
-        self.logger.info('Updated pod basis with snapshot at point %s',
-                         snapshot.point)
+        self.logger.info('Updated pod basis with snapshot at point {}'
+                         .format(snapshot.point))
 
     def estimate_quality(self):
         """Quality estimator.
@@ -126,8 +126,8 @@ class Pod(Core):
         logging.getLogger().setLevel(level_init)
 
         self.quality = quality
-        self.logger.info('pod quality = %g, max error location = %s', quality,
-                         point)
+        self.logger.info('POD quality: {}, max error location at {}'
+                         .format(quality, point))
         return self.quality, point
 
     def write(self, path):

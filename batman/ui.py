@@ -125,7 +125,7 @@ def run(settings, options):
         logger.info(driver.pod)
 
     if options.q2:
-        driver.pod.estimate_quality()
+        driver.surrogate.estimate_quality()
 
     if options.uq:
         driver.uq()

@@ -23,6 +23,7 @@ import os
 import numpy as np
 from scipy.optimize import differential_evolution
 import itertools
+from sklearn import preprocessing
 import matplotlib.pyplot as plt
 from .sampling import Doe
 from .point import Point
@@ -123,89 +124,6 @@ class Space(list):
              "Points:\n"
              "{}").format(str(self), super(Space, self).__repr__())
         return s
-
-    def cheap_doe_from_expensive(self, n):
-        """Compute the number of points required for the cheap DOE.
-
-        :param int n: size of the expensive design
-        :return: size of the cheap design
-        :rtype: int
-        """
-        doe_cheap = (self.settings['surrogate']['grand_cost'] - n)\
-            * self.settings['surrogate']['cost_ratio']
-        doe_cheap = int(doe_cheap)
-        if doe_cheap / n <= 1:
-            self.logger.error('Nc/Ne must be positive')
-            raise SystemExit
-        self.max_points_nb = n + doe_cheap
-        return doe_cheap
-
-    def is_full(self):
-        """Return whether the maximum number of points is reached."""
-        return len(self) >= self.max_points_nb
-
-    def write(self, path):
-        """Write space in file.
-
-        After writting points, it plots them with :func:`Space.plot_space`
-
-        :param str path: folder to save the points in
-        """
-        np.savetxt(path, self)
-        self.plot_space(path)
-
-    def plot_space(self, path):
-        """Plot the space of parameters 2d-by-2d.
-
-        :param str path: folder to save the fig in
-        """
-        sample = np.array(self)
-        if self.multifidelity:
-            sample = sample[:, 1:]
-        fig = plt.figure('Design of Experiment')
-
-        if self.dim < 2:
-            plt.scatter(sample[0:self.doe_init],
-                        [0] * self.doe_init, c='k', marker='o')
-            plt.scatter(sample[self.doe_init:],
-                        [0] * (len(self) - self.doe_init), c='r', marker='^')
-            plt.xlabel(self.p_lst[0])
-            plt.tick_params(axis='y', which='both',
-                            labelleft='off', left='off')
-
-        else:
-            # num figs = ((n-1)**2+(n-1))/2
-            fig = plt.figure('Design of Experiment')
-            plt.tick_params(axis='both', labelsize=8)
-
-            for i in range(0, self.dim - 1):
-                for j in range(i + 1, self.dim):
-                    ax = plt.subplot2grid((self.dim, self.dim), (j, i))
-                    ax.scatter(sample[0:self.doe_init, i], sample[
-                        0:self.doe_init, j], s=5, c='k', marker='o')
-                    ax.scatter(sample[self.doe_init:, i], sample[
-                        self.doe_init:, j], s=5, c='r', marker='^')
-                    ax.tick_params(axis='both', labelsize=(10 - self.dim))
-                    if i == 0:
-                        ax.set_ylabel(self.p_lst[j])
-                    if j == (self.dim - 1):
-                        ax.set_xlabel(self.p_lst[i])
-
-        fig.tight_layout()
-        path = os.path.join(os.path.dirname(os.path.abspath(path)), 'DOE.pdf')
-        fig.savefig(path, transparent=True, bbox_inches='tight')
-        plt.close('all')
-
-    def read(self, path):
-        """Read space from the file `path`."""
-        self.empty()
-        space = np.loadtxt(path)
-        for p in space:
-            self += p.flatten().tolist()
-
-    def empty(self):
-        """Remove all points."""
-        del self[:]
 
     def __iadd__(self, points):
         """Add `points` to the space.
@@ -308,6 +226,8 @@ class Space(list):
         method = self.settings['space']['resampling']['method']
         if method == 'sigma':
             new_point = self.refiner.sigma()
+        elif method == 'discrepancy':
+            new_point = self.refiner.discrepancy()
         elif method == 'loo_sigma':
             new_point = self.refiner.leave_one_out_sigma(point_loo)
         elif method == 'loo_sobol':
@@ -333,6 +253,30 @@ class Space(list):
 
         return point
 
+    def empty(self):
+        """Remove all points."""
+        del self[:]
+
+    def is_full(self):
+        """Return whether the maximum number of points is reached."""
+        return len(self) >= self.max_points_nb
+
+    def cheap_doe_from_expensive(self, n):
+        """Compute the number of points required for the cheap DOE.
+
+        :param int n: size of the expensive design
+        :return: size of the cheap design
+        :rtype: int
+        """
+        doe_cheap = (self.settings['surrogate']['grand_cost'] - n)\
+            * self.settings['surrogate']['cost_ratio']
+        doe_cheap = int(doe_cheap)
+        if doe_cheap / n <= 1:
+            self.logger.error('Nc/Ne must be positive')
+            raise SystemExit
+        self.max_points_nb = n + doe_cheap
+        return doe_cheap
+
     def optimization_results(self):
         """Compute the optimal value."""
         gen = [self.refiner.func(x) for x in self]
@@ -348,3 +292,91 @@ class Space(list):
         min_x = results.x
         self.logger.info('Optimization with surrogate: f(x)={} for x={}'
                          .format(min_value, min_x))
+
+    def discrepancy(self, sample=None):
+        """Compute the centered discrepancy.
+
+        :return: Centered discrepancy
+        :rtype: float
+        """
+        scaler = preprocessing.MinMaxScaler()
+        scaler.fit(self.corners)
+        if sample is None:
+            sample = scaler.transform(self)
+        else:
+            sample = scaler.transform(sample)
+
+        n_s = len(self)
+
+        abs_ = abs(sample - 0.5)
+        disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
+
+        prod_arr = 1
+        for i in range(self.dim):
+            s0 = sample[:, i]
+            prod_arr *= (1 +
+                         0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5) -
+                         0.5 * abs(s0[:, None] - s0))
+        disc2 = prod_arr.sum()
+
+        c2 = (13 / 12) ** self.dim - 2 / n_s * disc1 + 1 / (n_s ** 2) * disc2
+
+        return c2
+
+    def plot_space(self, path):
+        """Plot the space of parameters 2d-by-2d.
+
+        :param str path: folder to save the fig in
+        """
+        sample = np.array(self)
+        if self.multifidelity:
+            sample = sample[:, 1:]
+        fig = plt.figure('Design of Experiment')
+
+        if self.dim < 2:
+            plt.scatter(sample[0:self.doe_init],
+                        [0] * self.doe_init, c='k', marker='o')
+            plt.scatter(sample[self.doe_init:],
+                        [0] * (len(self) - self.doe_init), c='r', marker='^')
+            plt.xlabel(self.p_lst[0])
+            plt.tick_params(axis='y', which='both',
+                            labelleft='off', left='off')
+
+        else:
+            # num figs = ((n-1)**2+(n-1))/2
+            fig = plt.figure('Design of Experiment')
+            plt.tick_params(axis='both', labelsize=8)
+
+            for i, j in itertools.combinations(range(0, self.dim), 2):
+                ax = plt.subplot2grid((self.dim, self.dim), (j, i))
+                ax.scatter(sample[0:self.doe_init, i], sample[
+                    0:self.doe_init, j], s=5, c='k', marker='o')
+                ax.scatter(sample[self.doe_init:, i], sample[
+                    self.doe_init:, j], s=5, c='r', marker='^')
+                ax.tick_params(axis='both', labelsize=(10 - self.dim))
+                if i == 0:
+                    ax.set_ylabel(self.p_lst[j])
+                if j == (self.dim - 1):
+                    ax.set_xlabel(self.p_lst[i])
+
+        fig.tight_layout()
+        path = os.path.join(os.path.dirname(os.path.abspath(path)), 'DOE.pdf')
+        fig.savefig(path, transparent=True, bbox_inches='tight')
+        plt.close('all')
+
+    def read(self, path):
+        """Read space from the file `path`."""
+        self.empty()
+        space = np.loadtxt(path)
+        for p in space:
+            self += p.flatten().tolist()
+
+    def write(self, path):
+        """Write space in file.
+
+        After writting points, it plots them with :func:`Space.plot_space`
+
+        :param str path: folder to save the points in
+        """
+        np.savetxt(path, self)
+        self.plot_space(path)

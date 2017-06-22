@@ -50,7 +50,7 @@ def test_point_evaluation():
     f_3d = Ishigami()
     point = Point([2.20, 1.57, 3])
     target_point = f_3d(point)
-    assert target_point == 14.357312835804658
+    assert target_point == pytest.approx(14.357312835804658, 0.05)
 
 
 def test_space():
@@ -141,3 +141,16 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     point_loo = refiner.points[0]
     new_point = refiner.leave_one_out_sigma(point_loo)
     new_point = refiner.leave_one_out_sobol(point_loo)
+
+
+def test_discrepancy(settings_ishigami):
+    test_settings = copy.deepcopy(settings)
+    test_settings['space']['corners'] = [[0.5, 0.5], [6.5, 6.5]]
+    space_1 = Space(test_settings)
+    space_2 = Space(test_settings)
+
+    space_1 += [[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]]
+    space_2 += [[1, 5], [2, 4], [3, 3], [4, 2], [5, 1], [6, 6]]
+
+    assert space_1.discrepancy() == pytest.approx(0.0081, abs=0.0001)
+    assert space_2.discrepancy() == pytest.approx(0.0105, abs=0.0001)
