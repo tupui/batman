@@ -206,7 +206,7 @@ class SurrogateModel(object):
             progress()
 
         q2_loo = r2_score(self.data, y_pred)
-        index = np.argmax(self.data - y_pred)
+        index = ((self.data - y_pred) ** 2).sum(axis=1).argmax()
 
         logging.getLogger().setLevel(level_init)
         point = self.space[index]
