@@ -12,8 +12,7 @@ python setup.py build_fortran
 python setup.py install
 which batman
 
-cd batman/tests
-coverage run --omit=. -m pytest test_functions.py::test_Ishigami
+coverage run --omit=. -m pytest
 if [ $? -ne 0 ]
 then
     exit 1
