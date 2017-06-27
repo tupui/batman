@@ -12,7 +12,7 @@ python setup.py build_fortran
 python setup.py install
 which batman
 
-coverage run --omit=. -m pytest
+coverage run --omit=. -m pytest --ignore=test_cases/Mascaret
 if [ $? -ne 0 ]
 then
     exit 1
