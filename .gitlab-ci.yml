@@ -1,0 +1,16 @@
+stages:
+  - test
+  - doc
+
+nemo_testing:
+  stage: test
+  tags:
+    - sshroy.spike.batman
+  only:
+    - master
+    - develop
+  script:
+    - cd ../.
+    - tar -cf batman_ci.tar batman
+    - scp batman_ci.tar batman/CI_NEMO.sh roy@nemo:~/.
+    - ssh roy@nemo 'srun --partition debug --job-name batci --nodes=1 CI_NEMO.sh'
