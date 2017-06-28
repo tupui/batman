@@ -320,9 +320,9 @@ class Space(list):
             new_point = self.refiner.optimization()
 
         try:
-            point = (Point(point) for point in [new_point])
+            point = [Point(point) for point in [new_point]]
         except TypeError:
-            point = (Point(point) for point in new_point)
+            point = [Point(point) for point in new_point]
 
         self += point
 
