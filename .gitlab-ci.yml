@@ -13,7 +13,9 @@ nemo_testing:
     - cd ../.
     - tar -cf batman_ci.tar batman
     - scp batman_ci.tar batman/CI_NEMO.sh roy@nemo:~/.
-    - ssh roy@nemo 'srun --partition debug --job-name batci --nodes=1 CI_NEMO.sh'
+    - ssh roy@nemo 'sbatch --partition debug --job-name batci --nodes=1 --share CI_NEMO.sh'
+    - sleep 1800
+    - ssh roy@nemo 'cat slurm*'
 
 pages:
   stage: doc
