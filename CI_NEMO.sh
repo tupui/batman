@@ -1,5 +1,34 @@
 #!/bin/sh
+#SBATCH --partition prod
+#SBATCH --job-name batci
+#SBATCH --time=00:30:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=24
+#SBATCH --share
 
+# On spike: send the job to the HPC scheduler and wait for completion
+if [ ${HOSTNAME:0:4} != 'nemo' ]
+then
+    nojob=$(ssh roy@nemo 'sbatch --share CI_NEMO.sh' | awk '{print $NF}') 
+    echo $nojob
+    
+    r=0
+    while [ $r -eq 0 ]
+    do
+      resu=$(squeue -j $nojob -h -o %T)
+      if [ ! -z "$resu" ] ; then
+         sleep 30
+      else
+         r=1
+      fi
+    done
+
+    ssh roy@nemo 'cat slurm*'
+
+    exit 0
+fi
+
+# On HPC: launch test suite and coverage
 source activate bat_ci
 python --version
 
