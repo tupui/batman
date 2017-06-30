@@ -7,28 +7,31 @@
 #SBATCH --share
 
 # On spike: send the job to the HPC scheduler and wait for completion
-if [ ${HOSTNAME:0:4} != 'nemo' ]
-then
+if [ ${HOSTNAME:0:4} != 'nemo' ] && [ ${HOSTNAME:0:4} != 'node' ] ; then
     nojob=$(ssh roy@nemo 'sbatch --share CI_NEMO.sh' | awk '{print $NF}') 
-    echo $nojob
+    echo 'Job number: ' $nojob
     
     r=0
     while [ $r -eq 0 ]
     do
-      resu=$(squeue -j $nojob -h -o %T)
+      resu=$(ssh roy@nemo "squeue -j $nojob -h -o %T")
       if [ ! -z "$resu" ] ; then
          sleep 30
       else
          r=1
       fi
     done
-
+    
     ssh roy@nemo 'cat slurm*'
-
-    exit 0
+    status=$(ssh roy@nemo "sacct --format=state -j $nojob | awk 'NR>3 {print $1}'")
+    if [ $status = 'FAILED' ] ; then
+        exit 1
+    else
+        exit 0
+    fi
 fi
 
-# On HPC: launch test suite and coverage
+# On HPC:
 source activate bat_ci
 python --version
 
@@ -41,13 +44,18 @@ python setup.py build_fortran
 python setup.py install
 which batman
 
-coverage run --omit=. -m pytest --ignore=test_cases/Mascaret
-if [ $? -ne 0 ]
-then
-    exit 1
+# launch test suite and coverage
+coverage run -m pytest --basetemp=./TMP_CI --ignore=test_cases/Mascaret .
+if [ $? -ne 0 ] ; then
+    fail=1
+else
+    fail=0
 fi
-
-coverage report
+coverage report -m
 
 pip uninstall -y batman
 rm -r $SCRATCH/CI_BATMAN
+
+if [ $fail -eq 1 ] ; then
+    exit 1
+fi
