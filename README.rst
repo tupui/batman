@@ -1,4 +1,16 @@
-README
+.. image:: https://nitrox.cerfacs.fr/open-source/batman/badges/master/build.svg
+   :target: https://nitrox.cerfacs.fr/open-source/batman/commits/master
+   :alt: build status
+
+.. image:: https://nitrox.cerfacs.fr/open-source/batman/badges/master/coverage.svg
+   :target: https://nitrox.cerfacs.fr/open-source/batman/commits/master
+   :alt: build status
+
+.. image:: https://img.shields.io/badge/python-2.7,_3.6-blue.svg
+
+.. image:: https://img.shields.io/badge/release-v1.6_Selina-blue.svg
+
+BATMAN
 ======
 
 :Authors: 
@@ -11,10 +23,8 @@ README
     Melanie Rochoux,
     Sophie Ricci.
 
-:Version: 1.6 - Selina 01/06/2017
 
-
-What is BATMAN? 
+What is BATMAN?
 ---------------
 
 **BATMAN** stands for Bayesian Analysis Tool for Modelling And uNcertainty quantification.
@@ -121,3 +131,4 @@ If you encounter a bug (or have a feature request), report it via `GitLab <https
 Last but not least, if you consider contributing check-out :ref:`contributing`.
 
 Happy BATMAN.
+
