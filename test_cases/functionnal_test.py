@@ -13,15 +13,15 @@ path = os.path.dirname(os.path.realpath(__file__))
 schema = os.path.join(path, '../batman/misc/schema.json')
 
 def check_output(tmp):
-    if not os.path.isdir(os.path.join(tmp, 'surrogate/pod')):
+    if not os.path.isfile(os.path.join(tmp, 'surrogate/DOE.pdf')):
         assert False
     if not os.path.isfile(os.path.join(tmp, 'surrogate/surrogate.dat')):
         assert False
-    if not os.path.isfile(os.path.join(tmp, 'surrogate/pod/points.dat')):
+    if not os.path.isfile(os.path.join(tmp, 'surrogate/space.dat')):
         assert False
-    if not os.path.isfile(os.path.join(tmp, 'surrogate/pod/pod.npz')):
+    if not os.path.isfile(os.path.join(tmp, 'surrogate/data.dat')):
         assert False
-
+    
 
 def init_case(tmp, case, output=True, force=False):
     os.chdir(os.path.join(path, case))
@@ -37,7 +37,10 @@ def init_case(tmp, case, output=True, force=False):
         batman.ui.main()
         check_output(tmp)
     if not output:
-        shutil.rmtree(os.path.join(tmp, 'surrogate/pod'))
+        try:
+            shutil.rmtree(os.path.join(tmp, 'surrogate/pod'))
+        except:
+            pass
 
 
 # Use Michalewicz: 2D -> 1D
@@ -51,6 +54,8 @@ def test_no_pod(tmp, case='Michalewicz'):
     sys.argv = ['batman', 'settings.json', '-n', '-o', tmp]
     batman.ui.main()
     check_output(tmp)
+    if not os.path.isfile(os.path.join(tmp, 'surrogate/pod/pod.npz')):
+        assert False
 
 
 def test_no_model_pred(tmp, case='Michalewicz'):
@@ -120,7 +125,6 @@ def test_restart_pod(tmp, case='Michalewicz'):
     batman.ui.run(settings, options)
     check_output(tmp)
 
-
     init_case(tmp, case, force=True)
     # Restart from 4 and add 2 points continuing the DOE sequence
     settings["space"]["resampling"]["resamp_size"] = 0
@@ -163,3 +167,17 @@ def test_cases(tmp, name):
     test_quality(tmp, case=name)
     test_uq(tmp, case=name)
     test_restart_pod(tmp, case=name)
+
+
+def test_simple_settings(tmp):
+    init_case(tmp, 'Ishigami', output=False)
+    sys.argv = ['batman', 'settings.json', '-o', tmp]
+    options = batman.ui.parse_options()
+    settings = batman.misc.import_config(options.settings, schema)
+    settings['space'].pop('resampling')
+    settings.pop('pod')
+    settings['surrogate'].pop('predictions')
+    settings.pop('uq')
+    shutil.rmtree(tmp)
+    batman.ui.run(settings, options)
+    check_output(tmp)
