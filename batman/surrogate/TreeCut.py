@@ -1,10 +1,5 @@
-#  ==========================================================================
-#  Project: cfd - POD - Copyright (c) 2005 by CERFACS
-#  Type   :
-#  File   : TreeCut.py
-#  Vers   : V1.0
-#
 import numpy as np
+
 
 class cell(object):
 
@@ -56,14 +51,14 @@ class Tree(object):
             npas += 1
             self.NbCells = NbCells
 
-##         print 'resu '
-##         print NbCells,card
-##         for i in range(NbCells):
-##             print 'cell ',i+1
-##             toto=self.cellTab[i]
-##             print 'npts ',toto.nbPoints
-##             for j in range(toto.nbPoints):
-##                 print ' num ',toto.PointsOf[j]
+# print 'resu '
+# print NbCells,card
+# for i in range(NbCells):
+# print 'cell ',i+1
+# toto=self.cellTab[i]
+# print 'npts ',toto.nbPoints
+# for j in range(toto.nbPoints):
+# print ' num ',toto.PointsOf[j]
 
         return
 
@@ -107,7 +102,7 @@ class Tree(object):
             for dir in list_dir:  # balayage des directions
                 self.sort_inputs(cellIn, dir)
                 for j in range(self.Pmin - 1, cellIn.nbPoints - 1 - (self.Pmin
-                               - 1)):
+                                                                     - 1)):
                     b = (self.TrainSetInTree[cellIn.PointsOf[j], dir]
                          + self.TrainSetInTree[cellIn.PointsOf[j + 1], dir]) \
                         * 0.5
@@ -133,7 +128,8 @@ class Tree(object):
             self.subCellR.nbPoints = Nright
             self.subCellL.nbPoints = cellIn.nbPoints - Nright
             self.subCellR.PointsOf = np.zeros((Nright, ), dtype=np.int16)
-            self.subCellL.PointsOf = np.zeros((cellIn.nbPoints - Nright, ), dtype=np.int16)
+            self.subCellL.PointsOf = np.zeros(
+                (cellIn.nbPoints - Nright, ), dtype=np.int16)
 
             Nright = 0
             Nleft = 0
@@ -165,7 +161,7 @@ class Tree(object):
             trifini = 1
             for j in range(1, cellIn.nbPoints):
                 if self.TrainSetInTree[cellIn.PointsOf[j - 1], dir] \
-                    > self.TrainSetInTree[cellIn.PointsOf[j], dir]:
+                        > self.TrainSetInTree[cellIn.PointsOf[j], dir]:
                     tmp = cellIn.PointsOf[j - 1]
                     cellIn.PointsOf[j - 1] = cellIn.PointsOf[j]
                     cellIn.PointsOf[j] = tmp
@@ -235,9 +231,9 @@ class Tree(object):
                         ArtmpR = b - cellIn.boundsInf[i]
                         try:
                             ArtmpL = ArtmpL / (cellIn.boundsSup[j]
-                                    - cellIn.boundsInf[j])
+                                               - cellIn.boundsInf[j])
                             ArtmpR = ArtmpR / (cellIn.boundsSup[j]
-                                    - cellIn.boundsInf[j])
+                                               - cellIn.boundsInf[j])
                         except:
                             ArtmpL = 1.e99
                             ArtmpR = 1.e99
@@ -245,7 +241,7 @@ class Tree(object):
                         ArtmpL = cellIn.boundsSup[i] - cellIn.boundsInf[i]
                         try:
                             ArtmpL = ArtmpL / (cellIn.boundsSup[j]
-                                    - cellIn.boundsInf[j])
+                                               - cellIn.boundsInf[j])
                         except:
                             ArtmpL = 1.e99
                         ArtmpR = ArtmpL
@@ -260,7 +256,8 @@ class Tree(object):
         return Armini
 
     def ARfunc(self, AR, seuil):
-        # fonction permettant de gerer finement la penalisation des AR trop failbles
+        # fonction permettant de gerer finement la penalisation des AR trop
+        # failbles
         if AR < seuil:
             return 1.e99
         else:
@@ -268,7 +265,8 @@ class Tree(object):
 
     def setOutputs(self):
         # fonction de post traitement des resultats pour la sortie
-        # premets de recuperer les centres et rayons des cellules dans centers et radii
+        # premets de recuperer les centres et rayons des cellules dans centers
+        # et radii
         centers = np.zeros((self.NbCells, self.NbDir), dtype=np.float64)
         rayon = np.zeros((self.NbCells, self.NbDir), dtype=np.float64)
         for i in range(self.NbCells):
@@ -279,5 +277,3 @@ class Tree(object):
                 rayon[i, j] = np.abs(cellIn.boundsSup[j] - cellIn.boundsInf[j]) \
                     * 0.5
         return (centers, rayon)
-
-
