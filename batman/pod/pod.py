@@ -52,10 +52,6 @@ class Pod(Core):
         self.corners = settings['space']['corners']
         self.points = Space(settings)  # A space to record the points
 
-        # for external pod
-        if snapshot_io is not None:
-            Snapshot.initialize(snapshot_io)
-
         super(Pod, self).__init__(settings['pod']['tolerance'],
                                   settings['pod']['dim_max'])
 
@@ -78,11 +74,6 @@ class Pod(Core):
 
         :param lst(array) snapshots: snapshots matrix
         """
-        if len(snapshots) == 0:
-            self.logger.info(
-                'Empty snapshot list, no decomposition to compute')
-            return
-
         snapshots = [Snapshot.convert(s) for s in snapshots]
 
         self.logger.info('Decomposing pod basis...')

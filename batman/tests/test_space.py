@@ -43,6 +43,12 @@ def test_point():
     assert point_a == point_b
     assert point_a == point_c
 
+    with pytest.raises(ValueError):
+        Point.set_threshold(-0.1)
+
+    with pytest.raises(ValueError):
+        Point([2, 's', 9])
+
     Point.set_threshold(0)
 
 
@@ -114,6 +120,10 @@ def test_doe():
     sample = doe.generate()
     out = np.array([[5., 3.], [2.5, 4.], [7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
     npt.assert_almost_equal(sample, out, decimal=1)
+
+    kind = 'sobolscramble'
+    doe = Doe(n, bounds, kind, discrete_var)
+    sample = doe.generate()
 
 
 def test_resampling(tmp, branin_data, settings_ishigami):

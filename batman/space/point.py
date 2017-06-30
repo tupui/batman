@@ -28,7 +28,7 @@ class Point(tuple):
                 raise ValueError
         except ValueError:
             cls.logger.exception("Threshold must be a positive real number.")
-            raise SystemExit
+            raise ValueError
         else:
             cls.threshold = threshold
 
@@ -44,9 +44,9 @@ class Point(tuple):
             try:
                 coords += [float(c)]
             except ValueError:
-                self.logger.exception("Coordinate values must be real numbers: {}"
+                cls.logger.exception("Coordinate values must be real numbers: {}"
                                       .format(c))
-                raise SystemExit
+                raise ValueError
         return super(Point, cls).__new__(cls, coords)
 
     def __eq__(self, other):
