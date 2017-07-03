@@ -295,7 +295,6 @@
   },
   "required": [
     "space",
-    "snapshot",
-    "surrogate"
+    "snapshot"
   ]
 }

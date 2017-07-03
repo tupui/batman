@@ -114,14 +114,19 @@ class Driver(object):
                 raise SystemError
 
         # Pod
-        if 'pod' in self.settings:
+        try:
             self.pod = Pod(self.settings)
-        else:
+        except KeyError:
             self.pod = None
+            self.logger.info('No POD is computed.')
 
         # Surrogate model
-        self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                        self.settings['space']['corners'])
+        try:
+            self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
+                                            self.settings['space']['corners'])
+        except KeyError:
+            self.surrogate = None
+            self.logger.info('No surrogate is computed.')
 
     def sampling(self, points=None, update=False):
         """Create snapshots.
@@ -160,10 +165,9 @@ class Driver(object):
                     snapshots += [self.snapshooter.submit(t.run)]
 
         # Fit the Surrogate [and POD]
-        if update:
-            self.surrogate.space.empty()
-        if self.pod is not None:
+        if self.pod is not None:  # if POD
             if update:
+                self.surrogate.space.empty()
                 if self.provider.is_job:
                     for s in futures.as_completed(snapshots):
                         self.pod.update(s.result())
@@ -178,9 +182,11 @@ class Driver(object):
                     snapshots = _snapshots
                 self.pod.decompose(snapshots)
 
-            self.surrogate.fit(self.pod.points, self.pod.VS(), pod=self.pod)
+            try:  # if surrogate
+                self.surrogate.fit(self.pod.points, self.pod.VS(), pod=self.pod)
+            except AttributeError:
+                pass
         else:
-            self.logger.info('No POD is computed.')
             if self.provider.is_job:
                 _snapshots = []
                 for s in futures.as_completed(snapshots):
@@ -190,7 +196,10 @@ class Driver(object):
             snapshots = [Snapshot.convert(s) for s in snapshots]
             snapshots = np.vstack([s.data for s in snapshots])
 
-            self.surrogate.fit(points, snapshots, pod=self.pod)
+            try:  # if surrogate
+                self.surrogate.fit(points, snapshots, pod=self.pod)
+            except AttributeError:
+                pass
 
     def resampling(self):
         """Resampling of the POD.
@@ -264,11 +273,11 @@ class Driver(object):
             self.space.empty()
             self.space += processed_points
 
-    def prediction(self, write=False, points=None):
+    def prediction(self, points, write=False):
         """Perform a prediction.
 
-        :param bool write: write a snapshot or not
         :param :class:`space.point.Point` points: point(s) to predict
+        :param bool write: write a snapshot or not
         :return: Result
         :rtype: lst(:class:`tasks.snapshot.Snapshot`) or np.array(n_points, n_features)
         :return: Standard deviation
@@ -278,9 +287,6 @@ class Driver(object):
             output = os.path.join(self.output, self.output_tree['predictions'])
         else:
             output = None
-
-        if points is None:
-            points = self.settings['surrogate']['predictions']
 
         return self.surrogate(points, path=output)
 
