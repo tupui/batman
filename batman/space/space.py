@@ -370,6 +370,7 @@ class Space(list):
         space = np.loadtxt(path)
         for p in space:
             self += p.flatten().tolist()
+        self.logger.debug('Space read from {}'.format(path))
 
     def write(self, path):
         """Write space in file.
@@ -380,3 +381,4 @@ class Space(list):
         """
         np.savetxt(path, self)
         self.plot_space(path)
+        self.logger.debug('Space wrote to {}'.format(path))

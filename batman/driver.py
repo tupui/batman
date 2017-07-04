@@ -39,6 +39,8 @@ class Driver(object):
     logger = logging.getLogger(__name__)
     output_tree = {
         'snapshots': 'snapshots',
+        'space': 'space.dat',
+        'data': 'data.dat',
         'pod': 'surrogate/pod',
         'surrogate': 'surrogate',
         'predictions': 'predictions',
@@ -63,6 +65,9 @@ class Driver(object):
         except OSError:
             pass
         self.snapshot_counter = 0
+
+        # Space
+        self.space = Space(self.settings)
 
         # Snapshots
         Snapshot.initialize(self.settings['snapshot']['io'])
@@ -232,36 +237,58 @@ class Driver(object):
 
     def write(self):
         """Write Surrogate [and POD] to disk."""
-        model_path = os.path.join(self.output, self.output_tree['surrogate'])
-        try:
-            os.makedirs(model_path)
-        except OSError:
-            pass
-        self.surrogate.write(model_path)
-        if self.pod is not None:
-            pod_path = os.path.join(self.output, self.output_tree['pod'])
+        if self.surrogate is not None:
+            path = os.path.join(self.output, self.output_tree['surrogate'])
             try:
-                os.makedirs(pod_path)
+                os.makedirs(path)
             except OSError:
                 pass
-            self.pod.write(pod_path)
+            self.surrogate.write(path)
+        else:
+            path = os.path.join(self.output, self.output_tree['space'])
+            self.space.write(path)
+        if self.pod is not None:
+            path = os.path.join(self.output, self.output_tree['pod'])
+            try:
+                os.makedirs(path)
+            except OSError:
+                pass
+            self.pod.write(path)
+        elif (self.pod is None) and (self.surrogate is None):
+            path = os.path.join(self.output, self.output_tree['data'])
+            with open(path, 'wb') as f:
+                pickler = pickle.Pickler(f)
+                pickler.dump(self.data)
+            self.logger.debug('Wrote data to {}'.format(path))
 
     def read(self):
         """Read Surrogate [and POD] from disk."""
-        self.surrogate.read(os.path.join(self.output, self.output_tree['surrogate']))
+        if self.surrogate is not None:
+            self.surrogate.read(os.path.join(self.output,
+                                             self.output_tree['surrogate']))
+            self.space = self.surrogate.space
+        else:
+            path = os.path.join(self.output, self.output_tree['space'])
+            self.space.read(path)
         if self.pod is not None:
             self.pod.read(os.path.join(self.output, self.output_tree['pod']))
             self.surrogate.pod = self.pod
+        elif (self.pod is None) and (self.surrogate is None):
+            path = os.path.join(self.output, self.output_tree['data'])
+            with open(path, 'rb') as f:
+                unpickler = pickle.Unpickler(f)
+                self.data = unpickler.load()
+            self.logger.debug('Read data from {}'.format(path))
 
     def restart(self):
         """Restart process."""
         # Surrogate [and POD] has already been computed
         self.logger.info('Restarting from previous computation...')
         self.read()
-        processed_points = self.surrogate.space
+        processed_points = copy.deepcopy(self.space)
         self.snapshot_counter = len(processed_points)
 
-        if len(processed_points) < len(self.initial_points):
+        if self.snapshot_counter < len(self.initial_points):
             # static or dynamic pod is finished,
             # we add new points to be processed
             self.initial_points = [p for p in self.initial_points

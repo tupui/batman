@@ -106,7 +106,7 @@ def run(settings, options):
                 driver.resampling()
                 driver.write()
         except KeyError:
-            self.logger.debug('No resampling.')
+            logger.debug('No resampling.')
 
     else:
         # just read the existing surrogate [and POD]
@@ -122,7 +122,7 @@ def run(settings, options):
         driver.prediction(points=settings['surrogate']['prediction'],
                           write=options.save_snapshots)
     except KeyError:
-        self.logger.debug('No prediction.')
+        logger.debug('No prediction.')
 
     logger.info(driver.pod)
 
