@@ -64,8 +64,12 @@ class Space(list):
         :param dict settings: space settings
         """
         self.settings = settings
-        self.doe_init = settings['space']['sampling']['init_size']
-        self.doe_method = settings['space']['sampling']['method']
+        try:
+            self.doe_init = settings['space']['sampling']['init_size']
+            self.doe_method = settings['space']['sampling']['method']
+        except TypeError:
+            self.doe_init = len(settings['space']['sampling'])
+            self.doe_method = None
         if 'resampling' in settings['space']:
             self.refiner = None
             self.max_points_nb = settings['space']['resampling']['resamp_size'] + self.doe_init

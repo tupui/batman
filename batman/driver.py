@@ -77,9 +77,8 @@ class Driver(object):
             # compute relative path to snapshot files
             data_files = []
             for files in self.settings['snapshot']['io']['filenames'].values():
-                for f in files:
-                    data_files += [
-                        os.path.join(self.provider['data-directory'], f)]
+                data_files = [os.path.join(self.provider['data-directory'], f)
+                              for f in files]
             SnapshotTask.initialize(self.provider, data_files)
 
             # snapshots generation manager
@@ -100,16 +99,14 @@ class Driver(object):
                     self.logger.warning("Ignoring: {}".format(tb))
                 else:
                     self.initial_points[point] = path
-
         else:
             space_provider = self.settings['space']['sampling']
             if isinstance(space_provider, list):
                 # a list of points is provided
                 self.logger.info('Reading list of points from the settings.')
                 self.initial_points = space_provider
-                self.space += self.initial_points
             elif isinstance(space_provider, dict):
-                # use point sampling
+                # use sampling method
                 self.initial_points = self.space.sampling(space_provider['init_size'])
             else:
                 self.logger.error('Bad space provider.')

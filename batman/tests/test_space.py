@@ -62,6 +62,8 @@ def test_point_evaluation():
 def test_space():
     space = Space(settings)
 
+    assert space.max_points_nb == 16
+
     space += (1, 2, 3)
     assert space[:] == [(1, 2, 3)]
 
@@ -86,6 +88,16 @@ def test_space():
 
     with pytest.raises(FullSpaceError):
         space.sampling(17)
+
+    test_settings = copy.deepcopy(settings)
+    test_settings['space'].pop('resampling')
+    space = Space(test_settings)
+    assert space.max_points_nb == 10
+
+    test_settings['space']['sampling'] = [(1, 2, 3), (1, 1, 3)]
+    space = Space(test_settings)
+    assert space.doe_init == 2
+    assert space.max_points_nb == 2
 
 
 def test_space_evaluation():
