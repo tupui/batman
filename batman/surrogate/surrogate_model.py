@@ -90,6 +90,7 @@ class SurrogateModel(object):
             self.space.multifidelity = True
 
         self.pod = pod
+        self.space.empty()
         self.space += points
         self.space.doe_init = len(points)
 
