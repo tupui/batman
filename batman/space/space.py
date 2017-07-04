@@ -306,7 +306,7 @@ class Space(list):
         else:
             sample = scaler.transform(sample)
 
-        n_s = len(self)
+        n_s = len(sample)
 
         abs_ = abs(sample - 0.5)
         disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))

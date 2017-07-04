@@ -22,7 +22,6 @@ import logging
 import os
 import numpy as np
 import pickle
-import copy
 from concurrent import futures
 
 from collections import OrderedDict
@@ -87,7 +86,7 @@ class Driver(object):
             self.snapshooter = futures.ThreadPoolExecutor(
                 max_workers=self.settings['snapshot']['max_workers'])
 
-        elif self.provider.is_file:
+        if self.provider.is_file:
             # get the point from existing snapshot files,
             self.logger.info('Reading points from a list of snapshots files.')
 
