@@ -120,6 +120,7 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     f_2d, dists, model, point, target_point, space, target_space = branin_data
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings['space']['sampling']['init_size'] = len(space)
+    test_settings['space']['sampling']['method'] = 'halton'
     test_settings['space']['resampling']['method'] = 'sigma'
     test_settings['space']['resampling']['resamp_size'] = 1
     test_settings['space']['corners'] = space.corners
@@ -128,19 +129,35 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2']
     f_obj = Branin()
     test_settings['snapshot']['provider'] = f_obj
+    space.empty()
+    space.settings['space']['sampling']['method'] = 'halton'
+    space.sampling(10)
+    target_space = f_obj(space)
 
     Snapshot.initialize(test_settings['snapshot']['io'])
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
 
-    out = space.refine(surrogate)
+    space.refine(surrogate)
     assert len(space) == 11
 
     refiner = Refiner(surrogate, test_settings)
-    new_point = refiner.sigma()
-    point_loo = refiner.points[0]
-    new_point = refiner.leave_one_out_sigma(point_loo)
-    new_point = refiner.leave_one_out_sobol(point_loo)
+    point_loo = refiner.points[1]
+
+    npt.assert_almost_equal(refiner.sigma(),
+                            np.array([0.49, 13.90]), decimal=1)
+
+    refiner.leave_one_out_sigma(point_loo)
+    refiner.leave_one_out_sobol(point_loo)
+
+    npt.assert_almost_equal(refiner.optimization(method='EI'),
+                            np.array([-1.7, 13.00]), decimal=1)
+
+    npt.assert_almost_equal(refiner.optimization(method='PI'),
+                            np.array([-2.3, 11.3]), decimal=1)
+
+    npt.assert_almost_equal(refiner.discrepancy(),
+                            np.array([8.75, 13.90]), decimal=1)
 
 
 def test_discrepancy(settings_ishigami):

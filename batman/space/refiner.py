@@ -265,7 +265,6 @@ class Refiner(object):
 
         return min_x
 
-
     def sigma(self, hypercube=None):
         """Find the point at max Sigma.
 
@@ -495,7 +494,7 @@ class Refiner(object):
 
         return new_point, refined_pod_points
 
-    def optimization(self):
+    def optimization(self, method='EI'):
         """Optimization using Probability of Improvement.
 
         :return: The coordinate of the point to add
@@ -508,15 +507,12 @@ class Refiner(object):
         self.logger.info('Current minimal value is: f(x)={} for x={}'
                          .format(min_value, min_x))
 
-        target = min_value - 0.1 * np.abs(min_value)
-
-        if self.settings["sampling"]["method"] == 'discrete':
+        if self.settings['sampling']['method'] == 'discrete':
             discrete = 1
         else:
             discrete = 0
 
-
-        @optimization(self.settings["sampling"]["method"], self.corners)
+        @optimization(self.settings['sampling']['method'], self.corners)
         def probability_improvement(x):
             """Probability of improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
@@ -531,7 +527,7 @@ class Refiner(object):
 
             return - pi
 
-        @optimization(self.settings["sampling"]["method"], self.corners)
+        @optimization(self.settings['sampling']['method'], self.corners)
         def expected_improvement(x):
             """Expected improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
@@ -547,6 +543,10 @@ class Refiner(object):
 
             return - ei
 
-        max_ei, _ = expected_improvement()
+        if method == 'EI':
+            max_ei, _ = expected_improvement()
+        else:
+            target = min_value - 0.1 * np.abs(min_value)
+            max_ei, _ = probability_improvement()
 
         return max_ei
