@@ -242,6 +242,8 @@ class Space(list):
             new_point = self.refiner.optimization()
         elif method == 'ego_discrepancy':
             new_point = self.refiner.ego_discrepancy()
+        elif method == 'sigma_discrepancy':
+            new_point = self.refiner.sigma_discrepancy()
 
         try:
             point = [Point(point) for point in [new_point]]
