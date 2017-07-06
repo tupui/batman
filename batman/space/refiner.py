@@ -33,6 +33,7 @@ import numpy as np
 from sklearn import preprocessing
 import copy
 from ..uq import UQ
+from .sampling import Doe
 from ..misc import optimization
 
 
@@ -488,6 +489,10 @@ class Refiner(object):
             new_point = self.leave_one_out_sobol(point_loo)
         elif method == 'extrema':
             new_point, refined_pod_points = self.extrema(refined_pod_points)
+        elif method == 'discrepancy':
+            new_point = self.discrepancy()
+        elif method == 'optimization':
+            new_point = self.optimization()
         else:
             self.logger.exception("Resampling method does't exits")
             raise SystemExit
@@ -495,8 +500,9 @@ class Refiner(object):
         return new_point, refined_pod_points
 
     def optimization(self, method='EI'):
-        """Optimization using Probability of Improvement.
+        """Maximization of the Probability/Expected Improvement.
 
+        :param str method: Flag ['EI', 'PI']
         :return: The coordinate of the point to add
         :rtype: lst(float)
         """
@@ -538,15 +544,54 @@ class Refiner(object):
 
             pred, sigma = self.pred_sigma(x)
             std_dev = np.sqrt(sigma)
-            ei = (min_value - pred) * norm.cdf((min_value - pred) / std_dev)\
-                + std_dev * norm.pdf((min_value - pred) / std_dev)
+            diff = min_value - pred
+            ei = diff * norm.cdf(diff / std_dev)\
+                + std_dev * norm.pdf(diff / std_dev)
 
             return - ei
 
-        if method == 'EI':
-            max_ei, _ = expected_improvement()
-        else:
+        if method == 'PI':
             target = min_value - 0.1 * np.abs(min_value)
             max_ei, _ = probability_improvement()
+        else:
+            max_ei, _ = expected_improvement()
 
         return max_ei
+
+    def ego_discrepancy(self):
+        """Maximization of the Expected Improvement of the discrepancy.
+
+        :param str method: Flag ['EI', 'PI']
+        :return: The coordinate of the point to add
+        :rtype: lst(float)
+        """
+        doe = Doe(500, self.corners, 'halton')
+        sample = doe.generate()
+        _, sigma = self.pred_sigma(sample)
+
+        disc = [1 / self.surrogate.space.discrepancy(
+            np.vstack([self.surrogate.space, p])) for p in sample]
+
+        scale_sigma = preprocessing.StandardScaler().fit(sigma)
+        scale_disc = preprocessing.StandardScaler().fit(disc)
+        min_value = scale_disc.transform(self.surrogate.space.discrepancy(space)
+                                         .reshape(1, -1))
+
+        @optimization(self.settings['sampling']['method'], self.corners)
+        def f_obj(x):
+            """Maximize the inverse of the discrepancy and maximize the EI."""
+            _, sigma = self.pred_sigma(x)
+            disc = 1 / self.surrogate.space.discrepancy(
+                np.vstack([self.surrogate.space, x]))
+            disc = scale_disc.transform(disc)
+            s = scale_sigma.transform(sigma.reshape(1, -1))
+
+            diff = min_value - disc
+            ei_disc = diff * norm.cdf(diff / s)\
+                + s * norm.pdf(diff / s)
+
+            return - ei_disc
+
+        max_ei_disc, _ = f_obj()
+
+        return max_ei_disc

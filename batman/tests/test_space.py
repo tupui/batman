@@ -110,7 +110,7 @@ def test_doe():
     npt.assert_almost_equal(sample, out, decimal=1)
 
     kind = 'halton'
-    doe = Doe(n, bounds, kind, discrete_var)
+    doe = Doe(n, bounds, kind)
     sample = doe.generate()
     out = np.array([[5., 3.], [2.5, 4.], [7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
     npt.assert_almost_equal(sample, out, decimal=1)
