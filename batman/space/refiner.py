@@ -567,14 +567,16 @@ class Refiner(object):
         """
         doe = Doe(500, self.corners, 'halton')
         sample = doe.generate()
-        _, sigma = self.pred_sigma(sample)
+
+        _, sigma = zip(*[self.pred_sigma(s) for s in sample])
 
         disc = [1 / self.surrogate.space.discrepancy(
             np.vstack([self.surrogate.space, p])) for p in sample]
 
         scale_sigma = preprocessing.StandardScaler().fit(sigma)
         scale_disc = preprocessing.StandardScaler().fit(disc)
-        min_value = scale_disc.transform(self.surrogate.space.discrepancy(space)
+        min_value = scale_disc.transform(self.surrogate.space.discrepancy(
+                                            self.surrogate.space)
                                          .reshape(1, -1))
 
         @optimization(self.settings['sampling']['method'], self.corners)
@@ -583,7 +585,7 @@ class Refiner(object):
             _, sigma = self.pred_sigma(x)
             disc = 1 / self.surrogate.space.discrepancy(
                 np.vstack([self.surrogate.space, x]))
-            disc = scale_disc.transform(disc)
+            disc = scale_disc.transform(disc.reshape(1, -1))
             s = scale_sigma.transform(sigma.reshape(1, -1))
 
             diff = min_value - disc
