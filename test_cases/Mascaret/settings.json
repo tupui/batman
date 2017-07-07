@@ -1,0 +1,62 @@
+{
+    "space": {
+        "corners": [
+            [20.0, 2000.0], 
+            [30.0, 3000.0]
+        ],
+        "sampling": {
+            "init_size": 5,
+            "method": "halton"
+        },
+        "resampling":{
+            "delta_space": 0.08,
+            "resamp_size": 0,
+            "method": "sigma",
+            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
+            "q2_criteria": 0.9
+        }
+    },
+    "pod": {
+        "dim_max": 100,
+        "tolerance": 0.99,
+        "type": "static"
+     },
+    "snapshot": {
+        "max_workers": 5,
+        "io": {
+            "shapes": {
+                "0": [
+                    [1]
+                ]
+            },
+            "format": "fmt_tp_fortran",
+            "variables": ["F"],
+            "point_filename": "header.py",
+            "filenames": {
+                "0": ["function.dat"]
+            },
+            "template_directory": null,
+            "parameter_names": ["x1", "x2"]
+        },
+        "provider": {
+            "command": "bash",
+            "timeout": 20,
+            "context": "data",
+            "script": "data/script.sh",
+            "clean": false,
+            "private-directory": "batman-data",
+            "data-directory": "cfd-output-data",
+            "restart": "False"
+        }
+    },
+    "surrogate": {
+        "predictions": [27.0, 2500.0],
+        "method": "kriging"
+    },
+    "uq": {
+        "sample": 1000,
+        "pdf": ["Uniform(20., 30.)","Uniform(2000., 3000.)"],
+        "type": "aggregated",
+        "method": "sobol"
+    }
+}
