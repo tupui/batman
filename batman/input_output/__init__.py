@@ -30,7 +30,7 @@ class IOFormatSelector(object):
         check_antares = True
     except ImportError:
         check_antares = False
-        logger.info("Antares not installed")
+        logger.debug("Antares not installed")
 
     def __init__(self, format):
         """Select the io class to use."""
@@ -52,7 +52,7 @@ class IOFormatSelector(object):
                     self.info = io.info
                     return
                 except KeyError as bt:
-                    self.logger.info("Not available in Antares: {}".format(bt))
+                    self.logger.error("Not available in Antares: {}".format(bt))
                     pass
 
         if check_format_init is False:

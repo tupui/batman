@@ -5,23 +5,24 @@ Sampling the Space of Parameters
 ================================
 
 
-Design Of Experiments
+Design of Experiments
 ---------------------
 
-Whatever method is used, the first step consists in defining how we are going to modify input variables to retrieve the evolution of the response surface. This is called a Design Of Experiments (DOE) as defined by [Sacks1989]_. 
+Whatever method is used, the first step consists in defining how we are going to modify input variables to retrieve the evolution of the response surface. This is called a Design of Experiments (DoE) as defined by [Sacks1989]_. 
 
 .. image:: ./fig/monteCarlo.pdf
 
-The quality of the DOE is paramount as it determines the physics that will be observed. If the space is not filled properly, homogeneously, we can bias our analysis and retrieve only a particular behaviour of the physic. This concept has been extensively been used in experiments, especially the one-at-a-time design, which consists of only changing only one parameter at a time. Doing so, the space is not filled properly and only simple behaviours can be recovered. In order to assess the quality of the sampling, the discrepancy is usually used. It is an indicator of the distance between the points within the parameters space. The lower the discrepancy is, the better the design is.
+The quality of the DoE is paramount as it determines the physics that will be observed. If the space is not filled properly, homogeneously, we can bias our analysis and retrieve only a particular behaviour of the physic. This concept has been extensively been used in experiments, especially the one-at-a-time design, which consists of only changing only one parameter at a time. Doing so, the space is not filled properly and only simple behaviours can be recovered. In order to assess the quality of the sampling, the discrepancy is usually used. It is an indicator of the distance between the points within the parameters space. The lower the discrepancy is, the better the design is. This information can be used to optimize a DoE Among all formulations of this criterion, the centered discrepancy is the most robust one [Damblin2013]_.
 
 As stated before, the golden standard would be to perform a *Monte Carlo* sampling but it would require a huge sampling which is unfeasible with costly numerical simulations. Therefore are found random (or quasi-random) sampling methods. Low discrepancy sequence has been designed to overcome this issue. These designs are built upon a pattern, a sequence, depending on factors such as prime numbers. This allows a fast generation of sampling space with good properties. A well-known method is the Latin Hypercube Sampling (LHS). The idea behind is to discretize the space to get a regular grid and sample randomly a point per zone.
 
-In Damblin et al. [Damblin2013]_ a comprehensive analysis of most common DOE is found. In the end, the *Sobol'* or *Halton* DOE are sufficient when dealing with a small number of parameters (<5). With an increasing number of parameters, patterns start to appear.
+In Damblin et al. [Damblin2013]_ a comprehensive analysis of most common DOE is found. In the end, the *Sobol'* or *Halton* DOE are sufficient when dealing with a small number of parameters (<5). With an increasing number of parameters, patterns start to appear and optimized LHS are required.
+
 
 Resampling the parameters space
 -------------------------------
 
-There are several methods for refining, resampling, the parameter space. In [Scheidt]_, the classical methods are reviewed and a framework combining several methods is proposed. In [Roy]_, we added some methods that peforme better in high dimentionnal cases.
+There are several methods for refining, resampling, the parameter space. In [Scheidt]_, the classical methods are reviewed and a framework combining several methods is proposed. In [Roy2017]_, we added some methods that peforme better in high dimentionnal cases.
 
 * Variance (:math:`\sigma`),
   As stated in :ref:`Surrogate <surrogate>`, one of the main advantages of Gaussian processes over other surrogates is to provide an insight into the variance of the solution. The first method consists in using this data and weight it with the eigenvalues of the POD:
@@ -59,30 +60,39 @@ Moreover, a maximum cube-volume aspect ratio is defined in order to preserve the
 with :math:`\epsilon = 1.5` is set arbitrarily to prevent too elongated hypercubes. The global optimum is found using a two-step strategy: first, a discrete optimization using :math:`\mathcal{P}` gives an initial solution; second a basin-hopping algorithm finds the optimum coordinates of the hypercube. In case of the LOO-*Sobol'* method, the hypercube is truncated using the total order *Sobol'* indices.
 
 
+Efficient Global Optimization (EGO)
+-----------------------------------
+
+In the case of a surrogate model based on a gaussian process, Efficient Global Optimization (EGO) [Jones1998]_ algorithm can be used to resample the parameter space in directive to an optimization. It comprises as a tradeoff between the actual minimal value :math:`f_{min}` and an expected value given by the standard error :math:`s` for a given prediction :math:`\hat{y}`. The expected improvement is defined as:
+
+.. math:: \mathbb{E}[I(x)] = (f_{min} - \hat{y})\Phi \left( \frac{f_{min} - \hat{y}}{s} \right) + s\phi \left( \frac{f_{min} - \hat{y}}{s} \right),
+
+with :math:`\phi(.), \Phi(.)` the standard normal density and distribution function. Using the fact that this quantify is monotonic in :math:`\hat{y}` and :math:`s`, it reduces to the probability of improvement:
+
+.. math:: \frac{\partial \mathbb{E}[I(x)]}{\partial \hat{y}} &= - \Phi \left( \frac{f_{min} - \hat{y}}{s} \right) < 0, \\
+          \frac{\partial \mathbb{E}[I(x)]}{\partial s} &= \phi \left( \frac{f_{min} - \hat{y}}{s} \right) > 0.
+
 References
 ----------
 
-.. [Damblin2013] G. Damblin, M. Couplet, B. Iooss: Numerical studies of space filling designs : optimization of Latin Hypercube Samples and subprojection properties. Journal of Simulation. 2013
+.. [Damblin2013] G. Damblin, M. Couplet, B. Iooss: Numerical studies of space filling designs : optimization of Latin Hypercube Samples and subprojection properties. Journal of Simulation. 2013 :download:`pdf <ref/Damblin2013.pdf>`
+.. [Sacks1989] J. Sacks et al.: Design and Analysis of Computer Experiments. Statistical Science 4.4. 1989. DOI: 10.1214/ss/1177012413 :download:`pdf <ref/Sacks1989.pdf>`
+.. [Scheidt] C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptative de réponses non régulières par Krigeage et plans d'expériences, Application à la quantification des incertitudes en ingénierie des réservoirs pétroliers. Université Louis Pasteur. 2006 :download:`pdf <ref/Scheidt2006.pdf>`
+.. [Roy2017] P.T. Roy et al.: Resampling Strategies to Improve Surrogate Model-based Uncertainty Quantification - Application to LES of LS89. Computers & Fluids. 2017 :download:`pdf <ref/Roy2017.pdf>`
+.. [Jones1998] D. Jones et al.: Efficient Global Optimization of Expensive Black-Box Functions. Journal of Global Optimization 1998. DOI: 10.1023/a:1008306431147 :download:`pdf <ref/Jones1998.pdf>`
 
-.. [Sacks1989] J. Sacks et al.: Design and Analysis of Computer Experiments. Statistical Science 4.4. 1989. DOI: 10.1214/ss/1177012413
+Sources
+-------
 
-.. [Scheidt] C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptative de réponses non régulières par Krigeage et plans d'expériences, Application à la quantification des incertitudes en ingénierie des réservoirs pétroliers. Université Louis Pasteur. 2006
-
-.. [Roy] P.T. Roy et al.: Resampling Strategies to Improve Surrogate Model-based Uncertainty Quantification - Application to LES of LS89. Computers & Fluids. 2017
-
-
-Space module
-------------
+.. automodule:: batman.space.point
+   :members:
+   :undoc-members:
 
 .. automodule:: batman.space.space
    :members:
    :undoc-members:
 
 .. automodule:: batman.space.sampling
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.space.point
    :members:
    :undoc-members:
 

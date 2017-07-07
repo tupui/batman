@@ -10,7 +10,6 @@ Generalities
 A common class is used to manage surrogate models. Hence, several kind of surrogate
 can be used. 
 
-
 From *Kriging* to *Gaussian Process*
 ------------------------------------
 
@@ -24,7 +23,7 @@ In order to predict an unmeasured location :math:`\hat{Y}`, interpolation method
 .. math::
     \hat{Y} = \sum_{i = 1}^{N} \lambda_i Y_i.
 
-The advantage of this method is that the interpolation is exact at the sampled points and that it gives an estimation of the prediction error. Ordinary *Kriging* consists in the *Best Linear Unbiased Predictor* (BLUP) [Robinson2008]_:
+The advantage of this method is that the interpolation is exact at the sampled points and that it gives an estimation of the prediction error. Ordinary *Kriging* consists in the *Best Linear Unbiased Predictor* (BLUP) [Robinson1991]_:
 
 Best
     It minimizes the variance of the predicted error :math:`Var(\hat{Y} - Y)`,
@@ -126,17 +125,44 @@ Then the Gaussian process regression is written as a linear regression:
 
 The Kriging method is one of the most employed as of today. We can even enhance the result of the regression if we have access to the derivative (or even the hessian) of the function [Forrester2009]_. This could be even more challenging if we don't have an adjoint solver to compute it. Another method is to use a multi-fidelity metamodel in order to obtain an even better solution. This can be performed if we have two codes that compute the same thing or if we have two grids to run from.
 
+Multifidelity
+-------------
+
+It is possible to combine several level of fidelity in order to lower the computational cost of the surrogate
+building process. The fidelity can be either expressed as a mesh difference, a convergence difference, or even a
+different set of solvers. [Forrester2006]_ proposed a way of combining these fidelities by building a low
+fidelity model and correct it using a model of the error:
+
+.. math:: \hat{f}(x) = f_c(x) + \hat{f}_{\epsilon}(f_e(x), f_c(x)),
+
+with :math:`\hat{f}_{\epsilon}` the surrogate model representing the error between the two fidelity levels.
+This method needs nested design of experiments for the error model to be computed.
+
+Considering two levels of fidelity :math:`f_e` and :math:`f_c`, respectively an expensive and a cheap function expressed as a computational cost. A cost ratio :math:`\alpha` between the two can be defined as:
+
+.. math:: \alpha = \frac{f_e}{f_c}.
+
+Using this cost relationship an setting a computational budget :math:`C`, it is possible to get a relation between the number of cheap and expensive realizations:
+
+.. math:: C f_e &= N_e f_e + N_c f_c,\\
+          C f_e &= N_e f_e + N_c\frac{\alpha}{f_e},\\
+          C &= N_e + N_c\alpha, \\
+          N_c &= \frac{C - N_e}{\alpha}.
+
+As the design being nested, the number of cheap experiments must be strictly superior to the number or expensive ones. Indeed, the opposite would result in no additional information to the system.
+
 References
-..........
+----------
 
-.. [Krige1989] D.G. Krige, et al. “Early South African geostatistical techniques in today’s perspective”. Geostatistics 1. 1989.
-.. [Matheron1963] G. Matheron. “Principles of Geostatistics”. Economic Geology 58. 1963.
-.. [Robinson2008] G.K.Robinson.“That BLUP is a good thing: the estimation of random effects”. Statistical Science 6.1. 1991. DOI: 10.1214/ss/1177011926.
-.. [Bohling2005] G. Bohling. "Kriging". Tech.rep. 2005.
-.. [Forrester2009] Forrester and A.J. Keane.“Recent advances in surrogate-based optimization”. Progress in Aerospace Sciences 2009. DOI: 10.1016/j.paerosci.2008.11.001
+.. [Krige1989] D.G. Krige, et al. “Early South African geostatistical techniques in today’s perspective”. Geostatistics 1. 1989. :download:`pdf <ref/Krige1989.pdf>`
+.. [Matheron1963] G. Matheron. “Principles of Geostatistics”. Economic Geology 58. 1963. :download:`pdf <ref/Matheron1963.pdf>`
+.. [Robinson1991] G.K.Robinson.“That BLUP is a good thing: the estimation of random effects”. Statistical Science 6.1. 1991. DOI: 10.1214/ss/1177011926. :download:`pdf <ref/Robinson1991.pdf>`
+.. [Bohling2005] G. Bohling. "Kriging". Tech.rep. 2005. :download:`pdf <ref/Bohling2005.pdf>`
+.. [Forrester2006] Forrester, Alexander I.J, et al. "Optimization using surrogate models and partially converged computational fluid dynamics simulations". Proceedings of the Royal Society A: Mathematical, Physical and Engineering Science. 2006. DOI: 10.1098/rspa.2006.1679 :download:`pdf <ref/Forrester2006.pdf>`
+.. [Forrester2009] Forrester and A.J. Keane.“Recent advances in surrogate-based optimization”. Progress in Aerospace Sciences 2009. DOI: 10.1016/j.paerosci.2008.11.001 :download:`pdf <ref/Forrester2009.pdf>`
 
-Surrogate module
-----------------
+Sources
+-------
 
 .. automodule:: batman.surrogate.surrogate_model
    :members:
@@ -158,3 +184,6 @@ Surrogate module
    :members:
    :undoc-members:
 
+.. automodule:: batman.surrogate.multifidelity
+   :members:
+   :undoc-members:

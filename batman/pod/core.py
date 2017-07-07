@@ -14,7 +14,7 @@ M. Brand: Fast low-rank modifications of the thin singular value decomposition. 
 import numpy as np
 import copy
 from ..surrogate import SurrogateModel
-from .. import mpi
+# from .. import mpi
 from ..misc import ProgressBar, NestedPool
 from pathos.multiprocessing import cpu_count
 
@@ -149,13 +149,14 @@ class Core(object):
             snapshot -= mean_snapshot_copy
             s_proj = np.dot(self.U.T, snapshot)
 
-            mpi.Allreduce(sendbuf=s_proj.copy(), recvbuf=s_proj, op=mpi.sum)
+            # mpi.Allreduce(sendbuf=s_proj.copy(), recvbuf=s_proj, op=mpi.sum)
 
             h = snapshot - np.dot(self.U, s_proj)
             h_norm = np.linalg.norm(h)
 
             h_norm *= h_norm
-            h_norm = mpi.allreduce(h_norm, op=mpi.sum)
+            h_norm = np.sum(h_norm)
+            # h_norm = mpi.allreduce(h_norm, op=mpi.sum)
             h_norm = np.sqrt(h_norm)
 
             # St = |S   U^T s_proj|
@@ -232,8 +233,8 @@ class Core(object):
 
             (Urot, S_1, V_1) = self.downgrade(self.S, V_1)
             (Urot, S_1, V_1) = self.filtering(Urot, S_1, V_1,
-                                              self.tolerance,
-                                              self.dim_max)
+                                              1.,
+                                              len(self.S))
 
             points_1 = points[:]
             points_1.pop(i)
@@ -246,7 +247,7 @@ class Core(object):
             # New prediction with points_nb - 1
             surrogate.fit(new_pod.points, new_pod.V * new_pod.S)
 
-            prediction, _ = surrogate(points[i], snapshots=False)
+            prediction, _ = surrogate(points[i])
 
             # MSE on the missing point
             error = np.sum((np.dot(Urot, prediction[0]) - float(points_nb)

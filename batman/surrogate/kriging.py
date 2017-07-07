@@ -31,7 +31,6 @@ import logging
 from scipy.optimize import differential_evolution
 from pathos.multiprocessing import cpu_count
 from ..misc import NestedPool
-from ..space import Space
 from ..functions import multi_eval
 import os
 
@@ -49,7 +48,7 @@ class Kriging(object):
         Input is to be normalized before and depending on the number of
         parameters, the kernel is adapted to be anisotropic.
 
-        `self.data` contains the predictors as a list(array) of the size
+        :attr:`self.data` contains the predictors as a list(array) of the size
         of the `ouput`. A predictor per line of `output` is created. This leads
         to a line of predictors that predicts a new column of `output`.
 
@@ -112,10 +111,7 @@ class Kriging(object):
             results = [model_fitting(output)]
 
         # Gather results
-        self.data = [None] * self.model_len
-        self.hyperparameter = [None] * self.model_len
-        for i in range(self.model_len):
-            self.data[i], self.hyperparameter[i] = results[i]
+        self.data, self.hyperparameter = zip(*results)
 
         self.logger.debug("Hyperparameters: {}".format(self.hyperparameter))
 
@@ -160,11 +156,7 @@ class Kriging(object):
         results = list(results)
         pool.terminate()
 
-        theta_opt = [None] * self.n_restart
-        func_min = [None] * self.n_restart
-
-        for i in range(self.n_restart):
-            theta_opt[i], func_min[i] = results[i]
+        theta_opt, func_min = zip(*results)
 
         # Find best results
         min_idx = np.argmin(func_min)

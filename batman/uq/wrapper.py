@@ -53,9 +53,9 @@ class Wrapper(ot.OpenTURNSPythonFunction):
         """
         f_eval, _ = self.surrogate(coords)
         try:
-            _, f_eval = np.split(f_eval[0].data, 2)
+            _, f_eval = np.split(f_eval[0], 2)
         except:
-            f_eval = f_eval[0].data
+            pass
         return f_eval
 
     def int_func(self, coords):
@@ -71,9 +71,8 @@ class Wrapper(ot.OpenTURNSPythonFunction):
         """
         f_eval, _ = self.surrogate(coords)
         try:
-            f_input, f_eval = np.split(f_eval[0].data, 2)
+            f_input, f_eval = np.split(f_eval[0], 2)
             int_f_eval = np.trapz(f_eval, f_input)
         except:
-            f_eval = f_eval[0].data
             int_f_eval = f_eval
-        return [int_f_eval.item()]
+        return int_f_eval

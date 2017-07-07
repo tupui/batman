@@ -129,7 +129,7 @@ class Snapshot(object):
             raise SystemExit
 
         # logging
-        msg = ("\nSnapshot settings:\n"
+        msg = ("\n----- Snapshot settings -----\n"
                "variables: {}\n"
                "format: {}\n"
                "parameter_names: {}\n"
@@ -215,9 +215,9 @@ class Snapshot(object):
             total_size += size
 
         # check shapes or store them for later check
-        if data.size != total_size:
+        if len(data) != total_size:
             cls.logger.exception('bad dataset size: got {} instead of {}'
-                                 .format(data.size, total_size))
+                                 .format(len(data), total_size))
             raise SystemExit
 
     @classmethod

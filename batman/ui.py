@@ -12,9 +12,7 @@ from batman import __version__, __branch__, __commit__
 from batman import Driver
 from batman import misc
 
-description_message = '''
-BATMAN creates a surrogate model and perform UQ.
-'''
+description_message = 'BATMAN creates a surrogate model and perform UQ.'
 
 banner = r"""
  /$$$$$$$   /$$$$$$  /$$$$$$$$ /$$      /$$  /$$$$$$  /$$   /$$
@@ -25,7 +23,7 @@ banner = r"""
 | $$  \ $$| $$  | $$   | $$   | $$\  $ | $$| $$  | $$| $$\  $$$
 | $$$$$$$/| $$  | $$   | $$   | $$ \/  | $$| $$  | $$| $$ \  $$
 |_______/ |__/  |__/   |__/   |__/     |__/|__/  |__/|__/  \__/
-Baysian Analysis Tool for Modelling And uNcertainty quantification
+Bayesian Analysis Tool for Modelling And uNcertainty quantification
 """
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -46,23 +44,22 @@ def run(settings, options):
     logger = logging.getLogger('BATMAN main')
 
     logger.info(banner)
-    logger.info("Branch: {}\n\
-        Last commit: {}".format(__branch__, __commit__))
+    logger.info("Branch: {}\nLast commit: {}".format(__branch__, __commit__))
 
     # clean up output directory or re-use it
-    if not options.restart and not options.no_surrogate and not options.pred:
+    if not options.restart and not options.no_surrogate:
         delete = True
         # check if output is empty and ask for confirmation
         if os.path.isdir(options.output):
-            prompt = "Output folder exists, delete it? [y/N] > "
+            prompt = '\nOutput folder exists, delete it? [y/N] > '
             delete = misc.check_yes_no(prompt, default='no')
             if not delete:
-                prompt = "Re-use output results? [Y/n] > "
+                prompt = 'Re-use output results? [Y/n] > '
                 use_output = misc.check_yes_no(prompt, default='yes')
                 root = os.path.join(options.output, 'snapshots')
 
                 if not os.path.isdir(root):
-                    logger.warning("No folder snapshots in output folder")
+                    logger.warning('No folder snapshots in output folder')
                     raise SystemExit
 
                 def key(arg):
@@ -92,8 +89,10 @@ def run(settings, options):
 
     if 'pod' in settings:
         update = True if settings['pod']['type'] != 'static' else False
+    else:
+        update = None
 
-    if not options.no_surrogate and not options.pred:
+    if not options.no_surrogate:
         # the surrogate [and POD] will be computed
         if options.restart:
             driver.restart()
@@ -109,17 +108,17 @@ def run(settings, options):
         except KeyError:
             pass
 
-    elif options.no_surrogate or options.pred:
-        # just read the existing pod
+    else:
+        # just read the existing surrogate [and POD]
         try:
             driver.read()
         except IOError:
             logger.exception(
-                "Surrogate need to be computed: \
-                check output folder or re-try without -n")
+                'Surrogate need to be computed: \
+                check output folder or re-try without -n')
             raise SystemExit
 
-    if 'predictions' in settings["surrogate"]:
+    if 'predictions' in settings['surrogate']:
         driver.prediction(write=options.save_snapshots)
 
     if 'pod' in settings:
@@ -135,7 +134,7 @@ def run(settings, options):
 def parse_options():
     """Parse options."""
     # parser
-    parser = argparse.ArgumentParser(prog="BATMAN",
+    parser = argparse.ArgumentParser(prog='BATMAN',
                                      description=description_message)
     parser.add_argument('--version',
                         action='version',
@@ -192,12 +191,6 @@ def parse_options():
         help='Uncertainty Quantification study, [default: %(default)s].')
 
     parser.add_argument(
-        '-p', '--pred',
-        action='store_true',
-        default=False,
-        help='compute prediction and write it on disk, [default: %(default)s]')
-
-    parser.add_argument(
         '-q', '--q2',
         action='store_true',
         default=False,
@@ -214,13 +207,13 @@ def parse_options():
 
 
 def main():
-    """Parse options, import and check settings then call run()"""
+    """Parse options, import and check settings then call run()."""
     options = parse_options()
-    schema = path + "/misc/schema.json"
+    schema = path + '/misc/schema.json'
     settings = misc.import_config(options.settings, schema)
 
     run(settings, options)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

@@ -9,6 +9,7 @@ It implements the following methods:
 
 - :func:`Refiner.func`
 - :func:`Refiner.func_sigma`
+- :func:`Refiner.pred_sigma`
 - :func:`Refiner.distance_min`
 - :func:`Refiner.hypercube`
 - :func:`Refiner.sigma`
@@ -16,6 +17,7 @@ It implements the following methods:
 - :func:`Refiner.leave_one_out_sobol`
 - :func:`Refiner.extrema`
 - :func:`Refiner.hybrid`
+- :func:`Refiner.optimization`
 
 :Example::
 
@@ -24,16 +26,14 @@ It implements the following methods:
     >> new_point = resample.sigma()
 
 """
-
-# Authors: Pamphile ROY <roy.pamphile@gmail.fr>
-# Copyright: CERFACS
-
 import logging
 from scipy.optimize import (differential_evolution, minimize, basinhopping)
+from scipy.stats import norm
 import numpy as np
 from sklearn import preprocessing
 import copy
 from ..uq import UQ
+from ..misc import optimization
 
 
 class Refiner(object):
@@ -46,7 +46,7 @@ class Refiner(object):
         """Initialize the refiner with the Surrogate and space corners.
 
         Points data are scaled between ``[0, 1]`` based on the size of the
-        corners taking into account a ``delta_space`` factor.
+        corners taking into account a :param:``delta_space`` factor.
 
         :param class:`surrogate.surrogate_model.SurrogateModel`: Surrogate
         :param dict settings: parameters
@@ -75,7 +75,7 @@ class Refiner(object):
         self.scaler.fit(self.corners.T)
         self.points = self.scaler.transform(self.points)
 
-    def func(self, coords, sign):
+    def func(self, coords, sign=1):
         r"""Get the prediction for a given point.
 
         Retrieve Gaussian Process estimation. The function returns plus or
@@ -86,50 +86,46 @@ class Refiner(object):
         :param float sign: -1. or 1.
         :return: L2 norm of the function at the point
         :rtype: float
-
         """
         f, _ = self.surrogate(coords)
         try:
-            _, f = np.split(f[0].data, 2)
-        except:
-            f = f[0].data
-        # sum_f = np.sum(self.pod.S ** 2 * f)
-        sum_f = np.sum(f)
+            _, f = np.split(f, 2)
+        except (ValueError, TypeError):
+            pass
+        modes_weights = np.array(self.pod_S ** 2).reshape(-1, 1)
+        sum_f = np.average(f, weights=modes_weights)
 
         return sign * sum_f
 
-    def func_sigma(self, coords):
-        r"""Get the MSE for a given point.
+    def pred_sigma(self, coords):
+        """Prediction and sigma.
 
-        Retrieve Gaussian Process estimation of sigma.
-        A composite indicator is constructed using POD's modes.
-
-        .. math:: \sum S_i^2 \times \sigma_i
-
-        Function returns `- sum_sigma` in order to have a minimization problem.
+        Same as :func:`Refiner.func` and :func:`Refiner.func_sigma`.
+        Function prediction and sigma are weighted using POD modes.
 
         :param lst(float) coords: coordinate of the point
-        :return: - sum_sigma
-        :rtype: float
-
+        :returns: sum_f and sum_sigma
+        :rtype: floats
         """
-        _, sigma = self.surrogate(coords)
-        sum_sigma = np.sum(self.pod_S ** 2 * sigma)
+        f, sigma = self.surrogate(coords)
+        modes_weights = np.array(self.pod_S ** 2).reshape(-1, 1)
+        sum_f = np.average(f, weights=modes_weights)
+        sum_sigma = np.average(sigma, weights=modes_weights)
 
-        return - sum_sigma
+        return sum_f, sum_sigma
 
     def distance_min(self, point):
         """Get the distance of influence.
 
         Compute the distance, Linf norm between the anchor point and
-        every sampling points. Linf allows to add this lenght to all 
+        every sampling points. Linf allows to add this lenght to all
         coordinates and ensure that no points will be within this hypercube.
-        It returns the minimal distance. ``point`` needs to be scaled by ``self.corners`` so the returned distance is scaled.
+        It returns the minimal distance. :attr:`point` needs to be scaled by
+        :attr:`self.corners` so the returned distance is scaled.
 
         :param np.array point: Anchor point
         :return: The distance to the nearest point
         :rtype: float
-
         """
         point = self.scaler.transform(point.reshape(1, -1))[0]
         distances = np.array([np.linalg.norm(pod_point - point)
@@ -145,14 +141,13 @@ class Refiner(object):
         """Get the hypercube to add a point in.
 
         Propagate the distance around the anchor.
-        ``point`` is scaled by ``self.corners`` and input distance has to be.
-        Ensure that new values are bounded by corners.
+        :attr:`point` is scaled by :attr:`self.corners` and input distance has
+        to be. Ensure that new values are bounded by corners.
 
         :param np.array point: Anchor point
         :param float distance: The distance of influence
         :return: The hypercube around the point
         :rtype: np.array
-
         """
         point = self.scaler.transform(point.reshape(1, -1))[0]
         hypercube = np.array([point - distance, point + distance])
@@ -170,14 +165,13 @@ class Refiner(object):
     def hypercube_optim(self, point):
         """Get the hypercube to add a point in.
 
-        Compute the largest hypercube around the point based on the `L2-norm`.
-        Ensure that only the `leave-one-out` point lies within it.
+        Compute the largest hypercube around the point based on the *L2-norm*.
+        Ensure that only the *leave-one-out* point lies within it.
         Ensure that new values are bounded by corners.
 
         :param np.array point: Anchor point
         :return: The hypercube around the point (a point per column)
         :rtype: np.array
-
         """
         distance = self.distance_min(point) / 3
         x0 = self.hypercube_distance(point, distance).flatten('F')
@@ -185,7 +179,7 @@ class Refiner(object):
         point = np.maximum(point, self.corners[:, 0])
         point = self.scaler.transform(point.reshape(1, -1))[0]
 
-        gen = [p for p in self.points if not np.allclose(p, point)]
+        gen = (p for p in self.points if not np.allclose(p, point))
 
         def min_norm(hypercube):
             """Compute euclidean distance.
@@ -206,10 +200,11 @@ class Refiner(object):
 
             hypercube = hypercube.T
 
-            n = - np.linalg.norm(hypercube[:, 1] - hypercube[:, 0])
+            diff = hypercube[:, 1] - hypercube[:, 0]
+            n = - np.linalg.norm(diff)
 
             # Check aspect ratio
-            aspect = abs(hypercube[:, 1] - hypercube[:, 0])
+            aspect = abs(diff)
             aspect = np.power(np.max(aspect), self.dim) / np.prod(aspect)
             aspect = np.power(aspect, 1 / self.dim)
             if not (aspect <= 1.5):
@@ -221,10 +216,11 @@ class Refiner(object):
                 return np.inf
 
             # Verify that no other point is inside
-            for p in gen:
-                insiders = (hypercube[:, 0] <= p).all() & (p <= hypercube[:, 1]).all()
-                if insiders:
-                    return np.inf
+            insiders = np.array([True if (hypercube[:, 0] <= p).all() &
+                                 (p <= hypercube[:, 1]).all() else False
+                                 for p in gen]).any()
+            if insiders:
+                return np.inf
 
             return n
 
@@ -236,7 +232,7 @@ class Refiner(object):
         results = basinhopping(min_norm, x0, niter=1000, minimizer_kwargs=minimizer_kwargs)
         hypercube = results.x.reshape(2, self.dim)
         for i in range(self.dim):
-                hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
+            hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
         hypercube = hypercube.T
 
         self.logger.debug("Corners:\n{}".format(self.corners))
@@ -245,26 +241,49 @@ class Refiner(object):
         return hypercube
 
     def sigma(self, hypercube=None):
-        """Find the point at max MSE.
+        """Find the point at max Sigma.
 
-        It returns the point where the mean square error (sigma) is maximum.
+        It returns the point where the variance (sigma) is maximum.
         To do so, it uses Gaussian Process information.
         A genetic algorithm get the global maximum of the function.
 
         :param np.array hypercube: Corners of the hypercube
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         if hypercube is None:
             hypercube = self.corners
-        self.logger.debug("MSE strategy")
-        result = differential_evolution(self.func_sigma, hypercube)
+        self.logger.debug("Sigma strategy")
 
-        return result.x
+        @optimization(self.settings["sampling"]["method"], hypercube)
+        def func_sigma(coords):
+            r"""Get the Sigma for a given point.
+
+            Retrieve Gaussian Process estimation of sigma.
+            A composite indicator is constructed using POD's modes.
+
+            .. math:: \sum S_i^2 \times \sigma_i
+
+            Function returns `- sum_sigma` in order to have a minimization problem.
+
+            :param lst(float) coords: coordinate of the point
+            :return: - sum_sigma
+            :rtype: float
+            """
+            _, sigma = self.surrogate(coords)
+            sum_sigma = np.sum(self.pod_S ** 2 * sigma)
+    
+            return - sum_sigma
+
+        # result = differential_evolution(self.func_sigma, hypercube)
+
+        min_x, _ = func_sigma()
+
+        return min_x
+        # return result.x
 
     def leave_one_out_sigma(self, point_loo):
-        """Mixture of Leave-one-out and MSE.
+        """Mixture of Leave-one-out and Sigma.
 
         Estimate the quality of the POD by *leave-one-out cross validation*
         (LOOCV), and add a point arround the max error point.
@@ -275,9 +294,8 @@ class Refiner(object):
         :param tuple point_loo: leave-one-out point
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
-        self.logger.info("Leave-one-out + MSE strategy")
+        self.logger.info("Leave-one-out + Sigma strategy")
         # Get the point of max error by LOOCV
         point = np.array(point_loo)
 
@@ -301,7 +319,6 @@ class Refiner(object):
         :param tuple point_loo: leave-one-out point
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         self.logger.info("Leave-one-out + Sobol strategy")
         # Get the point of max error by LOOCV
@@ -337,12 +354,11 @@ class Refiner(object):
 
         Using an anchor point based on the extremum value at sample points,
         search the hypercube around it. If a new extremum is found,it uses
-        Nelder-Mead method to add a new point.
+        *Nelder-Mead* method to add a new point.
         The point is then bounded back by the hypercube.
 
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         self.logger.info("Extrema strategy")
         points = np.delete(self.points, refined_pod_points, 0)
@@ -436,7 +452,6 @@ class Refiner(object):
         :param str strategy: resampling method
         :return: The coordinate of the point to add
         :rtype: lst(float)
-
         """
         self.logger.info(">>---Hybrid strategy---<<")
 
@@ -453,3 +468,59 @@ class Refiner(object):
             raise SystemExit
 
         return new_point, refined_pod_points
+
+    def optimization(self):
+        """Optimization using Probability of Improvement.
+
+        :return: The coordinate of the point to add
+        :rtype: lst(float)
+        """
+        gen = [self.func(x) for x in self.scaler.inverse_transform(self.points)]
+        arg_min = np.argmin(gen)
+        min_value = gen[arg_min]
+        min_x = self.points[arg_min]
+        self.logger.info('Current minimal value is: f(x)={} for x={}'
+                         .format(min_value, min_x))
+
+        target = min_value - 0.1 * np.abs(min_value)
+
+        if self.settings["sampling"]["method"] == 'discrete':
+            discrete = 1
+        else:
+            discrete = 0
+
+
+        @optimization(self.settings["sampling"]["method"], self.corners)
+        def probability_improvement(x):
+            """Probability of improvement."""
+            x_scaled = self.scaler.transform(x.reshape(1, -1))
+            too_close = np.array([True if np.linalg.norm(x_scaled[0][discrete:] - p[discrete:], -1) < 0.02
+                                  else False for p in self.points]).any()
+            if too_close:
+                return np.inf
+
+            pred, sigma = self.pred_sigma(x)
+            std_dev = np.sqrt(sigma)
+            pi = norm.cdf((target - pred) / std_dev)
+
+            return - pi
+
+        @optimization(self.settings["sampling"]["method"], self.corners)
+        def expected_improvement(x):
+            """Expected improvement."""
+            x_scaled = self.scaler.transform(x.reshape(1, -1))
+            too_close = np.array([True if np.linalg.norm(x_scaled[0][discrete:] - p[discrete:], -1) < 0.02
+                                  else False for p in self.points]).any()
+            if too_close:
+                return np.inf
+
+            pred, sigma = self.pred_sigma(x)
+            std_dev = np.sqrt(sigma)
+            ei = (min_value - pred) * norm.cdf((min_value - pred) / std_dev)\
+                + std_dev * norm.pdf((min_value - pred) / std_dev)
+
+            return - ei
+
+        max_ei, _ = expected_improvement()
+
+        return max_ei

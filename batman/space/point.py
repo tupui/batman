@@ -27,7 +27,7 @@ class Point(tuple):
             if threshold < 0:
                 raise ValueError
         except ValueError:
-            self.logger.exception("Threshold must be a positive real number.")
+            cls.logger.exception("Threshold must be a positive real number.")
             raise SystemExit
         else:
             cls.threshold = threshold

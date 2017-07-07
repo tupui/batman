@@ -1,0 +1,56 @@
+{
+    "space": {
+        "corners": [
+            [0.0, 3.2],
+            [1.0, 8.1]
+        ],
+        "sampling": {
+            "init_size": 10,
+            "method": "halton"
+        },
+        "resampling":{
+            "delta_space": 0.08,
+            "resamp_size": 0,
+            "method": "sigma",
+            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
+            "q2_criteria": 0.9
+        }
+    },
+    "pod": {
+        "dim_max": 100,
+        "tolerance": 0.99,
+        "type": "static"
+    },
+    "snapshot": {
+        "max_workers": 5,
+        "io": {
+            "shapes": {
+                "0": [
+                    [1]
+                ]
+            },
+            "format": "numpy",
+            "variables": ["F"],
+            "point_filename": "header.py",
+            "filenames": {
+                "0": ["function.npz"]
+            },
+            "template_directory": null,
+            "parameter_names": ["fidelity", "x1", "x2"]
+        },
+        "provider": "function"
+    },
+    "surrogate": {
+        "predictions": [[0.9, 0.2]],
+        "method": "evofusion",
+        "cost_ratio": 5.1,
+        "grand_cost": 13
+    },
+    "uq": {
+        "sample": 2000,
+        "test": "Forrester",
+        "pdf": ["Uniform(0.0, 1.0)"],
+        "type": "aggregated",
+        "method": "sobol"
+    }
+}

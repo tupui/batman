@@ -25,15 +25,11 @@ def multi_eval(fun):
             n_eval = 1
             shape_eval = (-1)
 
-        f = [None] * n_eval
+        f = [fun(self, x_i, *args, **kwargs) for x_i in x]
 
-        for i, x_i in enumerate(x):
-            f[i] = fun(self, x_i, *args, **kwargs)
-
-        if 'kriging' in inspect.getmodule(fun).__name__:
-            sigma = [None] * n_eval
-            for i, _ in enumerate(x):
-                f[i], sigma[i] = f[i]
+        if any(method in inspect.getmodule(fun).__name__
+               for method in ['kriging', 'multifidelity']):
+            f, sigma = zip(*f)
             f = np.array(f).reshape(shape_eval)
             sigma = np.array(sigma).reshape(shape_eval)
             return f, sigma

@@ -24,6 +24,7 @@ import logging
 from .kriging import Kriging
 from .polynomial_chaos import PC
 from .RBFnet import RBFnet
+from .multifidelity import Evofusion
 from ..tasks import Snapshot
 from ..space import Space
 import dill as pickle
@@ -53,28 +54,36 @@ class SurrogateModel(object):
                         "sampling": {"init_size": np.inf, "method": kind}}}
         self.space = Space(settings)
         self.pod = None
-        self.update = False  # update switch: update model if POD update
-        self.directories = {
+        self.update = False  # switch: update model if POD update
+        self.dir = {
             'surrogate': 'surrogate.dat',
             'space': 'space.dat',
-            'snapshot': 'Newsnap%04d'
+            'snapshot': 'Newsnap{}'
         }
 
     def fit(self, points, data, pod=None):
         """Construct the surrogate."""
-        self.pod = pod
-        self.space += points
-        self.space.doe_init = len(points)
         points = np.array(points)
-        points = self.scaler.transform(points)
+        try:
+            points_scaled = self.scaler.transform(points)
+        except ValueError:
+            points_scaled = self.scaler.transform(points[:, 1:])
+            points_scaled = np.hstack((points[:, 0].reshape(-1, 1), points_scaled))
         # predictor object
         self.logger.info('Creating predictor of kind {}...'.format(self.kind))
         if self.kind == 'rbf':
-            self.predictor = RBFnet(points, data)
+            self.predictor = RBFnet(points_scaled, data)
         elif self.kind == 'kriging':
-            self.predictor = Kriging(points, data)
+            self.predictor = Kriging(points_scaled, data)
         elif self.kind == 'pc':
-            self.predictor = PC(input=points, output=data)
+            self.predictor = PC(input=points_scaled, output=data)
+        elif self.kind == 'evofusion':
+            self.predictor = Evofusion(points_scaled, data)
+            self.space.multifidelity = True
+
+        self.pod = pod
+        self.space += points
+        self.space.doe_init = len(points)
 
         self.logger.info('Predictor created')
         self.update = False
@@ -84,13 +93,12 @@ class SurrogateModel(object):
         self.update = True
         self.logger.info('got update notification')
 
-    def __call__(self, points, path=None, snapshots=True):
+    def __call__(self, points, path=None):
         """Predict snapshots.
 
         :param :class:`space.point.Point` points: point(s) to predict
         :param str path: if not set, will return a list of predicted snapshots
         instances, otherwise write them to disk.
-        :param bool snapshots: whether or not to return a Snapshot object
         :return: Result
         :rtype: lst(:class:`tasks.snapshot.Snapshot`) or np.array(n_points, n_features)
         :return: Standard deviation
@@ -107,7 +115,7 @@ class SurrogateModel(object):
 
         points = np.array(points)
         points = self.scaler.transform(points)
-        if self.kind == 'kriging':
+        if self.kind in ['kriging', 'evofusion']:
             results, sigma = self.predictor.evaluate(points)
         else:
             results = self.predictor.evaluate(points)
@@ -122,16 +130,13 @@ class SurrogateModel(object):
 
             results = np.atleast_2d(pred)
 
-        if snapshots:
+        if path is not None:
             points = self.scaler.inverse_transform(points)
             snapshots = [None] * len(points)
             for i, point in enumerate(points):
                 snapshots[i] = Snapshot(point, results[i])
-
-            if path is not None:
-                for i, s in enumerate(snapshots):
-                    s_path = os.path.join(path, self.directories['snapshot'] % i)
-                    s.write(s_path)
+                s_path = os.path.join(path, self.dir['snapshot'].format(i))
+                snapshots[i].write(s_path)
         else:
             return results, sigma
 
@@ -145,13 +150,13 @@ class SurrogateModel(object):
 
             :param str path: path to a directory.
             """
-            path_model = os.path.join(path, self.directories['surrogate'])
+            path_model = os.path.join(path, self.dir['surrogate'])
             with open(path_model, 'wb') as f:
                 pickler = pickle.Pickler(f)
                 pickler.dump(self.predictor)
             self.logger.debug('Wrote model to {}'.format(path_model))
 
-            path_space = os.path.join(path, self.directories['space'])
+            path_space = os.path.join(path, self.dir['space'])
             self.space.write(path_space)
             self.logger.debug('Wrote space to {}'.format(path_space))
 
@@ -162,13 +167,13 @@ class SurrogateModel(object):
 
         :param str path: path to a output/surrogate directory.
         """
-        path_model = os.path.join(path, self.directories['surrogate'])
+        path_model = os.path.join(path, self.dir['surrogate'])
         with open(path_model, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.predictor = unpickler.load()
         self.logger.debug('Read model from {}'.format(path_model))
 
-        path_space = os.path.join(path, self.directories['space'])
+        path_space = os.path.join(path, self.dir['space'])
         self.space.read(path_space)
         self.logger.debug('Read space from {}'.format(path_space))
 

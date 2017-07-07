@@ -48,16 +48,9 @@ class Pod(Core):
     def __init__(self, settings, snapshot_io=None):
         """Init POD with settings."""
         self.quality = None
-        '''Quality of the pod, used to know when it needs to be recomputed.'''
-
         self.predictor = None
-        '''Snapshot predictor.'''
-
         self.corners = settings['space']['corners']
-        '''Space corners.'''
-
-        self.points = Space(settings)
-        '''A space to record the points.'''
+        self.points = Space(settings)  # A space to record the points
 
         # for external pod
         if snapshot_io is not None:
@@ -75,7 +68,7 @@ class Pod(Core):
              "maximum number of modes: {}\n"
              "number of modes: {}\n"
              "modes: {}\n"
-             .format(self.tolerance, self.points.dim, self.points.size,
+             .format(self.tolerance, self.points.dim, len(self.points),
                      self.mean_snapshot.shape[0], self.dim_max,
                      self.S.shape[0], self.S))
         return s
@@ -163,7 +156,6 @@ class Pod(Core):
         points = np.vstack(tuple(self.points))
         np.savez(os.path.join(path, self.pod_file_name),
                  parameters=points,
-                 # TODO: remove, only here for checking vs batman 1
                  values=self.S,
                  vectors=self.V)
 
