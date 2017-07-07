@@ -11,24 +11,33 @@
         },
 
         "sampling": {
-          "type": "object",
-          "properties": {
-            "method": {
-              "type": "string",
-              "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", "discrete"],
-              "default": "halton"
-            },
-            "init_size": {
-              "type": "integer",
-              "default": 20,
-              "minimum": 4,
-              "exclusiveMinimum": false
-            },
-            "required": [
-              "method",
-              "init_size"
-            ]
+          "anyOf":[
+          {
+
+            "type": "object",
+            "properties": {
+              "method": {
+                "type": "string",
+                "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", " discrete"],
+                "default": "halton"
+              },
+              "init_size": {
+                "type": "integer",
+                "default": 20,
+                "minimum": 4,
+                "exclusiveMinimum": false
+              },
+              "required": [
+                "method",
+                "init_size"
+              ]
+            }
+          },
+          {
+            "type": "array",
+            "items": {}
           }
+          ]
         },
 
         "resampling": {
@@ -36,7 +45,7 @@
           "properties": {
             "method": {
               "type": "string",
-              "enum": ["None", "sigma", "loo_sigma", "loo_sobol", "extrema", "hybrid", "optimization"],
+              "enum": ["None", "discrepancy", "sigma", "loo_sigma", "loo_sobol", "extrema", "hybrid", "optimization"],
               "default": "sigma"
             },
             "resamp_size": {
@@ -295,7 +304,6 @@
   },
   "required": [
     "space",
-    "snapshot",
-    "surrogate"
+    "snapshot"
   ]
 }

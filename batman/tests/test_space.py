@@ -43,6 +43,12 @@ def test_point():
     assert point_a == point_b
     assert point_a == point_c
 
+    with pytest.raises(ValueError):
+        Point.set_threshold(-0.1)
+
+    with pytest.raises(ValueError):
+        Point([2, 's', 9])
+
     Point.set_threshold(0)
 
 
@@ -50,11 +56,13 @@ def test_point_evaluation():
     f_3d = Ishigami()
     point = Point([2.20, 1.57, 3])
     target_point = f_3d(point)
-    assert target_point == 14.357312835804658
+    assert target_point == pytest.approx(14.357312835804658, 0.05)
 
 
 def test_space():
     space = Space(settings)
+
+    assert space.max_points_nb == 16
 
     space += (1, 2, 3)
     assert space[:] == [(1, 2, 3)]
@@ -80,6 +88,16 @@ def test_space():
 
     with pytest.raises(FullSpaceError):
         space.sampling(17)
+
+    test_settings = copy.deepcopy(settings)
+    test_settings['space'].pop('resampling')
+    space = Space(test_settings)
+    assert space.max_points_nb == 10
+
+    test_settings['space']['sampling'] = [(1, 2, 3), (1, 1, 3)]
+    space = Space(test_settings)
+    assert space.doe_init == 2
+    assert space.max_points_nb == 2
 
 
 def test_space_evaluation():
@@ -115,6 +133,10 @@ def test_doe():
     out = np.array([[5., 3.], [2.5, 4.], [7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
     npt.assert_almost_equal(sample, out, decimal=1)
 
+    kind = 'sobolscramble'
+    doe = Doe(n, bounds, kind, discrete_var)
+    sample = doe.generate()
+
 
 def test_resampling(tmp, branin_data, settings_ishigami):
     f_2d, dists, model, point, target_point, space, target_space = branin_data
@@ -141,3 +163,16 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     point_loo = refiner.points[0]
     new_point = refiner.leave_one_out_sigma(point_loo)
     new_point = refiner.leave_one_out_sobol(point_loo)
+
+
+def test_discrepancy(settings_ishigami):
+    test_settings = copy.deepcopy(settings)
+    test_settings['space']['corners'] = [[0.5, 0.5], [6.5, 6.5]]
+    space_1 = Space(test_settings)
+    space_2 = Space(test_settings)
+
+    space_1 += [[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]]
+    space_2 += [[1, 5], [2, 4], [3, 3], [4, 2], [5, 1], [6, 6]]
+
+    assert space_1.discrepancy() == pytest.approx(0.0081, abs=0.0001)
+    assert space_2.discrepancy() == pytest.approx(0.0105, abs=0.0001)

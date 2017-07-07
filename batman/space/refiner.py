@@ -240,6 +240,31 @@ class Refiner(object):
 
         return hypercube
 
+    def discrepancy(self):
+        """Find the point that minimize the discrepancy.
+
+        :return: The coordinate of the point to add
+        :rtype: lst(float)
+        """
+        hypercube = self.corners
+        self.logger.debug("Discrepancy strategy")
+
+        init_discrepancy = self.surrogate.space.discrepancy()
+
+        @optimization(self.settings["sampling"]["method"], hypercube)
+        def func_discrepancy(coords):
+            sample = np.vstack([self.surrogate.space[:], coords])
+            return self.surrogate.space.discrepancy(sample)
+
+
+        min_x, new_discrepancy = func_discrepancy()
+
+        rel_change = (new_discrepancy - init_discrepancy) / init_discrepancy
+
+        self.logger.debug("Relative change in discrepancy: {}%".format(rel_change))
+
+        return min_x
+
     def sigma(self, hypercube=None):
         """Find the point at max Sigma.
 

@@ -9,7 +9,7 @@ import numpy.testing as npt
 import itertools
 import matplotlib.pyplot as plt
 from matplotlib import cm
-plt.switch_backend('Qt5Agg')
+plt.switch_backend('Agg')
 
 
 def test_SixHumpCamel():

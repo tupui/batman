@@ -5,7 +5,7 @@ import numpy as np
 import numpy.testing as npt
 import matplotlib.pyplot as plt
 import openturns as ot
-from batman.surrogate import (PC, Kriging, Evofusion, SurrogateModel)
+from batman.surrogate import (PC, Kriging, RBFnet, Evofusion, SurrogateModel)
 from batman.tasks import Snapshot
 from batman.tests.conftest import sklearn_q2
 
@@ -53,6 +53,30 @@ def test_GP_1d(ishigami_data):
     surrogate_ot = ot.PythonFunction(3, 1, wrap_surrogate)
     q2 = sklearn_q2(dists, model, surrogate_ot)
     assert q2 == pytest.approx(1, 0.1)
+
+
+def test_RBFnet_1d(ishigami_data):
+    f_3d, dists, model, point, target_point, space, target_space = ishigami_data
+
+    surrogate = RBFnet(space, target_space)
+
+    # Test one point evaluation
+    pred = np.array(surrogate.evaluate(point))
+    assert pred == pytest.approx(target_point, 0.3)
+
+    # Test space evaluation
+    pred = np.array(surrogate.evaluate(space))
+    npt.assert_almost_equal(target_space, pred, decimal=1)
+
+    # Compute predictivity coefficient Q2
+    def wrap_surrogate(x):
+        evaluation = surrogate.evaluate(x)
+        return [evaluation]
+    surrogate_ot = ot.PythonFunction(3, 1, wrap_surrogate)
+    q2 = sklearn_q2(dists, model, surrogate_ot)
+    assert q2 == pytest.approx(0.86, 0.1)
+
+    surrogate = RBFnet(space, target_space, regtree=1)
 
 
 def test_PC_14d(mascaret_data):

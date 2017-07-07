@@ -52,10 +52,6 @@ class Pod(Core):
         self.corners = settings['space']['corners']
         self.points = Space(settings)  # A space to record the points
 
-        # for external pod
-        if snapshot_io is not None:
-            Snapshot.initialize(snapshot_io)
-
         super(Pod, self).__init__(settings['pod']['tolerance'],
                                   settings['pod']['dim_max'])
 
@@ -78,11 +74,6 @@ class Pod(Core):
 
         :param lst(array) snapshots: snapshots matrix
         """
-        if len(snapshots) == 0:
-            self.logger.info(
-                'Empty snapshot list, no decomposition to compute')
-            return
-
         snapshots = [Snapshot.convert(s) for s in snapshots]
 
         self.logger.info('Decomposing pod basis...')
@@ -104,8 +95,8 @@ class Pod(Core):
         snapshot = Snapshot.convert(snapshot)
         super(Pod, self).update(snapshot.data)
         self.points += snapshot.point
-        self.logger.info('Updated pod basis with snapshot at point %s',
-                         snapshot.point)
+        self.logger.info('Updated pod basis with snapshot at point {}'
+                         .format(snapshot.point))
 
     def estimate_quality(self):
         """Quality estimator.
@@ -126,8 +117,8 @@ class Pod(Core):
         logging.getLogger().setLevel(level_init)
 
         self.quality = quality
-        self.logger.info('pod quality = %g, max error location = %s', quality,
-                         point)
+        self.logger.info('POD quality: {}, max error location at {}'
+                         .format(quality, point))
         return self.quality, point
 
     def write(self, path):
@@ -159,7 +150,7 @@ class Pod(Core):
                  values=self.S,
                  vectors=self.V)
 
-        self.logger.info('Wrote pod to %s', path)
+        self.logger.info('Wrote POD to %s', path)
 
     def read(self, path):
         """Read a pod from disk.
@@ -185,4 +176,4 @@ class Pod(Core):
         for i in range(size):
             self.U[:, i] = Snapshot.read_data(path_pattern % i)
 
-        self.logger.info('Read pod from %s', path)
+        self.logger.info('Read POD from %s', path)

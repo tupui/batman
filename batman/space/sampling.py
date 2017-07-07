@@ -93,19 +93,13 @@ class Doe():
             sample = self.sequence_type.generate(self.n_sample)
 
         # Scale the DOE from [0, 1] to bounds
-        r = np.empty_like(sample)
-        if self.kind == 'lhsc':
-            for j in range(self.dim):
-                b = self.bounds[0, j]
-                a = self.bounds[1, j] - b
-                for i, p in enumerate(sample):
-                    r[i, j] = a * ((p[j] // (1. / self.n_sample) + 1) - 0.5) / self.n_sample + b
+        b = self.bounds[0]
+        a = self.bounds[1] - b
+        if self.kind == 'lhsc':    
+            r = a * ((np.floor_divide(sample, (1. / self.n_sample)) + 1)
+                          - 0.5) / self.n_sample + b
         else:
-            for j in range(self.dim):
-                b = self.bounds[0, j]
-                a = self.bounds[1, j] - b
-                for i, p in enumerate(sample):
-                    r[i, j] = a * p[j] + b
+            r = a * sample + b
 
         if self.kind == 'discrete':
             r[:, 0] = np.array(sample[:, 0]).flatten()
@@ -149,7 +143,7 @@ class Doe():
                 r[i, j] = p[j]
 
         # Scramble the sequence
-        for col in range(0, self.dim):
+        for col in range(self.dim):
             r[:, col] = self.scramble(r[:, col])
 
         return r
