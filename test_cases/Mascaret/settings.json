@@ -7,20 +7,8 @@
         "sampling": {
             "init_size": 5,
             "method": "halton"
-        },
-        "resampling":{
-            "delta_space": 0.08,
-            "resamp_size": 0,
-            "method": "sigma",
-            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
-            "q2_criteria": 0.9
         }
     },
-    "pod": {
-        "dim_max": 100,
-        "tolerance": 0.99,
-        "type": "static"
-     },
     "snapshot": {
         "max_workers": 5,
         "io": {
@@ -48,15 +36,5 @@
             "data-directory": "cfd-output-data",
             "restart": "False"
         }
-    },
-    "surrogate": {
-        "predictions": [27.0, 2500.0],
-        "method": "kriging"
-    },
-    "uq": {
-        "sample": 1000,
-        "pdf": ["Uniform(20., 30.)","Uniform(2000., 3000.)"],
-        "type": "aggregated",
-        "method": "sobol"
     }
 }
