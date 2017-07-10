@@ -3,20 +3,11 @@
         "Q_cst": 0.0,
         "Z_cst": 10.0
     },
-    "Q_BC": {
-        "idx": 0,
-        "value": 1000.0
-    },
-    "Ks": {
-        "zone": true,
-        "idx": 25,
-        "value": 25.0,
-        "ind_zone": 0
-    },
     "bathy": {
         "all_bathy": false,
         "idx": 0,
-        "dz": 0.0
+        "dz": 2.0,
+        "Lp": 222.0
     },
     "misc": {
         "info_bc": true,

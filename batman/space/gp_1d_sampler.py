@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 import openturns as ot
 from math import sqrt
 import numpy as np
+import time
+
+ot.RandomGenerator.SetSeed(int(time.time() * 1e10))
 
 
 class Gp1dSampler:

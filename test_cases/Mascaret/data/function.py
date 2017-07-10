@@ -26,8 +26,8 @@ X1 = float(x1)
 X2 = float(x2)
 
 # Function
-F = study(x=[X1, X2])
-print('Water level computed with user defined BC matrix', F)
+F = study()
+print('Water level', F)
 
 # Output
 data = np.array(F)

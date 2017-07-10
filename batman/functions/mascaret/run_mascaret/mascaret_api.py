@@ -888,7 +888,7 @@ class MascaretApi(object):
 
         if 'Lp' in self.user_settings['bathy']:
             sampler = Gp1dSampler(t0=self.cross_section[0][0], T=self.cross_section[0][-1], Nt=size1.value, sigma=bathy['dz'], theta=bathy['Lp'])
-            shift_dz = sampler.sample()['Vavlues']
+            shift_dz = sampler.sample()['Values']
         else:
             shift_dz = np.ones(size1.value, float) + bathy['dz']
 
