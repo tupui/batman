@@ -2,7 +2,7 @@ import ctypes
 import csv
 import numpy as np
 from batman.functions import MascaretApi
-from batman.functions.mascaret import print_statistics, histogram
+from batman.functions.mascaret import print_statistics, histogram, plot_opt
 
 # Create an instance of MascaretApi
 study = MascaretApi('config_canal.json','config_canal_user.json')
@@ -21,7 +21,7 @@ print(study)
 h = study()
 print('Water level computed with json user defined values', h)
 # Plot the water level along the open-channel at final time
-#study.plot_opt('ResultatsOpthyca.opt')
+plot_opt('ResultatsOpthyca.opt')
 
 # Run study  with user provided Boundary Conditions matrix in .csv 
 # User defined BC matrix (here 10 time steps and 2 BC - Q and Z)
@@ -54,7 +54,7 @@ print('Water level computed with json user defined values', h)
 #h = study(Qtime = [nb_timebc, tab_timebc_c, tab_CL1_c, tab_CL2_c])
 #print('Water level computed with user defined BC matrix', h)
 # Plot the water level along the open-channel at final time
-#study.plot_opt('ResultatsOpthyca.opt')
+#plot_opt('ResultatsOpthyca.opt')
 
 
 
