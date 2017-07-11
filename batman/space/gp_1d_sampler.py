@@ -18,21 +18,14 @@ steps:
 
     >> from batman.space import Gp1dSampler
 
-    Attributes of a Gp_1d_sampler object:
-        - t_ini: the initial point of the mesh (default = 0).
-        - T: the final point of the mesh (default = 1).
-        - Nt: the size of the mesh (default = 100).
-        - sigma: the GP standard deviation (default = 1.0).
-        - theta: the GP correlation length (default = 1.0).
-        - threshold: the minimal relative amplitude of the eigenvalues to consider in the KLD wrt the maximum eigenvalue (default = 0.01).
-        - modes: Modes of the KLD evaluated over the mesh ([Nt x Nmodes] matrix).
 """
 import logging
 import matplotlib.pyplot as plt
 import openturns as ot
-from math import sqrt
 import numpy as np
 import time
+import os
+plt.switch_backend('Agg')
 
 ot.RandomGenerator.SetSeed(int(time.time() * 1e10))
 
@@ -44,7 +37,7 @@ class Gp1dSampler:
     logger = logging.getLogger(__name__)
 
     def __init__(self, t_ini=0, t_end=1, Nt=100, sigma=1.0, theta=0.5,
-                 threshold=0.01, covariance="AbsoluteExponential"):
+                 threshold=0.01, cov="AbsoluteExponential"):
         """Computes the Karhunen Loeve decomposition and initializes GP1D.
 
             :param int t_ini: initial point of the mesh
@@ -54,6 +47,9 @@ class Gp1dSampler:
             :param float theta: GP correlation length
             :param float threshold: minimal relative amplitude of the
             eigenvalues to consider in the KLD wrt the maximum eigenvalue
+            :param str cov: covariance model ['SquaredExponential',
+            'AbsoluteExponential', 'Matern32', 'Matern52', 'Exponential',
+            'Spherical']
             """
         self.t_ini = t_ini
         self.t_end = t_end
@@ -61,24 +57,24 @@ class Gp1dSampler:
         self.sigma = sigma
         self.theta = theta
         self.threshold = threshold
-        self.covariance = covariance
+        self.covariance = cov
 
         # OpenTurns mesh construction
         mesh = ot.IntervalMesher(
             [self.Nt - 1]).build(ot.Interval(self.t_ini, self.t_end))
 
         # Absolute exponential covariance model
-        if covariance == "SquaredExponential":
+        if self.covariance == "SquaredExponential":
             model = ot.SquaredExponential([self.theta], [self.sigma])
-        elif covariance == "AbsoluteExponential":
+        elif self.covariance == "AbsoluteExponential":
             model = ot.AbsoluteExponential([self.theta], [self.sigma])
-        elif covariance == "Matern32":
+        elif self.covariance == "Matern32":
             model = ot.MaternModel([self.theta], [self.sigma], 1.5)
-        elif covariance == "Matern52":
+        elif self.covariance == "Matern52":
             model = ot.MaternModel([self.theta], [self.sigma], 2.5)
-        elif covariance == "Exponential":
+        elif self.covariance == "Exponential":
             model = ot.ExponentialModel(1, [self.sigma], [self.theta])
-        elif covariance == "Spherical":
+        elif self.covariance == "Spherical":
             model = ot.SphericalModel(1, [self.sigma], [self.theta])
 
         # Karhunen-Loeve decomposition factory using P1 approximation
@@ -102,30 +98,25 @@ class Gp1dSampler:
         # Modes of the KLD evaluated over the mesh ([Nt x Nmodes] matrix)
         self.n_modes = n_modes
         self.modes = vaep.T
-        self.t = mesh
+        self.mesh = mesh
 
     def __str__(self):
         """Summary of GP1D and its Karhunen Loeve decomposition."""
-        s = ("Mesh interval = [{},{}]"
-             "Mesh size = {}"
-             "GP standard deviation = {}"
-             "GP correlation length = {}"
-             "Threshold for the KLD = {}"
-             "Number of modes = {}")
-            .format(self.t_ini, self.t_end, self.Nt, self.sigma, self.theta,
-                    self.threshold, self.n_modes)
+        s = ("GP sampler summary:\n"
+             "Mesh interval = [{},{}]\n"
+             "Mesh size = {}\n"
+             "GP standard deviation = {}\n"
+             "GP correlation length = {}\n"
+             "Threshold for the KLD = {}\n"
+             "Number of modes = {}").format(self.t_ini, self.t_end, self.Nt,
+                                            self.sigma, self.theta,
+                                            self.threshold, self.n_modes)
         return s
 
-    def plot_modes(self):
-        """Plot the modes of the Karhunen Loeve decomposition."""
-        plt.plot(self.t.getVertices(), self.modes)
-        plt.show()
-
-    def sample(self, n_sample=1, plot=False):
+    def sample(self, n_sample):
         """Compute realizations of the GP1D sampler.
 
         :param int n_sample: number of GP1D instances
-        :param bool plot: plot the GP1D sample
         :return: instances of GP discretized over the mesh
         [t_ini:(T-T_ini)/(Nt-1):T] and Coefficients for the KLD
         :rtype: np.array([Nm x Nt]), np.array([Nm x Nmodes])
@@ -141,13 +132,9 @@ class Gp1dSampler:
         for i in range(n_sample):
             Y[i, :] = np.dot(self.modes, X[i])
 
-        if plot:
-            plt.plot(self.t.getVertices(), Y.T)
-            plt.show()
-
         return {'Values': Y.T, 'Coefficients': X}
 
-    def build(self, coeff=[0], plot=False):
+    def build(self, coeff=[0]):
         """Compute realization of the GP1D corresponding to :attr:`coeff`.
 
         :param list coeff: coefficients of the Karhunen Loeve decomposition
@@ -159,10 +146,33 @@ class Gp1dSampler:
         X = list(coeff[0:self.n_modes]) + \
             list(np.zeros(max(0, self.n_modes - len(coeff))))
         Y = np.dot(self.modes, X)
-        if plot:
-            plt.plot(self.t.getVertices(), Y.T)
-            plt.show()
+
         return {'Values': Y.T, 'Coefficients': X}
+
+    def plot_modes(self, path='.'):
+        """Plot the modes of the Karhunen Loeve decomposition.
+
+        :param str path: path to write plot
+        """
+        fig = plt.figure('Modes')
+        plt.plot(self.mesh.getVertices(), self.modes)
+        fig.tight_layout()
+        path = os.path.join(path, 'modes_gp.pdf')
+        fig.savefig(path, transparent=True, bbox_inches='tight')
+        plt.close('all')
+
+    def plot_sample(self, sample, path='.'):
+        """Plot the modes of the Sample.
+
+        :param dict sample: Output of :func:`Gp1dSampler.sample`
+        :param str path: path to write plot
+        """
+        fig = plt.figure('Sample')
+        plt.plot(self.mesh.getVertices(), sample['Values'])
+        fig.tight_layout()
+        path = os.path.join(path, 'sample_gp.pdf')
+        fig.savefig(path, transparent=True, bbox_inches='tight')
+        plt.close('all')
 
 
 class Gp2dSampler:
@@ -230,7 +240,7 @@ class Gp2dSampler:
 
         # Evaluation of the eigen functions
         for i in range(n_modes):
-            modes[i] = ot.Field(mesh, modes[i].getValues() * [sqrt(ev[i])])
+            modes[i] = ot.Field(mesh, modes[i].getValues() * [np.sqrt(ev[i])])
 
         # Matrix of the modes over the grid (lines <> modes; columns <> times)
         vaep = np.eye(n_modes, np.prod(self.Nt))
