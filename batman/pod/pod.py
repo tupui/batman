@@ -150,7 +150,7 @@ class Pod(Core):
                  values=self.S,
                  vectors=self.V)
 
-        self.logger.info('Wrote pod to %s', path)
+        self.logger.info('Wrote POD to %s', path)
 
     def read(self, path):
         """Read a pod from disk.
@@ -176,4 +176,4 @@ class Pod(Core):
         for i in range(size):
             self.U[:, i] = Snapshot.read_data(path_pattern % i)
 
-        self.logger.info('Read pod from %s', path)
+        self.logger.info('Read POD from %s', path)

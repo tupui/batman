@@ -21,7 +21,7 @@ Defines all methods used to interact with other classes.
 import logging
 import os
 import numpy as np
-
+import pickle
 from concurrent import futures
 
 from collections import OrderedDict
@@ -39,6 +39,8 @@ class Driver(object):
     logger = logging.getLogger(__name__)
     output_tree = {
         'snapshots': 'snapshots',
+        'space': 'space.dat',
+        'data': 'data.dat',
         'pod': 'surrogate/pod',
         'surrogate': 'surrogate',
         'predictions': 'predictions',
@@ -64,6 +66,9 @@ class Driver(object):
             pass
         self.snapshot_counter = 0
 
+        # Space
+        self.space = Space(self.settings)
+
         # Snapshots
         Snapshot.initialize(self.settings['snapshot']['io'])
         self.provider = SnapshotProvider(self.settings['snapshot']['provider'])
@@ -72,17 +77,13 @@ class Driver(object):
             # compute relative path to snapshot files
             data_files = []
             for files in self.settings['snapshot']['io']['filenames'].values():
-                for f in files:
-                    data_files += [
-                        os.path.join(self.provider['data-directory'], f)]
+                data_files = [os.path.join(self.provider['data-directory'], f)
+                              for f in files]
             SnapshotTask.initialize(self.provider, data_files)
 
             # snapshots generation manager
             self.snapshooter = futures.ThreadPoolExecutor(
                 max_workers=self.settings['snapshot']['max_workers'])
-
-        # Space
-        self.space = Space(self.settings)
 
         if self.provider.is_file:
             # get the point from existing snapshot files,
@@ -98,30 +99,33 @@ class Driver(object):
                     self.logger.warning("Ignoring: {}".format(tb))
                 else:
                     self.initial_points[point] = path
-
         else:
             space_provider = self.settings['space']['sampling']
             if isinstance(space_provider, list):
                 # a list of points is provided
                 self.logger.info('Reading list of points from the settings.')
                 self.initial_points = space_provider
-                self.space += self.initial_points
             elif isinstance(space_provider, dict):
-                # use point sampling
+                # use sampling method
                 self.initial_points = self.space.sampling(space_provider['init_size'])
             else:
                 self.logger.error('Bad space provider.')
                 raise SystemError
 
         # Pod
-        if 'pod' in self.settings:
+        try:
             self.pod = Pod(self.settings)
-        else:
+        except KeyError:
             self.pod = None
+            self.logger.info('No POD is computed.')
 
         # Surrogate model
-        self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                        self.settings['space']['corners'])
+        try:
+            self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
+                                            self.settings['space']['corners'])
+        except KeyError:
+            self.surrogate = None
+            self.logger.info('No surrogate is computed.')
 
     def sampling(self, points=None, update=False):
         """Create snapshots.
@@ -135,11 +139,11 @@ class Driver(object):
         if points is None:
             points = self.initial_points
         # snapshots generation
-        snapshots = []
-        for p in points:
-            if self.provider.is_file:
-                snapshots += [points[p]]
-            else:
+        if self.provider.is_file:
+            snapshots = points
+        else:
+            snapshots = []
+            for p in points:
                 if not self.provider.is_job:
                     # snapshots are in memory
                     path = None
@@ -160,10 +164,9 @@ class Driver(object):
                     snapshots += [self.snapshooter.submit(t.run)]
 
         # Fit the Surrogate [and POD]
-        if update:
-            self.surrogate.space.empty()
         if self.pod is not None:
             if update:
+                self.surrogate.space.empty()
                 if self.provider.is_job:
                     for s in futures.as_completed(snapshots):
                         self.pod.update(s.result())
@@ -178,19 +181,30 @@ class Driver(object):
                     snapshots = _snapshots
                 self.pod.decompose(snapshots)
 
-            self.surrogate.fit(self.pod.points, self.pod.VS(), pod=self.pod)
+            self.data = self.pod.VS()
+
+            try:  # if surrogate
+                self.surrogate.fit(self.pod.points, self.data, pod=self.pod)
+            except AttributeError:
+                pass
         else:
-            self.logger.info('No POD is computed.')
             if self.provider.is_job:
                 _snapshots = []
                 for s in futures.as_completed(snapshots):
                     _snapshots += [s.result()]
                 snapshots = _snapshots
 
-            snapshots = [Snapshot.convert(s) for s in snapshots]
-            snapshots = np.vstack([s.data for s in snapshots])
+            if snapshots:
+                snapshots = [Snapshot.convert(s) for s in snapshots]
+                snapshots = np.vstack([s.data for s in snapshots])
+                self.data = snapshots
+            else:  # For restart purpose
+                points = self.space
 
-            self.surrogate.fit(points, snapshots, pod=self.pod)
+            try:  # if surrogate
+                self.surrogate.fit(points, self.data, pod=self.pod)
+            except AttributeError:
+                pass
 
     def resampling(self):
         """Resampling of the POD.
@@ -223,52 +237,72 @@ class Driver(object):
 
     def write(self):
         """Write Surrogate [and POD] to disk."""
-        model_path = os.path.join(self.output, self.output_tree['surrogate'])
-        try:
-            os.makedirs(model_path)
-        except OSError:
-            pass
-        self.surrogate.write(model_path)
-        if self.pod is not None:
-            pod_path = os.path.join(self.output, self.output_tree['pod'])
+        if self.surrogate is not None:
+            path = os.path.join(self.output, self.output_tree['surrogate'])
             try:
-                os.makedirs(pod_path)
+                os.makedirs(path)
             except OSError:
                 pass
-            self.pod.write(pod_path)
+            self.surrogate.write(path)
+        else:
+            path = os.path.join(self.output, self.output_tree['space'])
+            self.space.write(path)
+        if self.pod is not None:
+            path = os.path.join(self.output, self.output_tree['pod'])
+            try:
+                os.makedirs(path)
+            except OSError:
+                pass
+            self.pod.write(path)
+        elif (self.pod is None) and (self.surrogate is None):
+            path = os.path.join(self.output, self.output_tree['data'])
+            with open(path, 'wb') as f:
+                pickler = pickle.Pickler(f)
+                pickler.dump(self.data)
+            self.logger.debug('Wrote data to {}'.format(path))
 
     def read(self):
         """Read Surrogate [and POD] from disk."""
-        self.surrogate.read(os.path.join(self.output, self.output_tree['surrogate']))
+        if self.surrogate is not None:
+            self.surrogate.read(os.path.join(self.output,
+                                             self.output_tree['surrogate']))
+            self.space = self.surrogate.space
+            self.data = self.surrogate.data
+        else:
+            path = os.path.join(self.output, self.output_tree['space'])
+            self.space.read(path)
         if self.pod is not None:
             self.pod.read(os.path.join(self.output, self.output_tree['pod']))
             self.surrogate.pod = self.pod
+        elif (self.pod is None) and (self.surrogate is None):
+            path = os.path.join(self.output, self.output_tree['data'])
+            with open(path, 'rb') as f:
+                unpickler = pickle.Unpickler(f)
+                self.data = unpickler.load()
+            self.logger.debug('Data read from {}'.format(path))
 
     def restart(self):
         """Restart process."""
         # Surrogate [and POD] has already been computed
         self.logger.info('Restarting from previous computation...')
         self.read()
-        processed_points = self.surrogate.space
-        self.snapshot_counter = len(processed_points)
+        self.snapshot_counter = len(self.space)
 
-        if len(processed_points) < len(self.initial_points):
-            # static or dynamic pod is finished,
-            # we add new points to be processed
+        if self.snapshot_counter < len(self.initial_points):
+            # will add new points to be processed
+            # [static or dynamic pod is finished]
             self.initial_points = [p for p in self.initial_points
-                                   if p not in processed_points]
+                                   if p not in self.space]
         else:
             # automatic resampling has to continue from
             # the processed points
             self.initial_points = []
-            self.space.empty()
-            self.space += processed_points
 
-    def prediction(self, write=False, points=None):
+    def prediction(self, points, write=False):
         """Perform a prediction.
 
-        :param bool write: write a snapshot or not
         :param :class:`space.point.Point` points: point(s) to predict
+        :param bool write: write a snapshot or not
         :return: Result
         :rtype: lst(:class:`tasks.snapshot.Snapshot`) or np.array(n_points, n_features)
         :return: Standard deviation
@@ -278,9 +312,6 @@ class Driver(object):
             output = os.path.join(self.output, self.output_tree['predictions'])
         else:
             output = None
-
-        if points is None:
-            points = self.settings['surrogate']['predictions']
 
         return self.surrogate(points, path=output)
 

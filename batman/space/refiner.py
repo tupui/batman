@@ -265,7 +265,6 @@ class Refiner(object):
 
         return min_x
 
-
     def sigma(self, hypercube=None):
         """Find the point at max Sigma.
 

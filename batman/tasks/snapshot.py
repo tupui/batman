@@ -150,7 +150,7 @@ class Snapshot(object):
         if not os.path.exists(t_d):
             os.makedirs(t_d)
         elif not os.path.isdir(t_d):
-            cls.logger.exception('template path must be a directory.')
+            cls.logger.exception('Template path must be a directory')
             raise IOError
 
         # gather potential template files for checking
@@ -164,14 +164,14 @@ class Snapshot(object):
         # all not existing
         if files_to_copy:
             if len(files_to_copy) != len(cls.filenames):
-                raise Exception('check template directory content')
+                raise Exception('Check template directory content')
             else:
                 for f in cls.filenames:
                     path = os.path.join(directory, f)
                     shutil.copy(path, t_d)
 
         cls._get_shapes_from_template(directory)
-        cls.logger.info('Created snapshot file templates.')
+        cls.logger.info('Snapshot file templates created')
 
     @classmethod
     def _get_shapes_from_template(cls, directory):
@@ -181,7 +181,7 @@ class Snapshot(object):
             cls.io.meta_data(path)
             shapes += [cls.io.info.shape]
         cls.shapes = shapes
-        cls.logger.info('Read shape from template.')
+        cls.logger.info('Shape read from template')
 
     @classmethod
     def convert(cls, snapshot, path=None):
@@ -216,7 +216,7 @@ class Snapshot(object):
 
         # check shapes or store them for later check
         if len(data) != total_size:
-            cls.logger.exception('bad dataset size: got {} instead of {}'
+            cls.logger.exception('Bad dataset size: got {} instead of {}'
                                  .format(len(data), total_size))
             raise SystemExit
 
@@ -234,7 +234,7 @@ class Snapshot(object):
 
                 # checks
                 if len(p) != 1:
-                    cls.logger.exception('parsing problem in {} on the line {}'
+                    cls.logger.exception('Parsing problem in {} on the line {}'
                                          .format(path, line))
                     raise ValueError
 
@@ -242,12 +242,12 @@ class Snapshot(object):
                 coordinates += [p[0][1]]
 
         if tuple(names) != cls.parameter_names:
-            cls.logger.exception("bad coordinate names, should be: {}"
+            cls.logger.exception("Bad coordinate names, should be: {}"
                                  " but got: {}"
                                  .format(str(cls.parameter_names), str(names)))
             raise ValueError
 
-        cls.logger.debug('Read point from\n\t{}'.format(path))
+        cls.logger.debug('Point read from: {}'.format(path))
         return Point(coordinates)
 
     @classmethod
@@ -260,7 +260,7 @@ class Snapshot(object):
         with open(path, 'wb') as f:
             for k, v in zip(cls.parameter_names, point):
                 f.write((cls.point_format % (k, repr(v))).encode('utf8'))
-        cls.logger.debug('Wrote point to\n\t{}'.format(path))
+        cls.logger.debug('Point wrote to: {}'.format(path))
 
     @classmethod
     def read_data(cls, directory):
@@ -279,7 +279,7 @@ class Snapshot(object):
 
         cls._check_data(data)
 
-        cls.logger.debug('Read data from\n\t%s', directory)
+        cls.logger.debug('Data read from: %s', directory)
         return data
 
     @classmethod
@@ -324,7 +324,7 @@ class Snapshot(object):
             else:
                 cls.io.write(path, dataset)
 
-        cls.logger.debug('Wrote data in\n\t%s', directory)
+        cls.logger.debug('Data wrote to %s', directory)
 
     @classmethod
     def read(cls, directory):
@@ -334,7 +334,7 @@ class Snapshot(object):
         """
         point = cls.read_point(directory)
         data = cls.read_data(directory)
-        cls.logger.info('Read snapshot at point %s from\n\t%s',
+        cls.logger.info('Read snapshot at point %s from %s',
                         point, directory)
         return cls(point, data)
 
@@ -370,5 +370,5 @@ class Snapshot(object):
         cls = self.__class__
         cls.write_point(self.point, directory)
         cls.write_data(self.data, directory)
-        cls.logger.info('Wrote snapshot at point %s in\n\t%s',
+        cls.logger.info('Snapshot at point %s wrote to %s',
                         self.point, directory)

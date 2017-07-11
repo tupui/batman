@@ -87,14 +87,14 @@ class RBFnet(object):
 
     def __repr__(self):
         s = ("Radial Basis Function\n"
-        "  N Sample: {}\n"
-        "  N Input : {}\n"
-        "  N Output: {}\n"
-        "  N Center: {}\n"
-        "  Radius  : {}\n"
-        "  Regparam: {}"
-        .format(self.Setsize, self.Ninput, self.Noutput,
-                self.Ncenter, self.radius, self.regparam))
+             "  N Sample: {}\n"
+             "  N Input : {}\n"
+             "  N Output: {}\n"
+             "  N Center: {}\n"
+             "  Radius  : {}\n"
+             "  Regparam: {}"
+             .format(self.Setsize, self.Ninput, self.Noutput,
+                     self.Ncenter, self.radius, self.regparam))
         return s
 
     @multi_eval

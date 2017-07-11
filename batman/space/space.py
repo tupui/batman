@@ -64,8 +64,12 @@ class Space(list):
         :param dict settings: space settings
         """
         self.settings = settings
-        self.doe_init = settings['space']['sampling']['init_size']
-        self.doe_method = settings['space']['sampling']['method']
+        try:
+            self.doe_init = settings['space']['sampling']['init_size']
+            self.doe_method = settings['space']['sampling']['method']
+        except TypeError:
+            self.doe_init = len(settings['space']['sampling'])
+            self.doe_method = None
         if 'resampling' in settings['space']:
             self.refiner = None
             self.max_points_nb = settings['space']['resampling']['resamp_size'] + self.doe_init
@@ -306,7 +310,7 @@ class Space(list):
         else:
             sample = scaler.transform(sample)
 
-        n_s = len(self)
+        n_s = len(sample)
 
         abs_ = abs(sample - 0.5)
         disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
@@ -370,6 +374,7 @@ class Space(list):
         space = np.loadtxt(path)
         for p in space:
             self += p.flatten().tolist()
+        self.logger.debug('Space read from {}'.format(path))
 
     def write(self, path):
         """Write space in file.
@@ -380,3 +385,4 @@ class Space(list):
         """
         np.savetxt(path, self)
         self.plot_space(path)
+        self.logger.debug('Space wrote to {}'.format(path))
