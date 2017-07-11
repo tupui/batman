@@ -18,7 +18,8 @@ def test_driver_chain(driver_init, tmp, ishigami_data):
         assert False
 
     driver.read()
-    pred, _ = driver.prediction(write=True)
+    pred, _ = driver.prediction(points=[2, -3, 1], write=True)
+    assert pred == pytest.approx(1.1396, 0.01)
     if not os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0')):
         assert False
 
@@ -61,7 +62,7 @@ def test_provider_dict(tmp, settings_ishigami):
     driver.sampling()
     driver.write()
 
-    pred, _ = driver.prediction(write=True)
+    pred, _ = driver.prediction([2, -3, 1], write=True)
     if not os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0')):
         assert False
 
