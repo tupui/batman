@@ -18,13 +18,10 @@ def test_driver_chain(driver_init, tmp, ishigami_data):
         assert False
 
     driver.read()
-    pred, _ = driver.prediction(points=[2, -3, 1], write=True)
-    assert pred == pytest.approx(1.1396, 0.01)
+    _, _, _, point, target_point, _, _ = ishigami_data
+    pred, _ = driver.prediction(points=point, write=True)
     if not os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0')):
         assert False
-
-    f_ishigami = ishigami_data[0]
-    target_point = f_ishigami([0, 2, 1])
     assert pred[0].data == pytest.approx(target_point, 0.1)
 
 
