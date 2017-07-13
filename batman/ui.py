@@ -119,7 +119,7 @@ def run(settings, options):
             raise SystemExit
 
     try:
-        driver.prediction(points=settings['surrogate']['prediction'],
+        driver.prediction(points=settings['surrogate']['predictions'],
                           write=options.save_snapshots)
     except KeyError:
         logger.debug('No prediction.')
