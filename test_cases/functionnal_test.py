@@ -101,9 +101,8 @@ def test_checks(tmp, case='Michalewicz'):
 
     # Exit without doing anything
     with mock.patch('builtins.input', side_effect=['no', 'no']):
-        batman.ui.main()
-
-    check_output(tmp)
+        with pytest.raises(SystemExit):
+            batman.ui.main()
 
 
 def test_restart_pod(tmp, case='Michalewicz'):
@@ -113,7 +112,7 @@ def test_restart_pod(tmp, case='Michalewicz'):
     sys.argv = ['batman', 'settings.json', '-r', '-o', tmp]
     options = batman.ui.parse_options()
     settings = batman.misc.import_config(options.settings, schema)
-    settings["space"]["resampling"]["resamp_size"] = 1
+    settings['space']['resampling']['resamp_size'] = 1
     batman.ui.run(settings, options)
     check_output(tmp)
     if not os.path.isdir(os.path.join(tmp, 'snapshots/4')):
@@ -121,14 +120,14 @@ def test_restart_pod(tmp, case='Michalewicz'):
 
     init_case(tmp, case, force=True)
     # Restart from snapshots and read a template directory
-    settings["snapshot"]["io"]["template_directory"] = os.path.join(tmp, 'snapshots/0/batman-data')
+    settings['snapshot']['io']['template_directory'] = os.path.join(tmp, 'snapshots/0/batman-data')
     batman.ui.run(settings, options)
     check_output(tmp)
 
     init_case(tmp, case, force=True)
     # Restart from 4 and add 2 points continuing the DOE sequence
-    settings["space"]["resampling"]["resamp_size"] = 0
-    settings["space"]["sampling"]["init_size"] = 6
+    settings['space']['resampling']['resamp_size'] = 0
+    settings['space']['sampling']['init_size'] = 6
     batman.ui.run(settings, options)
     check_output(tmp)
     if not os.path.isdir(os.path.join(tmp, 'snapshots/5')):
@@ -141,14 +140,14 @@ def test_resampling(tmp, case='Michalewicz'):
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
     settings = batman.misc.import_config(options.settings, schema)
-    settings["space"]["sampling"]["init_size"] = 10
-    settings["space"]["resampling"]["resamp_size"] = 2
+    settings['space']['sampling']['init_size'] = 10
+    settings['space']['resampling']['resamp_size'] = 2
 
-    for method in ["loo_sigma", "loo_sobol", "extrema"]:
+    for method in ['loo_sigma', 'extrema']:
         shutil.rmtree(tmp)
-        settings["space"]["resampling"]["method"] = method
-        if method == "extrema":
-            settings["space"]["resampling"]["resamp_size"] = 4
+        settings['space']['resampling']['method'] = method
+        if method == 'extrema':
+            settings['space']['resampling']['resamp_size'] = 4
         batman.ui.run(settings, options)
         check_output(tmp)
         if not os.path.isdir(os.path.join(tmp, 'snapshots/11')):
@@ -157,7 +156,7 @@ def test_resampling(tmp, case='Michalewicz'):
 # Ishigami: 3D -> 1D
 # Oakley & O'Hagan: 1D -> 1D
 # Channel_Flow: 2D -> 400D
-@pytest.mark.parametrize("name", [
+@pytest.mark.parametrize('name', [
     ('G_Function'),
     ('Basic_function'),
     ('Channel_Flow'),
@@ -180,4 +179,3 @@ def test_simple_settings(tmp):
     settings.pop('uq')
     shutil.rmtree(tmp)
     batman.ui.run(settings, options)
-    check_output(tmp)
