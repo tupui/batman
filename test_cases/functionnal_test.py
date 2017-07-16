@@ -7,6 +7,8 @@ import batman.misc
 import os
 import shutil
 import sys
+import json
+import re
 from batman.tests.conftest import tmp
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -180,3 +182,32 @@ def test_simple_settings(tmp):
     settings.pop('uq')
     shutil.rmtree(tmp)
     batman.ui.run(settings, options)
+
+
+def test_wrong_settings(tmp):
+    init_case(tmp, 'Ishigami', output=False)
+    sys.argv = ['batman', 'settings.json', '-o', tmp]
+    options = batman.ui.parse_options()
+    settings = batman.misc.import_config(options.settings, schema)
+    
+    # Invalid settings
+    settings['space']['sampling'] = {'init_size': 150, 'method': 'wrong'}
+
+    wrong_path = os.path.join(tmp, 'wrong_settings.json')
+    with open(wrong_path, 'w') as f:
+        json.dump(settings, f, indent=4)
+
+    with pytest.raises(SystemExit):
+        batman.misc.import_config(wrong_path, schema)
+
+    # Invalid JSON file
+    with open('settings.json', 'rb') as ws:
+        file = ws.read().decode('utf8')
+        exp = re.search('(\"space\")(:)', file, re.MULTILINE)
+        file = file.replace(exp.group(2), ',')
+
+    with open(wrong_path, 'wb') as ws:
+        ws.write(file.encode('utf8'))
+
+    with pytest.raises(SystemExit):
+        batman.misc.import_config(wrong_path, schema)
