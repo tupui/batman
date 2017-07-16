@@ -132,6 +132,13 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     f_3d, dists, model, point, target_point, space, target_space = ishigami_data
 
     Snapshot.initialize(settings_ishigami['snapshot']['io'])
+
+    surrogate = SurrogateModel('pc', space.corners)
+    surrogate.fit(space, target_space)
+    surrogate.write(tmp)
+    if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
+        assert False
+
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
     surrogate.write(tmp)
