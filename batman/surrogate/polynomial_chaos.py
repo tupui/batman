@@ -38,6 +38,8 @@ class PC(object):
         except TypeError:
             self.model_len = 1
             output = output.ravel()
+        except AttributeError:  # output is None
+            self.model_len = 1
         # Define the CPU multi-threading/processing strategy
         try:
             n_cpu_system = cpu_count()
@@ -110,7 +112,7 @@ class PC(object):
             pc_algo.run()
             self.sample = np.array(pc_algo.getInputSample())
             self.pc_result = pc_algo.getResult()
-            self.pc = self.pc_result[0].getMetaModel()
+            self.pc = [self.pc_result.getMetaModel()]
         else:
             self.logger.info("Polynomial Chaos with prior input/output")
             def model_fitting(column):
