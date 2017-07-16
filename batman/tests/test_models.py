@@ -170,6 +170,28 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     assert q2 == pytest.approx(1, 0.1)
 
 
+def test_quality(tmp, mufi_data):
+    _, _, _, _, _, _, space, target_space = mufi_data
+
+    surrogate = SurrogateModel('kriging', space.corners)
+
+    # Split into cheap and expensive arrays
+    space = np.array(space)
+    target_space = np.array(target_space)
+    space = [space[space[:, 0] == 0][:, 1],
+             space[space[:, 0] == 1][:, 1]]
+    n_e = space[0].shape[0]
+    n_c = space[1].shape[0]
+    space = [space[0].reshape((n_e, -1)),
+             space[1].reshape((n_c, -1))]
+    target_space = [target_space[:n_e].reshape((n_e, -1)),
+                    target_space[n_e:].reshape((n_c, -1))]
+
+    surrogate.fit(space[1], target_space[1])
+
+    assert surrogate.estimate_quality()[0] == pytest.approx(1, 0.1)
+
+
 def test_evofusion(mufi_data):
     f_e, f_c, dist, model, point, target_point, space, target_space = mufi_data
 
@@ -189,10 +211,10 @@ def test_evofusion(mufi_data):
 
     # Plotting
     x = np.linspace(0, 1, 200).reshape(-1, 1)
-    space = np.array(space)
-    target_space = np.array(target_space)
 
     # Split into cheap and expensive arrays
+    space = np.array(space)
+    target_space = np.array(target_space)
     space = [space[space[:, 0] == 0][:, 1],
              space[space[:, 0] == 1][:, 1]]
     n_e = space[0].shape[0]

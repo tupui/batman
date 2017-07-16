@@ -229,7 +229,8 @@ class Refiner(object):
         # results = minimize(min_norm, x0, method='L-BFGS-B', bounds=bounds)
         # results = minimize(min_norm, x0, method='SLSQP', bounds=bounds)
         minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
-        results = basinhopping(min_norm, x0, niter=1000, minimizer_kwargs=minimizer_kwargs)
+        results = basinhopping(min_norm, x0,
+                               niter=1000, minimizer_kwargs=minimizer_kwargs)
         hypercube = results.x.reshape(2, self.dim)
         for i in range(self.dim):
             hypercube[:, i] = hypercube[hypercube[:, i].argsort()][:, i]
@@ -255,7 +256,6 @@ class Refiner(object):
         def func_discrepancy(coords):
             sample = np.vstack([self.surrogate.space[:], coords])
             return self.surrogate.space.discrepancy(sample)
-
 
         min_x, new_discrepancy = func_discrepancy()
 
@@ -289,7 +289,8 @@ class Refiner(object):
 
             .. math:: \sum S_i^2 \times \sigma_i
 
-            Function returns `- sum_sigma` in order to have a minimization problem.
+            Function returns `- sum_sigma` in order to have a minimization
+            problem.
 
             :param lst(float) coords: coordinate of the point
             :return: - sum_sigma
@@ -297,7 +298,7 @@ class Refiner(object):
             """
             _, sigma = self.surrogate(coords)
             sum_sigma = np.sum(self.pod_S ** 2 * sigma)
-    
+
             return - sum_sigma
 
         # result = differential_evolution(self.func_sigma, hypercube)
@@ -482,12 +483,16 @@ class Refiner(object):
 
         if method == 'sigma':
             new_point = self.sigma()
+        elif method == 'sigma':
+            new_point = self.discrepancy()
         elif method == 'loo_sigma':
             new_point = self.leave_one_out_sigma(point_loo)
         elif method == 'loo_sobol':
             new_point = self.leave_one_out_sobol(point_loo)
         elif method == 'extrema':
             new_point, refined_pod_points = self.extrema(refined_pod_points)
+        elif method == 'optimization':
+            new_point = self.optimization()
         else:
             self.logger.exception("Resampling method does't exits")
             raise SystemExit
@@ -513,7 +518,6 @@ class Refiner(object):
             discrete = 1
         else:
             discrete = 0
-
 
         @optimization(self.settings["sampling"]["method"], self.corners)
         def probability_improvement(x):

@@ -146,10 +146,10 @@ def test_resampling(tmp, case='Michalewicz'):
     settings['space']['sampling']['init_size'] = 10
     settings['space']['resampling']['resamp_size'] = 2
 
-    for method in ['loo_sigma', 'extrema']:
+    for method in ['loo_sigma', 'hybrid']:
         shutil.rmtree(tmp)
         settings['space']['resampling']['method'] = method
-        if method == 'extrema':
+        if method == 'hybrid':
             settings['space']['resampling']['resamp_size'] = 4
         batman.ui.run(settings, options)
         check_output(tmp)
