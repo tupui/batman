@@ -99,6 +99,10 @@ def test_space():
     assert space.doe_init == 2
     assert space.max_points_nb == 2
 
+    test_settings['space']['corners'][1] = [3.1415, 1, 3.1415]
+    with pytest.raises(ValueError):
+        space = Space(test_settings)
+
 
 def test_space_evaluation():
     f_3d = Ishigami()

@@ -12,6 +12,7 @@ from batman.tests.conftest import tmp
 path = os.path.dirname(os.path.realpath(__file__))
 schema = os.path.join(path, '../batman/misc/schema.json')
 
+
 def check_output(tmp):
     if not os.path.isfile(os.path.join(tmp, 'surrogate/DOE.pdf')):
         assert False
