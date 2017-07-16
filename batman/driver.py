@@ -140,7 +140,7 @@ class Driver(object):
             points = self.to_compute_points
         # snapshots generation
         if self.provider.is_file:
-            snapshots = points
+            snapshots = points.values()
         else:
             snapshots = []
             for p in points:
@@ -213,17 +213,12 @@ class Driver(object):
         From a new sample, it re-generates the POD.
 
         """
-        max_points = self.settings['space']['sampling']['init_size'] + self.settings['space']['resampling']['resamp_size']
-        while len(self.pod.points) < max_points:
-            if self.pod is not None:
-                quality, point_loo = self.surrogate.estimate_quality()
-                # quality = 0.5
-                # point_loo = [-1.1780625, -0.8144629629629629]
-                if quality >= self.settings['space']['resampling']['q2_criteria']:
-                    break
-            else:
-                quality = None
-                point_loo = None
+        while len(self.pod.points) < self.space.max_points_nb:
+            quality, point_loo = self.surrogate.estimate_quality()
+            # quality = 0.5
+            # point_loo = [-1.1780625, -0.8144629629629629]
+            if quality >= self.settings['space']['resampling']['q2_criteria']:
+                break
 
             try:
                 new_point = self.space.refine(self.surrogate, point_loo)

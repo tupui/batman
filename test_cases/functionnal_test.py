@@ -21,16 +21,16 @@ def check_output(tmp):
         assert False
     if not os.path.isfile(os.path.join(tmp, 'surrogate/data.dat')):
         assert False
-    
+
 
 def init_case(tmp, case, output=True, force=False):
     os.chdir(os.path.join(path, case))
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     run = True
 
-    if force:
+    if force or (os.listdir(tmp) == []):
         shutil.rmtree(tmp)
-    elif os.path.isdir(tmp):
+    else:
         run = False
 
     if run:
@@ -85,22 +85,22 @@ def test_uq(tmp, case='Michalewicz'):
 
 def test_checks(tmp, case='Michalewicz'):
     """Check answers to questions if there is an output folder."""
-    init_case(tmp, case, output=False)
+    init_case(tmp, case)
 
     # Restart from snapshots
-    with mock.patch.object(batman.misc, 'check_yes_no', lambda prompt, default: '\n'):
+    with mock.patch('builtins.input', side_effect=['', '']):
         batman.ui.main()
 
     check_output(tmp)
 
     # Remove files and restart
-    with mock.patch.object(batman.misc, 'check_yes_no', lambda prompt, default: 'y'):
+    with mock.patch('builtins.input', side_effect=['yes', 'yes']):
         batman.ui.main()
 
     check_output(tmp)
 
     # Exit without doing anything
-    with mock.patch.object(batman.misc, 'check_yes_no', lambda prompt, default: 'n'):
+    with mock.patch('builtins.input', side_effect=['no', 'no']):
         batman.ui.main()
 
     check_output(tmp)
@@ -176,7 +176,7 @@ def test_simple_settings(tmp):
     settings = batman.misc.import_config(options.settings, schema)
     settings['space'].pop('resampling')
     settings.pop('pod')
-    settings['surrogate'].pop('predictions')
+    settings.pop('surrogate')
     settings.pop('uq')
     shutil.rmtree(tmp)
     batman.ui.run(settings, options)

@@ -74,7 +74,7 @@ class SurrogateModel(object):
         points = np.array(points)
         try:
             points_scaled = self.scaler.transform(points)
-        except ValueError:
+        except ValueError:  # With multifidelity
             points_scaled = self.scaler.transform(points[:, 1:])
             points_scaled = np.hstack((points[:, 0].reshape(-1, 1), points_scaled))
         # predictor object

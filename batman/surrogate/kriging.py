@@ -115,17 +115,6 @@ class Kriging(object):
 
         self.logger.debug("Hyperparameters: {}".format(self.hyperparameter))
 
-    def optim_evolution_sequential(self, obj_func, initial_theta, bounds):
-        """Same as :func:`optim_evolution` without restart."""
-        def func(args):
-            return obj_func(args)[0]
-
-        results = differential_evolution(func, bounds, tol=0.001, popsize=20)
-        theta_opt = results.x
-        func_min = results.fun
-
-        return theta_opt, func_min
-
     def optim_evolution(self, obj_func, initial_theta, bounds):
         """Genetic optimization of the hyperparameters.
 
