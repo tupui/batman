@@ -118,10 +118,8 @@ class UQ:
 
         # Generate samples
         self.points_sample = settings['uq']['sample']
-        pdf = settings['uq']['pdf']
-        input_pdf = "ot." + pdf[0]
-        for i in range(self.p_len - 1):
-            input_pdf = input_pdf + ", ot." + pdf[i + 1]
+        input_pdf = ','.join(['ot.' + settings['uq']['pdf'][i]
+                              for i in range(self.p_len)])
         self.distribution = eval("ot.ComposedDistribution(["
                                  + input_pdf
                                  + "], ot.IndependentCopula(self.p_len))")
