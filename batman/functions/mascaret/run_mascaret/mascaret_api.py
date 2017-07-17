@@ -18,8 +18,8 @@ import matplotlib.pyplot as plt
 from ...utils import multi_eval
 from ....space import Gp1dSampler
 
-logging.basicConfig(level=logging.DEBUG)
-#logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 class MascaretApi(object):
