@@ -316,7 +316,9 @@ class Driver(object):
         output = os.path.join(self.output, self.output_tree['uq'])
 
         if self.pod is not None:
-            data = self.pod.mean_snapshot + self.data
+            data = []
+            for s in self.data:
+                data.append(self.pod.mean_snapshot + np.dot(self.pod.U, s)) 
         else:
             data = self.data
 

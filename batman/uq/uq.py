@@ -483,16 +483,18 @@ class UQ:
 
         # Covariance and correlation matrices
         if (self.output_len != 1) and (self.type_indices != 'block'):
-            correlation_matrix = output.computePearsonCorrelation()
-            covariance_matrix = output.computeCovariance()
+            corr_matrix_YY = self.output.computePearsonCorrelation()
+            corr_matrix_XY = np.corrcoef(self.f_input, self.output)
+            cov_matrix_YY = self.output.computeCovariance()
 
             x_input_2d, y_input_2d = np.meshgrid(self.f_input, self.f_input)
             x_input_2d = np.array([x_input_2d]).flatten()
             y_input_2d = np.array([y_input_2d]).flatten()
 
-            names = ["x", "y", "Correlation", "Covariance"]
+            names = ['x', 'y', 'Correlation-YY', 'Correlation-XY', 'Covariance']
             data_coord = np.append(x_input_2d, y_input_2d)
-            data_matrices = np.append(correlation_matrix, covariance_matrix)
+            data_matrices = np.append(corr_matrix_YY,
+                                      (corr_matrix_XY, cov_matrix_YY))
             data = np.append(data_coord, data_matrices)
             dataset = Dataset(names=names,
                               shape=[self.output_len, self.output_len, 1],
@@ -517,7 +519,7 @@ class UQ:
         # Write PDF to file
         output_extract = np.array(output_extract).flatten('C')
         pdf_pts = np.array(pdf_pts).flatten('F')
-        names = ["output", "PDF"]
+        names = ['output', 'PDF']
         if (self.output_len != 1) and (self.type_indices != 'block'):
             names = ['x'] + names
             f_input_2d = np.tile(self.f_input, d_PDF)
