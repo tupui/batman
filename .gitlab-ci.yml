@@ -25,8 +25,8 @@ pages:
   - python setup.py install
   - cd doc
   - make html
-  - rm -rf public/
-  - mv _build/html/ public/
+  - rm -rf ../public
+  - mv _build/html/ ../public/
   - pip uninstall -y batman
   artifacts:
     paths:
