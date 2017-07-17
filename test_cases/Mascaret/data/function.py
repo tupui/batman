@@ -7,8 +7,9 @@ import ctypes
 import csv
 from batman.input_output import (IOFormatSelector, Dataset)
 from batman.functions import MascaretApi
+from batman.functions.mascaret import print_statistics, histogram, plot_opt
 
-study = MascaretApi('config_canal.json','config_canal_user.json')
+study = MascaretApi('config_canal.json','config_canal_user_KsQ.json')
 print(study)
 
 
@@ -26,8 +27,9 @@ X1 = float(x1)
 X2 = float(x2)
 
 # Function
-F = study()
+F = study(x=[X1, X2])
 print('Water level', F)
+plot_opt('ResultatsOpthyca.opt')
 
 # Output
 data = np.array(F)

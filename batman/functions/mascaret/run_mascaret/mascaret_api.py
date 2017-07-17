@@ -18,8 +18,8 @@ import matplotlib.pyplot as plt
 from ...utils import multi_eval
 from ....space import Gp1dSampler
 
-#logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.INFO)
 
 
 class MascaretApi(object):
@@ -379,7 +379,7 @@ class MascaretApi(object):
                 self.iprint)
             
         else:
-            self.user_defined()
+#            self.user_defined()
             self.empty_opt()
             self.logger.info('Running Mascaret...')
             self.error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,

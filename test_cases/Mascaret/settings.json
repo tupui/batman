@@ -1,8 +1,8 @@
 {
     "space": {
         "corners": [
-            [999.0, 999.0], 
-            [9999.0, 9999.0]
+            [20.0, 1000.0], 
+            [40.0, 3000.0]
         ],
         "sampling": {
             "init_size": 5,
@@ -36,5 +36,15 @@
             "data-directory": "cfd-output-data",
             "restart": "False"
         }
+    },
+    "surrogate": {
+        "predictions": [2.2],
+        "method": "kriging"
+    },
+    "uq": {
+        "sample": 1000,
+        "pdf": ["Normal(0., 4.)"],
+        "type": "aggregated",
+        "method": "sobol"
     }
 }
