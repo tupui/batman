@@ -77,7 +77,7 @@ class UQ:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, surrogate, settings, output=None):
+    def __init__(self, settings, surrogate, space=None, data=None, output=None):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -92,9 +92,11 @@ class UQ:
 
         Also, it creates the `model` and `int_model` as `ot.PythonFunction()`.
 
-        :param class:`surrogate.surrogate_model.SurrogateModel` surrogate: a surrogate,
-        :param dict settings: The settings file.
-
+        :param dict settings: The settings file
+        :param class:`surrogate.surrogate_model.SurrogateModel` surrogate: a surrogate
+        :param class:`space.space.Space` space: sample space (can be a list)
+        :param np.array data: snapshot's data
+        :param str output: output path
         """
         self.logger.info("\n----- UQ module -----")
         try:
@@ -132,16 +134,23 @@ class UQ:
 
         # Get discretization if functionnal output
         try:
-            f_eval, _ = self.surrogate(self.sample[0])
-            self.f_input, _ = np.split(f_eval[0], 2)
-        except:
-            self.f_input = None
+            # With surrogate model
+            try:
+                f_eval, _ = self.surrogate(self.sample[0])
+                self.f_input, _ = np.split(f_eval[0], 2)
+            except ValueError:
+                self.f_input = None
 
-        # Wrapper for parallelism
-        self.n_cpus = 1  # cpu_count()
-        self.wrapper = Wrapper(self.surrogate, self.p_len, self.output_len)
-        self.model = otw.Parallelizer(self.wrapper,
-                                      backend='pathos', n_cpus=self.n_cpus)
+            # Wrapper for parallelism
+            self.n_cpus = 1
+            self.wrapper = Wrapper(self.surrogate, self.p_len, self.output_len)
+            self.model = otw.Parallelizer(self.wrapper,
+                                          backend='pathos', n_cpus=self.n_cpus)
+            self.output = self.model(self.sample)
+        except TypeError:
+            self.sample = space
+            self.output = ot.Sample(data)
+            self.f_input = None
 
         self.snapshots = settings['space']['sampling']['init_size']
         try:
@@ -451,8 +460,7 @@ class UQ:
 
         """
         self.logger.info("\n----- Moment evaluation -----")
-        output = self.model(self.sample)
-        output = output.sort()
+        output = self.output.sort()
 
         # Compute statistics
         mean = output.computeMean()
@@ -496,8 +504,8 @@ class UQ:
         kernel = ot.KernelSmoothing()
         pdf_pts = [None] * self.output_len
         d_PDF = 200
-        sample = self.distribution.getSample(d_PDF)
-        output_extract = self.model(sample)
+        output_extract = self.output[0:d_PDF]
+
         for i in range(self.output_len):
             try:
                 pdf = kernel.build(output[:, i])

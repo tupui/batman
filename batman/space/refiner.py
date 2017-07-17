@@ -351,7 +351,7 @@ class Refiner(object):
         point = np.array(point_loo)
 
         # Get Sobol' indices
-        analyse = UQ(self.surrogate, self.settings_full)
+        analyse = UQ(self.settings_full, self.surrogate)
         indices = analyse.sobol()[2]
         indices = indices * (indices > 0)
         indices = preprocessing.normalize(indices.reshape(1, -1), norm='max')

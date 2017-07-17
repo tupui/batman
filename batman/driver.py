@@ -314,6 +314,15 @@ class Driver(object):
     def uq(self):
         """Perform UQ analysis."""
         output = os.path.join(self.output, self.output_tree['uq'])
-        analyse = UQ(self.surrogate, self.settings, output)
-        analyse.sobol()
+
+        if self.pod is not None:
+            data = self.pod.mean_snapshot + self.data
+        else:
+            data = self.data
+
+        analyse = UQ(self.settings, self.surrogate,
+                     self.space, data, output)
+
+        if self.surrogate is not None:
+            analyse.sobol()
         analyse.error_propagation()
