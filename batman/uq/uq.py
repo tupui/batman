@@ -114,7 +114,6 @@ class UQ:
         self.surrogate = surrogate
         self.p_lst = settings['snapshot']['io']['parameter_names']
         self.p_len = len(self.p_lst)
-        self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]
         self.method_sobol = settings['uq']['method']
         self.type_indices = settings['uq']['type']
 
@@ -138,8 +137,10 @@ class UQ:
             try:
                 f_eval, _ = self.surrogate(self.sample[0])
                 self.f_input, _ = np.split(f_eval[0], 2)
+                self.output_len = len(self.f_input)
             except ValueError:
                 self.f_input = None
+                self.output_len = 1
 
             # Wrapper for parallelism
             self.n_cpus = 1
@@ -149,8 +150,9 @@ class UQ:
             self.output = self.model(self.sample)
         except TypeError:
             self.sample = space
-            self.output = ot.Sample(data)
-            self.f_input = None
+            self.f_input, output = np.split(data, 2)
+            self.output = ot.Sample(output)
+            self.output_len = len(self.f_input)
 
         self.snapshots = settings['space']['sampling']['init_size']
         try:
