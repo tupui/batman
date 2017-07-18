@@ -17,8 +17,8 @@ import numpy as np
 from ...utils import multi_eval
 from ....space import Gp1dSampler
 
-# logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.INFO)
 
 
 class MascaretApi(object):
@@ -296,6 +296,10 @@ class MascaretApi(object):
         for file1 in self.settings['files']['loi']:
             string += '         {}\n'
         string += '\nUSER SETTINGS:\n'
+        if 'init_cst' in self.user_settings:
+            string += (" -- Init model with cst values:\n"
+                       "       > Q_cst: {}\n"
+                       "       > Z_cst: {}\n")
         if 'Q_BC' in self.user_settings:
             string += (" -- Change the upstream flow rate:\n"
                        "       > Index: {}\n"
@@ -315,6 +319,7 @@ class MascaretApi(object):
         if 'misc' in self.user_settings:
             string += (" -- Miscellaneous:\n"
                        "       > Print  boundary conditions: {}\n"
+                       "       > Output all state: {}\n"
                        "       > Output index: {}\n")
         if 'bathy' in self.user_settings:
             string += (" -- Change bathymetry:\n"
@@ -350,7 +355,7 @@ class MascaretApi(object):
         :param list x: inputs [Ks, Q]
         :param str flag: None, 'Ks' or 'Q'
         :param bool saveall: Change the default name of the Results file
-        :return: water level at :attr:`index_outstate`
+        :return: water level at :attr:`index_outstate` or all state if `all_outstate` is true
         :rtype: double
         """
         if x is not None:
@@ -400,8 +405,8 @@ class MascaretApi(object):
             ticks = self.curv_abs()
             i = 0
             for tick in ticks:
-                if tick >= self.user_settings['misc']['curv_abs']:
-                    id_tick = i
+                if tick > self.user_settings['misc']['curv_abs']:
+                    id_tick = i - 1
                     break
                 else:
                     i += 1
@@ -410,6 +415,8 @@ class MascaretApi(object):
             output = (y2 * (self.user_settings['misc']['curv_abs'] - ticks[id_tick]) + y1 * (ticks[
                       id_tick + 1] - self.user_settings['misc']['curv_abs'])) / (ticks[id_tick + 1] - ticks[id_tick])
             return output
+        elif self.user_settings['misc']['all_outstate'] is True:
+            return self.allstate()
         else:
             return self.state(self.user_settings['misc']['index_outstate']).value
 
@@ -739,6 +746,38 @@ class MascaretApi(object):
         self.error = self.libmascaret.C_SET_DOUBLE_MASCARET(
             self.id_masc, var_name, self.ks_idx, 0, 0, ks_c)
         self.logger.debug('Ks changed.')
+
+    def allstate(self):
+        """Get state at all simulation points in :attr:`user_settings['misc']['all_outstate']`.
+
+        Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET` and
+        :meth:`C_GET_DOUBLE_MASCARET`.
+
+        :boolean index: Flag to return all state 
+        :return: State at each simulation point
+        :rtype: list of floats
+        """
+        var_name = ctypes.c_char_p(b'State.Z')
+
+        itemp0 = ctypes.c_int()
+        itemp1 = ctypes.c_int()
+        itemp2 = ctypes.c_int()
+        self.logger.debug('Getting the size of State.Z...')
+        self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+            self.id_masc, var_name, 0, ctypes.byref(itemp0), ctypes.byref(itemp1), ctypes.byref(itemp2))
+        self.logger.debug('itemp= {} {} {}.'
+                          .format(itemp0.value, itemp1.value, itemp2.value))
+
+        state_res = []
+        z_res_c = ctypes.c_double()
+        self.logger.debug('Getting the value of all State.Z...')
+        for index in range(1, itemp0.value + 1):
+            self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+                self.id_masc, var_name, index, 0, 0, ctypes.byref(z_res_c))
+            state_res.append(z_res_c.value)
+
+        self.logger.debug('State get.')
+        return state_res
 
     def state(self, index):
         """Get state at given index in :attr:`user_settings['misc']['index_outstate']`.
