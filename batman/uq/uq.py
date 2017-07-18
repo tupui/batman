@@ -120,6 +120,7 @@ class UQ:
         self.points_sample = settings['uq']['sample']
         pdf = settings['uq']['pdf']
         input_pdf = "ot." + pdf[0]
+        print(self.p_len, input_pdf, pdf)
         for i in range(self.p_len - 1):
             input_pdf = input_pdf + ", ot." + pdf[i + 1]
         self.distribution = eval("ot.ComposedDistribution(["

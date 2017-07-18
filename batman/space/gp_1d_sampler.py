@@ -9,7 +9,7 @@ from math import sqrt
 import numpy as np
 
 
-class Gp_1d_sampler:
+class Gp1dSampler:
     '''The class "Gp_1d_sampler" computes instances of a one-dimensional Gaussian Process (GP) discretized over a mesh. It can be decomposed into three steps: 
         1) Compute the Karhunen Loeve decomposition (KLD); 
         2) Sample the weights of the KLD according to the standard normal distribution.
@@ -52,12 +52,24 @@ class Gp_1d_sampler:
             [self.Nt - 1]).build(ot.Interval(self.t0, self.T))
         if x is not None:
             vertices = np.array(mesh.getVertices())
-            user_vertices = np.sort(np.concatenate((vertices, x)), axis=0)
-            self.Nt += len(x)
-            user_simplices = []
-            for i in range(self.Nt-1):
-                user_simplices.append([i, i+1])
-        mesh = ot.Mesh(user_vertices, user_simplices)
+            x_not_in_vertices = []
+            for i in range(len(self.x)):
+               if self.x[i] not in vertices:
+                   x_not_in_vertices.append(self.x[i])
+            if len(x_not_in_vertices)>0:
+                user_vertices = np.sort(np.concatenate((vertices, x_not_in_vertices)), axis=0)
+                self.Nt += len(x_not_in_vertices)
+                user_simplices = []
+                for i in range(self.Nt-1):
+                    user_simplices.append([i, i+1])
+                mesh = ot.Mesh(user_vertices, user_simplices)
+            vertices = np.array(mesh.getVertices())
+            self.idx = []
+            for i in range(len(self.x)):
+                self.idx.append((vertices.T)[0,:].tolist().index(self.x[i][0]))
+        else:
+            self.idx = None
+
         # Absolute exponential covariance model
         if covariance == "SquaredExponential":
             model = ot.SquaredExponential([self.theta], [self.sigma])
@@ -104,12 +116,14 @@ class Gp_1d_sampler:
                    "- Threshold for the KLDGP: {}\n "+\
                    "- Number of nodes: {}\n "
         if self.x is not None:
-            temp = ["["+str(item[0])+"]" for item in self.x]
-            template = template+"- User points: [{}]\n "
-#            return template%(self.t0, self.T, self.Nt, self.sigma, self.theta, self.threshold, self.n_modes, .join(temp))
-            return template.format(self.t0, self.T, self.Nt, self.sigma, self.theta, self.threshold, self.n_modes, ",".join(temp))
+            temp_x = ["["+str(item[0])+"]" for item in self.x]
+            print (self.idx)
+            temp_idx = ["["+str(item)+"]" for item in self.idx]
+            template = template+"- User points (values): [{}]\n "
+            template = template+"- User points (indices): [{}]\n "
+            return template.format(self.t0, self.T, self.Nt, self.sigma, self.theta, self.threshold, self.n_modes, ",".join(temp_x), ",".join(temp_idx))
         else:
-            return template%(self.t0, self.T, self.Nt, self.sigma, self.theta, self.threshold, self.n_modes)
+            return template.format(self.t0, self.T, self.Nt, self.sigma, self.theta, self.threshold, self.n_modes)
 
     def plot_modes(self):
         '''This function plots the modes of the Karhunen Loeve decomposition.'''
@@ -176,7 +190,7 @@ class Gp_1d_sampler:
         return {'Values': Y.T, 'Coefficients': X}
 
 
-class Gp_2d_sampler:
+class Gp2dSampler:
     '''The class "Gp_2d_sampler" computes instances of a two-dimensional Gaussian Process (GP) discretized over a mesh. It can be decomposed into three steps: 
         1) Compute the Karhunen Loeve decomposition (KLD); 
         2) Sample the weights of the KLD according to the standard normal distribution.
@@ -255,13 +269,13 @@ class Gp_2d_sampler:
 
     def __repr__(self):
         template = "INFORMATIONS ABOUT THE KARHUNEN-LOEVE DECOMPOSITION\n "+\
-                   "- Mesh interval: [[%f,%f],[%f,%f]]\n "+\
-                   "- Mesh size: [%i,%i]\n "+\
-                   "- GP standard deviation: %f\n "+\
-                   "- GP correlation length: [%f,%f]\n "+\
-                   "- Threshold for the KLDGP: %f\n "+\
-                   "- Number of nodes: %i"
-        return template%(self.t0[0],self.T[0],self.t0[1],self.T[1],self.Nt[0],self.Nt[1],self.sigma,self.theta[0],self.theta[1],self.threshold,self.n_modes)
+                   "- Mesh interval: [[{},{}],[{},{}]]\n "+\
+                   "- Mesh size: [{},{}]\n "+\
+                   "- GP standard deviation: {}\n "+\
+                   "- GP correlation length: [{},{}]\n "+\
+                   "- Threshold for the KLDGP: {}\n "+\
+                   "- Number of nodes: {}"
+        return template.format(self.t0[0],self.T[0],self.t0[1],self.T[1],self.Nt[0],self.Nt[1],self.sigma,self.theta[0],self.theta[1],self.threshold,self.n_modes)
 
     def plot_modes(self):
         '''This function plots the modes of the Karhunen Loeve decomposition.'''
@@ -304,11 +318,11 @@ class Gp_2d_sampler:
         return {'Values': Y.T, 'Coefficients': X}
 
     def build(self, coeff=[0]):
-        ''' This function computes the realization of the GP1D corresponding to the coefficients "coeff".
+        ''' This function computes the realization of the GP2D corresponding to the coefficients "coeff".
         Arguments:
             - coeff: coefficients of the Karhunen Loeve decomposition (default = [0]).
         Outputs:
-            - ['Values']: an instance of the 1D GP discretized over the mesh [t0:(T-T0)/(Nt-1):T].
+            - ['Values']: an instance of the 2D GP discretized over the mesh [t0:(T-T0)/(Nt-1):T].
                 ** [1 x Nt] matrix
             - ['Coefficients']: Coefficients for the KLD.
                 ** [1 x Nmodes] matrix'''
@@ -317,7 +331,7 @@ class Gp_2d_sampler:
         Y = np.dot(self.modes.T, X)
         return {'Values': Y.T, 'Coefficients': X}
 
-class Gp_3d_sampler:
+class Gp3dSampler:
     '''The class "Gp_nd_sampler" computes instances of a 3-dimensional Gaussian Process (GP) discretized over a mesh. It can be decomposed into three steps: 
         1) Compute the Karhunen Loeve decomposition (KLD); 
         2) Sample the weights of the KLD according to the standard normal distribution.
@@ -396,33 +410,20 @@ class Gp_3d_sampler:
 
     def __repr__(self):
         template = "INFORMATIONS ABOUT THE KARHUNEN-LOEVE DECOMPOSITION\n "+\
-                   "- Mesh interval: [[%f,%f],[%f,%f]]\n "+\
-                   "- Mesh size: [%i,%i]\n "+\
+                   "- Mesh interval: [[{},{}],[{},{}]]\n "+\
+                   "- Mesh size: [{},{}]\n "+\
                    "- GP standard deviation: %f\n "+\
-                   "- GP correlation length: [%f,%f]\n "+\
-                   "- Threshold for the KLDGP: %f\n "+\
-                   "- Number of nodes: %i"
-        return template%(self.t0[0],self.T[0],self.t0[1],self.T[1],self.Nt[0],self.Nt[1],self.sigma,self.theta[0],self.theta[1],self.threshold,self.n_modes)
-
-    def plot_modes(self):
-        '''This function plots the modes of the Karhunen Loeve decomposition.'''
-        X, Y = np.meshgrid(np.arange(self.t0[0], self.T[0], (self.T[0] - self.t0[0]) / self.Nt[
-                           0]), np.arange(self.t0[1], self.T[1], (self.T[1] - self.t0[1]) / self.Nt[1]))
-        for i in range(min(self.n_modes, 9)):
-            ax = plt.subplot("33" + str(i + 1))
-            Z = np.reshape(self.modes[i], self.Nt)
-            CS = plt.contour(X, Y, Z)
-            plt.clabel(CS, inline=1, fontsize=10)
-            plt.title("Mode " + str(i + 1))
-
-        plt.show()
+                   "- GP correlation length: [{},{}]\n "+\
+                   "- Threshold for the KLDGP: {}\n "+\
+                   "- Number of nodes: {}"
+        return template.format(self.t0[0],self.T[0],self.t0[1],self.T[1],self.t0[2],self.T[2],self.Nt[0],self.Nt[1],self.Nt[2],self.sigma,self.theta[0],self.theta[1],self.theta[2],self.threshold,self.n_modes)
 
     def sample(self, N=1):
-        ''' This function computes "Nm" realizations of the GP2D.
+        ''' This function computes "Nm" realizations of the GP3D.
         Arguments:
-            - Nm: the number of GP2D instances (default = 1).
+            - Nm: the number of GP3D instances (default = 1).
         Outputs:
-            - ['Values']: Nm instances of the 2D GP discretized over the mesh.
+            - ['Values']: Nm instances of the 3D GP discretized over the mesh.
                 ** [Nm x prod(Nt)] matrix
             - ['Coefficients']: Coefficients for the KLD.
                 ** [Nm x Nmodes] matrix'''
@@ -445,11 +446,11 @@ class Gp_3d_sampler:
         return {'Values': Y.T, 'Coefficients': X}
 
     def build(self, coeff=[0]):
-        ''' This function computes the realization of the GP1D corresponding to the coefficients "coeff".
+        ''' This function computes the realization of the GP3D corresponding to the coefficients "coeff".
         Arguments:
             - coeff: coefficients of the Karhunen Loeve decomposition (default = [0]).
         Outputs:
-            - ['Values']: an instance of the 1D GP discretized over the mesh [t0:(T-T0)/(Nt-1):T].
+            - ['Values']: an instance of the 3D GP discretized over the mesh [t0:(T-T0)/(Nt-1):T].
                 ** [1 x Nt] matrix
             - ['Coefficients']: Coefficients for the KLD.
                 ** [1 x Nmodes] matrix'''

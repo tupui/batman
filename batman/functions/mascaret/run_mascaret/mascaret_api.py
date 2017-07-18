@@ -920,9 +920,12 @@ class MascaretApi(object):
                           .format(sizeZ1.value, sizeZ2.value, sizeZ3.value))
 
         if 'Lp' in self.user_settings['bathy']:
-            sampler = Gp1dSampler(t_ini=self.cross_section[0][0], t_end=self.cross_section[
-                                  0][-1], Nt=sizeZ1.value, sigma=bathy['dz'], theta=bathy['Lp'])
-            shift_dz = sampler.sample()['Values']
+#            sampler = Gp1dSampler(t0=self.cross_section[0][0], T=self.cross_section[0][-1],
+#                                 Nt=sizeZ1.value, sigma=bathy['dz'], theta=bathy['Lp'])
+            sampler = Gp1dSampler(t0=self.cross_section[0][0], T=self.cross_section[
+                                 0][-1], Nt=sizeZ1.value, sigma=bathy['dz'], theta=bathy['Lp'], 
+                                 x=[[self.cross_section[0][0]], [self.cross_section[0][-1]]])
+            shift_dz = sampler.sample()['Values'][0]
         else:
             shift_dz = np.zeros(sizeZ1.value, float) + bathy['dz']
 

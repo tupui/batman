@@ -1,14 +1,18 @@
-from pyuq import Gp_1d_sampler, Gp_2d_sampler
+from pyuq import Gp1dSampler, Gp2dSampler
 import matplotlib.pyplot as plt
 import numpy as np
 
-help(Gp_1d_sampler)
+help(Gp1dSampler)
 
 # Construction of the sampler
-sampler = Gp_1d_sampler(x=[[0.126], [0.504]])
+#sampler = Gp1dSampler(x=[[0.104],[1.]])
+sampler = Gp1dSampler()
 
 # Information about the sampler
 print(sampler)
+
+print "User points (values):", sampler.x
+print "User points (indices):", sampler.idx
 
 # Plot of the modes of the Karhunen Loeve Decomposition
 sampler.plot_modes()
@@ -23,10 +27,10 @@ Y = sampler.build(coeff, plot=True)
 
 #########################################
 
-help(Gp_2d_sampler)
+help(Gp2dSampler)
 
 # Construction of the sampler
-sampler = Gp_2d_sampler()
+sampler = Gp2dSampler()
 
 # Information about the sampler
 print(sampler)
