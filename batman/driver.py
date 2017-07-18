@@ -89,7 +89,7 @@ class Driver(object):
             # get the point from existing snapshot files,
             self.logger.info('Reading points from a list of snapshots files.')
 
-            self.initial_points = OrderedDict()
+            self.to_compute_points = OrderedDict()
 
             for path in self.provider:
                 point = Snapshot.read_point(path)
@@ -98,16 +98,16 @@ class Driver(object):
                 except (AlienPointError, UnicityError, FullSpaceError) as tb:
                     self.logger.warning("Ignoring: {}".format(tb))
                 else:
-                    self.initial_points[point] = path
+                    self.to_compute_points[point] = path
         else:
             space_provider = self.settings['space']['sampling']
             if isinstance(space_provider, list):
                 # a list of points is provided
                 self.logger.info('Reading list of points from the settings.')
-                self.initial_points = space_provider
+                self.to_compute_points = space_provider
             elif isinstance(space_provider, dict):
                 # use sampling method
-                self.initial_points = self.space.sampling(space_provider['init_size'])
+                self.to_compute_points = self.space.sampling(space_provider['init_size'])
             else:
                 self.logger.error('Bad space provider.')
                 raise SystemError
@@ -137,10 +137,10 @@ class Driver(object):
 
         """
         if points is None:
-            points = self.initial_points
+            points = self.to_compute_points
         # snapshots generation
         if self.provider.is_file:
-            snapshots = points
+            snapshots = points.values()
         else:
             snapshots = []
             for p in points:
@@ -213,17 +213,12 @@ class Driver(object):
         From a new sample, it re-generates the POD.
 
         """
-        max_points = self.settings['space']['sampling']['init_size'] + self.settings['space']['resampling']['resamp_size']
-        while len(self.pod.points) < max_points:
-            if self.pod is not None:
-                quality, point_loo = self.surrogate.estimate_quality()
-                # quality = 0.5
-                # point_loo = [-1.1780625, -0.8144629629629629]
-                if quality >= self.settings['space']['resampling']['q2_criteria']:
-                    break
-            else:
-                quality = None
-                point_loo = None
+        while len(self.pod.points) < self.space.max_points_nb:
+            quality, point_loo = self.surrogate.estimate_quality()
+            # quality = 0.5
+            # point_loo = [-1.1780625, -0.8144629629629629]
+            if quality >= self.settings['space']['resampling']['q2_criteria']:
+                break
 
             try:
                 new_point = self.space.refine(self.surrogate, point_loo)
@@ -266,7 +261,7 @@ class Driver(object):
         if self.surrogate is not None:
             self.surrogate.read(os.path.join(self.output,
                                              self.output_tree['surrogate']))
-            self.space = self.surrogate.space
+            self.space[:] = self.surrogate.space[:]
             self.data = self.surrogate.data
         else:
             path = os.path.join(self.output, self.output_tree['space'])
@@ -285,18 +280,19 @@ class Driver(object):
         """Restart process."""
         # Surrogate [and POD] has already been computed
         self.logger.info('Restarting from previous computation...')
-        self.read()
+        to_compute_points = self.space[:]
+        self.read()  # Reset space with actual computations
         self.snapshot_counter = len(self.space)
 
-        if self.snapshot_counter < len(self.initial_points):
+        if self.snapshot_counter < len(to_compute_points):
             # will add new points to be processed
             # [static or dynamic pod is finished]
-            self.initial_points = [p for p in self.initial_points
+            self.to_compute_points = [p for p in to_compute_points
                                    if p not in self.space]
         else:
             # automatic resampling has to continue from
             # the processed points
-            self.initial_points = []
+            self.to_compute_points = []
 
     def prediction(self, points, write=False):
         """Perform a prediction.
@@ -318,6 +314,15 @@ class Driver(object):
     def uq(self):
         """Perform UQ analysis."""
         output = os.path.join(self.output, self.output_tree['uq'])
-        analyse = UQ(self.surrogate, self.settings, output)
-        analyse.sobol()
+
+        if self.pod is not None:
+            data = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
+        else:
+            data = self.data
+
+        analyse = UQ(self.settings, self.surrogate,
+                     self.space, data, output)
+
+        if self.surrogate is not None:
+            analyse.sobol()
         analyse.error_propagation()
