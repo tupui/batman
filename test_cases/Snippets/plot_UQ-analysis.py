@@ -53,11 +53,12 @@ moment_file = path + 'moment.dat'
 sensitivity_file = path + 'sensitivity.dat'
 sensitivity_aggr_file = path + 'sensitivity_aggregated.dat'
 corr_cov_file = path + 'correlation_covariance.dat'
+corr_XY_file = path + 'correlation_XY.dat'
 p2 = {'name': "Q", 's_1': None, 's_t': None, 's_1_ag': None, 's_t_ag': None}
 p1 = {'name': "Ks", 's_1': None, 's_t': None, 's_1_ag': None, 's_t_ag': None}
 z = {'name': "Z", 'label': r"$Z$ (m)", 'data': None, 'shape': 400}
 x = {'name': "x", 'label': "Curvilinear abscissa (km)", 'data': None}
-pdf_discretization = 14
+pdf_discretization = 22
 get_pdf = 8
 bound_pdf = np.linspace(0., 1., 50, endpoint=True)
 x_factor = 1000
@@ -67,17 +68,21 @@ x['data'], mini, sd_min, mean, sd_max, maxi = tecplot_reader(moment_file, 6)
 _, p1['s_1'], p2['s_1'], p1['s_t'], p2['s_t'] = tecplot_reader(sensitivity_file, 5)
 S_min_x1, S_min_x2, p1['s_1_ag'], p2['s_1_ag'], S_max_x1, S_max_x2, S_T_min_x1, S_T_min_x2, p1['s_t_ag'], p2['s_t_ag'], S_T_max_x1, S_T_max_x2 = tecplot_reader(sensitivity_aggr_file, 12)
 
-x_2d, y_2d, corr_YY, corr_XY, cov = tecplot_reader(corr_cov_file, 5)
+x_2d, y_2d, corr_YY, cov = tecplot_reader(corr_cov_file, 4)
+x_2d_XY, y_2d_XY, corr_XY = tecplot_reader(corr_XY_file, 3)
 
 # Reshape data
 x_pdf_matrix = x_pdf.reshape((pdf_discretization, z['shape']))
 z_matrix = z['data'].reshape((pdf_discretization, z['shape']))
 pdf_matrix = pdf.reshape((pdf_discretization, z['shape']))
 corr_YY_matrix = corr_YY.reshape((z['shape'], z['shape']))
-corr_XY_matrix = corr_XY.reshape((z['shape'], z['shape']))
 cov_matrix = cov.reshape((z['shape'], z['shape']))
 x_2d = x_2d.reshape((z['shape'], z['shape']))
 y_2d = y_2d.reshape((z['shape'], z['shape']))
+
+x_2d_XY = x_2d_XY.reshape((2, z['shape']))
+y_2d_XY = y_2d_XY.reshape((2, z['shape']))
+corr_XY_matrix = corr_XY.reshape((2, z['shape']))
 
 # Get a specific PDF
 pdf_array = pdf_matrix[:, get_pdf]
@@ -169,7 +174,7 @@ plt.show()
 
 fig = plt.figure('Correlation-matrix-XY')
 plt.contourf(x['data']/x_factor, x['data']/x_factor, cov_matrix, cmap=c_map)
-plt.contourf(x_2d, y_2d, corr_XY_matrix, cmap=c_map)
+plt.contourf(x_2d_XY, y_2d_XY, corr_XY_matrix, cmap=c_map)
 cbar = plt.colorbar()
 cbar.set_label(r"Correlation", size=26)
 cbar.ax.tick_params(labelsize=23)
