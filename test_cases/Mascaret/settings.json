@@ -14,7 +14,7 @@
         "io": {
             "shapes": {
                 "0": [
-                    [1]
+                    [51]
                 ]
             },
             "format": "fmt_tp_fortran",

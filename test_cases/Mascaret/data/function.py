@@ -36,5 +36,5 @@ data = np.array(F)
 names = ["F"]
 
 io = IOFormatSelector('fmt_tp_fortran')
-dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
+dataset = Dataset(names=names, shape=[51, 1, 1], data=data)
 io.write('./cfd-output-data/function.dat', dataset)
