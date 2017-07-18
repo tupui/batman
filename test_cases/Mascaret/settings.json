@@ -37,10 +37,6 @@
             "restart": "False"
         }
     },
-    "surrogate": {
-        "predictions": [22, 1500],
-        "method": "kriging"
-    },
     "uq": {
         "sample": 1000,
         "pdf": ["Uniform(20., 40.)", "Uniform(1000., 3000.)"],
