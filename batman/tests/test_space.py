@@ -99,6 +99,10 @@ def test_space():
     assert space.doe_init == 2
     assert space.max_points_nb == 2
 
+    test_settings['space']['corners'][1] = [3.1415, 1, 3.1415]
+    with pytest.raises(ValueError):
+        space = Space(test_settings)
+
 
 def test_space_evaluation():
     f_3d = Ishigami()
@@ -160,6 +164,8 @@ def test_resampling(tmp, branin_data, settings_ishigami):
 
     refiner = Refiner(surrogate, test_settings)
     new_point = refiner.sigma()
+    new_point = refiner.discrepancy()
+    new_point = refiner.extrema([])
     point_loo = refiner.points[0]
     new_point = refiner.leave_one_out_sigma(point_loo)
     new_point = refiner.leave_one_out_sobol(point_loo)

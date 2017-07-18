@@ -100,11 +100,7 @@ class Space(list):
             self.p_lst = ["x" + str(i) for i in range(self.dim)]
 
         # corner points
-        try:
-            self.corners = [Point(p) for p in corners]
-        except Exception as e:
-            e.args = ('bad corner points: ' + e.args[0],)
-            raise
+        self.corners = [Point(p) for p in corners]
 
         # Point of the sample resampled around
         self.refined_pod_points = []
@@ -112,7 +108,8 @@ class Space(list):
         # corner points validation
         for i in range(self.dim):
             if corners[0][i] == corners[1][i]:
-                raise ValueError('%dth corners coordinate are equal' % (i + 1))
+                raise ValueError('{}th corners coordinate are equal'
+                                 .format(i + 1))
 
     def __str__(self):
         s = ("Space summary:\n"
