@@ -12,7 +12,7 @@ def test_indices(tmp, ishigami_data, settings_ishigami):
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
 
-    analyse = UQ(surrogate, settings_ishigami, tmp)
+    analyse = UQ(settings_ishigami, surrogate, tmp)
 
     indices = analyse.sobol()
 

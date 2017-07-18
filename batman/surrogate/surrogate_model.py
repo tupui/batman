@@ -97,11 +97,6 @@ class SurrogateModel(object):
         self.logger.info('Predictor created')
         self.update = False
 
-    def notify(self):
-        """Notify the predictor that it requires an update."""
-        self.update = True
-        self.logger.info('got update notification')
-
     def __call__(self, points, path=None):
         """Predict snapshots.
 
