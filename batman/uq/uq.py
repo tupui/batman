@@ -150,7 +150,8 @@ class UQ:
             self.output = self.model(self.sample)
         except TypeError:
             self.sample = space
-            self.f_input, output = np.split(data, 2)
+            f_input, output = np.split(np.array(data), 2, axis=1)
+            self.f_input = f_input[0]
             self.output = ot.Sample(output)
             self.output_len = len(self.f_input)
 
@@ -486,24 +487,39 @@ class UQ:
         # Covariance and correlation matrices
         if (self.output_len != 1) and (self.type_indices != 'block'):
             corr_matrix_YY = self.output.computePearsonCorrelation()
-            corr_matrix_XY = np.corrcoef(self.f_input, self.output)
             cov_matrix_YY = self.output.computeCovariance()
 
             x_input_2d, y_input_2d = np.meshgrid(self.f_input, self.f_input)
             x_input_2d = np.array([x_input_2d]).flatten()
             y_input_2d = np.array([y_input_2d]).flatten()
 
-            names = ['x', 'y', 'Correlation-YY', 'Correlation-XY', 'Covariance']
             data_coord = np.append(x_input_2d, y_input_2d)
-            data_matrices = np.append(corr_matrix_YY,
-                                      (corr_matrix_XY, cov_matrix_YY))
+            data_matrices = np.append(corr_matrix_YY, cov_matrix_YY)
             data = np.append(data_coord, data_matrices)
-            dataset = Dataset(names=names,
+            # data = np.array([x_input_2d, y_input_2d, corr_matrix_YY, cov_matrix_YY])
+            dataset = Dataset(names=['x', 'y', 'Correlation-YY', 'Covariance'],
                               shape=[self.output_len, self.output_len, 1],
                               data=data)
             self.io.write(self.output_folder +
                           '/correlation_covariance.dat', dataset)
 
+            cov_matrix_XY = np.dot((np.mean(self.sample) - self.sample).T,
+                                   np.array(mean) - self.output) / (self.snapshots - 1)
+
+            x_input_2d, y_input_2d = np.meshgrid(self.f_input, self.p_len)
+            x_input_2d = np.array([x_input_2d]).flatten()
+            y_input_2d = np.array([y_input_2d]).flatten()
+
+            cov_matrix_XY = np.array([cov_matrix_XY]).flatten()
+
+            data_coord = np.append(x_input_2d, y_input_2d)
+            data = np.append(data_coord, cov_matrix_XY)
+
+            dataset = Dataset(names=['x', 'y', 'Correlation-XY'],
+                              shape=[self.output_len, self.output_len, 1],
+                              data=data)
+
+            self.io.write(self.output_folder + '/correlation_XY.dat', dataset)
         # Create the PDFs
         kernel = ot.KernelSmoothing()
         pdf_pts = [None] * self.output_len
