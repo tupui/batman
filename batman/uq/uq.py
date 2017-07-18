@@ -131,6 +131,12 @@ class UQ:
         self.logger.info("Created {} samples with an LHS experiment"
                          .format(self.points_sample))
 
+        self.init_size = settings['space']['sampling']['init_size']
+        try:
+            self.resamp_size = settings['space']['resampling']['resamp_size']
+        except KeyError:
+            self.resamp_size = 0
+
         # Get discretization if functionnal output
         try:
             # With surrogate model
@@ -160,12 +166,7 @@ class UQ:
                 output = data
 
             self.output = ot.Sample(output)
-
-        self.snapshots = settings['space']['sampling']['init_size']
-        try:
-            self.resamp_size = settings['space']['resampling']['resamp_size']
-        except KeyError:
-            self.resamp_size = 0
+            self.points_sample = self.init_size
 
     def __repr__(self):
         """Information about object."""
@@ -229,7 +230,7 @@ class UQ:
         # Write error to file pod_err.dat
         if self.output_folder is not None:
             with open(self.output_folder + '/pod_err.dat', 'w') as f:
-                f.writelines("{} {} {} {} {} {} {}".format(self.snapshots,
+                f.writelines("{} {} {} {} {} {} {}".format(self.init_size,
                                                            self.resamp_size,
                                                            err_q2,
                                                            self.points_sample,
@@ -510,7 +511,7 @@ class UQ:
                           '/correlation_covariance.dat', dataset)
 
             cov_matrix_XY = np.dot((np.mean(self.sample) - self.sample).T,
-                                   np.array(mean) - self.output) / (self.snapshots - 1)
+                                   np.array(mean) - self.output) / (self.points_sample - 1)
 
             x_input_2d, y_input_2d = np.meshgrid(self.f_input,
                                                  np.arange(self.p_len))
@@ -524,13 +525,16 @@ class UQ:
         kernel = ot.KernelSmoothing()
         pdf_pts = [None] * self.output_len
         d_PDF = 200
+        if self.points_sample < d_PDF:
+            d_PDF = self.points_sample
+
         output_extract = self.output[0:d_PDF]
 
         for i in range(self.output_len):
             try:
                 pdf = kernel.build(output[:, i])
-            except:
-                pdf = ot.Normal(output[i, i], 0.001)
+            except RuntimeError:  # Boundary conditions
+                pdf = ot.Normal(np.mean(output[:, i]), 0.001)
             pdf_pts[i] = np.array(pdf.computePDF(output_extract[:, i]))
             pdf_pts[i] = np.nan_to_num(pdf_pts[i])
 
