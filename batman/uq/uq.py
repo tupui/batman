@@ -150,10 +150,16 @@ class UQ:
             self.output = self.model(self.sample)
         except TypeError:
             self.sample = space
-            f_input, output = np.split(np.array(data), 2, axis=1)
-            self.f_input = f_input[0]
+            try:
+                f_input, output = np.split(np.array(data), 2, axis=1)
+                self.f_input = f_input[0]
+                self.output_len = len(self.f_input)
+            except ValueError:
+                self.f_input = None
+                self.output_len = 1
+                output = data
+
             self.output = ot.Sample(output)
-            self.output_len = len(self.f_input)
 
         self.snapshots = settings['space']['sampling']['init_size']
         try:
@@ -163,20 +169,23 @@ class UQ:
 
     def __repr__(self):
         """Information about object."""
-        return "UQ object: Method({}), Input({}), Distribution({})".format(self.method_sobol, self.p_lst, self.distribution)
+        return ("UQ object: Method({}), Input({}), Distribution({})"
+                .format(self.method_sobol, self.p_lst, self.distribution))
 
     def error_model(self, indices, function):
         r"""Compute the error between the POD and the analytic function.
 
         .. warning:: For test purpose only. Choises are `Ishigami`,
-           `Rosenbrock`, `Michalewicz`, `G_Function` and `Channel_Flow` test functions.
+           `Rosenbrock`, `Michalewicz`, `G_Function` and `Channel_Flow` test
+           functions.
 
         From the surrogate of the function, evaluate the error
         using the analytical evaluation of the function on the sample points.
 
         .. math:: Q^2 = 1 - \frac{err_{l2}}{var_{model}}
 
-        Knowing that :math:`err_{l2} = \sum \frac{(prediction - reference)^2}{n}`, :math:`var_{model} = \sum \frac{(prediction - mean)^2}{n}`
+        Knowing that :math:`err_{l2} = \sum \frac{(prediction - reference)^2}{n}`,
+        :math:`var_{model} = \sum \frac{(prediction - mean)^2}{n}`
 
         Also, it computes the mean square error on the Sobol first andtotal
         order indices.
@@ -187,9 +196,7 @@ class UQ:
         :param str function: name of the analytic function.
         :return: err_q2, mse, s_l2_2nd, s_l2_1st, s_l2_total
         :rtype: float
-
         """
-
         fun = func_ref.__dict__[function]()
 
         if fun.d_out > 1:
@@ -456,10 +463,16 @@ class UQ:
     def error_propagation(self):
         """Compute the moments.
 
-        1st and 2nd order moments are computed for every output of the function.
-        It also compute the PDF for these outputs as a 2D cartesian plot.
+        1st, 2nd order moments are computed for every output of the function.
+        Also compute the PDF for these outputs, and compute correlations
+        (YY and XY) and correlation (YY). Both exported as 2D cartesian plots.
+        Files are respectivelly:
 
-        The file `moment.dat` contains the moments and the file `pdf.dat` contains the PDFs.
+        * :file:`moment.dat`, the moments [discretized on curvilinear abscissa]
+        * :file:`pdf.dat` -> the PDFs [discretized on curvilinear abscissa]
+        * :file:`correlation_covariance.dat` -> correlation and covariance YY
+        * :file:`correlation_XY.dat` -> correlation XY
+
 
         """
         self.logger.info("\n----- Moment evaluation -----")
@@ -470,32 +483,26 @@ class UQ:
         sd = output.computeStandardDeviationPerComponent()
         sd_min = mean - sd
         sd_max = mean + sd
-        min = output.getMin()
-        max = output.getMax()
+        min_ = output.getMin()
+        max_ = output.getMax()
 
         # Write moments to file
-        data = np.append([min], [sd_min, mean, sd_max, max])
+        data = np.append([min_], [sd_min, mean, sd_max, max_])
         names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
         if (self.output_len != 1) and (self.type_indices != 'block'):
             names = ['x'] + names
             data = np.append(self.f_input, data)
 
-        dataset = Dataset(names=names, shape=[
-                          self.output_len, 1, 1], data=data)
+        dataset = Dataset(names=names, shape=[self.output_len, 1, 1], data=data)
         self.io.write(self.output_folder + '/moment.dat', dataset)
 
         # Covariance and correlation matrices
         if (self.output_len != 1) and (self.type_indices != 'block'):
-            corr_matrix_YY = self.output.computePearsonCorrelation()
-            cov_matrix_YY = self.output.computeCovariance()
+            corr_matrix_YY = np.array(self.output.computePearsonCorrelation())
+            cov_matrix_YY = np.array(self.output.computeCovariance())
 
             x_input_2d, y_input_2d = np.meshgrid(self.f_input, self.f_input)
-            x_input_2d = np.array([x_input_2d]).flatten()
-            y_input_2d = np.array([y_input_2d]).flatten()
-
-            data_coord = np.append(x_input_2d, y_input_2d)
-            data_matrices = np.append(corr_matrix_YY, cov_matrix_YY)
-            data = np.append(data_coord, data_matrices)
+            data = np.append(x_input_2d, [y_input_2d, corr_matrix_YY, cov_matrix_YY])
             dataset = Dataset(names=['x', 'y', 'Correlation-YY', 'Covariance'],
                               shape=[self.output_len, self.output_len, 1],
                               data=data)
@@ -507,19 +514,10 @@ class UQ:
 
             x_input_2d, y_input_2d = np.meshgrid(self.f_input,
                                                  np.arange(self.p_len))
-
-            x_input_2d = np.array([x_input_2d]).flatten()
-            y_input_2d = np.array([y_input_2d]).flatten()
-
-            cov_matrix_XY = np.array([cov_matrix_XY]).flatten()
-
-            data_coord = np.append(x_input_2d, y_input_2d)
-            data = np.append(data_coord, cov_matrix_XY)
-
+            data = np.append(x_input_2d, [y_input_2d, cov_matrix_XY])
             dataset = Dataset(names=['x', 'y', 'Correlation-XY'],
                               shape=[self.p_len, self.output_len, 1],
                               data=data)
-
             self.io.write(self.output_folder + '/correlation_XY.dat', dataset)
 
         # Create the PDFs

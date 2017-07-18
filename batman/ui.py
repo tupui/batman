@@ -40,6 +40,7 @@ def run(settings, options):
         console.setLevel(logging.DEBUG)
         logging.getLogger().removeHandler('console')
         logging.getLogger().addHandler(console)
+        logging.getLogger().handlers[0].formatter = logging.getLogger().handlers[1].formatter   
 
     logger = logging.getLogger('BATMAN main')
 
