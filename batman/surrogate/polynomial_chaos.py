@@ -32,11 +32,14 @@ class PC(object):
         :param int out_dim:
         """
         try:
-            self.model_len = len(output)
+            self.model_len = output.shape[1]
+            if self.model_len == 1:
+                output = output.ravel()
         except TypeError:
             self.model_len = 1
-        self.pc = [None] * self.model_len
-        self.pc_result = [None] * self.model_len
+            output = output.ravel()
+        except AttributeError:  # output is None
+            self.model_len = 1
         # Define the CPU multi-threading/processing strategy
         try:
             n_cpu_system = cpu_count()
@@ -108,8 +111,8 @@ class PC(object):
                                                   trunc_strategy, proj_strategy)
             pc_algo.run()
             self.sample = np.array(pc_algo.getInputSample())
-            self.pc_result[0] = pc_algo.getResult()
-            self.pc[0] = self.pc_result[0].getMetaModel()
+            self.pc_result = pc_algo.getResult()
+            self.pc = [self.pc_result.getMetaModel()]
         else:
             self.logger.info("Polynomial Chaos with prior input/output")
             def model_fitting(column):
@@ -126,7 +129,6 @@ class PC(object):
                 results = list(results)
                 pool.terminate()
             else:
-                output = output[0].reshape((len(input), 1))
                 results = [model_fitting(output)]
 
             self.pc, self.pc_result = zip(*results)
