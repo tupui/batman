@@ -43,6 +43,12 @@ def test_point():
     assert point_a == point_b
     assert point_a == point_c
 
+    with pytest.raises(ValueError):
+        Point.set_threshold(-0.1)
+
+    with pytest.raises(ValueError):
+        Point([2, 's', 9])
+
     Point.set_threshold(0)
 
 
@@ -55,6 +61,8 @@ def test_point_evaluation():
 
 def test_space():
     space = Space(settings)
+
+    assert space.max_points_nb == 16
 
     space += (1, 2, 3)
     assert space[:] == [(1, 2, 3)]
@@ -80,6 +88,20 @@ def test_space():
 
     with pytest.raises(FullSpaceError):
         space.sampling(17)
+
+    test_settings = copy.deepcopy(settings)
+    test_settings['space'].pop('resampling')
+    space = Space(test_settings)
+    assert space.max_points_nb == 10
+
+    test_settings['space']['sampling'] = [(1, 2, 3), (1, 1, 3)]
+    space = Space(test_settings)
+    assert space.doe_init == 2
+    assert space.max_points_nb == 2
+
+    test_settings['space']['corners'][1] = [3.1415, 1, 3.1415]
+    with pytest.raises(ValueError):
+        space = Space(test_settings)
 
 
 def test_space_evaluation():
@@ -115,6 +137,10 @@ def test_doe():
     out = np.array([[5., 3.], [2.5, 4.], [7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
     npt.assert_almost_equal(sample, out, decimal=1)
 
+    kind = 'sobolscramble'
+    doe = Doe(n, bounds, kind, discrete_var)
+    sample = doe.generate()
+
 
 def test_resampling(tmp, branin_data, settings_ishigami):
     f_2d, dists, model, point, target_point, space, target_space = branin_data
@@ -142,11 +168,11 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     assert len(space) == 11
 
     refiner = Refiner(surrogate, test_settings)
-    point_loo = refiner.points[1]
 
     npt.assert_almost_equal(refiner.sigma(),
                             np.array([0.49, 13.90]), decimal=1)
 
+    point_loo = refiner.points[1]
     refiner.leave_one_out_sigma(point_loo)
     refiner.leave_one_out_sobol(point_loo)
 
@@ -158,6 +184,9 @@ def test_resampling(tmp, branin_data, settings_ishigami):
 
     npt.assert_almost_equal(refiner.discrepancy(),
                             np.array([8.75, 13.90]), decimal=1)
+
+    refiner.discrepancy()
+    refiner.extrema([])
 
 
 def test_discrepancy(settings_ishigami):

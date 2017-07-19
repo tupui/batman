@@ -63,7 +63,7 @@ from multiprocessing import cpu_count
 from openturns.viewer import View
 from os import mkdir
 import itertools
-from .wrapper import Wrapper
+from ..functions import multi_eval
 from ..input_output import (IOFormatSelector, Dataset)
 from .. import functions as func_ref
 import matplotlib.pyplot as plt
@@ -77,7 +77,7 @@ class UQ:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, surrogate, settings, output=None):
+    def __init__(self, settings, surrogate, space=None, data=None, output=None):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -92,9 +92,11 @@ class UQ:
 
         Also, it creates the `model` and `int_model` as `ot.PythonFunction()`.
 
-        :param class:`surrogate.surrogate_model.SurrogateModel` surrogate: a surrogate,
-        :param dict settings: The settings file.
-
+        :param dict settings: The settings file
+        :param class:`surrogate.surrogate_model.SurrogateModel` surrogate: a surrogate
+        :param class:`space.space.Space` space: sample space (can be a list)
+        :param np.array data: snapshot's data
+        :param str output: output path
         """
         self.logger.info("\n----- UQ module -----")
         try:
@@ -112,16 +114,13 @@ class UQ:
         self.surrogate = surrogate
         self.p_lst = settings['snapshot']['io']['parameter_names']
         self.p_len = len(self.p_lst)
-        self.output_len = settings['snapshot']['io']['shapes']["0"][0][0]
         self.method_sobol = settings['uq']['method']
         self.type_indices = settings['uq']['type']
 
         # Generate samples
         self.points_sample = settings['uq']['sample']
-        pdf = settings['uq']['pdf']
-        input_pdf = "ot." + pdf[0]
-        for i in range(self.p_len - 1):
-            input_pdf = input_pdf + ", ot." + pdf[i + 1]
+        input_pdf = ','.join(['ot.' + settings['uq']['pdf'][i]
+                              for i in range(self.p_len)])
         self.distribution = eval("ot.ComposedDistribution(["
                                  + input_pdf
                                  + "], ot.IndependentCopula(self.p_len))")
@@ -132,41 +131,96 @@ class UQ:
         self.logger.info("Created {} samples with an LHS experiment"
                          .format(self.points_sample))
 
-        # Get discretization if functionnal output
-        try:
-            f_eval, _ = self.surrogate(self.sample[0])
-            self.f_input, _ = np.split(f_eval[0], 2)
-        except:
-            self.f_input = None
-
-        # Wrapper for parallelism
-        self.n_cpus = 1  # cpu_count()
-        self.wrapper = Wrapper(self.surrogate, self.p_len, self.output_len)
-        self.model = otw.Parallelizer(self.wrapper,
-                                      backend='pathos', n_cpus=self.n_cpus)
-
-        self.snapshots = settings['space']['sampling']['init_size']
+        self.init_size = settings['space']['sampling']['init_size']
         try:
             self.resamp_size = settings['space']['resampling']['resamp_size']
         except KeyError:
             self.resamp_size = 0
 
+        # Get discretization if functionnal output
+        try:
+            # With surrogate model
+            try:
+                f_eval, _ = self.surrogate(self.sample[0])
+                self.f_input, _ = np.split(f_eval[0], 2)
+                self.output_len = len(self.f_input)
+            except ValueError:
+                self.f_input = None
+                self.output_len = 1
+
+            self.model = self.func
+            self.output = ot.Sample(self.model(self.sample))
+        except TypeError:
+            self.sample = space
+            try:
+                f_input, output = np.split(np.array(data), 2, axis=1)
+                self.f_input = f_input[0]
+                self.output_len = len(self.f_input)
+            except ValueError:
+                self.f_input = None
+                self.output_len = 1
+                output = data
+
+            self.output = ot.Sample(output)
+            self.points_sample = self.init_size
+
     def __repr__(self):
         """Information about object."""
-        return "UQ object: Method({}), Input({}), Distribution({})".format(self.method_sobol, self.p_lst, self.distribution)
+        return ("UQ object: Method({}), Input({}), Distribution({})"
+                .format(self.method_sobol, self.p_lst, self.distribution))
+
+    @multi_eval
+    def func(self, coords):
+        """Evaluate the surrogate at a given point.
+
+        This function calls the surrogate to compute a prediction.
+
+        :param lst coords: The parameters set to calculate the solution from.
+        :return: The fonction evaluation.
+        :rtype: float
+
+        """
+        f_eval, _ = self.surrogate(coords)
+        try:
+            _, f_eval = np.split(f_eval[0], 2)
+        except:
+            pass
+        return f_eval
+
+    @multi_eval
+    def int_func(self, coords):
+        """Evaluate the surrogate at a given point and return the integral.
+
+        Same as :func:`func` but compute the integral using the trapezoidale
+        rule. It simply returns the prediction in case of a scalar output.
+
+        :param lst coords: The parameters set to calculate the solution from.
+        :return: The integral of the function.
+        :rtype: float
+
+        """
+        f_eval, _ = self.surrogate(coords)
+        try:
+            f_input, f_eval = np.split(f_eval[0], 2)
+            int_f_eval = np.trapz(f_eval, f_input)
+        except:
+            int_f_eval = f_eval
+        return int_f_eval
 
     def error_model(self, indices, function):
         r"""Compute the error between the POD and the analytic function.
 
         .. warning:: For test purpose only. Choises are `Ishigami`,
-           `Rosenbrock`, `Michalewicz`, `G_Function` and `Channel_Flow` test functions.
+           `Rosenbrock`, `Michalewicz`, `G_Function` and `Channel_Flow` test
+           functions.
 
         From the surrogate of the function, evaluate the error
         using the analytical evaluation of the function on the sample points.
 
         .. math:: Q^2 = 1 - \frac{err_{l2}}{var_{model}}
 
-        Knowing that :math:`err_{l2} = \sum \frac{(prediction - reference)^2}{n}`, :math:`var_{model} = \sum \frac{(prediction - mean)^2}{n}`
+        Knowing that :math:`err_{l2} = \sum \frac{(prediction - reference)^2}{n}`,
+        :math:`var_{model} = \sum \frac{(prediction - mean)^2}{n}`
 
         Also, it computes the mean square error on the Sobol first andtotal
         order indices.
@@ -177,9 +231,7 @@ class UQ:
         :param str function: name of the analytic function.
         :return: err_q2, mse, s_l2_2nd, s_l2_1st, s_l2_total
         :rtype: float
-
         """
-
         fun = func_ref.__dict__[function]()
 
         if fun.d_out > 1:
@@ -212,7 +264,7 @@ class UQ:
         # Write error to file pod_err.dat
         if self.output_folder is not None:
             with open(self.output_folder + '/pod_err.dat', 'w') as f:
-                f.writelines("{} {} {} {} {} {} {}".format(self.snapshots,
+                f.writelines("{} {} {} {} {} {} {}".format(self.init_size,
                                                            self.resamp_size,
                                                            err_q2,
                                                            self.points_sample,
@@ -267,11 +319,7 @@ class UQ:
         indices_conf = [[], []]
 
         if self.type_indices == 'block':
-            self.wrapper = Wrapper(self.pod, self.surrogate,
-                                   self.p_len, 1, block=True)
-            int_model = otw.Parallelizer(self.wrapper,
-                                         backend='pathos', n_cpus=self.n_cpus)
-            sobol_model = int_model
+            sobol_model = self.int_func
             sobol_len = 1
         else:
             sobol_model = self.model
@@ -304,8 +352,15 @@ class UQ:
 
         elif self.method_sobol == 'FAST':
             self.logger.info("\n----- FAST indices -----")
-            sobol = ot.FAST(sobol_model, self.distribution, self.points_sample)
-            sobol.setBlockSize(self.n_cpus)
+            if self.output_len > 1:
+                wrap_fun = sobol_model
+            else:
+                def wrap_fun(x):
+                    return [fun(x)]
+
+            fast_model = ot.PythonFunction(self.p_len, self.output_len, wrap_fun)
+            sobol = ot.FAST(ot.Function(fast_model),
+                            self.distribution, self.points_sample)
             self.logger.warn("No Second order indices with FAST")
 
         # try block used to handle boundary conditions with fixed values
@@ -319,8 +374,9 @@ class UQ:
             except TypeError:
                     indices[2].append(np.zeros(self.p_len))
 
-        self.logger.debug("First order: {}".format(indices[1]))
-        self.logger.debug("Total: {}".format(indices[2]))
+        self.logger.debug("First order: {}"
+                          "Total: {}"
+                          .format(*indices[1:]))
 
         # Write Sobol' indices to file: block or map
         if self.output_folder is not None:
@@ -349,10 +405,10 @@ class UQ:
             self.logger.info("\n----- Aggregated Sensitivity Indices -----")
 
             try:
-                output_var = output_design.computeVariance()
+                output_var = output_design.var(axis=0)
             except NameError:
                 output_design = sobol_model(self.sample)
-                output_var = output_design.computeVariance()
+                output_var = output_design.var(axis=0)
 
             sum_var_indices = [np.zeros((self.p_len, self.p_len)),
                                np.zeros((self.p_len)), np.zeros((self.p_len))]
@@ -373,8 +429,9 @@ class UQ:
                 indices_conf[0] = sobol.getFirstOrderIndicesInterval()
                 indices_conf[1] = sobol.getTotalOrderIndicesInterval()
 
-                self.logger.info("First order confidence: {}".format(indices_conf[0]))
-                self.logger.info("Total order confidence: {}".format(indices_conf[1]))
+                self.logger.info("First order confidence: {}"
+                                 "Total order confidence: {}"
+                                 .format(*indices_conf))
 
             self.logger.info("Aggregated_indices: {}".format(indices))
 
@@ -403,10 +460,11 @@ class UQ:
                     conf = np.vstack((conf1, conf2))
                 else:
                     conf = 0
+                    names = [i + str(p) for i, p in 
+                             itertools.product(['S_', 'S_T_'],
+                                                self.p_lst)]
                     data = np.append(i1, i2)
-                dataset = Dataset(names=names,
-                                  shape=[1, 1, 1],
-                                  data=data)
+                dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
                 self.io.write(self.output_folder + '/sensitivity_aggregated.dat',
                               dataset)
 
@@ -446,72 +504,84 @@ class UQ:
     def error_propagation(self):
         """Compute the moments.
 
-        1st and 2nd order moments are computed for every output of the function.
-        It also compute the PDF for these outputs as a 2D cartesian plot.
+        1st, 2nd order moments are computed for every output of the function.
+        Also compute the PDF for these outputs, and compute correlations
+        (YY and XY) and correlation (YY). Both exported as 2D cartesian plots.
+        Files are respectivelly:
 
-        The file `moment.dat` contains the moments and the file `pdf.dat` contains the PDFs.
+        * :file:`moment.dat`, the moments [discretized on curvilinear abscissa]
+        * :file:`pdf.dat` -> the PDFs [discretized on curvilinear abscissa]
+        * :file:`correlation_covariance.dat` -> correlation and covariance YY
+        * :file:`correlation_XY.dat` -> correlation XY
+
 
         """
         self.logger.info("\n----- Moment evaluation -----")
-        output = self.model(self.sample)
-        output = output.sort()
+        output = self.output.sort()
 
         # Compute statistics
         mean = output.computeMean()
         sd = output.computeStandardDeviationPerComponent()
         sd_min = mean - sd
         sd_max = mean + sd
-        min = output.getMin()
-        max = output.getMax()
+        min_ = output.getMin()
+        max_ = output.getMax()
 
         # Write moments to file
-        data = np.append([min], [sd_min, mean, sd_max, max])
+        data = np.append([min_], [sd_min, mean, sd_max, max_])
         names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
         if (self.output_len != 1) and (self.type_indices != 'block'):
             names = ['x'] + names
             data = np.append(self.f_input, data)
 
-        dataset = Dataset(names=names, shape=[
-                          self.output_len, 1, 1], data=data)
+        dataset = Dataset(names=names, shape=[self.output_len, 1, 1], data=data)
         self.io.write(self.output_folder + '/moment.dat', dataset)
 
         # Covariance and correlation matrices
         if (self.output_len != 1) and (self.type_indices != 'block'):
-            correlation_matrix = output.computePearsonCorrelation()
-            covariance_matrix = output.computeCovariance()
+            corr_yy = np.array(self.output.computePearsonCorrelation())
+            cov_yy = np.array(self.output.computeCovariance())
 
             x_input_2d, y_input_2d = np.meshgrid(self.f_input, self.f_input)
-            x_input_2d = np.array([x_input_2d]).flatten()
-            y_input_2d = np.array([y_input_2d]).flatten()
-
-            names = ["x", "y", "Correlation", "Covariance"]
-            data_coord = np.append(x_input_2d, y_input_2d)
-            data_matrices = np.append(correlation_matrix, covariance_matrix)
-            data = np.append(data_coord, data_matrices)
-            dataset = Dataset(names=names,
+            data = np.append(x_input_2d, [y_input_2d, corr_yy, cov_yy])
+            dataset = Dataset(names=['x', 'y', 'Correlation-YY', 'Covariance'],
                               shape=[self.output_len, self.output_len, 1],
                               data=data)
             self.io.write(self.output_folder +
                           '/correlation_covariance.dat', dataset)
 
+            cov_matrix_XY = np.dot((np.mean(self.sample) - self.sample).T,
+                                   np.array(mean) - self.output) / (self.points_sample - 1)
+
+            x_input_2d, y_input_2d = np.meshgrid(self.f_input,
+                                                 np.arange(self.p_len))
+            data = np.append(x_input_2d, [y_input_2d, cov_matrix_XY])
+            dataset = Dataset(names=['x', 'y', 'Correlation-XY'],
+                              shape=[self.p_len, self.output_len, 1],
+                              data=data)
+            self.io.write(self.output_folder + '/correlation_XY.dat', dataset)
+
         # Create the PDFs
         kernel = ot.KernelSmoothing()
         pdf_pts = [None] * self.output_len
         d_PDF = 200
-        sample = self.distribution.getSample(d_PDF)
-        output_extract = self.model(sample)
+        if self.points_sample < d_PDF:
+            d_PDF = self.points_sample
+
+        output_extract = self.output[0:d_PDF]
+
         for i in range(self.output_len):
             try:
                 pdf = kernel.build(output[:, i])
-            except:
-                pdf = ot.Normal(output[i, i], 0.001)
+            except RuntimeError:  # Boundary conditions
+                pdf = ot.Normal(np.mean(output[:, i]), 0.001)
             pdf_pts[i] = np.array(pdf.computePDF(output_extract[:, i]))
             pdf_pts[i] = np.nan_to_num(pdf_pts[i])
 
         # Write PDF to file
         output_extract = np.array(output_extract).flatten('C')
         pdf_pts = np.array(pdf_pts).flatten('F')
-        names = ["output", "PDF"]
+        names = ['output', 'PDF']
         if (self.output_len != 1) and (self.type_indices != 'block'):
             names = ['x'] + names
             f_input_2d = np.tile(self.f_input, d_PDF)

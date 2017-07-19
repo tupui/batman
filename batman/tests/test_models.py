@@ -5,7 +5,7 @@ import numpy as np
 import numpy.testing as npt
 import matplotlib.pyplot as plt
 import openturns as ot
-from batman.surrogate import (PC, Kriging, Evofusion, SurrogateModel)
+from batman.surrogate import (PC, Kriging, RBFnet, Evofusion, SurrogateModel)
 from batman.tasks import Snapshot
 from batman.tests.conftest import sklearn_q2
 
@@ -53,6 +53,30 @@ def test_GP_1d(ishigami_data):
     surrogate_ot = ot.PythonFunction(3, 1, wrap_surrogate)
     q2 = sklearn_q2(dists, model, surrogate_ot)
     assert q2 == pytest.approx(1, 0.1)
+
+
+def test_RBFnet_1d(ishigami_data):
+    f_3d, dists, model, point, target_point, space, target_space = ishigami_data
+
+    surrogate = RBFnet(space, target_space)
+
+    # Test one point evaluation
+    pred = np.array(surrogate.evaluate(point))
+    assert pred == pytest.approx(target_point, 0.3)
+
+    # Test space evaluation
+    pred = np.array(surrogate.evaluate(space))
+    npt.assert_almost_equal(target_space, pred, decimal=1)
+
+    # Compute predictivity coefficient Q2
+    def wrap_surrogate(x):
+        evaluation = surrogate.evaluate(x)
+        return [evaluation]
+    surrogate_ot = ot.PythonFunction(3, 1, wrap_surrogate)
+    q2 = sklearn_q2(dists, model, surrogate_ot)
+    assert q2 == pytest.approx(0.86, 0.1)
+
+    surrogate = RBFnet(space, target_space, regtree=1)
 
 
 def test_PC_14d(mascaret_data):
@@ -108,6 +132,13 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     f_3d, dists, model, point, target_point, space, target_space = ishigami_data
 
     Snapshot.initialize(settings_ishigami['snapshot']['io'])
+
+    surrogate = SurrogateModel('pc', space.corners)
+    surrogate.fit(space, target_space)
+    surrogate.write(tmp)
+    if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
+        assert False
+
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
     surrogate.write(tmp)
@@ -139,6 +170,28 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     assert q2 == pytest.approx(1, 0.1)
 
 
+def test_quality(tmp, mufi_data):
+    _, _, _, _, _, _, space, target_space = mufi_data
+
+    surrogate = SurrogateModel('kriging', space.corners)
+
+    # Split into cheap and expensive arrays
+    space = np.array(space)
+    target_space = np.array(target_space)
+    space = [space[space[:, 0] == 0][:, 1],
+             space[space[:, 0] == 1][:, 1]]
+    n_e = space[0].shape[0]
+    n_c = space[1].shape[0]
+    space = [space[0].reshape((n_e, -1)),
+             space[1].reshape((n_c, -1))]
+    target_space = [target_space[:n_e].reshape((n_e, -1)),
+                    target_space[n_e:].reshape((n_c, -1))]
+
+    surrogate.fit(space[1], target_space[1])
+
+    assert surrogate.estimate_quality()[0] == pytest.approx(1, 0.1)
+
+
 def test_evofusion(mufi_data):
     f_e, f_c, dist, model, point, target_point, space, target_space = mufi_data
 
@@ -158,10 +211,10 @@ def test_evofusion(mufi_data):
 
     # Plotting
     x = np.linspace(0, 1, 200).reshape(-1, 1)
-    space = np.array(space)
-    target_space = np.array(target_space)
 
     # Split into cheap and expensive arrays
+    space = np.array(space)
+    target_space = np.array(target_space)
     space = [space[space[:, 0] == 0][:, 1],
              space[space[:, 0] == 1][:, 1]]
     n_e = space[0].shape[0]

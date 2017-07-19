@@ -64,8 +64,12 @@ class Space(list):
         :param dict settings: space settings
         """
         self.settings = settings
-        self.doe_init = settings['space']['sampling']['init_size']
-        self.doe_method = settings['space']['sampling']['method']
+        try:
+            self.doe_init = settings['space']['sampling']['init_size']
+            self.doe_method = settings['space']['sampling']['method']
+        except TypeError:
+            self.doe_init = len(settings['space']['sampling'])
+            self.doe_method = None
         if 'resampling' in settings['space']:
             self.refiner = None
             self.max_points_nb = settings['space']['resampling']['resamp_size'] + self.doe_init
@@ -96,11 +100,7 @@ class Space(list):
             self.p_lst = ["x" + str(i) for i in range(self.dim)]
 
         # corner points
-        try:
-            self.corners = [Point(p) for p in corners]
-        except Exception as e:
-            e.args = ('bad corner points: ' + e.args[0],)
-            raise
+        self.corners = [Point(p) for p in corners]
 
         # Point of the sample resampled around
         self.refined_pod_points = []
@@ -108,7 +108,8 @@ class Space(list):
         # corner points validation
         for i in range(self.dim):
             if corners[0][i] == corners[1][i]:
-                raise ValueError('%dth corners coordinate are equal' % (i + 1))
+                raise ValueError('{}th corners coordinate are equal'
+                                 .format(i + 1))
 
     def __str__(self):
         s = ("Space summary:\n"
@@ -374,6 +375,7 @@ class Space(list):
         space = np.loadtxt(path)
         for p in space:
             self += p.flatten().tolist()
+        self.logger.debug('Space read from {}'.format(path))
 
     def write(self, path):
         """Write space in file.
@@ -384,3 +386,4 @@ class Space(list):
         """
         np.savetxt(path, self)
         self.plot_space(path)
+        self.logger.debug('Space wrote to {}'.format(path))

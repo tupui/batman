@@ -40,6 +40,7 @@ def run(settings, options):
         console.setLevel(logging.DEBUG)
         logging.getLogger().removeHandler('console')
         logging.getLogger().addHandler(console)
+        logging.getLogger().handlers[0].formatter = logging.getLogger().handlers[1].formatter   
 
     logger = logging.getLogger('BATMAN main')
 
@@ -87,9 +88,9 @@ def run(settings, options):
 
     driver = Driver(settings, options.output)
 
-    if 'pod' in settings:
+    try:
         update = True if settings['pod']['type'] != 'static' else False
-    else:
+    except KeyError:
         update = None
 
     if not options.no_surrogate:
@@ -106,7 +107,7 @@ def run(settings, options):
                 driver.resampling()
                 driver.write()
         except KeyError:
-            pass
+            logger.debug('No resampling.')
 
     else:
         # just read the existing surrogate [and POD]
@@ -118,11 +119,13 @@ def run(settings, options):
                 check output folder or re-try without -n')
             raise SystemExit
 
-    if 'predictions' in settings['surrogate']:
-        driver.prediction(write=options.save_snapshots)
+    try:
+        driver.prediction(points=settings['surrogate']['predictions'],
+                          write=options.save_snapshots)
+    except KeyError:
+        logger.debug('No prediction.')
 
-    if 'pod' in settings:
-        logger.info(driver.pod)
+    logger.info(driver.pod)
 
     if options.q2:
         driver.surrogate.estimate_quality()

@@ -74,7 +74,7 @@ class SurrogateModel(object):
         points = np.array(points)
         try:
             points_scaled = self.scaler.transform(points)
-        except ValueError:
+        except ValueError:  # With multifidelity
             points_scaled = self.scaler.transform(points[:, 1:])
             points_scaled = np.hstack((points[:, 0].reshape(-1, 1), points_scaled))
         # predictor object
@@ -90,16 +90,12 @@ class SurrogateModel(object):
             self.space.multifidelity = True
 
         self.pod = pod
+        self.space.empty()
         self.space += points
         self.space.doe_init = len(points)
 
         self.logger.info('Predictor created')
         self.update = False
-
-    def notify(self):
-        """Notify the predictor that it requires an update."""
-        self.update = True
-        self.logger.info('got update notification')
 
     def __call__(self, points, path=None):
         """Predict snapshots.
@@ -225,19 +221,18 @@ class SurrogateModel(object):
             with open(path, 'wb') as f:
                 pickler = pickle.Pickler(f)
                 pickler.dump(self.predictor)
-            self.logger.debug('Wrote model to {}'.format(path))
+            self.logger.debug('Model wrote to {}'.format(path))
 
             path = os.path.join(dir_path, self.dir['space'])
             self.space.write(path)
-            self.logger.debug('Wrote space to {}'.format(path))
 
             path = os.path.join(dir_path, self.dir['data'])
             with open(path, 'wb') as f:
                 pickler = pickle.Pickler(f)
                 pickler.dump(self.data)
-            self.logger.debug('Wrote data to {}'.format(path))
+            self.logger.debug('Data wrote to {}'.format(path))
 
-            self.logger.info('Wrote model, data and space.')
+            self.logger.info('Model, data and space wrote.')
 
     def read(self, dir_path):
         """Load model, data and space from disk.
@@ -248,16 +243,15 @@ class SurrogateModel(object):
         with open(path, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.predictor = unpickler.load()
-        self.logger.debug('Read model from {}'.format(path))
+        self.logger.debug('Model read from {}'.format(path))
 
         path = os.path.join(dir_path, self.dir['space'])
         self.space.read(path)
-        self.logger.debug('Read space from {}'.format(path))
 
         path = os.path.join(dir_path, self.dir['data'])
         with open(path, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.data = unpickler.load()
-        self.logger.debug('Read data from {}'.format(path))
+        self.logger.debug('Data read from {}'.format(path))
 
         self.logger.info('Model, data and space loaded.')
