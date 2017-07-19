@@ -416,7 +416,7 @@ class MascaretApi(object):
                       id_tick + 1] - self.user_settings['misc']['curv_abs'])) / (ticks[id_tick + 1] - ticks[id_tick])
             return output
         elif self.user_settings['misc']['all_outstate'] is True:
-            return self.allstate()
+            return self.curv_abs(), self.allstate()
         else:
             return self.state(self.user_settings['misc']['index_outstate']).value
 
@@ -469,9 +469,12 @@ class MascaretApi(object):
             self.logger.info('Performing a single MASCARET simulation...')
             h = self.run_mascaret(x=x, Qtime=Qtime, saveall=saveall)
 
-        self.results = h
+        if self.user_settings['misc']['all_outstate'] is True: 
+            self.results = np.split(h, 2) 
+        else:
+            self.results = h
 
-        return h
+        return self.results
 
     def error_message(self):
         """Error message wrapper.

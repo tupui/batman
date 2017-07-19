@@ -12,14 +12,14 @@ study = MascaretApi('config_canal.json','config_canal_user.json')
 print(study)
 
 # Run study with Ks and Q specified constant values 
-#h = study(x=[30, 3000])
-#print('Water level computed with Ks = 30, Q = 3000',h)
+res = study(x=[30, 3000])
+print('Water level computed with Ks = 30, Q = 3000',res[1])
 # Plot the water level along the open-channel at final time
 #study.plot_opt('ResultatsOpthyca.opt')
 
 # Run study  with the user defined tasks and values 
-h = study()
-print('Water level computed with json user defined values', h)
+#res = study()
+#print('Water level computed with json user defined values', res[1])
 # Plot the water level along the open-channel at final time
 plot_opt('ResultatsOpthyca.opt')
 

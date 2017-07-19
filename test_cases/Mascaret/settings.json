@@ -5,7 +5,7 @@
             [40.0, 3000.0]
         ],
         "sampling": {
-            "init_size": 5,
+            "init_size": 100,
             "method": "halton"
         }
     },
@@ -18,7 +18,7 @@
                 ]
             },
             "format": "fmt_tp_fortran",
-            "variables": ["F"],
+            "variables": ["X", "F"],
             "point_filename": "header.py",
             "filenames": {
                 "0": ["function.dat"]

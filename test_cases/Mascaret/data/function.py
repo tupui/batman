@@ -27,14 +27,24 @@ X1 = float(x1)
 X2 = float(x2)
 
 # Function
-F = study(x=[X1, X2])
+X, F = study(x=[X1, X2])
 print('Water level', F)
 plot_opt('ResultatsOpthyca.opt')
 
 # Output
-data = np.array(F)
-names = ["F"]
+nb_value = np.size(X)
+with open('./cfd-output-data/function.dat', 'w') as f:
+    f.writelines('TITLE = \"FUNCTION\" \n')
+    f.writelines('VARIABLES = \"X\" \"F\"  \n')
+    f.writelines('ZONE T=\"zone1\" , I=' + str(nb_value) + ', F=BLOCK  \n')
+    for i in range(len(X)):
+        f.writelines("{:.7E}".format(float(X[i])) + "\t ")
+        if i % 1000:
+            f.writelines('\n')
+    f.writelines('\n')
 
-io = IOFormatSelector('fmt_tp_fortran')
-dataset = Dataset(names=names, shape=[51, 1, 1], data=data)
-io.write('./cfd-output-data/function.dat', dataset)
+    for i in range(len(F)):
+        f.writelines("{:.7E}".format(float(F[i])) + "\t ")
+        if i % 1000:
+            f.writelines('\n')
+        f.writelines('\n')
