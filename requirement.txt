@@ -10,10 +10,8 @@ jsonschema==2.5.1
 MarkupSafe==0.23
 matplotlib==2.0.0
 mock==2.0.0
-mpi4py==2.0.0
 multiprocess==0.70.5
 numpy==1.12.0
-otwrapy==0.6
 pathos==0.2.0
 pbr==1.10.0
 pox==0.2.3
