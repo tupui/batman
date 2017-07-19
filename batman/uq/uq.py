@@ -63,7 +63,7 @@ from multiprocessing import cpu_count
 from openturns.viewer import View
 from os import mkdir
 import itertools
-from .wrapper import Wrapper
+from ..functions import multi_eval
 from ..input_output import (IOFormatSelector, Dataset)
 from .. import functions as func_ref
 import matplotlib.pyplot as plt
@@ -148,12 +148,8 @@ class UQ:
                 self.f_input = None
                 self.output_len = 1
 
-            # Wrapper for parallelism
-            self.n_cpus = 1
-            self.wrapper = Wrapper(self.surrogate, self.p_len, self.output_len)
-            self.model = otw.Parallelizer(self.wrapper,
-                                          backend='pathos', n_cpus=self.n_cpus)
-            self.output = self.model(self.sample)
+            self.model = self.func
+            self.output = ot.Sample(self.model(self.sample))
         except TypeError:
             self.sample = space
             try:
@@ -172,6 +168,44 @@ class UQ:
         """Information about object."""
         return ("UQ object: Method({}), Input({}), Distribution({})"
                 .format(self.method_sobol, self.p_lst, self.distribution))
+
+    @multi_eval
+    def func(self, coords):
+        """Evaluate the surrogate at a given point.
+
+        This function calls the surrogate to compute a prediction.
+
+        :param lst coords: The parameters set to calculate the solution from.
+        :return: The fonction evaluation.
+        :rtype: float
+
+        """
+        f_eval, _ = self.surrogate(coords)
+        try:
+            _, f_eval = np.split(f_eval[0], 2)
+        except:
+            pass
+        return f_eval
+
+    @multi_eval
+    def int_func(self, coords):
+        """Evaluate the surrogate at a given point and return the integral.
+
+        Same as :func:`func` but compute the integral using the trapezoidale
+        rule. It simply returns the prediction in case of a scalar output.
+
+        :param lst coords: The parameters set to calculate the solution from.
+        :return: The integral of the function.
+        :rtype: float
+
+        """
+        f_eval, _ = self.surrogate(coords)
+        try:
+            f_input, f_eval = np.split(f_eval[0], 2)
+            int_f_eval = np.trapz(f_eval, f_input)
+        except:
+            int_f_eval = f_eval
+        return int_f_eval
 
     def error_model(self, indices, function):
         r"""Compute the error between the POD and the analytic function.
@@ -285,11 +319,7 @@ class UQ:
         indices_conf = [[], []]
 
         if self.type_indices == 'block':
-            self.wrapper = Wrapper(self.pod, self.surrogate,
-                                   self.p_len, 1, block=True)
-            int_model = otw.Parallelizer(self.wrapper,
-                                         backend='pathos', n_cpus=self.n_cpus)
-            sobol_model = int_model
+            sobol_model = self.int_func
             sobol_len = 1
         else:
             sobol_model = self.model
@@ -337,8 +367,9 @@ class UQ:
             except TypeError:
                     indices[2].append(np.zeros(self.p_len))
 
-        self.logger.debug("First order: {}".format(indices[1]))
-        self.logger.debug("Total: {}".format(indices[2]))
+        self.logger.debug("First order: {}"
+                          "Total: {}"
+                          .format(*indices[1:]))
 
         # Write Sobol' indices to file: block or map
         if self.output_folder is not None:
@@ -367,10 +398,10 @@ class UQ:
             self.logger.info("\n----- Aggregated Sensitivity Indices -----")
 
             try:
-                output_var = output_design.computeVariance()
+                output_var = output_design.var()
             except NameError:
                 output_design = sobol_model(self.sample)
-                output_var = output_design.computeVariance()
+                output_var = output_design.var()
 
             sum_var_indices = [np.zeros((self.p_len, self.p_len)),
                                np.zeros((self.p_len)), np.zeros((self.p_len))]
@@ -391,8 +422,9 @@ class UQ:
                 indices_conf[0] = sobol.getFirstOrderIndicesInterval()
                 indices_conf[1] = sobol.getTotalOrderIndicesInterval()
 
-                self.logger.info("First order confidence: {}".format(indices_conf[0]))
-                self.logger.info("Total order confidence: {}".format(indices_conf[1]))
+                self.logger.info("First order confidence: {}"
+                                 "Total order confidence: {}"
+                                 .format(*indices_conf))
 
             self.logger.info("Aggregated_indices: {}".format(indices))
 
@@ -499,11 +531,11 @@ class UQ:
 
         # Covariance and correlation matrices
         if (self.output_len != 1) and (self.type_indices != 'block'):
-            corr_matrix_YY = np.array(self.output.computePearsonCorrelation())
-            cov_matrix_YY = np.array(self.output.computeCovariance())
+            corr_yy = np.array(self.output.computePearsonCorrelation())
+            cov_yy = np.array(self.output.computeCovariance())
 
             x_input_2d, y_input_2d = np.meshgrid(self.f_input, self.f_input)
-            data = np.append(x_input_2d, [y_input_2d, corr_matrix_YY, cov_matrix_YY])
+            data = np.append(x_input_2d, [y_input_2d, corr_yy, cov_yy])
             dataset = Dataset(names=['x', 'y', 'Correlation-YY', 'Covariance'],
                               shape=[self.output_len, self.output_len, 1],
                               data=data)
