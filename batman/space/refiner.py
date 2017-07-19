@@ -600,9 +600,10 @@ class Refiner(object):
 
         return max_ei_disc
 
-    def sigma_discrepancy(self):
+    def sigma_discrepancy(self, weights=[0.5, 0.5]):
         """Maximization of the composite indicator: sigma - discrepancy.
 
+        :param list(float) weights: respectively weights of sigma and discrepancy
         :return: The coordinate of the point to add
         :rtype: lst(float)
         """
@@ -621,12 +622,13 @@ class Refiner(object):
         def f_obj(x):
             """Maximize the inverse of the discrepancy plus sigma."""
             _, sigma = self.pred_sigma(x)
+            sigma = scale_sigma.transform(sigma.reshape(1, -1))
+            
             disc = 1 / self.surrogate.space.discrepancy(
                 np.vstack([self.surrogate.space, x]))
             disc = scale_disc.transform(disc.reshape(1, -1))
-            s = scale_sigma.transform(sigma.reshape(1, -1))
 
-            sigma_disc = s + disc
+            sigma_disc = sigma * weights[0] + disc * weights[1]
 
             return - sigma_disc
 

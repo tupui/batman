@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from batman import Driver
 from batman.functions import Branin
+from sklearn import preprocessing
 
 
 def test_optimization(tmp, branin_data, settings_ishigami):
@@ -16,9 +17,10 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     init_size = len(space)
     res_size = 2
     test_settings['space']['sampling']['init_size'] = init_size
-    test_settings["space"]["sampling"]["method"] = 'discrete'
-    test_settings['space']['resampling']['method'] = 'optimization'
+    test_settings["space"]["sampling"]["method"] = 'lhs'
+    test_settings['space']['resampling']['method'] = 'sigma_discrepancy'
     test_settings['space']['resampling']['resamp_size'] = res_size
+    test_settings['space']['resampling']['delta_space'] = 0.1
     test_settings["space"]["corners"] = space.corners
     test_settings["snapshot"]["io"]["parameter_names"] = ["x1", "x2"]
     f_obj = Branin()
@@ -42,10 +44,36 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     arg_min = np.argmin(target_space)
     min_value = target_space[arg_min]
 
+    # Expected improvement
     ei = np.empty_like(pred)
     for i, p, s in zip(range(num * num), pred, sigma):
         ei[i] = (min_value - p) * norm.cdf((min_value - p) / s)\
             + s * norm.pdf((min_value - p) / s)
+
+    # Discrepancy
+    disc = np.empty_like(pred)
+    for i, p in enumerate(points):
+        disc[i] = 1 / driver.space.discrepancy(np.vstack([space, p]))
+
+    scale_sigma = preprocessing.StandardScaler().fit(sigma)
+    scale_disc = preprocessing.StandardScaler().fit(disc)
+    min_value = scale_disc.transform(1 / driver.space.discrepancy(space).reshape(1, -1))
+
+    # EGO discrepancy...
+    ei_disc = np.empty_like(pred)
+    for i_s, p in zip(enumerate(sigma), disc):
+        i, s = i_s
+        s = scale_sigma.transform(s.reshape(1, -1))
+        p = scale_disc.transform(p.reshape(1, -1))
+        diff = min_value - p
+
+        ei_disc[i] = diff * norm.cdf(diff / s)\
+            + s * norm.pdf(diff / s)
+
+    # Sigma + Discrepancy
+    scale_sigma = preprocessing.scale(sigma)
+    scale_disc = preprocessing.scale(disc)
+    sigma_disc = scale_sigma + scale_disc
 
     # Plotting
     color = True
