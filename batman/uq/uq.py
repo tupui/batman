@@ -352,8 +352,15 @@ class UQ:
 
         elif self.method_sobol == 'FAST':
             self.logger.info("\n----- FAST indices -----")
-            sobol = ot.FAST(sobol_model, self.distribution, self.points_sample)
-            sobol.setBlockSize(self.n_cpus)
+            if self.output_len > 1:
+                wrap_fun = sobol_model
+            else:
+                def wrap_fun(x):
+                    return [fun(x)]
+
+            fast_model = ot.PythonFunction(self.p_len, self.output_len, wrap_fun)
+            sobol = ot.FAST(ot.Function(fast_model),
+                            self.distribution, self.points_sample)
             self.logger.warn("No Second order indices with FAST")
 
         # try block used to handle boundary conditions with fixed values
@@ -398,10 +405,10 @@ class UQ:
             self.logger.info("\n----- Aggregated Sensitivity Indices -----")
 
             try:
-                output_var = output_design.var()
+                output_var = output_design.var(axis=0)
             except NameError:
                 output_design = sobol_model(self.sample)
-                output_var = output_design.var()
+                output_var = output_design.var(axis=0)
 
             sum_var_indices = [np.zeros((self.p_len, self.p_len)),
                                np.zeros((self.p_len)), np.zeros((self.p_len))]
@@ -453,10 +460,11 @@ class UQ:
                     conf = np.vstack((conf1, conf2))
                 else:
                     conf = 0
+                    names = [i + str(p) for i, p in 
+                             itertools.product(['S_', 'S_T_'],
+                                                self.p_lst)]
                     data = np.append(i1, i2)
-                dataset = Dataset(names=names,
-                                  shape=[1, 1, 1],
-                                  data=data)
+                dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
                 self.io.write(self.output_folder + '/sensitivity_aggregated.dat',
                               dataset)
 
