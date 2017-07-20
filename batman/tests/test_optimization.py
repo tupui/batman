@@ -9,6 +9,7 @@ from matplotlib import cm
 from batman import Driver
 from batman.functions import Branin
 from sklearn import preprocessing
+plt.switch_backend('Agg')
 
 
 def test_optimization(tmp, branin_data, settings_ishigami):
