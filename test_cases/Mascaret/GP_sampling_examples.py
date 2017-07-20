@@ -11,8 +11,8 @@ sampler = Gp1dSampler()
 # Information about the sampler
 print(sampler)
 
-print "User points (values):", sampler.x
-print "User points (indices):", sampler.idx
+print("User points (values):", sampler.x)
+print("User points (indices):", sampler.idx)
 
 # Plot of the modes of the Karhunen Loeve Decomposition
 sampler.plot_modes()

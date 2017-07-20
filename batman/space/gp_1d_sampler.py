@@ -71,25 +71,21 @@ class Gp1dSampler:
         mesh = ot.IntervalMesher(
             [self.Nt - 1]).build(ot.Interval(self.t_ini, self.t_end))
 
-        if x is not None:
+        if self.x is not None:
             vertices = np.array(mesh.getVertices())
             x_not_in_vertices = []
-            for i, _ in enumerate(self.x):
-                if self.x[i] not in vertices:
-                    x_not_in_vertices.append(self.x[i])
+            for _, x in enumerate(self.x):
+                if x not in vertices:
+                    x_not_in_vertices.append(x)
             if len(x_not_in_vertices) > 0:
                 user_vertices = np.sort(np.concatenate((vertices,
                                                         x_not_in_vertices)),
                                         axis=0)
                 self.Nt += len(x_not_in_vertices)
-                user_simplices = []
-                for i in range(self.Nt - 1):
-                    user_simplices.append([i, i+1])
+                user_simplices = [[i, i+1] for i in range(self.Nt - 1)]
                 mesh = ot.Mesh(user_vertices, user_simplices)
             vertices = np.array(mesh.getVertices())
-            self.idx = []
-            for i, _ in enumerate(self.x):
-                self.idx.append((vertices.T)[0, :].tolist().index(self.x[i][0]))
+            self.idx = [(vertices.T)[0, :].tolist().index(x[0]) for i in self.x]
         else:
             self.idx = None
 
@@ -168,11 +164,9 @@ class Gp1dSampler:
         # Sampled weights
         X = np.array(dist.getSample(n_sample))
         # Predictions
-        Y = np.eye(n_sample, self.Nt)
-        for i in range(n_sample):
-            Y[i, :] = np.dot(self.modes, X[i])
+        Y = np.dot(self.modes, X.T)
 
-        return {'Values': Y.T, 'Coefficients': X}
+        return {'Values': Y, 'Coefficients': X}
 
     def build(self, coeff=[0]):
         """Compute realization of the GP1D corresponding to :attr:`coeff`.

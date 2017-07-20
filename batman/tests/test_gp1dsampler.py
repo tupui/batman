@@ -7,13 +7,15 @@ import openturns as ot
 
 
 def test_Gp1dSampler(tmp):
-    sampler = Gp1dSampler()
+    sampler = Gp1dSampler(x=[[0.104], [1.]])
+
+    print(sampler)
 
     # Plot of the modes of the Karhunen Loeve Decomposition
     sampler.plot_modes(tmp)
-    
+
     # Sample of the GP1D and plot the instances
-    size = 200
+    size = 5
     Y = sampler.sample(size)
     sampler.plot_sample(Y, tmp)
 
@@ -24,7 +26,7 @@ def test_Gp1dSampler(tmp):
 
 
 sampler = Gp1dSampler(t_ini=0, t_end=1, Nt=3, sigma=1.0, theta=0.5,
-                          threshold=0.01, cov="AbsoluteExponential")
+                      threshold=0.01, cov="AbsoluteExponential")
 
 
 def test_Gp1dSampler_modes():
