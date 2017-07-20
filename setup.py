@@ -85,7 +85,6 @@ install_requires = ['sphinx_rtd_theme',
                     'jsonschema',
                     'pathos>=0.2',
                     'matplotlib',
-                    'otwrapy>=0.6',
                     'scikit-learn>=0.18']
 
 if sys.version_info <= (3, 3):
@@ -129,8 +128,7 @@ setup(
     tests_require=tests_require,
     install_requires=install_requires,
     extras_require={'Antares': ["antares"]},
-    dependency_links=['https://github.com/openturns/otwrapy/tarball/master#egg=otwrapy-0.7',
-                      'git+ssh://git@nitrox.cerfacs.fr:cfd-apps/antares.git#egg=Antares-1.9.0'],
+    dependency_links=['git+ssh://git@nitrox.cerfacs.fr:cfd-apps/antares.git#egg=Antares-1.9.0'],
     cmdclass=cmdclasses,
     # metadata
     maintainer="Pamphile ROY",

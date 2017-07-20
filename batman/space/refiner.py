@@ -33,6 +33,7 @@ import numpy as np
 from sklearn import preprocessing
 import copy
 from ..uq import UQ
+from .sampling import Doe
 from ..misc import optimization
 
 
@@ -491,6 +492,8 @@ class Refiner(object):
             new_point = self.leave_one_out_sobol(point_loo)
         elif method == 'extrema':
             new_point, refined_pod_points = self.extrema(refined_pod_points)
+        elif method == 'discrepancy':
+            new_point = self.discrepancy()
         elif method == 'optimization':
             new_point = self.optimization()
         else:
@@ -499,9 +502,10 @@ class Refiner(object):
 
         return new_point, refined_pod_points
 
-    def optimization(self):
-        """Optimization using Probability of Improvement.
+    def optimization(self, method='EI'):
+        """Maximization of the Probability/Expected Improvement.
 
+        :param str method: Flag ['EI', 'PI']
         :return: The coordinate of the point to add
         :rtype: lst(float)
         """
@@ -512,14 +516,12 @@ class Refiner(object):
         self.logger.info('Current minimal value is: f(x)={} for x={}'
                          .format(min_value, min_x))
 
-        target = min_value - 0.1 * np.abs(min_value)
-
-        if self.settings["sampling"]["method"] == 'discrete':
+        if self.settings['sampling']['method'] == 'discrete':
             discrete = 1
         else:
             discrete = 0
 
-        @optimization(self.settings["sampling"]["method"], self.corners)
+        @optimization(self.settings['sampling']['method'], self.corners)
         def probability_improvement(x):
             """Probability of improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
@@ -534,7 +536,7 @@ class Refiner(object):
 
             return - pi
 
-        @optimization(self.settings["sampling"]["method"], self.corners)
+        @optimization(self.settings['sampling']['method'], self.corners)
         def expected_improvement(x):
             """Expected improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
@@ -545,11 +547,91 @@ class Refiner(object):
 
             pred, sigma = self.pred_sigma(x)
             std_dev = np.sqrt(sigma)
-            ei = (min_value - pred) * norm.cdf((min_value - pred) / std_dev)\
-                + std_dev * norm.pdf((min_value - pred) / std_dev)
+            diff = min_value - pred
+            ei = diff * norm.cdf(diff / std_dev)\
+                + std_dev * norm.pdf(diff / std_dev)
 
             return - ei
 
-        max_ei, _ = expected_improvement()
+        if method == 'PI':
+            target = min_value - 0.1 * np.abs(min_value)
+            max_ei, _ = probability_improvement()
+        else:
+            max_ei, _ = expected_improvement()
 
         return max_ei
+
+    def ego_discrepancy(self):
+        """Maximization of the Expected Improvement of the discrepancy.
+
+        :return: The coordinate of the point to add
+        :rtype: lst(float)
+        """
+        doe = Doe(500, self.corners, 'halton')
+        sample = doe.generate()
+
+        _, sigma = zip(*[self.pred_sigma(s) for s in sample])
+
+        disc = [1 / self.surrogate.space.discrepancy(
+            np.vstack([self.surrogate.space, p])) for p in sample]
+
+        scale_sigma = preprocessing.StandardScaler().fit(sigma)
+        scale_disc = preprocessing.StandardScaler().fit(disc)
+        min_value = scale_disc.transform(self.surrogate.space.discrepancy(
+                                            self.surrogate.space)
+                                         .reshape(1, -1))
+
+        @optimization(self.settings['sampling']['method'], self.corners)
+        def f_obj(x):
+            """Maximize the inverse of the discrepancy and maximize the EI."""
+            _, sigma = self.pred_sigma(x)
+            disc = 1 / self.surrogate.space.discrepancy(
+                np.vstack([self.surrogate.space, x]))
+            disc = scale_disc.transform(disc.reshape(1, -1))
+            s = scale_sigma.transform(sigma.reshape(1, -1))
+
+            diff = min_value - disc
+            ei_disc = diff * norm.cdf(diff / s)\
+                + s * norm.pdf(diff / s)
+
+            return - ei_disc
+
+        max_ei_disc, _ = f_obj()
+
+        return max_ei_disc
+
+    def sigma_discrepancy(self, weights=[0.5, 0.5]):
+        """Maximization of the composite indicator: sigma - discrepancy.
+
+        :param list(float) weights: respectively weights of sigma and discrepancy
+        :return: The coordinate of the point to add
+        :rtype: lst(float)
+        """
+        doe = Doe(500, self.corners, 'halton')
+        sample = doe.generate()
+
+        _, sigma = zip(*[self.pred_sigma(s) for s in sample])
+
+        disc = [1 / self.surrogate.space.discrepancy(
+            np.vstack([self.surrogate.space, p])) for p in sample]
+
+        scale_sigma = preprocessing.StandardScaler().fit(sigma)
+        scale_disc = preprocessing.StandardScaler().fit(disc)
+
+        @optimization(self.settings['sampling']['method'], self.corners)
+        def f_obj(x):
+            """Maximize the inverse of the discrepancy plus sigma."""
+            _, sigma = self.pred_sigma(x)
+            sigma = scale_sigma.transform(sigma.reshape(1, -1))
+            
+            disc = 1 / self.surrogate.space.discrepancy(
+                np.vstack([self.surrogate.space, x]))
+            disc = scale_disc.transform(disc.reshape(1, -1))
+
+            sigma_disc = sigma * weights[0] + disc * weights[1]
+
+            return - sigma_disc
+
+        max_sigma_disc, _ = f_obj()
+
+        return max_sigma_disc

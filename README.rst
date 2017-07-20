@@ -1,10 +1,10 @@
-.. image:: https://nitrox.cerfacs.fr/open-source/batman/badges/master/build.svg
-   :target: https://nitrox.cerfacs.fr/open-source/batman/commits/master
+.. image:: https://nitrox.cerfacs.fr/open-source/batman/badges/develop/build.svg
+   :target: https://nitrox.cerfacs.fr/open-source/batman/pipelines
    :alt: build status
 
-.. image:: https://nitrox.cerfacs.fr/open-source/batman/badges/master/coverage.svg
-   :target: https://nitrox.cerfacs.fr/open-source/batman/commits/master
-   :alt: build status
+.. image:: https://nitrox.cerfacs.fr/open-source/batman/badges/develop/coverage.svg
+   :target: https://nitrox.cerfacs.fr/open-source/batman/pipelines
+   :alt: coverage status
 
 .. image:: https://img.shields.io/badge/python-2.7,_3.6-blue.svg
 
@@ -49,7 +49,6 @@ The required dependencies are:
 - `scipy <http://scipy.org>`_ >= 0.15
 - `OpenTURNS <http://www.openturns.org>`_ >= 1.7
 - `pathos <https://github.com/uqfoundation/pathos>`_ >= 0.2
-- `otwrapy <http://openturns.github.io/otwrapy/>`_ >= 0.6
 - matplotlib
 - `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_
 - `sphinx <http://www.sphinx-doc.org>`_ >= 1.4
