@@ -21,6 +21,6 @@ F = 5 + X1 + np.cos(X1)
 data = np.array(F)
 names = ["F"]
 
-io = IOFormatSelector('fmt_tp_fortran')
+io = IOFormatSelector('numpy')
 dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
-io.write('./cfd-output-data/function.dat', dataset)
+io.write('./cfd-output-data/function.npz', dataset)

@@ -33,7 +33,7 @@
             "variables": ["F"],
             "point_filename": "header.py",
             "filenames": {
-                "0": ["function.dat"]
+                "0": ["function.npz"]
             },
             "template_directory": null,
             "parameter_names": ["x1"]
