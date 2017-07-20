@@ -90,8 +90,8 @@ def test_checks(tmp, case='Michalewicz'):
     """Check answers to questions if there is an output folder."""
     init_case(tmp, case)
 
-    # Restart from snapshots
-    with mock.patch('builtins.input', side_effect=['', '']):
+    # Restart from snapshots, first enter something incorrect
+    with mock.patch('builtins.input', side_effect=['nope', '', '']):
         batman.ui.main()
 
     check_output(tmp)

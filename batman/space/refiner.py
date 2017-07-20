@@ -561,45 +561,6 @@ class Refiner(object):
 
         return max_ei
 
-    def ego_discrepancy(self):
-        """Maximization of the Expected Improvement of the discrepancy.
-
-        :return: The coordinate of the point to add
-        :rtype: lst(float)
-        """
-        doe = Doe(500, self.corners, 'halton')
-        sample = doe.generate()
-
-        _, sigma = zip(*[self.pred_sigma(s) for s in sample])
-
-        disc = [1 / self.surrogate.space.discrepancy(
-            np.vstack([self.surrogate.space, p])) for p in sample]
-
-        scale_sigma = preprocessing.StandardScaler().fit(sigma)
-        scale_disc = preprocessing.StandardScaler().fit(disc)
-        min_value = scale_disc.transform(self.surrogate.space.discrepancy(
-                                            self.surrogate.space)
-                                         .reshape(1, -1))
-
-        @optimization(self.settings['sampling']['method'], self.corners)
-        def f_obj(x):
-            """Maximize the inverse of the discrepancy and maximize the EI."""
-            _, sigma = self.pred_sigma(x)
-            disc = 1 / self.surrogate.space.discrepancy(
-                np.vstack([self.surrogate.space, x]))
-            disc = scale_disc.transform(disc.reshape(1, -1))
-            s = scale_sigma.transform(sigma.reshape(1, -1))
-
-            diff = min_value - disc
-            ei_disc = diff * norm.cdf(diff / s)\
-                + s * norm.pdf(diff / s)
-
-            return - ei_disc
-
-        max_ei_disc, _ = f_obj()
-
-        return max_ei_disc
-
     def sigma_discrepancy(self, weights=[0.5, 0.5]):
         """Maximization of the composite indicator: sigma - discrepancy.
 

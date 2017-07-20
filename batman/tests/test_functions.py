@@ -84,6 +84,13 @@ def test_Forrester():
     assert f_c([0.6]) == pytest.approx(-4.0747189, 0.0001)
 
 
+def test_Manning():
+    f = Manning()
+    assert f(25) == pytest.approx(5.64345405, 0.0001)
+    f_2d = Manning(d=2)
+    assert f_2d([25, 1200]) == pytest.approx(6.29584085, 0.0001)
+
+
 def test_Mascaret():
     f = Mascaret()
     f_out = f([31.54645246710516560, 4237.025232805773157])

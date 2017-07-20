@@ -29,7 +29,7 @@
                     [1]
                 ]
             },
-            "format": "fmt_tp_fortran",
+            "format": "numpy",
             "variables": ["F"],
             "point_filename": "header.py",
             "filenames": {

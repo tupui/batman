@@ -169,8 +169,8 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     # LOO tests on small set
     refiner = Refiner(surrogate, test_settings)
     point_loo = refiner.points[1]
-    # refiner.leave_one_out_sigma(point_loo)
-    # refiner.leave_one_out_sobol(point_loo)
+    refiner.leave_one_out_sigma(point_loo)
+    refiner.leave_one_out_sobol(point_loo)
 
     # Larger dataset to ensure stable results
     space.empty()

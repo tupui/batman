@@ -456,23 +456,23 @@ class Manning(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, width=100., slope=5.e-4, inflow=1000, flag='1D'):
+    def __init__(self, width=100., slope=5.e-4, inflow=1000, d=1):
         """Initialize the geometrical configuration.
 
         :param float width: canal width
         :param float slope: canal slope
         :param float inflow: canal inflow (optional)
-        :param str flag: 1D (Ks) or 2D (Ks,Q)
+        :param int dim: 1 (Ks) or 2 (Ks,Q)
         """
-        self.d_in = 1 if self.flag == '1D' else 2
+        self.d_in = d
         self.d_out = 1
-        self.w = width
+        self.width = width
         self.slope = slope
         self.inflow = inflow
-        self.flag = flag
 
         self.logger.info("Using function Manning :  width={}, "
-                         "slope={}, inflow={}, flag={}".format(width, slope, inflow, flag))
+                         "slope={}, inflow={}, dim={}"
+                         .format(width, slope, inflow, d))
 
     @multi_eval
     def __call__(self, x):
@@ -483,12 +483,12 @@ class Manning(object):
         :rtype: float
         """
         x = np.array(x)
-        if self.flag == '1D':
+        if self.d_in == 1:
             ks = x
             q = self.inflow
         else:
             ks, q = x
 
-        h = q / (ks * self.w * np.sqrt(self.slope))
+        h = q / (ks * self.width * np.sqrt(self.slope))
         h = np.power(h, 3. / 5.)
         return h
