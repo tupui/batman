@@ -39,8 +39,36 @@ It aims at:
 
 Aside from that, an uncertainty quantification (UQ) module allows to make sensitivity analysis (SA) and uncertainty propagation.
 
+Getting started
+---------------
+
+All changes can be found in :ref:`changes`. The main folder contains three
+subfolders: ``doc`` ``batman`` and ``test_cases``. The latter contains examples
+that you can adapt to you needs. You can find more information about the cases
+within the respectives ``README.rst`` file. A detailled example can be found in
+:ref:`tutorial`.
+
+Shoud you be interested by BATMAN's implementation, consider
+reading :ref:`introduction`.
+
+If you encounter a bug (or have a feature request), please report it via `GitLab <https://nitrox.cerfacs.fr/open-source/batman>`_. Or it might be you falling but "Why do we fall sir? So we can learn to pick ourselves up".
+
+Last but not least, if you consider contributing check-out :ref:`contributing`.
+
+Happy BATMAN.
+
+How to get it?
+--------------
+
+The sources are located on the *GitLab* server: 
+
+    https://nitrox.cerfacs.fr/open-source/batman
+
+How to Install?
+---------------
+
 Dependencies
-------------
+............
 
 The required dependencies are: 
 
@@ -59,15 +87,10 @@ Optionnal dependencies are:
   
 Appart from OpenTURNS and Antares, dependencies are satisfied by the installer.
 
-How to get it?
---------------
+.. note:: OpenTURNS is available on *conda* through the *conda-forge* channel.
 
-The sources are located on the *GitLab* server: 
-
-    https://nitrox.cerfacs.fr/open-source/batman
-
-How to Install?
----------------
+User installation
+.................
 
 Then to install::
 
@@ -105,7 +128,7 @@ If BATMAN has been correctly installed, you should be able to call it simply::
         module load python/2.7-shared
         module load python/miniconda2.7
 
-    .. warning:: You cannot load both OpenTURNS versions at the same time.
+    .. warning:: You cannot load application/openturns/1.7 and python/miniconda2.7 at the same time.
 
     Otherwize (if you want Python 3 for instance) you can create your ``conda`` environment::
 
@@ -114,20 +137,3 @@ If BATMAN has been correctly installed, you should be able to call it simply::
         conda create -n bat_env -c conda-forge openturns numpy scipy scikit-learn pathos jsonschema sphinx sphinx_rtd_theme otwrapy pytest pytest-runner mock
 
     Then you can install all packages without ``root`` access.
-
-Getting started
----------------
-
-All changes can be found in the :ref:`changes`. The main folder contains three
-subfolders: ``doc`` ``batman`` and ``test_cases``. The latter contains examples
-that you can adapt to you needs. You can find more information about the cases
-within the respectives ``README.rst`` file. A detailled example can be found in
-:ref:`tutorial`. Shoud you be interested by BATMAN's implementation, consider
-reading :ref:`introduction`.
-
-If you encounter a bug (or have a feature request), report it via `GitLab <https://nitrox.cerfacs.fr/open-source/batman>`_. Or it might be you falling but "Why do we fall sir? So we can learn to pick ourselves up".
-
-Last but not least, if you consider contributing check-out :ref:`contributing`.
-
-Happy BATMAN.
-

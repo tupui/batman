@@ -59,6 +59,11 @@ def run(settings, options):
                 use_output = misc.check_yes_no(prompt, default='yes')
                 root = os.path.join(options.output, 'snapshots')
 
+                if not use_output:
+                    logger.warning(
+                        'Stopped to prevent deletion. Change options')
+                    raise SystemExit
+
                 if not os.path.isdir(root):
                     logger.warning('No folder snapshots in output folder')
                     raise SystemExit
@@ -73,11 +78,7 @@ def run(settings, options):
                 settings['snapshot']['io']['template_directory'] = \
                     os.path.join(root, '0', 'batman-data')
                 settings['snapshot']['io']['shapes'] = None
-
-                if not use_output:
-                    logger.warning(
-                        'Stopped to prevent deletion. Change options')
-                    raise SystemExit
+                
         if delete:
             try:
                 shutil.rmtree(options.output)

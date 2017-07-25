@@ -57,9 +57,7 @@ M. Baudin, A. Dutfoy, B. Iooss, A. Popelin: OpenTURNS: An industrial software fo
 import logging
 import numpy as np
 import openturns as ot
-import otwrapy as otw
 from sklearn.metrics import (r2_score, mean_squared_error)
-from multiprocessing import cpu_count
 from openturns.viewer import View
 from os import mkdir
 import itertools

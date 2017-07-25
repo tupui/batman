@@ -28,7 +28,6 @@ def check_output(tmp):
 
 def init_case(tmp, case, output=True, force=False):
     os.chdir(os.path.join(path, case))
-    sys.argv = ['batman', 'settings.json', '-o', tmp]
     run = True
 
     if force or (os.listdir(tmp) == []):
@@ -37,6 +36,7 @@ def init_case(tmp, case, output=True, force=False):
         run = False
 
     if run:
+        sys.argv = ['batman', 'settings.json', '-o', tmp]
         batman.ui.main()
         check_output(tmp)
     if not output:
@@ -47,6 +47,14 @@ def init_case(tmp, case, output=True, force=False):
 
 
 # Use Michalewicz: 2D -> 1D
+def test_empty_output(tmp, case='Michalewicz'):
+    os.mkdir(os.path.join(tmp, 'snapshots'))
+    init_case(tmp, case)
+    sys.argv = ['batman', 'settings.json', '-nv', '-o', tmp]
+    with pytest.raises(SystemExit):
+        batman.ui.main()
+
+
 def test_init(tmp, case='Michalewicz'):
     init_case(tmp, case, force=True)
     check_output(tmp)
@@ -89,6 +97,7 @@ def test_uq(tmp, case='Michalewicz'):
 def test_checks(tmp, case='Michalewicz'):
     """Check answers to questions if there is an output folder."""
     init_case(tmp, case)
+    sys.argv = ['batman', 'settings.json', '-o', tmp]
 
     # Restart from snapshots, first enter something incorrect
     with mock.patch('builtins.input', side_effect=['nope', '', '']):
@@ -107,11 +116,17 @@ def test_checks(tmp, case='Michalewicz'):
         with pytest.raises(SystemExit):
             batman.ui.main()
 
+    # Exit because no snapshot folder
+    shutil.rmtree(os.path.join(tmp, 'snapshots'))
+    with mock.patch('builtins.input', side_effect=['no', 'no']):
+        with pytest.raises(SystemExit):
+            batman.ui.main()
+
 
 def test_restart_pod(tmp, case='Michalewicz'):
     """Test all restart options."""
     # Restart POD from existing one and continue with resample
-    init_case(tmp, case)
+    init_case(tmp, case, force=True)
     sys.argv = ['batman', 'settings.json', '-r', '-o', tmp]
     options = batman.ui.parse_options()
     settings = batman.misc.import_config(options.settings, schema)
@@ -184,8 +199,32 @@ def test_simple_settings(tmp):
     batman.ui.run(settings, options)
 
 
-def test_wrong_settings(tmp):
-    init_case(tmp, 'Ishigami', output=False)
+def test_only_surrogate(tmp, case='Ishigami'):
+    init_case(tmp, case, output=False)
+    sys.argv = ['batman', 'settings.json', '-o', tmp]
+    options = batman.ui.parse_options()
+    settings = batman.misc.import_config(options.settings, schema)
+    settings['space'].pop('resampling')
+    settings.pop('pod')
+    settings.pop('uq')
+    shutil.rmtree(tmp)
+    batman.ui.run(settings, options)
+
+
+def test_uq_no_surrogate(tmp, case='Ishigami'):
+    init_case(tmp, case, output=False)
+    sys.argv = ['batman', 'settings.json', '-u', '-o', tmp]
+    options = batman.ui.parse_options()
+    settings = batman.misc.import_config(options.settings, schema)
+    settings['space'].pop('resampling')
+    settings.pop('pod')
+    settings.pop('surrogate')
+    shutil.rmtree(tmp)
+    batman.ui.run(settings, options)
+
+
+def test_wrong_settings(tmp, case='Ishigami'):
+    init_case(tmp, case, output=False)
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
     settings = batman.misc.import_config(options.settings, schema)

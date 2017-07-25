@@ -31,7 +31,6 @@ from ..misc import ProgressBar, NestedPool
 import dill as pickle
 import numpy as np
 from sklearn import preprocessing
-from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import r2_score
 import copy
