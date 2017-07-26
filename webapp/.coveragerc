@@ -1,0 +1,3 @@
+[run]
+source = webapp_batman
+omit = webapp_batman/test*

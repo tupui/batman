@@ -1,0 +1,16 @@
+{% extends "layout.jinja2" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-2">
+    <img class="logo img-responsive" src="{{request.static_url('webapp_batman:static/batman-logo.png') }}" alt="batman logo">
+  </div>
+  <div class="col-md-10">
+    <div class="content">
+      <h1><span class="font-semi-bold">Batman</span> <span class="smaller">an Uncertain project</span></h1>
+      <p class="lead">Welcome to <span class="font-normal">Batman</span>, a&nbsp;web application to perform   Uncertainty&nbsp;Quantification by<br><span class="font-normal"> <a href="http://cerfacs.fr/en/">CERFACS</a></span>.</p>
+      <p>Go to the <a href="{{request.route_url('settings')}}">settings</a>.</p>
+    </div>
+  </div>
+</div>
+{% endblock content %}
