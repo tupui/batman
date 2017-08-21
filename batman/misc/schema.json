@@ -18,7 +18,7 @@
             "properties": {
               "method": {
                 "type": "string",
-                "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", " discrete"],
+                "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", "discrete"],
                 "default": "halton"
               },
               "init_size": {

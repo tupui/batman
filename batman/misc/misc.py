@@ -41,9 +41,9 @@ def check_yes_no(prompt, default):
     while True:
         try:
             try:
-                value = input(prompt)
+                value = raw_input(prompt)  # safe python 2
             except NameError:
-                value = raw_input(prompt)
+                value = input(prompt)
         except ValueError:
             logger.error("Sorry, I didn't understand that.")
             continue

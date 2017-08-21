@@ -134,6 +134,6 @@ If BATMAN has been correctly installed, you should be able to call it simply::
 
         wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
         bash Miniconda3-latest-Linux-x86_64.sh
-        conda create -n bat_env -c conda-forge openturns numpy scipy scikit-learn pathos jsonschema sphinx sphinx_rtd_theme otwrapy pytest pytest-runner mock
+        conda create -n bat_env -c conda-forge openturns matplotlib numpy scipy scikit-learn pathos jsonschema sphinx sphinx_rtd_theme otwrapy pytest pytest-runner mock
 
     Then you can install all packages without ``root`` access.
