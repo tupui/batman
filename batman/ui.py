@@ -126,7 +126,8 @@ def run(settings, options):
     except KeyError:
         logger.debug('No prediction.')
 
-    logger.info(driver.pod)
+    if 'pod' in settings:
+        logger.info(driver.pod)
 
     if options.q2:
         driver.surrogate.estimate_quality()

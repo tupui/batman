@@ -199,7 +199,7 @@ def test_simple_settings(tmp):
     batman.ui.run(settings, options)
 
 
-def test_only_surrogate(tmp, case='Ishigami'):
+def test_only_surrogate(tmp, case='Michalewicz'):
     init_case(tmp, case, output=False)
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
@@ -209,6 +209,12 @@ def test_only_surrogate(tmp, case='Ishigami'):
     settings.pop('uq')
     shutil.rmtree(tmp)
     batman.ui.run(settings, options)
+
+    # Restart from snapshots
+    with mock.patch('builtins.input', side_effect=['', '']):
+        batman.ui.run(settings, options)
+
+    check_output(tmp)
 
 
 def test_uq_no_surrogate(tmp, case='Ishigami'):

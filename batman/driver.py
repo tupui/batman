@@ -198,8 +198,8 @@ class Driver(object):
                 snapshots = [Snapshot.convert(s) for s in snapshots]
                 snapshots = np.vstack([s.data for s in snapshots])
                 self.data = snapshots
-            else:  # For restart purpose
-                points = self.space
+
+            points = self.space
 
             try:  # if surrogate
                 self.surrogate.fit(points, self.data, pod=self.pod)

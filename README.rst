@@ -37,7 +37,8 @@ It aims at:
 - Automatically manage (parallel) the CFD computations,
 - Have the optimal representation of the problem for a minimal cost in term of CFD evaluations.
 
-Aside from that, an uncertainty quantification (UQ) module allows to make sensitivity analysis (SA) and uncertainty propagation.
+Aside from that, an uncertainty quantification (UQ) module allows to make
+sensitivity analysis (SA) and uncertainty propagation.
 
 Getting started
 ---------------
@@ -48,10 +49,15 @@ that you can adapt to you needs. You can find more information about the cases
 within the respectives ``README.rst`` file. A detailled example can be found in
 :ref:`tutorial`.
 
+Aside from the documentation folder, the HTML documentation is available
+`here <http://open-source.pg.cerfacs.fr/batman/>`_.
+
 Shoud you be interested by BATMAN's implementation, consider
 reading :ref:`introduction`.
 
-If you encounter a bug (or have a feature request), please report it via `GitLab <https://nitrox.cerfacs.fr/open-source/batman>`_. Or it might be you falling but "Why do we fall sir? So we can learn to pick ourselves up".
+If you encounter a bug (or have a feature request), please report it via
+`GitLab <https://nitrox.cerfacs.fr/open-source/batman>`_. Or it might be you
+falling but "Why do we fall sir? So we can learn to pick ourselves up".
 
 Last but not least, if you consider contributing check-out :ref:`contributing`.
 
