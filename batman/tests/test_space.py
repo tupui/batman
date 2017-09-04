@@ -4,10 +4,11 @@ import pytest
 import numpy as np
 import numpy.testing as npt
 import copy
+import os
 import itertools
 from batman.space import (Point, Space, Doe,
                           UnicityError, AlienPointError, FullSpaceError)
-from batman.functions import (Ishigami, Branin)
+from batman.functions import Ishigami
 from batman.tasks import Snapshot
 from batman.surrogate import SurrogateModel
 from batman.space.refiner import Refiner
@@ -195,6 +196,10 @@ def test_resampling(tmp, branin_data, settings_ishigami):
                             refiner.sigma_discrepancy([0.5, 0.5]), decimal=2)
     assert (base_sigma_disc != refiner.sigma_discrepancy([-0.1, 1.])).any()
 
+    # Refiner without surrogate
+    refiner = Refiner(space, test_settings)
+    disc2 = refiner.discrepancy()
+
     num = 25
     x = np.linspace(-7, 10, num=num)
     y = np.linspace(0, 15, num=num)
@@ -212,12 +217,12 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     plt.plot(space[:11, 0], space[:11, 1], 'ko', label='initial sample')
     plt.plot(space[11:, 0], space[11:, 1], 'm^', label='firsts sigma')
     plt.plot(-3.68928528, 13.62998774, 'rx')
-    bounds = np.linspace(-17, 300., 30, endpoint=True)
     plt.tricontourf(x, y, pred, antialiased=True, cmap=c_map)
     plt.plot(sigma[0], sigma[1], '+', label='sigma')
     plt.plot(optim_EI[0], optim_EI[1], 's', label='optimization EI')
     plt.plot(optim_PI[0], optim_PI[1], 'p', label='optimization PI')
     plt.plot(disc[0], disc[1], 'v', label='discrepancy')
+    plt.plot(disc[0], disc2[1], '-', label='discrepancy without surrogate')
     plt.plot(extrema[:, 0], extrema[:, 1], '>', label='extrema')
     plt.plot(base_sigma_disc[0], base_sigma_disc[1], '<', label='sigma+discrepancy')
     cbar = plt.colorbar()
@@ -228,9 +233,9 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     for txt, point in enumerate(space):
         plt.annotate(txt, point, textcoords='offset points')
 
-    plt.legend(fontsize=21, bbox_to_anchor=(1.3,1), borderaxespad=0)
+    plt.legend(fontsize=21, bbox_to_anchor=(1.3, 1), borderaxespad=0)
     fig.tight_layout()
-    path = 'refinements.pdf'
+    path = os.path.join(tmp, 'refinements.pdf')
     fig.savefig(path, transparent=True, bbox_inches='tight')
     plt.close('all')
 

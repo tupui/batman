@@ -27,7 +27,7 @@ It implements the following methods:
 
 """
 import logging
-from scipy.optimize import (differential_evolution, minimize, basinhopping)
+from scipy.optimize import (differential_evolution, basinhopping)
 from scipy.stats import norm
 import numpy as np
 from sklearn import preprocessing
@@ -35,6 +35,7 @@ import copy
 from ..uq import UQ
 from .sampling import Doe
 from ..misc import optimization
+from .. import surrogate
 
 
 class Refiner(object):
@@ -43,21 +44,32 @@ class Refiner(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, surrogate, settings):
+    def __init__(self, data, settings):
         """Initialize the refiner with the Surrogate and space corners.
 
         Points data are scaled between ``[0, 1]`` based on the size of the
         corners taking into account a :param:``delta_space`` factor.
 
-        :param class:`surrogate.surrogate_model.SurrogateModel`: Surrogate
+        :param :class:`surrogate.surrogate_model.SurrogateModel` or
+        :class:`space.space.Space` data: Surrogate or space
         :param dict settings: parameters
         """
-        self.points = copy.deepcopy(surrogate.space[:])
-        self.surrogate = surrogate
+        if isinstance(data, surrogate.SurrogateModel):
+            self.surrogate = data
+        else:
+            self.surrogate = surrogate.SurrogateModel('kriging', data.corners)
+            self.surrogate.space = data
+            self.logger.debug("Using Space instance instead of SurrogateModel "
+                              "-> restricted to discrepancy refiner")
+
         if self.surrogate.pod is None:
             self.pod_S = 1
         else:
             self.pod_S = self.surrogate.pod.S
+
+        self.space = self.surrogate.space
+        self.points = copy.deepcopy(self.space[:])
+
         self.settings_full = settings
         self.settings = settings['space']
         self.corners = np.array(self.settings['corners']).T
@@ -206,7 +218,10 @@ class Refiner(object):
 
             # Check aspect ratio
             aspect = abs(diff)
-            aspect = np.power(np.max(aspect), self.dim) / np.prod(aspect)
+            try:
+                aspect = np.power(np.max(aspect), self.dim) / np.prod(aspect)
+            except ZeroDivisionError:
+                return np.inf
             aspect = np.power(aspect, 1 / self.dim)
             if not (aspect <= 1.5):
                 return np.inf
@@ -227,8 +242,6 @@ class Refiner(object):
 
         bounds = np.reshape([self.corners] * 2, (self.dim * 2, 2))
         # results = differential_evolution(min_norm, bounds, popsize=100)
-        # results = minimize(min_norm, x0, method='L-BFGS-B', bounds=bounds)
-        # results = minimize(min_norm, x0, method='SLSQP', bounds=bounds)
         minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
         results = basinhopping(min_norm, x0,
                                niter=1000, minimizer_kwargs=minimizer_kwargs)
@@ -301,8 +314,6 @@ class Refiner(object):
             sum_sigma = np.sum(self.pod_S ** 2 * sigma)
 
             return - sum_sigma
-
-        # result = differential_evolution(self.func_sigma, hypercube)
 
         min_x, _ = func_sigma()
 
@@ -523,7 +534,7 @@ class Refiner(object):
 
         @optimization(self.settings['sampling']['method'], self.corners)
         def probability_improvement(x):
-            """Probability of improvement."""
+            """Do probability of improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
             too_close = np.array([True if np.linalg.norm(x_scaled[0][discrete:] - p[discrete:], -1) < 0.02
                                   else False for p in self.points]).any()
@@ -538,7 +549,7 @@ class Refiner(object):
 
         @optimization(self.settings['sampling']['method'], self.corners)
         def expected_improvement(x):
-            """Expected improvement."""
+            """Do expected improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
             too_close = np.array([True if np.linalg.norm(x_scaled[0][discrete:] - p[discrete:], -1) < 0.02
                                   else False for p in self.points]).any()
@@ -576,6 +587,9 @@ class Refiner(object):
         disc = [1 / self.surrogate.space.discrepancy(
             np.vstack([self.surrogate.space, p])) for p in sample]
 
+        sigma = np.array(sigma).reshape(-1, 1)
+        disc = np.array(disc).reshape(-1, 1)
+
         scale_sigma = preprocessing.StandardScaler().fit(sigma)
         scale_disc = preprocessing.StandardScaler().fit(disc)
 
@@ -584,7 +598,7 @@ class Refiner(object):
             """Maximize the inverse of the discrepancy plus sigma."""
             _, sigma = self.pred_sigma(x)
             sigma = scale_sigma.transform(sigma.reshape(1, -1))
-            
+
             disc = 1 / self.surrogate.space.discrepancy(
                 np.vstack([self.surrogate.space, x]))
             disc = scale_disc.transform(disc.reshape(1, -1))
