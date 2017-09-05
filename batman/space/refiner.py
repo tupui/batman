@@ -35,7 +35,7 @@ import copy
 from ..uq import UQ
 from .sampling import Doe
 from ..misc import optimization
-from .. import surrogate
+import batman as bat
 
 
 class Refiner(object):
@@ -54,10 +54,10 @@ class Refiner(object):
         :class:`space.space.Space` data: Surrogate or space
         :param dict settings: parameters
         """
-        if isinstance(data, surrogate.SurrogateModel):
+        if isinstance(data, bat.surrogate.SurrogateModel):
             self.surrogate = data
         else:
-            self.surrogate = surrogate.SurrogateModel('kriging', data.corners)
+            self.surrogate = bat.surrogate.SurrogateModel('kriging', data.corners)
             self.surrogate.space = data
             self.logger.debug("Using Space instance instead of SurrogateModel "
                               "-> restricted to discrepancy refiner")
