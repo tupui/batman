@@ -2,7 +2,7 @@
 import pytest
 from batman.functions import (SixHumpCamel, Branin, Michalewicz, Rosenbrock,
                               Rastrigin, Ishigami, G_Function,
-                              Forrester,  Manning, Mascaret)
+                              Forrester,  Manning, Mascaret, ChemicalSpill)
 from scipy.optimize import differential_evolution
 import numpy as np
 import numpy.testing as npt
@@ -130,3 +130,9 @@ def test_Plot():
     plt.tick_params(axis='y', labelsize=26)
     plt.legend(fontsize=26, loc='upper left')
     # plt.show()
+
+
+def test_ChemicalSpill():
+    f = ChemicalSpill()
+    y = f([10, 0.07, 1.505, 30.1525])
+    assert y.shape == (1000,)

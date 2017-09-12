@@ -6,7 +6,7 @@ Analytical module
 Defines analytical Uncertainty Quantification oriented functions for test and
 model evaluation purpose.
 
-.. seealso:: `Virtual Library <https://www.sfu.ca/~ssurjano/index.html>`_
+.. seealso:: [Surjanovic2017]_ `Virtual Library <https://www.sfu.ca/~ssurjano/index.html>`_
 
 It implements the following classes:
 
@@ -19,7 +19,8 @@ It implements the following classes:
 - :class:`G_Function`,
 - :class:`Forrester`,
 - :class:`Channel_Flow`,
-- :class:`Manning`.
+- :class:`Manning`,
+- :class:`ChemicalSpill`.
 
 In each case, Sobol' indices are declared.
 
@@ -32,8 +33,11 @@ References
 .. [Saltelli2000] Saltelli, A., Chan, K., & Scott, E. M. (Eds.). (2000). Sensitivity analysis (Vol. 134). New York: Wiley.
 .. [Forrester2007] Forrester, Sobester. (2007). Multi-Fidelity Optimization via Surrogate Modelling. In Proceedings of the Royal Society A: Mathematical, Physical and Engineering Sciences.
 .. [Forrester2008] Forrester, A., Sobester, A., & Keane, A. (2008). Engineering design via surrogate modelling: a practical guide. Wiley.
+.. [Bliznyuk2008] Bliznyuk, N., Ruppert, D., Shoemaker, C., Regis, R., Wild, S., & Mugunthan, P. (2008). Bayesian calibration and uncertainty analysis for computationally expensive models using optimization and radial basis function approximation. Journal of Computational and Graphical Statistics, 17(2).
+.. [Surjanovic2017] Surjanovic, S. & Bingham, D. (2013). Virtual Library of Simulation Experiments: Test Functions and Datasets. Retrieved September 11, 2017, from http://www.sfu.ca/~ssurjano. 
 """
 import numpy as np
+import itertools
 import logging
 from .utils import multi_eval
 
@@ -492,3 +496,72 @@ class Manning(object):
         h = q / (ks * self.width * np.sqrt(self.slope))
         h = np.power(h, 3. / 5.)
         return h
+
+
+class ChemicalSpill(object):
+
+    r"""Environmental Model class [Bliznyuk2008]_.
+
+    Model a pollutant spill caused by a chemical accident.
+    ``C(x)`` being the concentration of the pollutant at the space-time vector
+    ``(s, t)``, with ``0 < s < 3`` and ``t > 0``.
+
+    A mass ``M`` of pollutant is spilled at each of two locations, denoted by
+    the space-time vectors ``(0, 0)`` and :math:`(L, \tau)`. Each element of
+    the response is a scaled concentration of the pollutant at the space-time
+    vector.
+
+    .. math:: f(X) = \sqrt{4\pi}C(X), x \in [[7, 13], [0.02, 0.12], [0.01, 3],
+        [30.1, 30.295]]\\
+        C(X) = \frac{M}{\sqrt{4\pi D_{t}}}\exp \left(\frac{-s^2}{4D_t}\right) +
+        \frac{M}{\sqrt{4\pi D_{t}(t - \tau)}} \exp \left(-\frac{(s-L)^2}{4D(t -
+        \tau)}\right) I (\tau < t)
+
+    """
+
+    logger = logging.getLogger(__name__)
+
+    def __init__(self, s=[0.5, 1, 1.5, 2, 2.5], tstep=0.3):
+        """Definition of the time-space domain.
+
+        :param list s: locations
+        :param float tstep: time-step
+        """
+        self.d_in = 4
+
+        self.s = s
+        self.ds = len(self.s)
+
+        self.t = np.arange(0.3, 60, tstep)
+        self.dt = self.t.shape[0]
+
+        self.d_out = self.ds * self.dt
+
+        self.logger.info("Using function ChemicalSpill with s={}, tstep={}"
+                         .format(self.s, tstep))
+
+    @multi_eval
+    def __call__(self, x):
+        """Call function.
+
+        :param list x: inputs
+        :return: f(x)
+        :rtype: float
+        """
+        mass, diff_rate, second_spill, tau = x
+
+        f = np.zeros((self.ds, self.dt))
+        for i, j in itertools.product(range(self.ds), range(self.dt)):
+            term1 = mass / np.sqrt(4 * np.pi * diff_rate * self.t[j])\
+                * np.exp(-self.s[i] ** 2 / (4 * diff_rate * self.t[j]))
+
+            term2 = 0
+            if tau < self.t[j]:
+                term2 = mass / np.sqrt(4 * np.pi * diff_rate * (self.t[j] - tau))\
+                    * np.exp(-(self.s[i] - second_spill) ** 2
+                             / (4 * diff_rate * (self.t[j] - tau)))
+
+            C = term1 + term2
+            f[i, j] = np.sqrt(4 * np.pi) * C
+
+        return f
