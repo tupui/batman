@@ -9,7 +9,7 @@ import shutil
 import json
 
 from batman import __version__, __branch__, __commit__
-from batman import Driver
+from batman.driver import Driver
 from batman import misc
 
 description_message = 'BATMAN creates a surrogate model and perform UQ.'

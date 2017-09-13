@@ -234,7 +234,7 @@ def test_wrong_settings(tmp, case='Ishigami'):
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
     settings = batman.misc.import_config(options.settings, schema)
-    
+
     # Invalid settings
     settings['space']['sampling'] = {'init_size': 150, 'method': 'wrong'}
 

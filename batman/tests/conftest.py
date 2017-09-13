@@ -9,7 +9,7 @@ from batman.functions import (Ishigami, Michalewicz, Branin,
                               Mascaret, Forrester)
 from batman.functions import output_to_sequence
 from batman.space import (Space, Point)
-from batman import Driver
+from batman.driver import Driver
 
 
 @pytest.fixture(scope="session")

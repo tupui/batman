@@ -40,7 +40,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
 
 intersphinx_mapping = {'openturns': ('http://doc.openturns.org/openturns-latest/sphinx/', None), 
                        'sklearn': ('http://scikit-learn.org/dev/', None),
-                       'python': ('https://docs.python.org/3.6', None)
+                       'python': ('https://docs.python.org', None)
 }
 
 

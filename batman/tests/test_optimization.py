@@ -1,12 +1,11 @@
 # coding: utf8
-import pytest
 import copy
 import numpy as np
 from scipy.stats import norm
 import itertools
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from batman import Driver
+from batman.driver import Driver
 from batman.functions import Branin
 from sklearn import preprocessing
 plt.switch_backend('Agg')
@@ -56,8 +55,8 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     for i, p in enumerate(points):
         disc[i] = 1 / driver.space.discrepancy(np.vstack([space, p]))
 
-    scale_sigma = preprocessing.StandardScaler().fit(sigma)
-    scale_disc = preprocessing.StandardScaler().fit(disc)
+    scale_sigma = preprocessing.StandardScaler().fit(sigma.reshape(-1, 1))
+    scale_disc = preprocessing.StandardScaler().fit(disc.reshape(-1, 1))
     min_value = scale_disc.transform(1 / driver.space.discrepancy(space).reshape(1, -1))
 
     # EGO discrepancy...
@@ -72,8 +71,8 @@ def test_optimization(tmp, branin_data, settings_ishigami):
             + s * norm.pdf(diff / s)
 
     # Sigma + Discrepancy
-    scale_sigma = preprocessing.scale(sigma)
-    scale_disc = preprocessing.scale(disc)
+    scale_sigma = preprocessing.scale(sigma.reshape(-1, 1))
+    scale_disc = preprocessing.scale(disc.reshape(-1, 1))
     sigma_disc = scale_sigma + scale_disc
 
     # Plotting
