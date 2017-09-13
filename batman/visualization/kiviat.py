@@ -12,7 +12,6 @@ from matplotlib.colors import Normalize
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import proj3d
 from matplotlib import pyplot as plt
-plt.switch_backend('Agg')
 plt.rc('text', usetex=True)
 
 

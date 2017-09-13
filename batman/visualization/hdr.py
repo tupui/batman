@@ -18,7 +18,7 @@ from .pdf import kernel_smoothing
 import matplotlib.animation as manimation
 import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
-plt.switch_backend('Agg')
+plt.rc('text', usetex=True)
 np.set_printoptions(precision=3)
 
 
@@ -259,7 +259,7 @@ class HdrBoxplot:
         figures = []
         axs = []
 
-        if isinstance(samples, bool):
+        if samples is None:
             data = self.data
             data_r = self.data_r
             n_samples = self.n_samples
@@ -387,14 +387,14 @@ class HdrBoxplot:
         fig.set_canvas(new_manager.canvas)
         return dummy
 
-    def f_hops(self, frame_rate=400, fname='f-HOPs.mp4', samples=False,
+    def f_hops(self, frame_rate=400, fname='f-HOPs.mp4', samples=None,
                x_common=None, labels=None, xlabel='t', ylabel='y', offset=0.05):
         """Functional Hypothetical Outcome Plots.
 
         Each frame consists in a HDR boxplot and an additional outcome.
         If it is an outlier, it is rendered as red dashed line.
 
-        If :attr:`samples` is `False` it will use the dataset, if an `int>0`
+        If :attr:`samples` is `None` it will use the dataset, if an `int>0`
         it will samples *n* new samples ; and if
         `array_like, shape (n_samples, n_features)` it will use this.
 
@@ -434,7 +434,7 @@ class HdrBoxplot:
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
 
-        if isinstance(samples, bool):
+        if samples is None:
             data_r = self.data_r
             pdf_r = self.pdf_r
             data = self.data
