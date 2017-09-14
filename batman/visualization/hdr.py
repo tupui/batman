@@ -13,7 +13,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 
-from .pdf import kernel_smoothing
+from .uncertainty import kernel_smoothing
 
 import matplotlib.animation as manimation
 import matplotlib.backends.backend_pdf

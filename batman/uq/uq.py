@@ -354,7 +354,7 @@ class UQ:
                 wrap_fun = sobol_model
             else:
                 def wrap_fun(x):
-                    return [fun(x)]
+                    return [sobol_model(x)]
 
             fast_model = ot.PythonFunction(self.p_len, self.output_len, wrap_fun)
             sobol = ot.FAST(ot.Function(fast_model),
@@ -445,11 +445,11 @@ class UQ:
                     i2_max = np.array(indices_conf[1].getUpperBound()).flatten('F')
 
                     data = np.append([i1_min], [i1, i1_max, i2_min, i2, i2_max])
-                    
-                    names = [i + str(p) for i, p in 
+
+                    names = [i + str(p) for i, p in
                              itertools.product(['S_min_', 'S_', 'S_max_',
                                                 'S_T_min_', 'S_T_', 'S_T_max_'],
-                                                self.p_lst)]
+                                               self.p_lst)]
 
                     conf1 = np.vstack((i1_min, i2_min)).flatten('F')
                     conf1 = ind_total_first - conf1
@@ -458,9 +458,9 @@ class UQ:
                     conf = np.vstack((conf1, conf2))
                 else:
                     conf = 0
-                    names = [i + str(p) for i, p in 
+                    names = [i + str(p) for i, p in
                              itertools.product(['S_', 'S_T_'],
-                                                self.p_lst)]
+                                               self.p_lst)]
                     data = np.append(i1, i2)
                 dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
                 self.io.write(self.output_folder + '/sensitivity_aggregated.dat',

@@ -5,7 +5,7 @@ import numpy as np
 import numpy.testing as npt
 from scipy.io import wavfile
 from mock import patch
-from batman.visualization import HdrBoxplot
+from batman.visualization import (HdrBoxplot, Kiviat3D)
 import matplotlib.pyplot as plt
 
 # Water surface temperature data from:
@@ -201,3 +201,31 @@ def test_sample(hdr):
 #     hdr.plot(fname=os.path.join(tmp, 'hdr_boxplot.pdf'))
 #     hdr.f_hops(samples=10, fname=os.path.join(tmp, 'f-HOPs.mp4'))
 #     hdr.sound(fname=os.path.join(tmp, 'song-fHOPs.wav'))
+
+
+@pytest.fixture(scope="session")
+def kiviat_data():
+    space = [[30, 4000], [15, 5000]]
+    feval = [[12], [15]]
+    corners = [[15.0, 2500.0],[60.0, 6000.0]]
+    param_names = ['Ks', 'Q', '-']
+
+    kiviat = Kiviat3D(space, corners,
+                      feval, param_names=param_names)
+    labels = ["Ks={}, Q={}".format(ks, q) for (ks, q) in space]
+
+    return kiviat, labels
+
+
+def test_kiviat_fhops(kiviat_data, tmp):
+    kiviat, labels = kiviat_data
+    kiviat.f_hops(frame_rate=400, labels=labels,
+                  fname=os.path.join(tmp, 'kiviat.mp4'))
+    kiviat.f_hops(fname=os.path.join(tmp, 'kiviat.mp4'))
+
+
+@patch("matplotlib.pyplot.show")
+def test_kiviat_plot(mock_show, kiviat_data, tmp):
+    kiviat, labels = kiviat_data
+    kiviat.plot(fname=os.path.join(tmp, 'kiviat.pdf'))
+    kiviat.plot()

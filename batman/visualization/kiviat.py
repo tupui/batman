@@ -36,7 +36,7 @@ class Kiviat3D:
 
     """3D version of the Kiviat plot."""
 
-    def __init__(self, params, bounds, feval, labels=None):
+    def __init__(self, params, bounds, feval, param_names=None):
         """Prepare params for Kiviat plot."""
         self.params = np.asarray(params)
         self.bounds = bounds
@@ -64,10 +64,10 @@ class Kiviat3D:
         self.n_params = self.params.shape[1]
         alpha = 2 * np.pi / self.n_params
         self.alphas = [alpha * (i + 1) for i in range(self.n_params)]
-        if labels is None:
-            self.labels = ['x' + str(i) for i in range(self.n_params)]
+        if param_names is None:
+            self.param_names = ['x' + str(i) for i in range(self.n_params)]
         else:
-            self.labels = labels
+            self.param_names = param_names
         self.z_offset = - 10
         self.ticks = np.tile(self.ticks, self.n_params).reshape(-1, len(self.ticks)).T
         self.ticks_values = self.scale.inverse_transform(self.ticks).T
@@ -106,9 +106,9 @@ class Kiviat3D:
                         [self.z_offset, self.z_offset],
                         mutation_scale=20, lw=1, arrowstyle="-|>", color="k")
             ax.add_artist(a)
-            # Annotate with labels
+            # Annotate with param_names
             ax.text(1.1 * self.x_ticks[i], 1.1 * self.y_ticks[i],
-                    self.z_offset, self.labels[i],
+                    self.z_offset, self.param_names[i],
                     fontsize=14, ha='center', va='center', color='k')
 
             # Add ticks with values
