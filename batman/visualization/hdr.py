@@ -376,17 +376,6 @@ class HdrBoxplot:
 
         return figures, axs
 
-    def reshow(self, fig):
-        """Create a dummy figure and use its manager to display :attr:`fig`.
-
-        :param fig: Matplotlib figure instance
-        """
-        dummy = plt.figure()
-        new_manager = dummy.canvas.manager
-        new_manager.canvas.figure = fig
-        fig.set_canvas(new_manager.canvas)
-        return dummy
-
     def f_hops(self, frame_rate=400, fname='f-HOPs.mp4', samples=None,
                x_common=None, labels=None, xlabel='t', ylabel='y', offset=0.05):
         """Functional Hypothetical Outcome Plots.

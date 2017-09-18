@@ -5,7 +5,7 @@ import numpy as np
 import numpy.testing as npt
 from scipy.io import wavfile
 from mock import patch
-from batman.visualization import (HdrBoxplot, Kiviat3D)
+from batman.visualization import (HdrBoxplot, Kiviat3D, pdf, reshow)
 import matplotlib.pyplot as plt
 
 # Water surface temperature data from:
@@ -70,12 +70,12 @@ def test_basic(mock_show, hdr, tmp):
     assert len(figs) == 3
     assert len(axs) == 3
 
-    fig = hdr.reshow(figs[2])
+    fig = reshow(figs[2])
     plt.plot([0, 10], [25, 25])
     axs[2].plot([0, 6], [4, -3])
     fig.savefig(os.path.join(tmp, 'hdr_boxplot_change_sample.pdf'))
 
-    fig = hdr.reshow(figs[1])
+    fig = reshow(figs[1])
     axs[1][0].plot([0, 6], [4, -3])
     fig.savefig(os.path.join(tmp, 'hdr_boxplot_change_scatter.pdf'))
 
@@ -229,3 +229,15 @@ def test_kiviat_plot(mock_show, kiviat_data, tmp):
     kiviat, labels = kiviat_data
     kiviat.plot(fname=os.path.join(tmp, 'kiviat.pdf'))
     kiviat.plot()
+
+
+def test_pdf_1D(tmp):
+    pdf(data[:, 5].reshape(-1, 1), fname=os.path.join(tmp, 'pdf.pdf'))
+
+
+@patch("matplotlib.pyplot.show")
+def test_pdf_nD():
+    fig_pdf = pdf(data)
+    fig = reshow(fig_pdf)
+    plt.plot([0, 10], [25, 25])
+    fig.show()

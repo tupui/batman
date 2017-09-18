@@ -59,11 +59,12 @@ import numpy as np
 import openturns as ot
 from sklearn.metrics import (r2_score, mean_squared_error)
 from openturns.viewer import View
-from os import mkdir
+import os
 import itertools
 from ..functions import multi_eval
 from ..input_output import (IOFormatSelector, Dataset)
 from .. import functions as func_ref
+from .. import visualization
 import matplotlib.pyplot as plt
 from matplotlib import cm
 plt.switch_backend('Agg')
@@ -103,7 +104,7 @@ class UQ:
             self.test = None
         self.output_folder = output
         try:
-            mkdir(output)
+            os.mkdir(output)
         except OSError:
             self.logger.debug("Output folder already exists.")
         except TypeError:
@@ -560,32 +561,5 @@ class UQ:
             self.io.write(self.output_folder + '/correlation_XY.dat', dataset)
 
         # Create the PDFs
-        kernel = ot.KernelSmoothing()
-        pdf_pts = [None] * self.output_len
-        d_PDF = 200
-        if self.points_sample < d_PDF:
-            d_PDF = self.points_sample
-
-        output_extract = self.output[0:d_PDF]
-
-        for i in range(self.output_len):
-            try:
-                pdf = kernel.build(output[:, i])
-            except RuntimeError:  # Boundary conditions
-                pdf = ot.Normal(np.mean(output[:, i]), 0.001)
-            pdf_pts[i] = np.array(pdf.computePDF(output_extract[:, i]))
-            pdf_pts[i] = np.nan_to_num(pdf_pts[i])
-
-        # Write PDF to file
-        output_extract = np.array(output_extract).flatten('C')
-        pdf_pts = np.array(pdf_pts).flatten('F')
-        names = ['output', 'PDF']
-        if (self.output_len != 1) and (self.type_indices != 'block'):
-            names = ['x'] + names
-            f_input_2d = np.tile(self.f_input, d_PDF)
-            data = np.array([f_input_2d, output_extract, pdf_pts])
-        else:
-            data = np.array([output_extract, pdf_pts])
-
-        dataset = Dataset(names=names, data=data)
-        self.io.write(self.output_folder + '/pdf.dat', dataset)
+        visualization.pdf(self.output, self.f_input,
+                          fname=os.path.join(self.output_folder, 'pdf.pdf'))

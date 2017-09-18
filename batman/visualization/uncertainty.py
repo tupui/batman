@@ -3,10 +3,22 @@ Uncertainty visualization tools
 -------------------------------
 """
 import numpy as np
+import re
+import os
+import itertools
+import openturns as ot
 from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KernelDensity
 from sklearn.model_selection import GridSearchCV
 from scipy.optimize import differential_evolution
+
+from ..input_output import (IOFormatSelector, Dataset)
+import batman as bat
+
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+plt.rc('text', usetex=True)
 
 
 def kernel_smoothing(data, optimize=False):
@@ -41,3 +53,95 @@ def kernel_smoothing(data, optimize=False):
         ks_gaussian = grid.best_estimator_
 
     return ks_gaussian
+
+
+def pdf(data, xdata=None, extract=None, labels=['x', 'F'], fname=None):
+    """Plot PDF in 1D or 2D.
+
+    :param dict/np.ndarray/:class:`surrogate.surrogate_model.bat.surrogate.SurrogateModel`
+    data: 
+    :param :class:`openturns.ComposedDistribution` dist: input composed distribution
+    :param int extract: index of the functional value to extract
+    :param list(str) labels: label of the function
+    """
+    dx = 100
+    if isinstance(data, dict):
+        f = bat.SurrogateModel('kriging', data['bounds'])
+        f.read(data['model'])
+        dist = data['dist']
+        output_len = len(data['bounds'][0])
+    elif isinstance(data, np.ndarray):
+        z_array = data
+        output_len = data.shape[1]
+    else:
+        output_len = len(data.space.corners[0])
+
+    if not isinstance(data, np.ndarray):
+        sample = np.array(ot.LHSExperiment(dist, 1000).generate())
+        z_array, _ = data(sample)
+
+    if output_len > 1:
+        pdf = []
+        ydata = []
+        for i in range(output_len):
+            ks_gaussian = kernel_smoothing(z_array[:, i].reshape(-1, 1), False)
+            xpdf = np.linspace(min(z_array[:, i]), max(z_array[:, i]), dx).reshape(-1, 1)
+            pdf.append(np.exp(ks_gaussian.score_samples(xpdf)))
+            ydata.append(xpdf.flatten())
+        pdf = np.array(pdf).T
+        if xdata is None:
+            xdata = np.linspace(0, 1, output_len)
+        xdata = np.tile(xdata, dx).reshape(-1, output_len)
+        ydata = np.array(ydata).T
+    else:
+        z_array = z_array.reshape(-1, 1)
+        ks_gaussian = kernel_smoothing(z_array, True)
+        xdata = np.linspace(min(z_array), max(z_array), dx).reshape(-1, 1)
+        pdf = np.exp(ks_gaussian.score_samples(xdata))
+
+    c_map = cm.viridis
+
+    if output_len > 1:
+        fig = plt.figure('PDF')
+        bound_pdf = np.linspace(0., np.max(pdf), 50, endpoint=True)
+        plt.contourf(xdata, ydata, pdf, bound_pdf, cmap=c_map)
+        cbar = plt.colorbar()
+        cbar.set_label(r"PDF")
+        plt.xlabel(labels[0], fontsize=26)
+        plt.ylabel(labels[1], fontsize=26)
+        plt.tick_params(axis='x', labelsize=26)
+        plt.tick_params(axis='y', labelsize=26)
+    else:
+        fig = plt.figure('PDF')
+        plt.plot(xdata, pdf, color='k', ls='-', linewidth=3)
+        plt.fill_between(xdata[:, 0], pdf, [0] * xdata.shape[0], color='gray', alpha=0.1)
+        z_delta = np.max(z_array) * 5e-4
+        plt.plot(z_array[:, 0], - z_delta - z_delta * np.random.random(z_array.shape[0]), '+k')
+        plt.xlabel(labels[1], fontsize=26)
+        plt.ylabel("PDF", fontsize=26)
+        plt.tick_params(axis='x', labelsize=26)
+        plt.tick_params(axis='y', labelsize=26)
+        plt.legend(fontsize=26, loc='upper right')
+
+    plt.tight_layout()
+    if fname is not None:
+        plt.savefig(fname, transparent=True, bbox_inches='tight')
+        # Write PDF to file
+        xdata = xdata.flatten('C')
+        pdf = pdf.flatten('F')
+        names = ['output', 'PDF']
+        if output_len > 1:
+            ydata = np.array(ydata).flatten('C')
+            names = ['x'] + names
+            data = np.array([xdata, ydata, pdf])
+        else:
+            data = np.array([xdata, pdf])
+
+        io = IOFormatSelector('fmt_tp_fortran')
+        dataset = Dataset(names=names, data=data)
+        io.write(fname + '.dat', dataset)
+    else:
+        plt.show()
+    plt.close('all')
+
+    return fig
