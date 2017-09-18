@@ -4,8 +4,10 @@ import os
 import numpy as np
 import numpy.testing as npt
 from scipy.io import wavfile
+import openturns as ot
 from mock import patch
 from batman.visualization import (HdrBoxplot, Kiviat3D, pdf, reshow)
+from batman.surrogate import SurrogateModel
 import matplotlib.pyplot as plt
 
 # Water surface temperature data from:
@@ -236,8 +238,25 @@ def test_pdf_1D(tmp):
 
 
 @patch("matplotlib.pyplot.show")
-def test_pdf_nD():
-    fig_pdf = pdf(data)
+def test_pdf_surrogate(ishigami_data):
+    dist = ot.ComposedDistribution(ishigami_data[1], ot.IndependentCopula(3))
+    f_3d = ishigami_data[0]
+    space = ishigami_data[5]
+
+    surrogate = SurrogateModel('kriging', space.corners)
+    surrogate.fit(space, f_3d(space))
+    data = {
+        "dist": dist,
+        "model": surrogate,
+        "bounds": space.corners
+    }
+
+    pdf(data)
+
+
+@patch("matplotlib.pyplot.show")
+def test_pdf_nD(mock_show):
+    fig_pdf = pdf(data, xdata=np.linspace(1, 12, 12))
     fig = reshow(fig_pdf)
     plt.plot([0, 10], [25, 25])
     fig.show()

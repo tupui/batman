@@ -55,31 +55,35 @@ def kernel_smoothing(data, optimize=False):
     return ks_gaussian
 
 
-def pdf(data, xdata=None, extract=None, labels=['x', 'F'], fname=None):
+def pdf(data, xdata=None, labels=['x', 'F'], fname=None):
     """Plot PDF in 1D or 2D.
 
-    :param dict/np.ndarray/:class:`surrogate.surrogate_model.bat.surrogate.SurrogateModel`
-    data: 
-    :param :class:`openturns.ComposedDistribution` dist: input composed distribution
-    :param int extract: index of the functional value to extract
-    :param list(str) labels: label of the function
+    :param np.ndarray/dict data: 1D array of shape (n_sample, n_feature)
+    or a dictionary with the following::
+
+        - `bounds`, array like of shape (2, n_feature) first line is mins and
+            second line is maxs.
+        - `model`, :class:`batman.surrogate.SurrogateModel` instance or str
+            path to the surrogate data.
+        - `dist`, :class:`openturns.ComposedDistribution` instance.
+
+    :param list(str) labels: `x` label and `PDF` label
+    :param str fname: wether to export to filename or display the figures
     """
     dx = 100
     if isinstance(data, dict):
-        f = bat.SurrogateModel('kriging', data['bounds'])
-        f.read(data['model'])
-        dist = data['dist']
+        try:
+            f = bat.surrogate.SurrogateModel('kriging', data['bounds'])
+            f.read(data['model'])
+        except TypeError:
+            f = data['model']
         output_len = len(data['bounds'][0])
-    elif isinstance(data, np.ndarray):
-        z_array = data
-        output_len = data.shape[1]
+        sample = np.array(ot.LHSExperiment(data['dist'], 500).generate())
+        z_array, _ = f(sample)
     else:
-        output_len = len(data.space.corners[0])
+        z_array = data
 
-    if not isinstance(data, np.ndarray):
-        sample = np.array(ot.LHSExperiment(dist, 1000).generate())
-        z_array, _ = data(sample)
-
+    output_len = z_array.shape[1]
     if output_len > 1:
         pdf = []
         ydata = []
@@ -99,8 +103,8 @@ def pdf(data, xdata=None, extract=None, labels=['x', 'F'], fname=None):
         xdata = np.linspace(min(z_array), max(z_array), dx).reshape(-1, 1)
         pdf = np.exp(ks_gaussian.score_samples(xdata))
 
+    # Plotting
     c_map = cm.viridis
-
     if output_len > 1:
         fig = plt.figure('PDF')
         bound_pdf = np.linspace(0., np.max(pdf), 50, endpoint=True)
@@ -114,9 +118,11 @@ def pdf(data, xdata=None, extract=None, labels=['x', 'F'], fname=None):
     else:
         fig = plt.figure('PDF')
         plt.plot(xdata, pdf, color='k', ls='-', linewidth=3)
-        plt.fill_between(xdata[:, 0], pdf, [0] * xdata.shape[0], color='gray', alpha=0.1)
+        plt.fill_between(xdata[:, 0], pdf, [0] * xdata.shape[0],
+                         color='gray', alpha=0.1)
         z_delta = np.max(z_array) * 5e-4
-        plt.plot(z_array[:, 0], - z_delta - z_delta * np.random.random(z_array.shape[0]), '+k')
+        plt.plot(z_array[:, 0],
+                 -z_delta - z_delta * np.random.random(z_array.shape[0]), '+k')
         plt.xlabel(labels[1], fontsize=26)
         plt.ylabel("PDF", fontsize=26)
         plt.tick_params(axis='x', labelsize=26)
