@@ -33,6 +33,7 @@ fi
 
 # On HPC:
 source activate bat_ci
+export PYTHONPATH=
 python --version
 
 SCRATCH='/scratch/cfd/roy'
