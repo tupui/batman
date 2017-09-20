@@ -396,6 +396,11 @@ class UQ:
             dataset = Dataset(names=full_names, shape=[self.output_len, 1, 1],
                               data=data)
             self.io.write(self.output_folder + '/sensitivity.dat', dataset)
+
+            # Plot
+            path = self.output_folder + '/sensitivity_map.pdf'
+            visualization.sobol(indices[1:], p_lst=self.p_lst,
+                                xdata=self.f_input, fname=path)
         else:
             self.logger.debug("No output folder to write indices in")
 
@@ -458,7 +463,7 @@ class UQ:
                     conf2 -= ind_total_first
                     conf = np.vstack((conf1, conf2))
                 else:
-                    conf = 0
+                    conf = None
                     names = [i + str(p) for i, p in
                              itertools.product(['S_', 'S_T_'],
                                                self.p_lst)]
@@ -467,29 +472,10 @@ class UQ:
                 self.io.write(self.output_folder + '/sensitivity_aggregated.dat',
                               dataset)
 
-                # Plot indices and confidence intervals
-                objects = [[r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"]
-                           for i, p in enumerate(self.p_lst)]
-                color = [[cm.Pastel1(i), cm.Pastel1(i)]
-                         for i, p in enumerate(self.p_lst)]
-
-                objects = [item for sublist in objects for item in sublist]
-                color = [item for sublist in color for item in sublist]
-                y_pos = np.arange(2 * self.p_len)
-
-                fig = plt.figure('Aggregated Indices')
-                plt.bar(y_pos, ind_total_first,
-                        yerr=conf, align='center', alpha=0.5, color=color)
-                plt.set_cmap('Pastel2')
-                plt.xticks(y_pos, objects)
-                plt.tick_params(axis='x', labelsize=20)
-                plt.tick_params(axis='y', labelsize=20)
-                plt.ylabel("Sobol' aggregated indices", fontsize=20)
-                plt.xlabel("Input parameters", fontsize=20)
-                fig.tight_layout()
+                # Plot
                 path = self.output_folder + '/sensitivity_aggregated.pdf'
-                fig.savefig(path, transparent=True, bbox_inches='tight')
-                plt.close('all')
+                visualization.sobol(indices[1:], conf=conf, p_lst=self.p_lst,
+                                    fname=path)
             else:
                 self.logger.debug(
                     "No output folder to write aggregated indices in")
@@ -560,6 +546,6 @@ class UQ:
                               data=data)
             self.io.write(self.output_folder + '/correlation_XY.dat', dataset)
 
-        # Create the PDFs
-        visualization.pdf(self.output, self.f_input,
+        # Create and plot the PDFs
+        visualization.pdf(np.array(self.output), self.f_input,
                           fname=os.path.join(self.output_folder, 'pdf.pdf'))

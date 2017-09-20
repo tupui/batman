@@ -17,12 +17,15 @@ import batman as bat
 
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=True)
 
 
 def kernel_smoothing(data, optimize=False):
     """Create gaussian kernel.
+
+    The optimization option could lead to longer computation of the PDF.
 
     :param bool optimize: use global optimization of grid search
     :return: gaussian kernel
@@ -69,6 +72,8 @@ def pdf(data, xdata=None, labels=['x', 'F'], fname=None):
 
     :param list(str) labels: `x` label and `PDF` label
     :param str fname: wether to export to filename or display the figures
+    :returns: figure.
+    :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """
     dx = 100
     if isinstance(data, dict):
@@ -153,7 +158,7 @@ def pdf(data, xdata=None, labels=['x', 'F'], fname=None):
     return fig
 
 
-def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel=None, fname=None):
+def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
     """Plot total aggregated Sobol' indices.
 
     :param list(str) p_lst: parameters' name.
@@ -171,9 +176,9 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel=None, fname=None):
     color = [[cm.Pastel1(i), cm.Pastel1(i)]
              for i, p in enumerate(p_lst)]
 
-    # objects = [item for sublist in objects for item in sublist]
+    s_lst = [item for sublist in objects for item in sublist]
     color = [item for sublist in color for item in sublist]
-    y_pos = np.arange(2 * len(p_lst))
+    y_pos = np.arange(2 * p_len)
 
     figures = []
     fig = plt.figure('Aggregated Indices')
@@ -181,11 +186,29 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel=None, fname=None):
     plt.bar(y_pos, np.array(sobols[:2]).flatten('F'),
             yerr=conf, align='center', alpha=0.5, color=color)
     plt.set_cmap('Pastel2')
-    plt.xticks(y_pos, objects)
+    plt.xticks(y_pos, s_lst)
     plt.tick_params(axis='x', labelsize=20)
     plt.tick_params(axis='y', labelsize=20)
     plt.ylabel("Sobol' aggregated indices", fontsize=20)
     plt.xlabel("Input parameters", fontsize=20)
+
+    if len(sobols) > 2:
+        n_xdata = len(sobols[3])
+        if xdata is None:
+            xdata = np.linspace(0, 1, n_xdata)
+        fig = plt.figure('Sensitivity Map')
+        figures.append(fig)
+        sobols = np.hstack(sobols[2:]).T
+        s_lst = np.array(objects).T.flatten('C').tolist()
+        for sobol, label in zip(sobols, s_lst):
+            plt.plot(xdata, sobol, linewidth=3, label=label)
+        plt.xlabel(xlabel, fontsize=26)
+        plt.ylabel(r"Indices", fontsize=26)
+        plt.ylim(-0.1, 1.1)
+        plt.tick_params(axis='x', labelsize=23)
+        plt.tick_params(axis='y', labelsize=23)
+        plt.legend(fontsize=26, loc='center right')
+
     plt.tight_layout()
 
     if fname is not None:
@@ -196,3 +219,5 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel=None, fname=None):
     else:
         plt.show()
     plt.close('all')
+
+    return figures

@@ -263,9 +263,20 @@ def test_pdf_nD(mock_show):
     fig.show()
 
 
-def test_sobols_aggregated():
+@patch("matplotlib.pyplot.show")
+def test_sobols_aggregated(mock_show, tmp):
     fun = Ishigami()
     indices = [fun.s_first, fun.s_total]
-    sobol(indices)
-    sobol(indices, p_lst=['x1', 't', 'y'])
+    fig = sobol(indices)
+    fig = reshow(fig[0])
+    plt.plot([0, 10], [25, 25])
+    fig.show()
+    sobol(indices, p_lst=['x1', 't', 'y'], fname=os.path.join(tmp, 'sobol.pdf'))
 
+
+@patch("matplotlib.pyplot.show")
+def test_sobols_map(mock_show):
+    fun = Mascaret()
+    indices = [fun.s_first, fun.s_total, fun.s_first_full, fun.s_total_full]
+    sobol(indices)
+    sobol(indices, p_lst=['Ks', 'Q'], xdata=fun.x)
