@@ -151,3 +151,48 @@ def pdf(data, xdata=None, labels=['x', 'F'], fname=None):
     plt.close('all')
 
     return fig
+
+
+def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel=None, fname=None):
+    """Plot total aggregated Sobol' indices.
+
+    :param list(str) p_lst: parameters' name.
+    :param sobols: total Sobol' aggregated indices.
+    :param conf: confidence intervals around indices.
+    :param str fname: wether to export to filename or display the figures.
+    :returns: figure.
+    :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
+    """
+    p_len = len(sobols[0])
+    if p_lst is None:
+        p_lst = ["x" + str(i) for i in range(p_len)]
+    objects = [[r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"]
+               for i, p in enumerate(p_lst)]
+    color = [[cm.Pastel1(i), cm.Pastel1(i)]
+             for i, p in enumerate(p_lst)]
+
+    # objects = [item for sublist in objects for item in sublist]
+    color = [item for sublist in color for item in sublist]
+    y_pos = np.arange(2 * len(p_lst))
+
+    figures = []
+    fig = plt.figure('Aggregated Indices')
+    figures.append(fig)
+    plt.bar(y_pos, np.array(sobols[:2]).flatten('F'),
+            yerr=conf, align='center', alpha=0.5, color=color)
+    plt.set_cmap('Pastel2')
+    plt.xticks(y_pos, objects)
+    plt.tick_params(axis='x', labelsize=20)
+    plt.tick_params(axis='y', labelsize=20)
+    plt.ylabel("Sobol' aggregated indices", fontsize=20)
+    plt.xlabel("Input parameters", fontsize=20)
+    plt.tight_layout()
+
+    if fname is not None:
+        pdf = matplotlib.backends.backend_pdf.PdfPages(fname)
+        for fig in figures:
+            pdf.savefig(fig, transparent=True, bbox_inches='tight')
+        pdf.close()
+    else:
+        plt.show()
+    plt.close('all')

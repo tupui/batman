@@ -6,8 +6,9 @@ import numpy.testing as npt
 from scipy.io import wavfile
 import openturns as ot
 from mock import patch
-from batman.visualization import (HdrBoxplot, Kiviat3D, pdf, reshow)
+from batman.visualization import (HdrBoxplot, Kiviat3D, pdf, sobol, reshow)
 from batman.surrogate import SurrogateModel
+from batman.functions import Ishigami, Mascaret
 import matplotlib.pyplot as plt
 
 # Water surface temperature data from:
@@ -260,3 +261,11 @@ def test_pdf_nD(mock_show):
     fig = reshow(fig_pdf)
     plt.plot([0, 10], [25, 25])
     fig.show()
+
+
+def test_sobols_aggregated():
+    fun = Ishigami()
+    indices = [fun.s_first, fun.s_total]
+    sobol(indices)
+    sobol(indices, p_lst=['x1', 't', 'y'])
+
