@@ -148,8 +148,10 @@ class UQ:
 
             self.model = self.func
             self.output = ot.Sample(self.model(self.sample))
+            self.init_size = self.surrogate.space.doe_init
         except TypeError:
             self.sample = space
+            self.init_size = len(space) - self.resamp_size
             try:
                 f_input, output = np.split(np.array(data), 2, axis=1)
                 self.f_input = f_input[0]
