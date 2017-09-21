@@ -137,7 +137,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     surrogate.fit(space, target_space)
     pred, sigma = surrogate(point)
     assert sigma is None
-    assert pred == pytest.approx(target_point, 0.5)
+    assert pred[0] == pytest.approx(target_point, 0.5)
     surrogate.write(tmp)
     if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
         assert False
@@ -154,10 +154,10 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     assert surrogate.space == space
 
     pred, _ = surrogate(point)
-    assert pred == pytest.approx(target_point, 0.1)
+    assert pred[0] == pytest.approx(target_point, 0.1)
 
     pred, _ = surrogate(point)
-    assert pred == pytest.approx(target_point, 0.1)
+    assert pred[0] == pytest.approx(target_point, 0.1)
 
     pred, _ = surrogate(point, path=tmp)
     assert pred[0].data == pytest.approx(target_point, 0.1)
