@@ -129,7 +129,7 @@ class UQ:
         self.logger.info("Created {} samples with an LHS experiment"
                          .format(self.points_sample))
 
-        self.init_size = settings['space']['sampling']['init_size']
+        self.init_size = self.surrogate.space.doe_init
         try:
             self.resamp_size = settings['space']['resampling']['resamp_size']
         except KeyError:
