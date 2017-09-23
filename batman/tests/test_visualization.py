@@ -36,7 +36,7 @@ def hdr():
 
 
 @patch("matplotlib.pyplot.show")
-def test_basic(mock_show, hdr, tmp):
+def test_hdr_basic(mock_show, hdr, tmp):
     print('Data shape: ', data.shape)
 
     assert len(hdr.extra_quantiles) == 0
@@ -64,7 +64,7 @@ def test_basic(mock_show, hdr, tmp):
 
     npt.assert_almost_equal(quant, quant_t, decimal=0)
 
-    figs, axs = hdr.plot(fname=os.path.join(tmp, 'hdr_boxplot.pdf'),
+    figs, axs = hdr.plot(fname=os.path.join('.', 'hdr_boxplot.pdf'),
                          labels=labels,
                          x_common=np.linspace(1, 12, 12),
                          xlabel='Month of the year (-)',
@@ -85,7 +85,7 @@ def test_basic(mock_show, hdr, tmp):
 
 # @pytest.mark.xfail(reason='Global optimization')
 @patch("matplotlib.pyplot.show")
-def test_alpha(mock_show):
+def test_hdr_alpha(mock_show):
     hdr = HdrBoxplot(data, alpha=[0.7])
     extra_quant_t = np.vstack([[25.1, 26.4, 26.9, 26.3, 25.2, 23.9,
                                 22.7, 21.8, 21.5, 21.8, 22.5, 23.7],
@@ -96,7 +96,7 @@ def test_alpha(mock_show):
 
 
 @patch("matplotlib.pyplot.show")
-def test_multiple_alpha(mock_show):
+def test_hdr_multiple_alpha(mock_show):
     hdr = HdrBoxplot(data, alpha=[0.4, 0.92])
     extra_quant_t = [[25.712, 27.052, 27.711, 27.200,
                       26.162, 24.833, 23.639, 22.378,
@@ -114,21 +114,21 @@ def test_multiple_alpha(mock_show):
     hdr.plot()
 
 
-def test_threshold():
+def test_hdr_threshold():
     hdr = HdrBoxplot(data, alpha=[0.8], threshold=0.93)
     labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)
     outliers = labels[labels_pos]
     npt.assert_equal([1982, 1983, 1997, 1998], outliers)
 
 
-def test_outliers_method():
+def test_hdr_outliers_method():
     hdr = HdrBoxplot(data, threshold=0.93, outliers_method='forest')
     labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)
     outliers = labels[labels_pos]
     npt.assert_equal([1982, 1983, 1997, 1998], outliers)
 
 
-def test_optimize_bw():
+def test_hdr_optimize_bw():
     hdr = HdrBoxplot(data, optimize=True)
     median_t = [24.27, 25.67, 25.98, 25.05, 23.76, 22.40,
                 21.31, 20.43, 20.20, 20.47, 21.17, 22.37]
@@ -136,7 +136,7 @@ def test_optimize_bw():
 
 
 @patch("matplotlib.pyplot.show")
-def test_variance(mock_show):
+def test_hdr_variance(mock_show):
     hdr = HdrBoxplot(data, variance=0.9)
     median_t = [24.37, 25.74, 26.02, 25.07, 23.76, 22.40,
                 21.31, 20.44, 20.23, 20.52, 21.24, 22.44]
@@ -146,11 +146,11 @@ def test_variance(mock_show):
 
 
 @patch("matplotlib.pyplot.show")
-def test_plot_data(mock_show, hdr):
+def test_hdr_plot_data(mock_show, hdr):
     hdr.plot(samples=data, labels=labels.tolist())
 
 
-def test_fhops(hdr, tmp):
+def test_hdr_fhops(hdr, tmp):
     hdr.f_hops(x_common=np.linspace(1, 12, 12),
                labels=labels,
                xlabel='Month of the year (-)',
@@ -163,7 +163,7 @@ def test_fhops(hdr, tmp):
     hdr.f_hops(fname=os.path.join(tmp, 'f-HOPs.mp4'))
 
 
-def test_sound(hdr, tmp):
+def test_hdr_sound(hdr, tmp):
     hdr.sound(fname=os.path.join(tmp, 'song-fHOPs.wav'),
               samples=5, distance=False)
     _, song = wavfile.read(os.path.join(tmp, 'song-fHOPs.wav'))
@@ -178,7 +178,7 @@ def test_sound(hdr, tmp):
     assert song.shape[0] == data.shape[0] * 44100 * frame_rate / 1000
 
 
-def test_sample(hdr):
+def test_hdr_sample(hdr):
     samples = hdr.sample(10)
     assert samples.shape[0] == 10
     assert samples.shape[1] == 12
@@ -193,7 +193,7 @@ def test_sample(hdr):
 
 
 # @patch("matplotlib.pyplot.show")
-# def test_tahiti(mock_show, tmp):
+# def test_hdr_tahiti(mock_show, tmp):
 #     hdr = HdrBoxplot(data_tahiti)
 #     print('Data tahiti shape: ', data_tahiti.shape)
 
@@ -235,7 +235,7 @@ def test_kiviat_plot(mock_show, kiviat_data, tmp):
 
 
 def test_pdf_1D(tmp):
-    pdf(data[:, 5].reshape(-1, 1), fname=os.path.join(tmp, 'pdf.pdf'))
+    pdf(data[:, 5].reshape(-1, 1), fname=os.path.join('.', 'pdf.pdf'))
 
 
 @patch("matplotlib.pyplot.show")
@@ -267,7 +267,7 @@ def test_pdf_nD(mock_show):
 def test_sobols_aggregated(mock_show, tmp):
     fun = Ishigami()
     indices = [fun.s_first, fun.s_total]
-    fig = sobol(indices)
+    fig = sobol(indices, conf=0.05)
     fig = reshow(fig[0])
     plt.plot([0, 10], [25, 25])
     fig.show()

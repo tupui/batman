@@ -61,9 +61,9 @@ class HdrBoxplot:
         3. Compute mediane curve along with quantiles regions and outlier
         curves.
 
-        :param np.array data: dataset (n_samples, n_features)
+        :param array_like data: dataset (n_samples, n_features)
         :param float variance: percentage of total variance to conserve
-        :param array_like alpha: extra quantile values
+        :param array_like alpha: extra quantile values (n_alpha)
         :param float threshold: threshold for outliers
         :param str outliers_method: detection method ['kde', 'forest']
         :param bool optimize: bandwidth global optimization or grid search

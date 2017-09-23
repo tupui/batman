@@ -159,11 +159,18 @@ def pdf(data, xdata=None, labels=['x', 'F'], fname=None):
 
 
 def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
-    """Plot total aggregated Sobol' indices.
+    """Plot total Sobol' indices.
+
+    If `len(sobols)>2` map indices are also plotted along with aggregated
+    indices.
 
     :param list(str) p_lst: parameters' name.
-    :param sobols: total Sobol' aggregated indices.
-    :param conf: confidence intervals around indices.
+    :param array_like sobols: `[first (n_params), total (n_params), 
+    first (xdata, n_params), total (xdata, n_params)]`.
+    :param float/array_like conf: relative error around indices. If float,
+    same error is applied for all parameters. Otherwise shape ([min])
+    [[ 0.156  0.098  0.02   0.078]
+ [ 0.119  0.1    0.026  0.072]]
     :param str fname: wether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
