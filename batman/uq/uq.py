@@ -503,33 +503,13 @@ class UQ:
         (YY and XY) and correlation (YY). Both exported as 2D cartesian plots.
         Files are respectivelly:
 
-        * :file:`moment.dat`, the moments [discretized on curvilinear abscissa]
+        * :file:`pdf-moment.dat`, moments [discretized on curvilinear abscissa]
         * :file:`pdf.dat` -> the PDFs [discretized on curvilinear abscissa]
         * :file:`correlation_covariance.dat` -> correlation and covariance YY
         * :file:`correlation_XY.dat` -> correlation XY
-
-
+        * :file:`pdf.pdf`, plot of the PDF (with moments if dim > 1)
         """
-        self.logger.info("\n----- Moment evaluation -----")
-        output = self.output.sort()
-
-        # Compute statistics
-        mean = output.computeMean()
-        sd = output.computeStandardDeviationPerComponent()
-        sd_min = mean - sd
-        sd_max = mean + sd
-        min_ = output.getMin()
-        max_ = output.getMax()
-
-        # Write moments to file
-        data = np.append([min_], [sd_min, mean, sd_max, max_])
-        names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
-        if (self.output_len != 1) and (self.type_indices != 'block'):
-            names = ['x'] + names
-            data = np.append(self.f_input, data)
-
-        dataset = Dataset(names=names, shape=[self.output_len, 1, 1], data=data)
-        self.io.write(os.path.join(self.output_folder, 'moment.dat'), dataset)
+        self.logger.info("\n----- Moments evaluation -----")
 
         # Covariance and correlation matrices
         if (self.output_len != 1) and (self.type_indices != 'block'):
@@ -545,7 +525,8 @@ class UQ:
                           '/correlation_covariance.dat', dataset)
 
             cov_matrix_XY = np.dot((np.mean(self.sample) - self.sample).T,
-                                   np.array(mean) - self.output) / (self.points_sample - 1)
+                                   np.mean(self.output, axis=0) - self.output)\
+                                / (self.points_sample - 1)
 
             x_input_2d, y_input_2d = np.meshgrid(self.f_input,
                                                  np.arange(self.p_len))
@@ -556,6 +537,7 @@ class UQ:
             self.io.write(os.path.join(self.output_folder,
                                        'correlation_XY.dat'), dataset)
 
-        # Create and plot the PDFs
+        # Create and plot the PDFs + moments
         visualization.pdf(np.array(self.output), self.f_input,
-                          fname=os.path.join(self.output_folder, 'pdf.pdf'))
+                          fname=os.path.join(self.output_folder, 'pdf.pdf'),
+                          moments=True)

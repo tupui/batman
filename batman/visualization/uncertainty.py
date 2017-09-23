@@ -58,7 +58,7 @@ def kernel_smoothing(data, optimize=False):
     return ks_gaussian
 
 
-def pdf(data, xdata=None, labels=['x', 'F'], fname=None):
+def pdf(data, xdata=None, labels=['x', 'F'], moments=False, fname=None):
     """Plot PDF in 1D or 2D.
 
     :param np.ndarray/dict data: 1D array of shape (n_sample, n_feature)
@@ -71,7 +71,8 @@ def pdf(data, xdata=None, labels=['x', 'F'], fname=None):
         - `dist`, :class:`openturns.ComposedDistribution` instance.
 
     :param list(str) labels: `x` label and `PDF` label
-    :param str fname: wether to export to filename or display the figures
+    :param bool moments: whether to plot moments along with PDF if dim > 1
+    :param str fname: whether to export to filename or display the figures
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """
@@ -88,6 +89,7 @@ def pdf(data, xdata=None, labels=['x', 'F'], fname=None):
     else:
         z_array = data
 
+    # Compute PDF
     output_len = z_array.shape[1]
     if output_len > 1:
         pdf = []
@@ -108,20 +110,33 @@ def pdf(data, xdata=None, labels=['x', 'F'], fname=None):
         xdata = np.linspace(min(z_array), max(z_array), dx).reshape(-1, 1)
         pdf = np.exp(ks_gaussian.score_samples(xdata))
 
+    # Get moments
+    if moments:
+        mean = np.mean(z_array, axis=0)
+        sd = np.std(z_array, axis=0)
+        sd_min = mean - sd
+        sd_max = mean + sd
+        min_ = np.min(z_array, axis=0)
+        max_ = np.max(z_array, axis=0)
+
     # Plotting
     c_map = cm.viridis
+    fig = plt.figure('PDF')
+    plt.tick_params(axis='x', labelsize=26)
+    plt.tick_params(axis='y', labelsize=26)
     if output_len > 1:
-        fig = plt.figure('PDF')
         bound_pdf = np.linspace(0., np.max(pdf), 50, endpoint=True)
-        plt.contourf(xdata, ydata, pdf, bound_pdf, cmap=c_map)
+        plt.contourf(xdata, ydata, pdf, bound_pdf, cmap=c_map, label=None)
         cbar = plt.colorbar()
         cbar.set_label(r"PDF")
         plt.xlabel(labels[0], fontsize=26)
         plt.ylabel(labels[1], fontsize=26)
-        plt.tick_params(axis='x', labelsize=26)
-        plt.tick_params(axis='y', labelsize=26)
+        if moments:
+            plt.plot(xdata[0], sd_min, color='k', ls='-.', linewidth=2, label="Standard Deviation")
+            plt.plot(xdata[0], mean, color='k', ls='-', linewidth=2, label="Mean")
+            plt.plot(xdata[0], sd_max, color='k', ls='-.', linewidth=2, label=None)
+            plt.legend(fontsize=26, loc='best')
     else:
-        fig = plt.figure('PDF')
         plt.plot(xdata, pdf, color='k', ls='-', linewidth=3)
         plt.fill_between(xdata[:, 0], pdf, [0] * xdata.shape[0],
                          color='gray', alpha=0.1)
@@ -130,9 +145,6 @@ def pdf(data, xdata=None, labels=['x', 'F'], fname=None):
                  -z_delta - z_delta * np.random.random(z_array.shape[0]), '+k')
         plt.xlabel(labels[1], fontsize=26)
         plt.ylabel("PDF", fontsize=26)
-        plt.tick_params(axis='x', labelsize=26)
-        plt.tick_params(axis='y', labelsize=26)
-        plt.legend(fontsize=26, loc='upper right')
 
     plt.tight_layout()
     if fname is not None:
@@ -150,7 +162,17 @@ def pdf(data, xdata=None, labels=['x', 'F'], fname=None):
 
         io = IOFormatSelector('fmt_tp_fortran')
         dataset = Dataset(names=names, data=data)
-        io.write(fname + '.dat', dataset)
+        io.write(fname.split('.')[0] + '.dat', dataset)
+
+        # Write moments to file
+        data = np.append([min_], [sd_min, mean, sd_max, max_])
+        names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
+        if output_len != 1:
+            names = ['x'] + names
+            data = np.append(xdata, data)
+
+        dataset = Dataset(names=names, shape=[output_len, 1, 1], data=data)
+        io.write(fname.split('.')[0] + '-moment.dat', dataset)
     else:
         plt.show()
     plt.close('all')

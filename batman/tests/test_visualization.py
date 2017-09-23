@@ -264,6 +264,11 @@ def test_pdf_nD(mock_show):
 
 
 @patch("matplotlib.pyplot.show")
+def test_pdf_nD_moments(mock_show):
+    pdf(data, xdata=np.linspace(1, 12, 12), moments=True)
+
+
+@patch("matplotlib.pyplot.show")
 def test_sobols_aggregated(mock_show, tmp):
     fun = Ishigami()
     indices = [fun.s_first, fun.s_total]
