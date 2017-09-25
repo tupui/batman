@@ -7,7 +7,7 @@ from scipy.io import wavfile
 import openturns as ot
 from mock import patch
 from batman.visualization import (HdrBoxplot, Kiviat3D, pdf, sobol, reshow,
-                                  response_surface)
+                                  response_surface, doe)
 from batman.surrogate import SurrogateModel
 from batman.functions import Ishigami, Mascaret
 import matplotlib.pyplot as plt
@@ -324,3 +324,14 @@ def test_response_surface_2D_vector(mock_show, mascaret_data, tmp):
     path = os.path.join(tmp, 'rs_2D_vector.pdf')
     response_surface(bounds=bounds, fun=mascaret_data[0], xdata=xdata,
                      plabels=['Ks', 'Q'], flabel='Z', fname=path)
+
+
+@patch("matplotlib.pyplot.show")
+def test_doe(mock_show, mascaret_data):
+    space = mascaret_data[5]
+    doe(space)
+
+
+def test_doe_mufi(ishigami_data, tmp):
+    space = ishigami_data[5]
+    doe(space, multifidelity=True, fname=os.path.join(tmp, 'DOE.pdf'))

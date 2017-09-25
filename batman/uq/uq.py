@@ -65,9 +65,6 @@ from ..functions import multi_eval
 from ..input_output import (IOFormatSelector, Dataset)
 from .. import functions as func_ref
 from .. import visualization
-import matplotlib.pyplot as plt
-from matplotlib import cm
-plt.switch_backend('Agg')
 
 
 class UQ:

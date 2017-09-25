@@ -5,11 +5,12 @@ Visualization module
 
 from .kiviat import Kiviat3D
 from .hdr import HdrBoxplot
-from .uncertainty import (kernel_smoothing, pdf, sobol, response_surface)
+from .uncertainty import (kernel_smoothing, pdf, sobol)
+from .doe import (response_surface, doe)
 from matplotlib import pyplot as plt
 
 __all__ = ['Kiviat3D', 'HdrBoxplot', 'kernel_smoothing', 'pdf', 'sobol',
-           'reshow', 'response_surface']
+           'reshow', 'response_surface', 'doe']
 
 
 def reshow(fig):

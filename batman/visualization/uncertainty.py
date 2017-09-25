@@ -5,7 +5,6 @@ Uncertainty visualization tools
 It regoups various functions for graph visualizations.
 """
 import numpy as np
-from scipy.interpolate import griddata
 import openturns as ot
 from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KernelDensity
@@ -19,7 +18,6 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
-plt.rc('text', usetex=True)
 
 
 def kernel_smoothing(data, optimize=False):
@@ -251,94 +249,3 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
     plt.close('all')
 
     return figures
-
-
-def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
-                     resampling=0, xdata=None, flabel='F', plabels=None,
-                     fname=None):
-    """Response surface visualization.
-
-    You have to set either (i) :attr:`sample` with :attr:`data` or  (ii)
-    :attr:`fun` depending on your data. If (i), the data are interpolated
-    on a mesh in order to be plotted as a surface. Otherwize, :attr:`fun` is
-    directly used to generate correct data.
-
-    The DoE can also be plotted by setting :attr:`doe` along with
-    :attr:`resampling`.
-    
-    :param array_like bounds: sample boundaries
-    ([min, n_features], [max, n_features])
-    :param array_like sample: sample (n_samples, n_featrues)
-    :param array_like data: function evaluations(n_samples, [n_featrues])
-    :param callable fun: function to plot the response from.
-    :param array_like doe: design of experiment (n_samples, n_features).
-    :param int resampling: number of resampling points.
-    :param array_like xdata: 1D discretization of the function (n_features,).
-    :param str flabel: name of the quantity of interest.
-    :param list(str) plabels: parameters' labels.
-    :param str fname: wether to export to filename or display the figures.
-    :returns: figure.
-    :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
-    """
-    dim = len(bounds[0])
-    if dim == 1:
-        n_samples = 50
-    elif dim == 2:
-        n_samples = 625
-    n_samples = int(np.floor(np.power(n_samples, 1 / dim)))
-
-    grids = [np.linspace(bounds[0][i], bounds[1][i], n_samples) for i in range(dim)]
-
-    if dim == 1:
-        grids = grids
-    else:
-        grids = np.meshgrid(*grids)
-        xsample, ysample = grids
-        xsample = xsample.flatten()
-        ysample = ysample.flatten()
-
-    if fun is not None:
-        data = fun(np.stack([grid.flatten() for grid in grids]).T)
-
-    if xdata is not None:
-        data = np.trapz(data[:], xdata) / (np.max(xdata) - np.min(xdata))
-
-    if fun is None:
-        data = griddata(sample, data, (*grids,), method='nearest')
-
-    data = data.flatten()
-
-    if plabels is None:
-        plabels = ["x" + str(i) for i in range(dim)]
-
-    c_map = cm.viridis
-    fig = plt.figure('Response Surface')
-
-    if dim == 1:
-        plt.plot(*grids, data)
-        plt.ylabel(flabel, fontsize=28)
-    elif dim == 2:
-        plt.tricontourf(xsample, ysample, data,
-                        antialiased=True, cmap=c_map)
-        if doe is not None:
-            doe = np.asarray(doe)
-            len_sampling = len(doe) - resampling
-            plt.plot(doe[:, 0][0:len_sampling], doe[:, 1][0:len_sampling], 'ko')
-            plt.plot(doe[:, 0][len_sampling:], doe[:, 1][len_sampling:], 'r^')
-
-        plt.ylabel(plabels[1], fontsize=28)
-        cbar = plt.colorbar()
-        cbar.set_label(flabel, fontsize=28)
-        cbar.ax.tick_params(labelsize=28)
-
-    plt.xlabel(plabels[0], fontsize=28)
-    plt.tick_params(axis='x', labelsize=28)
-    plt.tick_params(axis='y', labelsize=28)
-    plt.tight_layout()
-    if fname is not None:
-        plt.savefig(fname, transparent=True, bbox_inches='tight')
-    else:
-        plt.show()
-    plt.close('all')
-
-    return fig

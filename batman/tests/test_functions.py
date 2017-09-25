@@ -1,5 +1,6 @@
 # coding: utf8
 import pytest
+from mock import patch
 from batman.functions import (SixHumpCamel, Branin, Michalewicz, Rosenbrock,
                               Rastrigin, Ishigami, G_Function,
                               Forrester,  Manning, Mascaret, ChemicalSpill)
@@ -9,7 +10,6 @@ import numpy.testing as npt
 import itertools
 import matplotlib.pyplot as plt
 from matplotlib import cm
-plt.switch_backend('Agg')
 
 
 def test_SixHumpCamel():
@@ -100,7 +100,8 @@ def test_Mascaret():
     npt.assert_almost_equal(f_out, f_data_base, decimal=2)
 
 
-def test_Plot():
+@patch("matplotlib.pyplot.show")
+def test_Plot(mock_show):
     f = Branin()
 
     num = 25
@@ -129,7 +130,7 @@ def test_Plot():
     plt.tick_params(axis='x', labelsize=26)
     plt.tick_params(axis='y', labelsize=26)
     plt.legend(fontsize=26, loc='upper left')
-    # plt.show()
+    plt.show()
 
 
 def test_ChemicalSpill():

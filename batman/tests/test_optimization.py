@@ -8,10 +8,11 @@ from matplotlib import cm
 from batman.driver import Driver
 from batman.functions import Branin
 from sklearn import preprocessing
-plt.switch_backend('Agg')
+from mock import patch
 
 
-def test_optimization(tmp, branin_data, settings_ishigami):
+@patch("matplotlib.pyplot.show")
+def test_optimization(mock_show, tmp, branin_data, settings_ishigami):
     f_2d, dists, model, point, target_point, space, target_space = branin_data
     test_settings = copy.deepcopy(settings_ishigami)
     init_size = len(space)
@@ -116,5 +117,4 @@ def test_optimization(tmp, branin_data, settings_ishigami):
     fig.tight_layout()
     path = 'expected_improvement_' + str(res_size) + '.pdf'
     fig.savefig(path, transparent=True, bbox_inches='tight')
-    # plt.show()
-    plt.close('all')
+    plt.show()

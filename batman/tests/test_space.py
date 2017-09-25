@@ -1,5 +1,6 @@
 # coding: utf8
 import pytest
+from mock import patch
 import numpy as np
 import numpy.testing as npt
 import copy
@@ -13,7 +14,6 @@ from batman.surrogate import SurrogateModel
 from batman.space.refiner import Refiner
 import matplotlib.pyplot as plt
 from matplotlib import cm
-plt.switch_backend('Agg')
 
 settings = {
     "space": {
@@ -236,7 +236,6 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     fig.tight_layout()
     path = os.path.join(tmp, 'refinements.pdf')
     fig.savefig(path, transparent=True, bbox_inches='tight')
-    plt.close('all')
 
 
 def test_discrepancy(settings_ishigami):

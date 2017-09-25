@@ -4,14 +4,13 @@ Kiviat in 3D
 """
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
-import matplotlib.animation as manimation
-from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import pyplot as plt
 from matplotlib import cm
+import matplotlib.animation as manimation
 from matplotlib.colors import Normalize
 from matplotlib.patches import FancyArrowPatch
+from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
-from matplotlib import pyplot as plt
-plt.rc('text', usetex=True)
 
 
 class Arrow3D(FancyArrowPatch):

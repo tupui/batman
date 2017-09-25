@@ -18,7 +18,6 @@ from .uncertainty import kernel_smoothing
 import matplotlib.animation as manimation
 import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
-plt.rc('text', usetex=True)
 np.set_printoptions(precision=3)
 
 

@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 from .sampling import Doe
 from .point import Point
 from .refiner import Refiner
-plt.switch_backend('Agg')
+from .. import visualization
 
 
 class UnicityError(Exception):
@@ -328,47 +328,6 @@ class Space(list):
 
         return c2
 
-    def plot_space(self, path):
-        """Plot the space of parameters 2d-by-2d.
-
-        :param str path: folder to save the fig in
-        """
-        sample = np.array(self)
-        if self.multifidelity:
-            sample = sample[:, 1:]
-        fig = plt.figure('Design of Experiment')
-
-        if self.dim < 2:
-            plt.scatter(sample[0:self.doe_init],
-                        [0] * self.doe_init, c='k', marker='o')
-            plt.scatter(sample[self.doe_init:],
-                        [0] * (len(self) - self.doe_init), c='r', marker='^')
-            plt.xlabel(self.p_lst[0])
-            plt.tick_params(axis='y', which='both',
-                            labelleft='off', left='off')
-
-        else:
-            # num figs = ((n-1)**2+(n-1))/2
-            fig = plt.figure('Design of Experiment')
-            plt.tick_params(axis='both', labelsize=8)
-
-            for i, j in itertools.combinations(range(0, self.dim), 2):
-                ax = plt.subplot2grid((self.dim, self.dim), (j, i))
-                ax.scatter(sample[0:self.doe_init, i], sample[
-                    0:self.doe_init, j], s=5, c='k', marker='o')
-                ax.scatter(sample[self.doe_init:, i], sample[
-                    self.doe_init:, j], s=5, c='r', marker='^')
-                ax.tick_params(axis='both', labelsize=(10 - self.dim))
-                if i == 0:
-                    ax.set_ylabel(self.p_lst[j])
-                if j == (self.dim - 1):
-                    ax.set_xlabel(self.p_lst[i])
-
-        fig.tight_layout()
-        path = os.path.join(os.path.dirname(os.path.abspath(path)), 'DOE.pdf')
-        fig.savefig(path, transparent=True, bbox_inches='tight')
-        plt.close('all')
-
     def read(self, path):
         """Read space from the file `path`."""
         self.empty()
@@ -385,5 +344,8 @@ class Space(list):
         :param str path: folder to save the points in
         """
         np.savetxt(path, self)
-        self.plot_space(path)
+        resampling = len(self) - self.doe_init
+        path = os.path.join(os.path.dirname(os.path.abspath(path)), 'DOE.pdf')
+        visualization.doe(self, p_lst=self.p_lst, resampling=resampling,
+                          multifidelity=self.multifidelity, fname=path)
         self.logger.debug('Space wrote to {}'.format(path))
