@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 from .uncertainty import kernel_smoothing
 
 
-def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None):
+def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None,
+        show=True):
     """Plot the space of parameters 2d-by-2d.
 
     A n-variate plot is constructed with all couple of variables.
@@ -18,6 +19,7 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None):
     :param int resampling: number of resampling points.
     :param bool multifidelity: whether or not the model is a multifidelity.
     :param str fname: whether to export to filename or display the figures.
+    :param bool show: whether to show the plot if not :attr:`fname`.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """
@@ -78,7 +80,7 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None):
 
     if fname is not None:
         plt.savefig(fname, transparent=True, bbox_inches='tight')
-    else:
+    elif show:
         plt.show()
     plt.close('all')
 
