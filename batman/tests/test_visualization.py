@@ -37,8 +37,7 @@ def hdr():
     return HdrBoxplot(data)
 
 
-@patch("matplotlib.pyplot.show")
-def test_hdr_basic(mock_show, hdr, tmp):
+def test_hdr_basic(hdr, tmp):
     print('Data shape: ', data.shape)
 
     assert len(hdr.extra_quantiles) == 0
@@ -332,6 +331,15 @@ def test_doe(mock_show, mascaret_data):
     doe(space)
 
 
+def test_doe_3D(ishigami_data, tmp):
+    space = ishigami_data[5]
+    fig, ax = doe(space, fname=os.path.join(tmp, 'DOE.pdf'))
+
+    fig = reshow(fig)
+    ax[0].plot([0, 6], [4, -3])
+    fig.savefig(os.path.join(tmp, 'DOE_change.pdf'))
+
+
 def test_doe_mufi(ishigami_data, tmp):
     space = ishigami_data[5]
-    doe(space, multifidelity=True, fname=os.path.join(tmp, 'DOE.pdf'))
+    doe(space, multifidelity=True, fname=os.path.join(tmp, 'DOE_mufi.pdf'))

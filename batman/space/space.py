@@ -24,7 +24,6 @@ import numpy as np
 from scipy.optimize import differential_evolution
 import itertools
 from sklearn import preprocessing
-import matplotlib.pyplot as plt
 from .sampling import Doe
 from .point import Point
 from .refiner import Refiner

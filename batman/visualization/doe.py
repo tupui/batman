@@ -1,12 +1,17 @@
 import numpy as np
 from scipy.interpolate import griddata
-import itertools
+from itertools import combinations_with_replacement
 from matplotlib import cm
 import matplotlib.pyplot as plt
+
+from .uncertainty import kernel_smoothing
 
 
 def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None):
     """Plot the space of parameters 2d-by-2d.
+
+    A n-variate plot is constructed with all couple of variables.
+    The distribution on each variable is shown on the diagonal.
 
     :param array_like sample: sample (n_samples, n_featrues).
     :param list(str) p_lst: parameters' names.
@@ -27,8 +32,7 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None):
         sample = sample[:, 1:]
         dim -= 1
 
-    fig = plt.figure('Design of Experiment')
-
+    fig, sub_ax = plt.subplots()
     if dim < 2:
         plt.scatter(sample[0:len_sampling],
                     [0] * len_sampling, c='k', marker='o')
@@ -38,20 +42,37 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None):
         plt.tick_params(axis='y', which='both',
                         labelleft='off', left='off')
     else:
-        # num figs = ((n-1)**2+(n-1))/2
+        # num figs = ((n-1)**2+(n-1))/2 + diag
         plt.tick_params(axis='both', labelsize=8)
 
-        for i, j in itertools.combinations(range(0, dim), 2):
+        # Bivariate space
+        sub_ax = []  # Axis stored as a list
+        plt.tick_params(axis='both', labelsize=8)
+        # Axis are created and stored top to bottom, left to right
+        for i, j in combinations_with_replacement(range(dim), 2):
             ax = plt.subplot2grid((dim, dim), (j, i))
-            ax.scatter(sample[0:len_sampling, i], sample[
-                0:len_sampling, j], s=5, c='k', marker='o')
-            ax.scatter(sample[len_sampling:, i], sample[
-                len_sampling:, j], s=5, c='r', marker='^')
             ax.tick_params(axis='both', labelsize=(10 - dim))
+
+            if i == j:  # diag
+                x_plot = np.linspace(min(sample[:, i]),
+                                     max(sample[:, i]), 100)[:, np.newaxis]
+                _ks = kernel_smoothing(sample[:, i, np.newaxis], False)
+                pdf = np.exp(_ks.score_samples(x_plot))
+                ax.plot(x_plot, pdf)
+                ax.fill_between(x_plot[:, 0], pdf, [0] * x_plot.shape[0],
+                                color='gray', alpha=0.1)
+            elif i < j:  # lower corners
+                ax.scatter(sample[0:len_sampling, i], sample[
+                    0:len_sampling, j], s=5, c='k', marker='o')
+                ax.scatter(sample[len_sampling:, i], sample[
+                    len_sampling:, j], s=5, c='r', marker='^')
+
             if i == 0:
                 ax.set_ylabel(p_lst[j])
             if j == (dim - 1):
                 ax.set_xlabel(p_lst[i])
+
+            sub_ax.append(ax)
 
     plt.tight_layout()
 
@@ -61,7 +82,7 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None):
         plt.show()
     plt.close('all')
 
-    return fig
+    return fig, sub_ax
 
 
 def response_surface(bounds, sample=None, data=None, fun=None, doe=None,

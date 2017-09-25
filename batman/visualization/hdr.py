@@ -14,6 +14,7 @@ from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 
 from .uncertainty import kernel_smoothing
+from .doe import doe
 
 import matplotlib.animation as manimation
 import matplotlib.backends.backend_pdf
@@ -297,35 +298,10 @@ class HdrBoxplot:
             plt.tight_layout()
 
         # Bivariate space
-        fig, ax = plt.subplots()
+        fig, sub_ax = doe(data_r,
+                          p_lst=[str(i + 1) for i in range(self.n_components)])
         figures.append(fig)
-        sub_ax = []  # Axis stored as a list
-        plt.tick_params(axis='both', labelsize=8)
-        # Axis are created and stored top to bottom, left to right
-        for i, j in combinations_with_replacement(range(self.n_components), 2):
-            ax = plt.subplot2grid((self.n_components, self.n_components), (j, i))
-            ax.tick_params(axis='both', labelsize=(10 - self.n_components))
-
-            if i == j:  # diag
-                x_plot = np.linspace(min(data_r[:, i]),
-                                     max(data_r[:, i]), 100)[:, np.newaxis]
-                _ks = kernel_smoothing(data_r[:, i, np.newaxis], self.optimize)
-                pdf = np.exp(_ks.score_samples(x_plot))
-                ax.plot(x_plot, pdf)
-                ax.fill_between(x_plot[:, 0], pdf, [0] * x_plot.shape[0],
-                                color='gray', alpha=0.1)
-            elif i < j:  # lower corners
-                ax.scatter(data_r[:, i], data_r[:, j], s=5, c='k', marker='o')
-
-            if i == 0:
-                ax.set_ylabel(str(j + 1))
-            if j == (self.n_components - 1):
-                ax.set_xlabel(str(i + 1))
-
-            sub_ax.append(ax)
-
         axs.append(sub_ax)
-        plt.tight_layout()
 
         # Time serie
         fig, ax = plt.subplots()
