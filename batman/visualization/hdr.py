@@ -2,7 +2,7 @@
 High Density Region Boxplot
 ---------------------------
 """
-from logzero import logger
+import logging
 from itertools import (combinations_with_replacement, compress)
 from multiprocessing import Pool
 import numpy as np
@@ -52,6 +52,8 @@ class HdrBoxplot:
 
     """
 
+    logger = logging.getLogger(__name__)
+
     def __init__(self, data, variance=0.8, alpha=None,
                  threshold=0.95, outliers_method='kde', optimize=False):
         """Compute HDR Boxplot on :attr:`data`.
@@ -74,16 +76,16 @@ class HdrBoxplot:
         self.outliers_method = outliers_method
         self.optimize = optimize
         self.n_samples, self.dim = self.data.shape
-        logger.info('Dataset with:\n-> {} samples\n-> {} features'
-                    .format(self.n_samples, self.dim))
+        self.logger.info('Dataset with:\n-> {} samples\n-> {} features'
+                         .format(self.n_samples, self.dim))
         # PCA and bivariate plot
         self.pca = PCA(n_components=variance, svd_solver='full')
         self.data_r = self.pca.fit_transform(self.data)
         self.n_components = len(self.pca.explained_variance_ratio_)
 
-        logger.info('Explained variance ratio: {} -> {:0.3f}'
-                    .format(self.pca.explained_variance_ratio_,
-                            np.sum(self.pca.explained_variance_ratio_)))
+        self.logger.info('Explained variance ratio: {} -> {:0.3f}'
+                         .format(self.pca.explained_variance_ratio_,
+                                 np.sum(self.pca.explained_variance_ratio_)))
 
         # Create gaussian kernel
         self.ks_gaussian = kernel_smoothing(self.data_r, self.optimize)
@@ -99,7 +101,7 @@ class HdrBoxplot:
             alpha = list(set(alpha))
         alpha.sort(reverse=True)
         self.alpha = alpha
-        logger.debug('alpha: {}'.format(self.alpha))
+        self.logger.debug('alpha: {}'.format(self.alpha))
         self.n_alpha = len(self.alpha)
 
         # Compute PDF values associated to each quantile
@@ -108,7 +110,7 @@ class HdrBoxplot:
                                                interpolation='linear')
                                  for i in range(self.n_alpha)])
 
-        logger.debug('pvalues: {}'.format(self.pvalues))
+        self.logger.debug('pvalues: {}'.format(self.pvalues))
 
         def pdf(x):
             """Compute -PDF given components."""
@@ -234,7 +236,7 @@ class HdrBoxplot:
                 outliers = np.where(self.detector.predict(data_r) == -1)
             outliers = data[outliers]
         else:
-            logger.error('Unknown outlier method: no detection')
+            self.logger.error('Unknown outlier method: no detection')
             outliers = None
 
         return outliers
@@ -355,7 +357,7 @@ class HdrBoxplot:
                 plt.plot(x_common, outlier,
                          ls='--', alpha=0.7, label=label)
         else:
-            logger.debug('It seems that there are no outliers...')
+            self.logger.debug('It seems that there are no outliers...')
 
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)

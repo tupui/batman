@@ -14,12 +14,13 @@ import matplotlib.pyplot as plt
 
 # Water surface temperature data from:
 # http://www.cpc.ncep.noaa.gov/data/indices/
-labels, data = np.loadtxt('functional_dataset/elnino.dat', skiprows=1,
-                          usecols=(0, 2), unpack=True)
+path = os.path.dirname(os.path.realpath(__file__))
+labels, data = np.loadtxt(os.path.join(path, 'functional_dataset/elnino.dat'),
+                          skiprows=1, usecols=(0, 2), unpack=True)
 labels = labels.reshape(-1, 12)[:, 0]
 data = data.reshape(-1, 12)
 
-labels_tahiti, *data_tahiti = np.loadtxt('functional_dataset/tahiti.dat',
+labels_tahiti, *data_tahiti = np.loadtxt(os.path.join(path, 'functional_dataset/tahiti.dat'),
                                          skiprows=4, usecols=range(0, 13),
                                          unpack=True)
 data_tahiti = np.array(data_tahiti).T
