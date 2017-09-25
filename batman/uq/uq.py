@@ -59,11 +59,12 @@ import numpy as np
 import openturns as ot
 from sklearn.metrics import (r2_score, mean_squared_error)
 from openturns.viewer import View
-from os import mkdir
+import os
 import itertools
 from ..functions import multi_eval
 from ..input_output import (IOFormatSelector, Dataset)
 from .. import functions as func_ref
+from .. import visualization
 import matplotlib.pyplot as plt
 from matplotlib import cm
 plt.switch_backend('Agg')
@@ -99,11 +100,11 @@ class UQ:
         self.logger.info("\n----- UQ module -----")
         try:
             self.test = settings['uq']['test']
-        except:
+        except KeyError:
             self.test = None
         self.output_folder = output
         try:
-            mkdir(output)
+            os.mkdir(output)
         except OSError:
             self.logger.debug("Output folder already exists.")
         except TypeError:
@@ -138,6 +139,7 @@ class UQ:
         try:
             # With surrogate model
             try:
+                # Functional output
                 f_eval, _ = self.surrogate(self.sample[0])
                 self.f_input, _ = np.split(f_eval[0], 2)
                 self.output_len = len(self.f_input)
@@ -224,7 +226,7 @@ class UQ:
         Also, it computes the mean square error on the Sobol first andtotal
         order indices.
 
-        A summary is written within `pod_err.dat`.
+        A summary is written within `model_err.dat`.
 
         :param lst(array) indices: Sobol first order indices computed using the POD.
         :param str function: name of the analytic function.
@@ -260,9 +262,9 @@ class UQ:
                          "{}, {}, {}"
                          .format(err_q2, mse, s_l2_2nd, s_l2_1st, s_l2_total))
 
-        # Write error to file pod_err.dat
+        # Write error to file model_err.dat
         if self.output_folder is not None:
-            with open(self.output_folder + '/pod_err.dat', 'w') as f:
+            with open(os.path.join(self.output_folder, 'model_err.dat'), 'w') as f:
                 f.writelines("{} {} {} {} {} {} {}".format(self.init_size,
                                                            self.resamp_size,
                                                            err_q2,
@@ -270,17 +272,14 @@ class UQ:
                                                            s_l2_2nd,
                                                            s_l2_1st,
                                                            s_l2_total))
-
             # Visual tests
             if fun.d_out == 1:
                 # cobweb = ot.VisualTest.DrawCobWeb(self.sample, y_pred, y_min, y_max, 'red', False)
                 # View(cobweb).show()
                 qq_plot = ot.VisualTest_DrawQQplot(y_ref, y_pred)
-                View(qq_plot).save(self.output_folder + '/qq_plot.png')
-                # View(qq_plot).show()
+                View(qq_plot).save(os.path.join(self.output_folder, 'qq_plot.png'))
             else:
-                self.logger.debug(
-                    "Cannot draw QQplot with output dimension > 1")
+                self.logger.debug("Cannot draw QQplot with output dimension > 1")
         else:
             self.logger.debug("No output folder to write errors in")
 
@@ -315,6 +314,7 @@ class UQ:
 
         """
         indices = [[], [], []]
+        aggregated = [[], [], []]
         indices_conf = [[], []]
 
         if self.type_indices == 'block':
@@ -355,7 +355,7 @@ class UQ:
                 wrap_fun = sobol_model
             else:
                 def wrap_fun(x):
-                    return [fun(x)]
+                    return [sobol_model(x)]
 
             fast_model = ot.PythonFunction(self.p_len, self.output_len, wrap_fun)
             sobol = ot.FAST(ot.Function(fast_model),
@@ -395,7 +395,7 @@ class UQ:
 
             dataset = Dataset(names=full_names, shape=[self.output_len, 1, 1],
                               data=data)
-            self.io.write(self.output_folder + '/sensitivity.dat', dataset)
+            self.io.write(os.path.join(self.output_folder, 'sensitivity.dat'), dataset)
         else:
             self.logger.debug("No output folder to write indices in")
 
@@ -411,34 +411,43 @@ class UQ:
 
             sum_var_indices = [np.zeros((self.p_len, self.p_len)),
                                np.zeros((self.p_len)), np.zeros((self.p_len))]
-            for i, j in itertools.product(range(self.output_len), range(3)):
+
+            # Compute manually for FAST and second order, otherwise OT
+            if (self.method_sobol == 'FAST') or (float(ot.__version__[:3]) < 1.8):
+                agg_range = [0, 1, 2]
+            else:
+                agg_range = [0]
+            for i, j in itertools.product(range(self.output_len), agg_range):
                 try:
                     indices[:][j][i] = np.nan_to_num(indices[:][j][i])
-                    sum_var_indices[
-                        j] += float(output_var[i]) * indices[:][j][i]
+                    sum_var_indices[j] += float(output_var[i]) * indices[:][j][i]
                 except IndexError:
                     sum_var_indices[j] = np.inf
             sum_var = np.sum(output_var)
             for i in range(3):
-                indices[i] = sum_var_indices[i] / sum_var
+                aggregated[i] = sum_var_indices[i] / sum_var
 
             if (float(ot.__version__[:3]) >= 1.8) and (self.method_sobol != 'FAST'):
-                indices[1] = np.array(sobol.getAggregatedFirstOrderIndices())
-                indices[2] = np.array(sobol.getAggregatedTotalOrderIndices())
+                aggregated[1] = np.array(sobol.getAggregatedFirstOrderIndices())
+                aggregated[2] = np.array(sobol.getAggregatedTotalOrderIndices())
                 indices_conf[0] = sobol.getFirstOrderIndicesInterval()
                 indices_conf[1] = sobol.getTotalOrderIndicesInterval()
 
-                self.logger.info("First order confidence: {}"
-                                 "Total order confidence: {}"
+                self.logger.info("First order confidence:\n{}\n"
+                                 "Total order confidence:\n{}\n"
                                  .format(*indices_conf))
 
-            self.logger.info("Aggregated_indices: {}".format(indices))
+            self.logger.info("Aggregated_indices:\n"
+                             "-> Second order:\n{}\n"
+                             "-> First order:\n{}\n"
+                             "-> Total order:\n{}\n"
+                             .format(*aggregated))
 
             # Write aggregated indices to file
             if self.output_folder is not None:
-                ind_total_first = np.array(indices[1:]).flatten('F')
-                i1 = np.array(indices[1]).flatten('F')
-                i2 = np.array(indices[2]).flatten('F')
+                ind_total_first = np.array(aggregated[1:]).flatten('F')
+                i1 = np.array(aggregated[1]).flatten('F')
+                i2 = np.array(aggregated[2]).flatten('F')
                 if (float(ot.__version__[:3]) >= 1.8) and (self.method_sobol != 'FAST'):
                     i1_min = np.array(indices_conf[0].getLowerBound()).flatten('F')
                     i1_max = np.array(indices_conf[0].getUpperBound()).flatten('F')
@@ -446,11 +455,11 @@ class UQ:
                     i2_max = np.array(indices_conf[1].getUpperBound()).flatten('F')
 
                     data = np.append([i1_min], [i1, i1_max, i2_min, i2, i2_max])
-                    
-                    names = [i + str(p) for i, p in 
+
+                    names = [i + str(p) for i, p in
                              itertools.product(['S_min_', 'S_', 'S_max_',
                                                 'S_T_min_', 'S_T_', 'S_T_max_'],
-                                                self.p_lst)]
+                                               self.p_lst)]
 
                     conf1 = np.vstack((i1_min, i2_min)).flatten('F')
                     conf1 = ind_total_first - conf1
@@ -458,47 +467,34 @@ class UQ:
                     conf2 -= ind_total_first
                     conf = np.vstack((conf1, conf2))
                 else:
-                    conf = 0
-                    names = [i + str(p) for i, p in 
+                    conf = None
+                    names = [i + str(p) for i, p in
                              itertools.product(['S_', 'S_T_'],
-                                                self.p_lst)]
+                                               self.p_lst)]
                     data = np.append(i1, i2)
                 dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
-                self.io.write(self.output_folder + '/sensitivity_aggregated.dat',
+                self.io.write(os.path.join(self.output_folder,
+                                           'sensitivity_aggregated.dat'),
                               dataset)
-
-                # Plot indices and confidence intervals
-                objects = [[r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"]
-                           for i, p in enumerate(self.p_lst)]
-                color = [[cm.Pastel1(i), cm.Pastel1(i)]
-                         for i, p in enumerate(self.p_lst)]
-
-                objects = [item for sublist in objects for item in sublist]
-                color = [item for sublist in color for item in sublist]
-                y_pos = np.arange(2 * self.p_len)
-
-                fig = plt.figure('Aggregated Indices')
-                plt.bar(y_pos, ind_total_first,
-                        yerr=conf, align='center', alpha=0.5, color=color)
-                plt.set_cmap('Pastel2')
-                plt.xticks(y_pos, objects)
-                plt.tick_params(axis='x', labelsize=20)
-                plt.tick_params(axis='y', labelsize=20)
-                plt.ylabel("Sobol' aggregated indices", fontsize=20)
-                plt.xlabel("Input parameters", fontsize=20)
-                fig.tight_layout()
-                path = self.output_folder + '/sensitivity_aggregated.pdf'
-                fig.savefig(path, transparent=True, bbox_inches='tight')
-                plt.close('all')
             else:
                 self.logger.debug(
                     "No output folder to write aggregated indices in")
+        else:
+            aggregated = indices
+
+        # Plot
+        if self.output_folder is not None:
+            full_indices = [aggregated[1], aggregated[2],
+                            indices[1], indices[2]]
+            path = os.path.join(self.output_folder, 'sensitivity.pdf')
+            visualization.sobol(full_indices, p_lst=self.p_lst, conf=conf,
+                                xdata=self.f_input, fname=path)
 
         # Compute error of the POD with a known function
         if (self.type_indices in ['aggregated', 'block']) and (self.test is not None):
             self.error_model(indices, self.test)
 
-        return indices
+        return aggregated
 
     def error_propagation(self):
         """Compute the moments.
@@ -508,33 +504,13 @@ class UQ:
         (YY and XY) and correlation (YY). Both exported as 2D cartesian plots.
         Files are respectivelly:
 
-        * :file:`moment.dat`, the moments [discretized on curvilinear abscissa]
+        * :file:`pdf-moment.dat`, moments [discretized on curvilinear abscissa]
         * :file:`pdf.dat` -> the PDFs [discretized on curvilinear abscissa]
         * :file:`correlation_covariance.dat` -> correlation and covariance YY
         * :file:`correlation_XY.dat` -> correlation XY
-
-
+        * :file:`pdf.pdf`, plot of the PDF (with moments if dim > 1)
         """
-        self.logger.info("\n----- Moment evaluation -----")
-        output = self.output.sort()
-
-        # Compute statistics
-        mean = output.computeMean()
-        sd = output.computeStandardDeviationPerComponent()
-        sd_min = mean - sd
-        sd_max = mean + sd
-        min_ = output.getMin()
-        max_ = output.getMax()
-
-        # Write moments to file
-        data = np.append([min_], [sd_min, mean, sd_max, max_])
-        names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
-        if (self.output_len != 1) and (self.type_indices != 'block'):
-            names = ['x'] + names
-            data = np.append(self.f_input, data)
-
-        dataset = Dataset(names=names, shape=[self.output_len, 1, 1], data=data)
-        self.io.write(self.output_folder + '/moment.dat', dataset)
+        self.logger.info("\n----- Moments evaluation -----")
 
         # Covariance and correlation matrices
         if (self.output_len != 1) and (self.type_indices != 'block'):
@@ -550,7 +526,8 @@ class UQ:
                           '/correlation_covariance.dat', dataset)
 
             cov_matrix_XY = np.dot((np.mean(self.sample) - self.sample).T,
-                                   np.array(mean) - self.output) / (self.points_sample - 1)
+                                   np.mean(self.output, axis=0) - self.output)\
+                                / (self.points_sample - 1)
 
             x_input_2d, y_input_2d = np.meshgrid(self.f_input,
                                                  np.arange(self.p_len))
@@ -558,35 +535,10 @@ class UQ:
             dataset = Dataset(names=['x', 'y', 'Correlation-XY'],
                               shape=[self.p_len, self.output_len, 1],
                               data=data)
-            self.io.write(self.output_folder + '/correlation_XY.dat', dataset)
+            self.io.write(os.path.join(self.output_folder,
+                                       'correlation_XY.dat'), dataset)
 
-        # Create the PDFs
-        kernel = ot.KernelSmoothing()
-        pdf_pts = [None] * self.output_len
-        d_PDF = 200
-        if self.points_sample < d_PDF:
-            d_PDF = self.points_sample
-
-        output_extract = self.output[0:d_PDF]
-
-        for i in range(self.output_len):
-            try:
-                pdf = kernel.build(output[:, i])
-            except RuntimeError:  # Boundary conditions
-                pdf = ot.Normal(np.mean(output[:, i]), 0.001)
-            pdf_pts[i] = np.array(pdf.computePDF(output_extract[:, i]))
-            pdf_pts[i] = np.nan_to_num(pdf_pts[i])
-
-        # Write PDF to file
-        output_extract = np.array(output_extract).flatten('C')
-        pdf_pts = np.array(pdf_pts).flatten('F')
-        names = ['output', 'PDF']
-        if (self.output_len != 1) and (self.type_indices != 'block'):
-            names = ['x'] + names
-            f_input_2d = np.tile(self.f_input, d_PDF)
-            data = np.array([f_input_2d, output_extract, pdf_pts])
-        else:
-            data = np.array([output_extract, pdf_pts])
-
-        dataset = Dataset(names=names, data=data)
-        self.io.write(self.output_folder + '/pdf.dat', dataset)
+        # Create and plot the PDFs + moments
+        visualization.pdf(np.array(self.output), self.f_input,
+                          fname=os.path.join(self.output_folder, 'pdf.pdf'),
+                          moments=True)

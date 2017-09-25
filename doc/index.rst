@@ -17,6 +17,7 @@ Contents:
    surrogate
    pod
    uq
+   visualization
    misc
    io
    functions
