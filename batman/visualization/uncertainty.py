@@ -1,11 +1,11 @@
 """
 Uncertainty visualization tools
 -------------------------------
+
+It regoups various functions for graph visualizations.
 """
 import numpy as np
-import re
-import os
-import itertools
+from scipy.interpolate import griddata
 import openturns as ot
 from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KernelDensity
@@ -27,9 +27,9 @@ def kernel_smoothing(data, optimize=False):
 
     The optimization option could lead to longer computation of the PDF.
 
-    :param bool optimize: use global optimization of grid search
-    :return: gaussian kernel
-    :rtype: :class:`sklearn.neighbors.KernelDensity`
+    :param bool optimize: use global optimization of grid search.
+    :return: gaussian kernel.
+    :rtype: :class:`sklearn.neighbors.KernelDensity`.
     """
     n_samples, dim = data.shape
     cv = n_samples if n_samples < 50 else 50
@@ -61,25 +61,26 @@ def kernel_smoothing(data, optimize=False):
 def pdf(data, xdata=None, labels=['x', 'F'], moments=False, fname=None):
     """Plot PDF in 1D or 2D.
 
-    :param np.ndarray/dict data: 1D array of shape (n_sample, n_feature)
+    :param np.ndarray/dict data: array of shape (n_samples, n_features)
     or a dictionary with the following::
 
-        - `bounds`, array like of shape (2, n_feature) first line is mins and
+        - `bounds`, array like of shape (2, n_features) first line is mins and
             second line is maxs.
         - `model`, :class:`batman.surrogate.SurrogateModel` instance or str
             path to the surrogate data.
+        - `method`, str, surrogate model method.
         - `dist`, :class:`openturns.ComposedDistribution` instance.
 
-    :param list(str) labels: `x` label and `PDF` label
-    :param bool moments: whether to plot moments along with PDF if dim > 1
-    :param str fname: whether to export to filename or display the figures
+    :param list(str) labels: `x` label and `PDF` label.
+    :param bool moments: whether to plot moments along with PDF if dim > 1.
+    :param str fname: whether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """
     dx = 100
     if isinstance(data, dict):
         try:
-            f = bat.surrogate.SurrogateModel('kriging', data['bounds'])
+            f = bat.surrogate.SurrogateModel(data['method'], data['bounds'])
             f.read(data['model'])
         except TypeError:
             f = data['model']
@@ -165,14 +166,15 @@ def pdf(data, xdata=None, labels=['x', 'F'], moments=False, fname=None):
         io.write(fname.split('.')[0] + '.dat', dataset)
 
         # Write moments to file
-        data = np.append([min_], [sd_min, mean, sd_max, max_])
-        names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
-        if output_len != 1:
-            names = ['x'] + names
-            data = np.append(xdata, data)
+        if moments:
+            data = np.append([min_], [sd_min, mean, sd_max, max_])
+            names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
+            if output_len != 1:
+                names = ['x'] + names
+                data = np.append(xdata, data)
 
-        dataset = Dataset(names=names, shape=[output_len, 1, 1], data=data)
-        io.write(fname.split('.')[0] + '-moment.dat', dataset)
+            dataset = Dataset(names=names, shape=[output_len, 1, 1], data=data)
+            io.write(fname.split('.')[0] + '-moment.dat', dataset)
     else:
         plt.show()
     plt.close('all')
@@ -186,13 +188,12 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
     If `len(sobols)>2` map indices are also plotted along with aggregated
     indices.
 
-    :param list(str) p_lst: parameters' name.
-    :param array_like sobols: `[first (n_params), total (n_params), 
+    :param list(str) p_lst: parameters' names.
+    :param array_like sobols: `[first (n_params), total (n_params),
     first (xdata, n_params), total (xdata, n_params)]`.
     :param float/array_like conf: relative error around indices. If float,
-    same error is applied for all parameters. Otherwise shape ([min])
-    [[ 0.156  0.098  0.02   0.078]
- [ 0.119  0.1    0.026  0.072]]
+    same error is applied for all parameters. Otherwise shape
+    ([min, n_features], [max, n_features])
     :param str fname: wether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
@@ -250,3 +251,94 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
     plt.close('all')
 
     return figures
+
+
+def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
+                     resampling=0, xdata=None, flabel='F', plabels=None,
+                     fname=None):
+    """Response surface visualization.
+
+    You have to set either (i) :attr:`sample` with :attr:`data` or  (ii)
+    :attr:`fun` depending on your data. If (i), the data are interpolated
+    on a mesh in order to be plotted as a surface. Otherwize, :attr:`fun` is
+    directly used to generate correct data.
+
+    The DoE can also be plotted by setting :attr:`doe` along with
+    :attr:`resampling`.
+    
+    :param array_like bounds: sample boundaries
+    ([min, n_features], [max, n_features])
+    :param array_like sample: sample (n_samples, n_featrues)
+    :param array_like data: function evaluations(n_samples, [n_featrues])
+    :param callable fun: function to plot the response from.
+    :param array_like doe: design of experiment (n_samples, n_features).
+    :param int resampling: number of resampling points.
+    :param array_like xdata: 1D discretization of the function (n_features,).
+    :param str flabel: name of the quantity of interest.
+    :param list(str) plabels: parameters' labels.
+    :param str fname: wether to export to filename or display the figures.
+    :returns: figure.
+    :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
+    """
+    dim = len(bounds[0])
+    if dim == 1:
+        n_samples = 50
+    elif dim == 2:
+        n_samples = 625
+    n_samples = int(np.floor(np.power(n_samples, 1 / dim)))
+
+    grids = [np.linspace(bounds[0][i], bounds[1][i], n_samples) for i in range(dim)]
+
+    if dim == 1:
+        grids = grids
+    else:
+        grids = np.meshgrid(*grids)
+        xsample, ysample = grids
+        xsample = xsample.flatten()
+        ysample = ysample.flatten()
+
+    if fun is not None:
+        data = fun(np.stack([grid.flatten() for grid in grids]).T)
+
+    if xdata is not None:
+        data = np.trapz(data[:], xdata) / (np.max(xdata) - np.min(xdata))
+
+    if fun is None:
+        data = griddata(sample, data, (*grids,), method='nearest')
+
+    data = data.flatten()
+
+    if plabels is None:
+        plabels = ["x" + str(i) for i in range(dim)]
+
+    c_map = cm.viridis
+    fig = plt.figure('Response Surface')
+
+    if dim == 1:
+        plt.plot(*grids, data)
+        plt.ylabel(flabel, fontsize=28)
+    elif dim == 2:
+        plt.tricontourf(xsample, ysample, data,
+                        antialiased=True, cmap=c_map)
+        if doe is not None:
+            doe = np.asarray(doe)
+            len_sampling = len(doe) - resampling
+            plt.plot(doe[:, 0][0:len_sampling], doe[:, 1][0:len_sampling], 'ko')
+            plt.plot(doe[:, 0][len_sampling:], doe[:, 1][len_sampling:], 'r^')
+
+        plt.ylabel(plabels[1], fontsize=28)
+        cbar = plt.colorbar()
+        cbar.set_label(flabel, fontsize=28)
+        cbar.ax.tick_params(labelsize=28)
+
+    plt.xlabel(plabels[0], fontsize=28)
+    plt.tick_params(axis='x', labelsize=28)
+    plt.tick_params(axis='y', labelsize=28)
+    plt.tight_layout()
+    if fname is not None:
+        plt.savefig(fname, transparent=True, bbox_inches='tight')
+    else:
+        plt.show()
+    plt.close('all')
+
+    return fig

@@ -6,7 +6,8 @@ import numpy.testing as npt
 from scipy.io import wavfile
 import openturns as ot
 from mock import patch
-from batman.visualization import (HdrBoxplot, Kiviat3D, pdf, sobol, reshow)
+from batman.visualization import (HdrBoxplot, Kiviat3D, pdf, sobol, reshow,
+                                  response_surface)
 from batman.surrogate import SurrogateModel
 from batman.functions import Ishigami, Mascaret
 import matplotlib.pyplot as plt
@@ -239,20 +240,19 @@ def test_pdf_1D(tmp):
 
 
 @patch("matplotlib.pyplot.show")
-def test_pdf_surrogate(ishigami_data):
+def test_pdf_surrogate(mock_show, ishigami_data):
     dist = ot.ComposedDistribution(ishigami_data[1], ot.IndependentCopula(3))
     f_3d = ishigami_data[0]
     space = ishigami_data[5]
-
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, f_3d(space))
-    data = {
+    settings = {
         "dist": dist,
         "model": surrogate,
+        "method": 'kriging',
         "bounds": space.corners
     }
-
-    pdf(data)
+    pdf(settings)
 
 
 @patch("matplotlib.pyplot.show")
@@ -285,3 +285,41 @@ def test_sobols_map(mock_show):
     indices = [fun.s_first, fun.s_total, fun.s_first_full, fun.s_total_full]
     sobol(indices)
     sobol(indices, p_lst=['Ks', 'Q'], xdata=fun.x)
+
+
+@patch("matplotlib.pyplot.show")
+def test_response_surface_1D(mock_show, tmp):
+    def fun(x):
+        return x ** 2
+    bounds = [[-7], [10]]
+    path = os.path.join(tmp, 'rs_1D_vector.pdf')
+    response_surface(bounds=bounds, fun=fun, fname=path)
+
+    xdata = np.linspace(0, 1, 10)
+    def fun(x):
+        return (xdata * x) ** 2
+    sample = np.array(range(5)).reshape(-1, 1)
+    data = fun(sample)
+    response_surface(bounds=bounds, sample=sample, data=data, xdata=xdata)
+
+
+@patch("matplotlib.pyplot.show")
+def test_response_surface_2D_scalar(mock_show, branin_data):
+    space = branin_data[5]
+    data = branin_data[6]
+    fun = branin_data[0]
+    bounds = [[-7, 0], [10, 15]]
+    response_surface(bounds=bounds, sample=space, data=data)
+    response_surface(bounds=bounds, fun=fun, doe=space, resampling=4)
+
+
+@patch("matplotlib.pyplot.show")
+def test_response_surface_2D_vector(mock_show, mascaret_data, tmp):
+    space = mascaret_data[5]
+    data = mascaret_data[6]
+    xdata = mascaret_data[0].x
+    bounds = [[15.0, 2500.0], [60, 6000.0]]
+    response_surface(bounds=bounds, sample=space, data=data, xdata=xdata)
+    path = os.path.join(tmp, 'rs_2D_vector.pdf')
+    response_surface(bounds=bounds, fun=mascaret_data[0], xdata=xdata,
+                     plabels=['Ks', 'Q'], flabel='Z', fname=path)
