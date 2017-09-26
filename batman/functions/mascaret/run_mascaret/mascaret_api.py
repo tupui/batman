@@ -316,17 +316,17 @@ class MascaretApi(object):
                        "       > Ks parameter 1: {}\n"
                        "       > Ks parameter 2: {}\n"
                        "       > Number of simulations: {}\n")
-        if 'misc' in self.user_settings:
-            string += (" -- Miscellaneous:\n"
-                       "       > Print  boundary conditions: {}\n"
-                       "       > Output all state: {}\n"
-                       "       > Output index: {}\n")
         if 'bathy' in self.user_settings:
             string += (" -- Change bathymetry:\n"
                        "       > Flag shift all bathy by dz: {}\n"
                        "       > Shift Index Profil: {}\n"
                        "       > Shift dz: {}\n"
-                       "       > Gp Lp: {}")
+                       "       > Gp Lp: {}\n")
+        if 'misc' in self.user_settings:
+            string += (" -- Miscellaneous:\n"
+                       "       > Print  boundary conditions: {}\n"
+                       "       > Output all state: {}\n"
+                       "       > Output index: {}\n")
 
         src1 = list(itertools.chain.from_iterable([v.values() if isinstance(
             v, dict) else [v] for v in self.settings['files'].values()]))
@@ -389,6 +389,7 @@ class MascaretApi(object):
                                                                              self.iprint)
 
         else:
+# Sophie : Comment user_defined here when bathy
 #            self.user_defined()
             self.empty_opt()
             self.logger.info('Running Mascaret...')
