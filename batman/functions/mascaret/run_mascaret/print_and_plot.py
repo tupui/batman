@@ -99,4 +99,3 @@ def plot_opt(filename='ResultatsOpthyca.opt', xlab='Curvilinear abscissa (m)', y
     fig.tight_layout()
     fig.savefig('./waterlevel.pdf', transparent=True, bbox_inches='tight')
     plt.close('all')
-

@@ -15,10 +15,9 @@ import ctypes
 import itertools
 import numpy as np
 from ...utils import multi_eval
-from ....space import Gp1dSampler
+import batman as bat
 
-logging.basicConfig(level=logging.DEBUG)
-#logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.DEBUG)
 
 
 class MascaretApi(object):
@@ -125,11 +124,10 @@ class MascaretApi(object):
         il_temp2 = ctypes.c_int()
         self.logger.error("Getting size var in model  #{}..."
                           .format(self.id_masc.value))
-        self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(self.id_masc, var_name, 0,
-                                                                ctypes.byref(
-                                                                    nb_nodes),
-                                                                ctypes.byref(
-                                                                    il_temp1),
+        self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(self.id_masc,
+                                                                var_name, 0,
+                                                                ctypes.byref(nb_nodes),
+                                                                ctypes.byref(il_temp1),
                                                                 ctypes.byref(il_temp2))
         self.logger.debug('Get nb of nodes: size_X={}.'
                           .format(nb_nodes.value))
@@ -355,7 +353,8 @@ class MascaretApi(object):
         :param list x: inputs [Ks, Q]
         :param str flag: None, 'Ks' or 'Q'
         :param bool saveall: Change the default name of the Results file
-        :return: water level at :attr:`index_outstate` or all state if `all_outstate` is true
+        :return: water level at :attr:`index_outstate` or all state if
+        `all_outstate` is true
         :rtype: double
         """
         if x is not None:
@@ -389,8 +388,7 @@ class MascaretApi(object):
                                                                              self.iprint)
 
         else:
-# Sophie : Comment user_defined here when bathy
-#            self.user_defined()
+            # self.user_defined()  # user_defined here when bathy
             self.empty_opt()
             self.logger.info('Running Mascaret...')
             self.error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
@@ -470,8 +468,8 @@ class MascaretApi(object):
             self.logger.info('Performing a single MASCARET simulation...')
             h = self.run_mascaret(x=x, Qtime=Qtime, saveall=saveall)
 
-        if self.user_settings['misc']['all_outstate'] is True: 
-            self.results = np.split(h, 2) 
+        if self.user_settings['misc']['all_outstate'] is True:
+            self.results = np.split(h, 2)
         else:
             self.results = h
 
@@ -768,7 +766,8 @@ class MascaretApi(object):
         itemp2 = ctypes.c_int()
         self.logger.debug('Getting the size of State.Z...')
         self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
-            self.id_masc, var_name, 0, ctypes.byref(itemp0), ctypes.byref(itemp1), ctypes.byref(itemp2))
+            self.id_masc, var_name, 0, ctypes.byref(itemp0),
+            ctypes.byref(itemp1), ctypes.byref(itemp2))
         self.logger.debug('itemp= {} {} {}.'
                           .format(itemp0.value, itemp1.value, itemp2.value))
 
@@ -800,7 +799,8 @@ class MascaretApi(object):
         itemp2 = ctypes.c_int()
         self.logger.debug('Getting the size of State.Z...')
         self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
-            self.id_masc, var_name, 0, ctypes.byref(itemp0), ctypes.byref(itemp1), ctypes.byref(itemp2))
+            self.id_masc, var_name, 0, ctypes.byref(itemp0),
+            ctypes.byref(itemp1), ctypes.byref(itemp2))
         self.logger.debug('itemp= {} {} {}.'
                           .format(itemp0.value, itemp1.value, itemp2.value))
 
@@ -828,7 +828,8 @@ class MascaretApi(object):
         itemp2 = ctypes.c_int()
         self.logger.debug('Getting the size of Model.X...')
         self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
-            self.id_masc, var_name, 0, ctypes.byref(itemp0), ctypes.byref(itemp1), ctypes.byref(itemp2))
+            self.id_masc, var_name, 0, ctypes.byref(itemp0),
+            ctypes.byref(itemp1), ctypes.byref(itemp2))
         self.logger.debug('itemp= {} {} {}.'
                           .format(itemp0.value, itemp1.value, itemp2.value))
 
@@ -911,12 +912,14 @@ class MascaretApi(object):
             # Loop on number of point by section
             for n_pts in range(sizeX2.value):
                 self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-                    self.id_masc, var_name_Y, n_sec + 1, n_pts + 1, 0, ctypes.byref(Z_c))
+                    self.id_masc, var_name_Y, n_sec + 1, n_pts + 1, 0,
+                    ctypes.byref(Z_c))
                 self.logger.debug(
                     'In Getter Cross Section, Z ={}'.format(Z_c.value))
                 res_Z.append(Z_c.value)
                 self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-                    self.id_masc, var_name_RelAbs, n_sec + 1, n_pts + 1, 0, ctypes.byref(RelAbs_c))
+                    self.id_masc, var_name_RelAbs, n_sec + 1, n_pts + 1, 0,
+                    ctypes.byref(RelAbs_c))
                 self.logger.debug(
                     'In Getter Cross Section, RelAbs ={}'.format(RelAbs_c.value))
                 res_RelAbs.append(RelAbs_c.value)
@@ -940,7 +943,8 @@ class MascaretApi(object):
         Use Mascaret Api :meth:`C_GET_DOUBLE_MASCARET` and
         :meth:`C_SET_DOUBLE_MASCARET`.
 
-        :param dict bathy: Displacement of all bathymetry ``{'bathy','all_bathy','idx','dz'}``
+        :param dict bathy: Displacement of all bathymetry
+        ``{'bathy','all_bathy','idx','dz'}``
         """
         var_name_Y = ctypes.c_char_p(b'Model.CrossSection.Y')
         sizeY1 = ctypes.c_int()
@@ -963,11 +967,16 @@ class MascaretApi(object):
                           .format(sizeZ1.value, sizeZ2.value, sizeZ3.value))
 
         if 'Lp' in self.user_settings['bathy']:
-#            sampler = Gp1dSampler(t0=self.cross_section[0][0], T=self.cross_section[0][-1],
-#                                 Nt=sizeZ1.value, sigma=bathy['dz'], theta=bathy['Lp'])
-            sampler = Gp1dSampler(t0=self.cross_section[0][0], T=self.cross_section[
-                                 0][-1], Nt=sizeZ1.value, sigma=bathy['dz'], theta=bathy['Lp'], 
-                                 x=[[self.cross_section[0][0]], [self.cross_section[0][-1]]])
+            # sampler = bat.space.Gp1dSampler(t0=self.cross_section[0][0],
+            #                                 T=self.cross_section[0][-1],
+            #                                 Nt=sizeZ1.value, sigma=bathy['dz'],
+            #                                 theta=bathy['Lp'])
+            sampler = bat.space.Gp1dSampler(t0=self.cross_section[0][0],
+                                            T=self.cross_section[0][-1],
+                                            Nt=sizeZ1.value, sigma=bathy['dz'],
+                                            theta=bathy['Lp'],
+                                            x=[[self.cross_section[0][0]],
+                                               [self.cross_section[0][-1]]])
             shift_dz = sampler.sample()['Values'][0]
         else:
             shift_dz = np.zeros(sizeZ1.value, float) + bathy['dz']
@@ -993,28 +1002,28 @@ class MascaretApi(object):
                         'In Setter Cross Section, Z ={}'.format(Z_c.value))
                     new_Z_c = ctypes.c_double()
                     new_Z_c.value = Z_c.value + shift_dz[n_sec]
-                    self.error= self.libmascaret.C_SET_DOUBLE_MASCARET(
+                    self.error = self.libmascaret.C_SET_DOUBLE_MASCARET(
                         self.id_masc, var_name_Y, n_sec + 1, n_pts + 1, 0, new_Z_c)
         else:
-            idx= bathy['idx']
+            idx = bathy['idx']
             self.logger.debug(
                 'In Setter Cross Section, profil idx = {}'.format(idx))
-            self.error= self.libmascaret.C_GET_DOUBLE_MASCARET(
+            self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
                 self.id_masc, var_name_Z, idx + 1, 0, 0, ctypes.byref(Zbot_c))
             self.logger.debug(
                 'In Setter Cross Section, Zbot = {}'.format(Zbot_c.value))
-            new_Zbot_c= ctypes.c_double()
-            new_Zbot_c.value= Zbot_c.value + shift_dz[0]
-            self.error= self.libmascaret.C_SET_DOUBLE_MASCARET(
+            new_Zbot_c = ctypes.c_double()
+            new_Zbot_c.value = Zbot_c.value + shift_dz[0]
+            self.error = self.libmascaret.C_SET_DOUBLE_MASCARET(
                 self.id_masc, var_name_Z, idx + 1, 0, 0, new_Zbot_c)
             for n_pts in range(sizeY2.value):
-                self.error= self.libmascaret.C_GET_DOUBLE_MASCARET(
+                self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
                     self.id_masc, var_name_Y, idx + 1, n_pts + 1, 0, ctypes.byref(Z_c))
                 self.logger.debug(
                     'In Setter Cross Section, Z = {}'.format(Z_c.value))
-                new_Z_c= ctypes.c_double()
-                new_Z_c.value= Z_c.value + shift_dz[0]
-                self.error= self.libmascaret.C_SET_DOUBLE_MASCARET(
+                new_Z_c = ctypes.c_double()
+                new_Z_c.value = Z_c.value + shift_dz[0]
+                self.error = self.libmascaret.C_SET_DOUBLE_MASCARET(
                     self.id_masc, var_name_Y, idx + 1, n_pts + 1, 0, new_Z_c)
 
             self.logger.debug(
