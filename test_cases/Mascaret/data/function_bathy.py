@@ -9,7 +9,7 @@ from batman.input_output import (IOFormatSelector, Dataset)
 from batman.functions import MascaretApi
 from batman.functions.mascaret import print_statistics, histogram, plot_opt
 
-study = MascaretApi('config_canal.json','config_canal_user_KsQ.json')
+study = MascaretApi('config_canal.json','config_canal_user_bathy.json')
 print(study)
 
 

@@ -1,11 +1,11 @@
 {
     "space": {
         "corners": [
-            [20.0, 1000.0], 
-            [40.0, 3000.0]
+            [999.0, 999.0], 
+            [9999.0, 9999.0]
         ],
         "sampling": {
-            "init_size": 100,
+            "init_size": 5,
             "method": "halton"
         }
     },
@@ -14,11 +14,11 @@
         "io": {
             "shapes": {
                 "0": [
-                    [51]
+                    [1]
                 ]
             },
             "format": "fmt_tp_fortran",
-            "variables": ["X", "F"],
+            "variables": ["F"],
             "point_filename": "header.py",
             "filenames": {
                 "0": ["function.dat"]
@@ -36,11 +36,5 @@
             "data-directory": "cfd-output-data",
             "restart": "False"
         }
-    },
-    "uq": {
-        "sample": 1000,
-        "pdf": ["Uniform(20., 40.)", "Uniform(1000., 3000.)"],
-        "type": "aggregated",
-        "method": "sobol"
     }
 }

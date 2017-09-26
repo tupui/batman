@@ -15,7 +15,7 @@
     },
     "misc": {
         "info_bc": true,
-        "all_outstate": true,
+        "all_outstate": false,
         "index_outstate": 25
     }
 }
