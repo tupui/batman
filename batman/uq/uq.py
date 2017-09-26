@@ -489,7 +489,7 @@ class UQ:
 
         # Compute error of the POD with a known function
         if (self.type_indices in ['aggregated', 'block']) and (self.test is not None):
-            self.error_model(indices, self.test)
+            self.error_model(aggregated, self.test)
 
         return aggregated
 
