@@ -12,6 +12,13 @@ from batman.surrogate import SurrogateModel
 from batman.functions import Ishigami, Mascaret
 import matplotlib.pyplot as plt
 
+try:
+    import matplotlib.animation as manimation
+    manimation.writers['ffmpeg']
+    have_ffmpeg = True
+except ImportError:
+    have_ffmpeg = False
+
 # Water surface temperature data from:
 # http://www.cpc.ncep.noaa.gov/data/indices/
 path = os.path.dirname(os.path.realpath(__file__))
@@ -151,6 +158,7 @@ def test_hdr_plot_data(mock_show, hdr):
     hdr.plot(samples=data, labels=labels.tolist())
 
 
+@pytest.mark.skip(not have_ffmpeg, reason='ffmpeg not available')
 def test_hdr_fhops(hdr, tmp):
     hdr.f_hops(x_common=np.linspace(1, 12, 12),
                labels=labels,
@@ -193,6 +201,7 @@ def test_hdr_sample(hdr):
     npt.assert_almost_equal(samples, samples_t, decimal=2)
 
 
+# @pytest.mark.skip(not have_ffmpeg, reason='ffmpeg not available')
 # @patch("matplotlib.pyplot.show")
 # def test_hdr_tahiti(mock_show, tmp):
 #     hdr = HdrBoxplot(data_tahiti)
@@ -211,7 +220,7 @@ def test_hdr_sample(hdr):
 def kiviat_data():
     space = [[30, 4000], [15, 5000]]
     feval = [[12], [15]]
-    corners = [[15.0, 2500.0],[60.0, 6000.0]]
+    corners = [[15.0, 2500.0], [60.0, 6000.0]]
     param_names = ['Ks', 'Q', '-']
 
     kiviat = Kiviat3D(space, corners,
@@ -221,6 +230,7 @@ def kiviat_data():
     return kiviat, labels
 
 
+@pytest.mark.skip(not have_ffmpeg, reason='ffmpeg not available')
 def test_kiviat_fhops(kiviat_data, tmp):
     kiviat, labels = kiviat_data
     kiviat.f_hops(frame_rate=400, labels=labels,

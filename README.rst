@@ -78,27 +78,29 @@ Dependencies
 
 The required dependencies are: 
 
-- Python >= 2.7 or >= 3.3
+- `Python <https://python.org>`_ >= 2.7 or >= 3.3
 - `scikit-learn <http://scikit-learn.org>`_ >= 0.18
 - `scipy <http://scipy.org>`_ >= 0.15
 - `OpenTURNS <http://www.openturns.org>`_ >= 1.7
 - `pathos <https://github.com/uqfoundation/pathos>`_ >= 0.2
-- matplotlib
+- `matplotlib <http://matplotlib.org>`_ >= 1.5
 - `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_
 - `sphinx <http://www.sphinx-doc.org>`_ >= 1.4
 
 Optionnal dependencies are: 
 
-- `Antares <http://www.cerfacs.fr/antares>`_
+- `Antares <http://www.cerfacs.fr/antares>`_ for extra IO options
+- `ffmpeg <https://www.ffmpeg.org>`_ for movie visualizations
   
-Appart from OpenTURNS and Antares, dependencies are satisfied by the installer.
+Appart from OpenTURNS, required dependencies are satisfied by the installer.
 
-.. note:: OpenTURNS is available on *conda* through the *conda-forge* channel.
+.. note:: OpenTURNS and ffmpeg are available on *conda* through
+    the *conda-forge* channel.
 
 User installation
 .................
 
-Then to install::
+Using the latest python version is prefered! Then to install::
 
     cd BATMAN
     python setup.py build_fortran
@@ -107,7 +109,7 @@ Then to install::
     python setup.py build_sphinx
 
 The latter is optionnal as it build the documentation.
-The testing part is also optionnal but is recommanded. (~15mins).
+The testing part is also optionnal but is recommanded. (~20mins).
 
 .. note:: If you don't have install priviledge, add ``--user`` option after install.
 

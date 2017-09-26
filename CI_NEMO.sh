@@ -1,7 +1,7 @@
 #!/bin/sh
 #SBATCH --partition prod
 #SBATCH --job-name batci
-#SBATCH --time=00:30:00
+#SBATCH --time=01:20:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24
 #SBATCH --share
@@ -39,6 +39,7 @@ python --version
 SCRATCH='/scratch/cfd/roy'
 mkdir $SCRATCH/CI_BATMAN
 tar -xf batman_ci.tar -C $SCRATCH/CI_BATMAN/.
+rm batman_ci.tar CI_NEMO.sh
 cd $SCRATCH/CI_BATMAN/batman
 
 python setup.py build_fortran
