@@ -1,0 +1,11 @@
+{
+    "init_cst": {
+        "Q_cst": 0.0,
+        "Z_cst": 10.0
+    },
+    "misc": {
+        "info_bc": true,
+        "all_outstate": true,
+        "index_outstate": 25
+    }
+}

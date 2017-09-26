@@ -1,0 +1,17 @@
+{
+    "init_cst": {
+        "Q_cst": 0.0,
+        "Z_cst": 10.0
+    },
+    "bathy": {
+        "all_bathy": true,
+        "idx": 0,
+        "dz": 2.0,
+        "Lp": 222.0
+    },
+    "misc": {
+        "info_bc": true,
+        "all_outstate": true,
+        "index_outstate": 25
+    }
+}
