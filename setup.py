@@ -81,10 +81,10 @@ tests_require = ['pytest', 'mock']
 install_requires = ['sphinx_rtd_theme',
                     'sphinx>=1.4',
                     'scipy>=0.15',
-                    'numpy',
+                    'numpy>=1.13',
                     'jsonschema',
                     'pathos>=0.2',
-                    'matplotlib',
+                    'matplotlib>=1.5',
                     'scikit-learn>=0.18']
 
 if sys.version_info <= (3, 3):

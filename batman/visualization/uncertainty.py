@@ -125,7 +125,9 @@ def pdf(data, xdata=None, labels=['x', 'F'], moments=False, fname=None):
     plt.tick_params(axis='x', labelsize=26)
     plt.tick_params(axis='y', labelsize=26)
     if output_len > 1:
-        bound_pdf = np.linspace(0., np.max(pdf), 50, endpoint=True)
+        max_pdf_bound = np.max(pdf)
+        max_pdf_bound = max_pdf_bound if max_pdf_bound < 1 else 1
+        bound_pdf = np.linspace(0., max_pdf_bound, 50, endpoint=True)
         plt.contourf(xdata, ydata, pdf, bound_pdf, cmap=c_map, label=None)
         cbar = plt.colorbar()
         cbar.set_label(r"PDF")

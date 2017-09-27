@@ -80,6 +80,7 @@ The required dependencies are:
 
 - `Python <https://python.org>`_ >= 2.7 or >= 3.3
 - `scikit-learn <http://scikit-learn.org>`_ >= 0.18
+- `numpy <http://www.numpy.org>`_ >= 1.13
 - `scipy <http://scipy.org>`_ >= 0.15
 - `OpenTURNS <http://www.openturns.org>`_ >= 1.7
 - `pathos <https://github.com/uqfoundation/pathos>`_ >= 0.2
@@ -92,6 +93,11 @@ Optionnal dependencies are:
 
 - `Antares <http://www.cerfacs.fr/antares>`_ for extra IO options
 - `ffmpeg <https://www.ffmpeg.org>`_ for movie visualizations
+
+Testing dependencies are: 
+
+- `pytest <https://docs.pytest.org/en/latest/>`_ >= 2.8
+- `mock <https://pypi.python.org/pypi/mock>`_ >= 2.0
 
 .. note:: OpenTURNS and ffmpeg are available on *conda* through
     the *conda-forge* channel.
