@@ -87,12 +87,11 @@ The required dependencies are:
 - `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_
 - `sphinx <http://www.sphinx-doc.org>`_ >= 1.4
 
+Appart from OpenTURNS, required dependencies are satisfied by the installer.
 Optionnal dependencies are: 
 
 - `Antares <http://www.cerfacs.fr/antares>`_ for extra IO options
 - `ffmpeg <https://www.ffmpeg.org>`_ for movie visualizations
-  
-Appart from OpenTURNS, required dependencies are satisfied by the installer.
 
 .. note:: OpenTURNS and ffmpeg are available on *conda* through
     the *conda-forge* channel.

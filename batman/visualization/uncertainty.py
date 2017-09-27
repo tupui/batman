@@ -91,6 +91,7 @@ def pdf(data, xdata=None, labels=['x', 'F'], moments=False, fname=None):
     # Compute PDF
     output_len = z_array.shape[1]
     if output_len > 1:
+        z_array = z_array[:199]  # Reduce the number of sample to use
         pdf = []
         ydata = []
         for i in range(output_len):
@@ -149,15 +150,15 @@ def pdf(data, xdata=None, labels=['x', 'F'], moments=False, fname=None):
     if fname is not None:
         plt.savefig(fname, transparent=True, bbox_inches='tight')
         # Write PDF to file
-        xdata = xdata.flatten('C')
+        xdata_flattened = xdata.flatten('C')
         pdf = pdf.flatten('F')
         names = ['output', 'PDF']
         if output_len > 1:
             ydata = np.array(ydata).flatten('C')
             names = ['x'] + names
-            data = np.array([xdata, ydata, pdf])
+            data = np.array([xdata_flattened, ydata, pdf])
         else:
-            data = np.array([xdata, pdf])
+            data = np.array([xdata_flattened, pdf])
 
         io = IOFormatSelector('fmt_tp_fortran')
         dataset = Dataset(names=names, data=data)
@@ -169,7 +170,7 @@ def pdf(data, xdata=None, labels=['x', 'F'], moments=False, fname=None):
             names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
             if output_len != 1:
                 names = ['x'] + names
-                data = np.append(xdata, data)
+                data = np.append(xdata[0], data)
 
             dataset = Dataset(names=names, shape=[output_len, 1, 1], data=data)
             io.write(fname.split('.')[0] + '-moment.dat', dataset)

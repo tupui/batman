@@ -510,6 +510,7 @@ class UQ:
         self.logger.info("\n----- Moments evaluation -----")
 
         # Covariance and correlation matrices
+        self.logger.info('Creating Covariance/correlation and figures...')
         if (self.output_len != 1) and (self.type_indices != 'block'):
             corr_yy = np.array(self.output.computePearsonCorrelation())
             cov_yy = np.array(self.output.computeCovariance())
@@ -536,6 +537,7 @@ class UQ:
                                        'correlation_XY.dat'), dataset)
 
         # Create and plot the PDFs + moments
+        self.logger.info('Creating PDF and figures...')
         visualization.pdf(np.array(self.output), self.f_input,
                           fname=os.path.join(self.output_folder, 'pdf.pdf'),
                           moments=True)

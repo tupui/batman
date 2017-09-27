@@ -266,16 +266,17 @@ def test_pdf_surrogate(mock_show, ishigami_data):
 
 
 @patch("matplotlib.pyplot.show")
-def test_pdf_nD(mock_show):
-    fig_pdf = pdf(data, xdata=np.linspace(1, 12, 12))
+def test_pdf_nD(mock_show, tmp):
+    fig_pdf = pdf(data, xdata=np.linspace(1, 12, 12),
+                  fname=os.path.join(tmp, 'pdf_nd.pdf'))
     fig = reshow(fig_pdf)
     plt.plot([0, 10], [25, 25])
     fig.show()
 
 
-@patch("matplotlib.pyplot.show")
-def test_pdf_nD_moments(mock_show):
-    pdf(data, xdata=np.linspace(1, 12, 12), moments=True)
+def test_pdf_nD_moments(tmp):
+    pdf(data, xdata=np.linspace(1, 12, 12), moments=True,
+        fname=os.path.join(tmp, 'pdf_nd_moments.pdf'))
 
 
 @patch("matplotlib.pyplot.show")

@@ -406,7 +406,7 @@ class Channel_Flow(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, dx=100., length=40000., width=500.):
+    def __init__(self, dx=8000., length=40000., width=500.):
         """Initialize the geometrical configuration.
 
         :param float dx: discretization
