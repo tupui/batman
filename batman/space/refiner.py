@@ -72,6 +72,13 @@ class Refiner(object):
 
         self.settings_full = settings
         self.settings = settings['space']
+
+        try:
+            self.discrete = True if self.settings['sampling']['method']\
+                == 'discrete' else False
+        except:
+            self.discrete = False
+
         self.corners = np.array(self.settings['corners']).T
         delta_space = self.settings['resampling']['delta_space']
         self.dim = len(self.corners)
@@ -266,7 +273,7 @@ class Refiner(object):
 
         init_discrepancy = self.surrogate.space.discrepancy()
 
-        @optimization(self.settings["sampling"]["method"], hypercube)
+        @optimization(hypercube, self.discrete)
         def func_discrepancy(coords):
             sample = np.vstack([self.surrogate.space[:], coords])
             return self.surrogate.space.discrepancy(sample)
@@ -294,7 +301,7 @@ class Refiner(object):
             hypercube = self.corners
         self.logger.debug("Sigma strategy")
 
-        @optimization(self.settings["sampling"]["method"], hypercube)
+        @optimization(hypercube, self.discrete)
         def func_sigma(coords):
             r"""Get the Sigma for a given point.
 
@@ -527,12 +534,12 @@ class Refiner(object):
         self.logger.info('Current minimal value is: f(x)={} for x={}'
                          .format(min_value, min_x))
 
-        if self.settings['sampling']['method'] == 'discrete':
+        if self.discrete:
             discrete = 1
         else:
             discrete = 0
 
-        @optimization(self.settings['sampling']['method'], self.corners)
+        @optimization(self.corners, self.discrete)
         def probability_improvement(x):
             """Do probability of improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
@@ -547,7 +554,7 @@ class Refiner(object):
 
             return - pi
 
-        @optimization(self.settings['sampling']['method'], self.corners)
+        @optimization(self.corners, self.discrete)
         def expected_improvement(x):
             """Do expected improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
@@ -593,7 +600,7 @@ class Refiner(object):
         scale_sigma = preprocessing.StandardScaler().fit(sigma)
         scale_disc = preprocessing.StandardScaler().fit(disc)
 
-        @optimization(self.settings['sampling']['method'], self.corners)
+        @optimization(self.corners, self.discrete)
         def f_obj(x):
             """Maximize the inverse of the discrepancy plus sigma."""
             _, sigma = self.pred_sigma(x)

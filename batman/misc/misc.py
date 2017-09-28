@@ -226,14 +226,14 @@ class ProgressBar(object):
         sys.stdout.flush()
 
 
-def optimization(method, bounds):
+def optimization(bounds, discrete=False):
     """Perform a discret or a continuous/discrete optimization.
 
     If a variable is discrete, the decorator allows to find the optimum by
     doing an optimization per discrete value and then returns the optimum.
 
-    :param str method: if 'discrete' perform a discrete optimization
     :param ndarray bounds: bounds for optimization (nb param, (min, max))
+    :param bool discrete: whether to perform a discrete optimization
     """
     def optimize(fun):
         """Compute several optimizations."""
@@ -253,7 +253,7 @@ def optimization(method, bounds):
             min_fun = results.fun
             return min_x, min_fun
         def wrapper_fun_obj():
-            if method == 'discrete':
+            if discrete:
                 start = int(np.ceil(bounds[0, 0]))
                 end = int(np.ceil(bounds[0, 1]))
                 n_results = end - start

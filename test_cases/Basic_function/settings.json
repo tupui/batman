@@ -16,11 +16,6 @@
             "q2_criteria": 0.9
         }
     },
-    "pod": {
-        "dim_max": 100,
-        "tolerance": 0.99,
-        "type": "static"
-    },
     "snapshot": {
         "max_workers": 5,
         "io": {
@@ -40,7 +35,7 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 20,
+            "timeout": 10,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,

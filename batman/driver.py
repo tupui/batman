@@ -105,6 +105,7 @@ class Driver(object):
                 # a list of points is provided
                 self.logger.info('Reading list of points from the settings.')
                 self.to_compute_points = space_provider
+                self.space += space_provider
             elif isinstance(space_provider, dict):
                 # use sampling method
                 self.to_compute_points = self.space.sampling(space_provider['init_size'])
@@ -195,8 +196,20 @@ class Driver(object):
                 snapshots = _snapshots
 
             if snapshots:
-                snapshots = [Snapshot.convert(s) for s in snapshots]
-                snapshots = np.vstack([s.data for s in snapshots])
+                snapshots_ = [Snapshot.convert(s) for s in snapshots]
+                snapshots = np.vstack([s.data for s in snapshots_])
+
+                if update:
+                    snapshots = np.vstack([self.data, snapshots])
+                    if len(snapshots) != len(self.space):  # no resampling
+                        snapshots = self.data
+                        for snapshot in snapshots_:
+                            try:
+                                self.space += snapshot.point
+                                snapshots = np.vstack([snapshots, snapshot.data])
+                            except (AlienPointError, UnicityError, FullSpaceError) as tb:
+                                self.logger.warning("Ignoring: {}".format(tb))
+
                 self.data = snapshots
 
             points = self.space
@@ -207,13 +220,13 @@ class Driver(object):
                 pass
 
     def resampling(self):
-        """Resampling of the POD.
+        """Resampling of the parameter space.
 
         Generate new samples if quality and number of sample are not satisfied.
         From a new sample, it re-generates the POD.
 
         """
-        while len(self.pod.points) < self.space.max_points_nb:
+        while len(self.space) < self.space.max_points_nb:
             quality, point_loo = self.surrogate.estimate_quality()
             # quality = 0.5
             # point_loo = [-1.1780625, -0.8144629629629629]
@@ -288,7 +301,7 @@ class Driver(object):
             # will add new points to be processed
             # [static or dynamic pod is finished]
             self.to_compute_points = [p for p in to_compute_points
-                                   if p not in self.space]
+                                      if p not in self.space]
         else:
             # automatic resampling has to continue from
             # the processed points

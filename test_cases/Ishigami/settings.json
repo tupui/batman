@@ -45,7 +45,7 @@
         "method": "kriging"
     },
     "uq": {
-        "sample": 2000,
+        "sample": 1000,
         "test": "Ishigami",
         "pdf": ["Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)"],
         "type": "aggregated",

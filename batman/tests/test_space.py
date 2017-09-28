@@ -87,6 +87,9 @@ def test_space():
         space += (1, 2, 3)
         space += (1, 2, 3)
 
+    with pytest.raises(SystemExit):
+        space += (1, 2)
+
     with pytest.raises(AlienPointError):
         space += (1, 7, 3)
 

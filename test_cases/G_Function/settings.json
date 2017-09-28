@@ -16,12 +16,6 @@
             "q2_criteria": 0.9
         }
     },
-    "pod": {
-        "dim_max": 100,
-        "tolerance": 0.99,
-        "server": null,
-        "type": "static"
-    },
     "snapshot": {
         "max_workers": 10,
         "io": {
@@ -41,7 +35,7 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 20,
+            "timeout": 10,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
@@ -55,7 +49,7 @@
         "method": "kriging"
     },
     "uq": {
-        "sample": 15000,
+        "sample": 1000,
         "test": "G_Function",
         "pdf": ["Uniform(0.0, 1.0)", "Uniform(0.0, 1.0)", "Uniform(0.0, 1.0)", "Uniform(0.0, 1.0)"],
         "type": "aggregated",

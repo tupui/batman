@@ -222,11 +222,14 @@ def test_hdr_sample(hdr):
 def kiviat_data():
     space = [[30, 4000], [15, 5000]]
     feval = [[12], [15]]
-    corners = [[15.0, 2500.0], [60.0, 6000.0]]
     param_names = ['Ks', 'Q', '-']
 
-    kiviat = Kiviat3D(space, corners,
-                      feval, param_names=param_names)
+    corners = [[15.0, 2500.0], [60.0, 6000.0]]
+    kiviat = Kiviat3D(space, corners, feval)
+
+    corners = [[15.0, 2500.0], [60.0, 6000.0]]
+    kiviat = Kiviat3D(space, corners, feval, param_names=param_names)
+
     labels = ["Ks={}, Q={}".format(ks, q) for (ks, q) in space]
 
     return kiviat, labels
@@ -277,7 +280,7 @@ def test_pdf_nD(mock_show, tmp):
 
 
 def test_pdf_nD_moments(tmp):
-    pdf(data, xdata=np.linspace(1, 12, 12), moments=True,
+    pdf(data, moments=True,
         fname=os.path.join(tmp, 'pdf_nd_moments.pdf'))
 
 

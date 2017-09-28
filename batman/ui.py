@@ -78,7 +78,6 @@ def run(settings, options):
                 settings['snapshot']['io']['template_directory'] = \
                     os.path.join(root, '0', 'batman-data')
                 settings['snapshot']['io']['shapes'] = None
-                
         if delete:
             try:
                 shutil.rmtree(options.output)
