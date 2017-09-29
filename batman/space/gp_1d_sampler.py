@@ -145,10 +145,8 @@ class Gp1dSampler:
             temp_idx = [item for item in self.idx]
             s += ("\n- User points (values): [{}]\n"
                   "- User points (indices): [{}]")
-            return s.format(*format_,
-                            temp_x, temp_idx)
-        else:
-            return s.format(*format_)
+            format_.append(temp_x, temp_idx)
+        return s.format(*format_)
 
     def sample(self, n_sample):
         """Compute realizations of the GP1D sampler.
