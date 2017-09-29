@@ -292,8 +292,10 @@ class HdrBoxplot:
 
         if self.n_components == 2:
             n_contours = 50
-            grid = np.meshgrid(np.linspace(self.bounds[0,0], self.bounds[1,0], n_contours), 
-                                       np.linspace(self.bounds[0,1], self.bounds[1,1], n_contours))
+            grid = np.meshgrid(np.linspace(self.bounds[0,0], self.bounds[1,0],
+                                           n_contours),
+                               np.linspace(self.bounds[0,1], self.bounds[1,1],
+                                           n_contours))
             xgrid, ygrid = grid
             stack = np.dstack(grid).reshape(-1, self.n_components)
             pdf = np.exp(self.ks_gaussian.score_samples(stack)).flatten()
@@ -398,7 +400,7 @@ class HdrBoxplot:
                     'comment': "Functional Hypothetical Outcome Plots at {} ms"
                               .format(frame_rate)}
 
-        writer = movie_writer(fps=1000 / frame_rate, metadata=metadata)
+        writer = movie_writer(fps=1000.0 / frame_rate, metadata=metadata)
 
         fig = plt.figure()
         if x_common is None:
