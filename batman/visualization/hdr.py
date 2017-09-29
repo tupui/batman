@@ -276,8 +276,8 @@ class HdrBoxplot:
 
         if self.n_components == 2:
             n_contours = 50
-            grid = np.meshgrid(*[np.linspace(*self.bounds[i], n_contours)
-                                 for i in range(self.n_components)])
+            xgrid, ygrid = np.meshgrid(np.linspace(self.bounds[0,0], self.bounds[1,0], n_contours), 
+                                       np.linspace(self.bounds[0,1], self.bounds[1,1], n_contours))
             stack = np.dstack(grid).reshape(-1, self.n_components)
             pdf = np.exp(self.ks_gaussian.score_samples(stack)).flatten()
 
@@ -285,7 +285,8 @@ class HdrBoxplot:
             fig, ax = plt.subplots()
             figures.append(fig)
             axs.append(ax)
-            contour = plt.contour(*grid,
+            contour = plt.contour(xgrid, 
+                                  ygrid,
                                   pdf.reshape((n_contours, n_contours)),
                                   self.pvalues)
             # Labels: probability instead of density
