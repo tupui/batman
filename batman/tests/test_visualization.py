@@ -27,10 +27,10 @@ labels, data = np.loadtxt(os.path.join(path, 'functional_dataset/elnino.dat'),
 labels = labels.reshape(-1, 12)[:, 0]
 data = data.reshape(-1, 12)
 
-data_tahiti = np.loadtxt(os.path.join(path, 'functional_dataset/tahiti.dat'),
-                                         skiprows=4, usecols=range(0, 13),
-                                         unpack=True)
-data_tahiti = np.array(data_tahiti[1:]).T
+#labels_tahiti, *data_tahiti = np.loadtxt(os.path.join(path, 'functional_dataset/tahiti.dat'),
+#                                         skiprows=4, usecols=range(0, 13),
+#                                         unpack=True)
+#data_tahiti = np.array(data_tahiti).T
 
 
 @pytest.fixture(scope="session")

@@ -21,6 +21,20 @@ import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
 np.set_printoptions(precision=3)
 
+try:
+    import copyreg
+except ImportError:
+    import copy_reg as copyreg
+import types
+
+def _pickle_method(m):
+    """Handle pickling issues with class instance."""
+    if m.im_self is None:
+        return getattr, (m.im_class, m.im_func.func_name)
+    else:
+        return getattr, (m.im_self, m.im_func.func_name)
+
+copyreg.pickle(types.MethodType, _pickle_method)
 
 class HdrBoxplot:
 
@@ -159,9 +173,11 @@ class HdrBoxplot:
             max_pdf = 1E6
         self.band = [min_pdf, max_pdf]
 
-        with Pool() as pool:
-            band_quantiles = pool.map(self._min_max_band, range(self.dim))
-
+        pool = Pool()
+        band_quantiles = pool.map(self._min_max_band, range(self.dim))
+        pool.terminate()
+        pool.close()
+ 
         band_quantiles = list(zip(*band_quantiles))
 
         return band_quantiles
@@ -463,13 +479,13 @@ class HdrBoxplot:
         :param False, int, list samples: Data selector
         :param str fname: export sound to filename
         """
-        duration = frame_rate / 1000
+        duration = frame_rate / 1000.0
         amp = amplitude
-        rate = 44100
-        t = np.linspace(0, duration, duration * rate)
+        rate = 44100.0
+        t = np.linspace(0.0, duration, duration * rate)
 
         def note(freq):
-            data = np.sin(2 * np.pi * freq * t) * amp
+            data = np.sin(2.0 * np.pi * freq * t) * amp
             return data
 
         scaler = MinMaxScaler(feature_range=tone_range)
@@ -488,10 +504,9 @@ class HdrBoxplot:
             song = [np.array(note(d)) for d in dists]
         else:
             data = scaler.fit_transform(data)
-
             song = [np.sum([note(tone) for tone in curve],
                            axis=0) for curve in data]
-
+        
         # two byte integers conversion
         wavfile.write(fname, rate,
                       np.array(song).astype(np.int16).flatten('C'))

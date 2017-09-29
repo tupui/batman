@@ -119,7 +119,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
         n_samples = 50
     elif dim == 2:
         n_samples = 625
-    n_samples = int(np.floor(np.power(n_samples, 1 / dim)))
+    n_samples = int(np.floor(np.power(n_samples, 1.0 / dim)))
 
     grids = [np.linspace(bounds[0][i], bounds[1][i], n_samples) for i in range(dim)]
 
@@ -136,7 +136,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
         data = np.trapz(data[:], xdata) / (np.max(xdata) - np.min(xdata))
 
     if fun is None:
-        data = griddata(sample, data, grids, method='nearest')
+        data = griddata(sample, data, tuple(grids), method='nearest') 
 
     data = data.flatten()
 
@@ -147,7 +147,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
     fig = plt.figure('Response Surface')
 
     if dim == 1:
-        plt.plot(grids, data)
+        plt.plot(grids[0], data)
         plt.ylabel(flabel, fontsize=28)
     elif dim == 2:
         plt.tricontourf(xsample, ysample, data,
