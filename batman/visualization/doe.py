@@ -123,9 +123,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
 
     grids = [np.linspace(bounds[0][i], bounds[1][i], n_samples) for i in range(dim)]
 
-    if dim == 1:
-        grids = grids
-    else:
+    if dim == 2:
         grids = np.meshgrid(*grids)
         xsample, ysample = grids
         xsample = xsample.flatten()
