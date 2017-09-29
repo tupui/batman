@@ -275,7 +275,7 @@ class Space(list):
         doe_cheap = (self.settings['surrogate']['grand_cost'] - n)\
             * self.settings['surrogate']['cost_ratio']
         doe_cheap = int(doe_cheap)
-        if doe_cheap / n <= 1:
+        if doe_cheap / float(n) <= 1:
             self.logger.error('Nc/Ne must be positive')
             raise SystemExit
         self.max_points_nb = n + doe_cheap
