@@ -323,7 +323,7 @@ class Space(list):
                          0.5 * abs(s0[:, None] - s0))
         disc2 = prod_arr.sum()
 
-        c2 = (13 / 12) ** self.dim - 2 / n_s * disc1 + 1 / (n_s ** 2) * disc2
+        c2 = (13.0 / 12.0) ** self.dim - 2.0 / n_s * disc1 + 1.0 / (n_s ** 2) * disc2
 
         return c2
 
