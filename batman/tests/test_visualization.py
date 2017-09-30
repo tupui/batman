@@ -27,16 +27,10 @@ labels, data = np.loadtxt(os.path.join(path, 'functional_dataset/elnino.dat'),
 labels = labels.reshape(-1, 12)[:, 0]
 data = data.reshape(-1, 12)
 
-labels_tahiti, *data_tahiti = np.loadtxt(os.path.join(path, 'functional_dataset/tahiti.dat'),
-                                         skiprows=4, usecols=range(0, 13),
-                                         unpack=True)
-data_tahiti = np.array(data_tahiti).T
-
-
-@pytest.fixture(scope="session")
-def tmp(tmpdir_factory):
-    """Create a common temp directory."""
-    return str(tmpdir_factory.mktemp('tmp_test'))
+#labels_tahiti, *data_tahiti = np.loadtxt(os.path.join(path, 'functional_dataset/tahiti.dat'),
+#                                         skiprows=4, usecols=range(0, 13),
+#                                         unpack=True)
+#data_tahiti = np.array(data_tahiti).T
 
 
 @pytest.fixture(scope="session")
@@ -73,7 +67,7 @@ def test_hdr_basic(hdr, tmp):
 
     npt.assert_almost_equal(quant, quant_t, decimal=0)
 
-    figs, axs = hdr.plot(fname=os.path.join('.', 'hdr_boxplot.pdf'),
+    figs, axs = hdr.plot(fname=os.path.join(tmp, 'hdr_boxplot.pdf'),
                          labels=labels,
                          x_common=np.linspace(1, 12, 12),
                          xlabel='Month of the year (-)',
@@ -175,18 +169,18 @@ def test_hdr_fhops(hdr, tmp):
 
 
 def test_hdr_sound(hdr, tmp):
-    hdr.sound(fname=os.path.join(tmp, 'song-fHOPs.wav'),
+    hdr.sound(fname=os.path.join(tmp, 'song-fHOPs-samples.wav'),
               samples=5, distance=False)
-    _, song = wavfile.read(os.path.join(tmp, 'song-fHOPs.wav'))
-    assert song.shape[0] == 5 * 44100 * 400 / 1000
+    _, song = wavfile.read(os.path.join(tmp, 'song-fHOPs-samples.wav'))
+    assert song.shape[0] == 5 * 44100 * 400 / 1000.0
 
-    hdr.sound(fname=os.path.join(tmp, 'song-fHOPs.wav'),
+    hdr.sound(fname=os.path.join(tmp, 'song-fHOPs-data.wav'),
               samples=data)
 
     frame_rate = 1000
     hdr.sound(frame_rate=frame_rate, fname=os.path.join(tmp, 'song-fHOPs.wav'))
     _, song = wavfile.read(os.path.join(tmp, 'song-fHOPs.wav'))
-    assert song.shape[0] == data.shape[0] * 44100 * frame_rate / 1000
+    assert song.shape[0] == data.shape[0] * 44100 * frame_rate / 1000.0
 
 
 def test_hdr_sample(hdr):
@@ -251,7 +245,7 @@ def test_kiviat_plot(mock_show, kiviat_data, tmp):
 
 
 def test_pdf_1D(tmp):
-    pdf(data[:, 5].reshape(-1, 1), fname=os.path.join('.', 'pdf.pdf'))
+    pdf(data[:, 5].reshape(-1, 1), fname=os.path.join(tmp, 'pdf.pdf'))
 
 
 @patch("matplotlib.pyplot.show")
@@ -290,7 +284,7 @@ def test_sobols_aggregated(mock_show, tmp):
     indices = [fun.s_first, fun.s_total]
     fig = sobol(indices, conf=0.05)
     fig = reshow(fig[0])
-    plt.plot([0, 10], [25, 25])
+    plt.plot([0, 10], [0.5, 0.5])
     fig.show()
     sobol(indices, p_lst=['x1', 't', 'y'], fname=os.path.join(tmp, 'sobol.pdf'))
 
@@ -300,7 +294,8 @@ def test_sobols_map(mock_show):
     fun = Mascaret()
     indices = [fun.s_first, fun.s_total, fun.s_first_full, fun.s_total_full]
     sobol(indices)
-    sobol(indices, p_lst=['Ks', 'Q'], xdata=fun.x)
+    sobol(indices, p_lst=['Ks', 'Q'],
+          xdata=fun.x, fname=os.path.join(tmp, 'sobol_map.pdf'))
 
 
 @patch("matplotlib.pyplot.show")

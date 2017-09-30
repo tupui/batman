@@ -108,7 +108,7 @@ class Doe():
 
     def uniform(self):
         """Uniform sampling."""
-        n_sample = int(np.floor(np.power(self.n_sample, 1 / len(self.bounds[1]))))
+        n_sample = int(np.floor(np.power(self.n_sample, 1.0 / len(self.bounds[1]))))
         n_sample = [n_sample] * len(self.bounds[1])
         n = np.product(n_sample)
         h = [1. / float(n_sample[i] - 1) for i in range(self.dim)]

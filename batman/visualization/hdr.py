@@ -19,7 +19,24 @@ from .doe import doe
 import matplotlib.animation as manimation
 import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
+try:
+    import copyreg
+except ImportError:
+    import copy_reg as copyreg
+import types
+
 np.set_printoptions(precision=3)
+
+
+def _pickle_method(m):
+    """Handle pickling issues with class instance."""
+    if m.im_self is None:
+        return getattr, (m.im_class, m.im_func.func_name)
+    else:
+        return getattr, (m.im_self, m.im_func.func_name)
+
+
+copyreg.pickle(types.MethodType, _pickle_method)
 
 
 class HdrBoxplot:
@@ -159,8 +176,10 @@ class HdrBoxplot:
             max_pdf = 1E6
         self.band = [min_pdf, max_pdf]
 
-        with Pool() as pool:
-            band_quantiles = pool.map(self._min_max_band, range(self.dim))
+        pool = Pool()
+        band_quantiles = pool.map(self._min_max_band, range(self.dim))
+        pool.terminate()
+        pool.close()
 
         band_quantiles = list(zip(*band_quantiles))
 
@@ -276,8 +295,11 @@ class HdrBoxplot:
 
         if self.n_components == 2:
             n_contours = 50
-            grid = np.meshgrid(*[np.linspace(*self.bounds[i], n_contours)
-                                 for i in range(self.n_components)])
+            grid = np.meshgrid(np.linspace(self.bounds[0, 0], self.bounds[0, 1],
+                                           n_contours),
+                               np.linspace(self.bounds[1, 0], self.bounds[1, 1],
+                                           n_contours))
+            xgrid, ygrid = grid
             stack = np.dstack(grid).reshape(-1, self.n_components)
             pdf = np.exp(self.ks_gaussian.score_samples(stack)).flatten()
 
@@ -285,7 +307,7 @@ class HdrBoxplot:
             fig, ax = plt.subplots()
             figures.append(fig)
             axs.append(ax)
-            contour = plt.contour(*grid,
+            contour = plt.contour(xgrid, ygrid,
                                   pdf.reshape((n_contours, n_contours)),
                                   self.pvalues)
             # Labels: probability instead of density
@@ -380,7 +402,7 @@ class HdrBoxplot:
                     'comment': "Functional Hypothetical Outcome Plots at {} ms"
                               .format(frame_rate)}
 
-        writer = movie_writer(fps=1000 / frame_rate, metadata=metadata)
+        writer = movie_writer(fps=1000.0 / frame_rate, metadata=metadata)
 
         fig = plt.figure()
         if x_common is None:
@@ -461,13 +483,13 @@ class HdrBoxplot:
         :param False, int, list samples: Data selector
         :param str fname: export sound to filename
         """
-        duration = frame_rate / 1000
+        duration = frame_rate / 1000.0
         amp = amplitude
         rate = 44100
-        t = np.linspace(0, duration, duration * rate)
+        t = np.linspace(0.0, duration, duration * rate)
 
         def note(freq):
-            data = np.sin(2 * np.pi * freq * t) * amp
+            data = np.sin(2.0 * np.pi * freq * t) * amp
             return data
 
         scaler = MinMaxScaler(feature_range=tone_range)
@@ -486,7 +508,6 @@ class HdrBoxplot:
             song = [np.array(note(d)) for d in dists]
         else:
             data = scaler.fit_transform(data)
-
             song = [np.sum([note(tone) for tone in curve],
                            axis=0) for curve in data]
 

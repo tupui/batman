@@ -2,7 +2,7 @@ stages:
   - test
   - doc
 
-nemo_testing:
+nemo_testing_python_3:
   stage: test
   tags:
     - sshroy.spike.batman
@@ -14,6 +14,19 @@ nemo_testing:
     - tar -cf batman_ci.tar batman
     - scp batman_ci.tar batman/CI_NEMO.sh roy@nemo:~/.
     - bash batman/CI_NEMO.sh
+
+nemo_testing_python_2:
+  stage: test
+  tags:
+    - sshroy.spike.batman
+  only:
+    - master
+    - develop
+  script:
+    - cd ../.
+    - tar -cf batman_ci_2.tar batman
+    - scp batman_ci_2.tar batman/CI_NEMO_2.sh roy@nemo:~/.
+    - bash batman/CI_NEMO_2.sh
 
 pages:
   stage: doc

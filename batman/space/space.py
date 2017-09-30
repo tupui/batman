@@ -275,7 +275,7 @@ class Space(list):
         doe_cheap = (self.settings['surrogate']['grand_cost'] - n)\
             * self.settings['surrogate']['cost_ratio']
         doe_cheap = int(doe_cheap)
-        if doe_cheap / n <= 1:
+        if doe_cheap / float(n) <= 1:
             self.logger.error('Nc/Ne must be positive')
             raise SystemExit
         self.max_points_nb = n + doe_cheap
@@ -323,7 +323,7 @@ class Space(list):
                          0.5 * abs(s0[:, None] - s0))
         disc2 = prod_arr.sum()
 
-        c2 = (13 / 12) ** self.dim - 2 / n_s * disc1 + 1 / (n_s ** 2) * disc2
+        c2 = (13.0 / 12.0) ** self.dim - 2.0 / n_s * disc1 + 1.0 / (n_s ** 2) * disc2
 
         return c2
 

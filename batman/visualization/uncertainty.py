@@ -80,7 +80,7 @@ def pdf(data, xdata=None, labels=['x', 'F'], moments=False, fname=None):
         try:
             f = bat.surrogate.SurrogateModel(data['method'], data['bounds'])
             f.read(data['model'])
-        except TypeError:
+        except (AttributeError, TypeError):
             f = data['model']
         output_len = len(data['bounds'][0])
         sample = np.array(ot.LHSExperiment(data['dist'], 500).generate())
