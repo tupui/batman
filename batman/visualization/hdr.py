@@ -19,13 +19,14 @@ from .doe import doe
 import matplotlib.animation as manimation
 import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
-np.set_printoptions(precision=3)
-
 try:
     import copyreg
 except ImportError:
     import copy_reg as copyreg
 import types
+
+np.set_printoptions(precision=3)
+
 
 def _pickle_method(m):
     """Handle pickling issues with class instance."""
@@ -34,7 +35,9 @@ def _pickle_method(m):
     else:
         return getattr, (m.im_self, m.im_func.func_name)
 
+
 copyreg.pickle(types.MethodType, _pickle_method)
+
 
 class HdrBoxplot:
 
@@ -177,7 +180,7 @@ class HdrBoxplot:
         band_quantiles = pool.map(self._min_max_band, range(self.dim))
         pool.terminate()
         pool.close()
- 
+
         band_quantiles = list(zip(*band_quantiles))
 
         return band_quantiles
@@ -292,9 +295,9 @@ class HdrBoxplot:
 
         if self.n_components == 2:
             n_contours = 50
-            grid = np.meshgrid(np.linspace(self.bounds[0,0], self.bounds[1,0],
+            grid = np.meshgrid(np.linspace(self.bounds[0, 0], self.bounds[0, 1],
                                            n_contours),
-                               np.linspace(self.bounds[0,1], self.bounds[1,1],
+                               np.linspace(self.bounds[1, 0], self.bounds[1, 1],
                                            n_contours))
             xgrid, ygrid = grid
             stack = np.dstack(grid).reshape(-1, self.n_components)
@@ -304,8 +307,7 @@ class HdrBoxplot:
             fig, ax = plt.subplots()
             figures.append(fig)
             axs.append(ax)
-            contour = plt.contour(xgrid, 
-                                  ygrid,
+            contour = plt.contour(xgrid, ygrid,
                                   pdf.reshape((n_contours, n_contours)),
                                   self.pvalues)
             # Labels: probability instead of density
@@ -483,7 +485,7 @@ class HdrBoxplot:
         """
         duration = frame_rate / 1000.0
         amp = amplitude
-        rate = 44100.0
+        rate = 44100
         t = np.linspace(0.0, duration, duration * rate)
 
         def note(freq):
@@ -508,7 +510,7 @@ class HdrBoxplot:
             data = scaler.fit_transform(data)
             song = [np.sum([note(tone) for tone in curve],
                            axis=0) for curve in data]
-        
+
         # two byte integers conversion
         wavfile.write(fname, rate,
                       np.array(song).astype(np.int16).flatten('C'))
