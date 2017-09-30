@@ -290,7 +290,7 @@ def test_sobols_aggregated(mock_show, tmp):
 
 
 @patch("matplotlib.pyplot.show")
-def test_sobols_map(mock_show):
+def test_sobols_map(mock_show, tmp):
     fun = Mascaret()
     indices = [fun.s_first, fun.s_total, fun.s_first_full, fun.s_total_full]
     sobol(indices)
