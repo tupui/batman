@@ -14,6 +14,11 @@ from batman.tests.conftest import tmp
 path = os.path.dirname(os.path.realpath(__file__))
 schema = os.path.join(path, '../batman/misc/schema.json')
 
+if sys.version_info <= (3, 3):
+    user_input = '__builtin__.raw_input'
+else:
+    user_input = 'builtins.input'
+
 
 def check_output(tmp):
     if not os.path.isfile(os.path.join(tmp, 'surrogate/DOE.pdf')):
@@ -98,25 +103,25 @@ def test_checks(tmp, case='Michalewicz'):
     sys.argv = ['batman', 'settings.json', '-o', tmp]
 
     # Restart from snapshots, first enter something incorrect
-    with mock.patch('builtins.input', side_effect=['nope', '', '']):
+    with mock.patch(user_input, side_effect=['nope', '', '']):
         batman.ui.main()
 
     check_output(tmp)
 
     # Remove files and restart
-    with mock.patch('builtins.input', side_effect=['yes', 'yes']):
+    with mock.patch(user_input, side_effect=['yes', 'yes']):
         batman.ui.main()
 
     check_output(tmp)
 
     # Exit without doing anything
-    with mock.patch('builtins.input', side_effect=['no', 'no']):
+    with mock.patch(user_input, side_effect=['no', 'no']):
         with pytest.raises(SystemExit):
             batman.ui.main()
 
     # Exit because no snapshot folder
     shutil.rmtree(os.path.join(tmp, 'snapshots'))
-    with mock.patch('builtins.input', side_effect=['no', 'no']):
+    with mock.patch(user_input, side_effect=['no', 'no']):
         with pytest.raises(SystemExit):
             batman.ui.main()
 
@@ -209,7 +214,7 @@ def test_only_surrogate(tmp, case='Michalewicz'):
     batman.ui.run(settings, options)
 
     # Restart from snapshots
-    with mock.patch('builtins.input', side_effect=['', '']):
+    with mock.patch(user_input, side_effect=['', '']):
         batman.ui.run(settings, options)
 
     check_output(tmp)

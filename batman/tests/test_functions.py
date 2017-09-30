@@ -100,39 +100,6 @@ def test_Mascaret():
     npt.assert_almost_equal(f_out, f_data_base, decimal=2)
 
 
-@patch("matplotlib.pyplot.show")
-def test_Plot(mock_show):
-    f = Branin()
-
-    num = 25
-    x = np.linspace(-5, 10, num=num)
-    y = np.linspace(0, 15, num=num)
-    points = []
-    for i, j in itertools.product(x, y):
-        points += [(float(i), float(j))]
-    pred = f(points)
-    points = np.array(points)
-    x = points[:, 0].flatten()
-    y = points[:, 1].flatten()
-    pred = np.array(pred).flatten()
-
-    # Plotting
-    color = True
-    c_map = cm.viridis if color else cm.gray
-    plt.figure("Expected Improvement")
-    bounds = np.linspace(-17, 300., 30, endpoint=True)
-    plt.tricontourf(x, y, pred, bounds,
-                    antialiased=True, cmap=c_map)
-    cbar = plt.colorbar()
-    cbar.set_label('f', fontsize=28)
-    plt.xlabel(r'$x_1$', fontsize=28)
-    plt.ylabel(r'$x_2$', fontsize=28)
-    plt.tick_params(axis='x', labelsize=26)
-    plt.tick_params(axis='y', labelsize=26)
-    plt.legend(fontsize=26, loc='upper left')
-    plt.show()
-
-
 def test_ChemicalSpill():
     f = ChemicalSpill()
     y = f([10, 0.07, 1.505, 30.1525])

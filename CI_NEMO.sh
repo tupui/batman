@@ -1,6 +1,6 @@
 #!/bin/sh
 #SBATCH --partition prod
-#SBATCH --job-name batci
+#SBATCH --job-name batCI3
 #SBATCH --time=01:20:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24
@@ -22,7 +22,7 @@ if [ ${HOSTNAME:0:4} != 'nemo' ] && [ ${HOSTNAME:0:4} != 'node' ] ; then
       fi
     done
     
-    ssh roy@nemo 'cat slurm*'
+    ssh roy@nemo "cat slurm-$nojob.out"
     status=$(ssh roy@nemo "sacct --format=state -j $nojob | awk 'NR>3 {print $1}'")
     if [ $status = 'FAILED' ] ; then
         exit 1

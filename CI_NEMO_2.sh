@@ -1,6 +1,6 @@
 #!/bin/sh
 #SBATCH --partition prod
-#SBATCH --job-name batci2
+#SBATCH --job-name batCI2
 #SBATCH --time=01:20:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24
