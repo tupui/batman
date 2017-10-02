@@ -69,6 +69,7 @@ def pdf(data, xdata=None, labels=['x', 'F'], moments=False, fname=None):
         - `method`, str, surrogate model method.
         - `dist`, :class:`openturns.ComposedDistribution` instance.
 
+    :param array_like xdata: 1D discretization of the function (n_features,).
     :param list(str) labels: `x` label and `PDF` label.
     :param bool moments: whether to plot moments along with PDF if dim > 1.
     :param str fname: whether to export to filename or display the figures.
@@ -189,12 +190,14 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
     If `len(sobols)>2` map indices are also plotted along with aggregated
     indices.
 
-    :param list(str) p_lst: parameters' names.
     :param array_like sobols: `[first (n_params), total (n_params),
     first (xdata, n_params), total (xdata, n_params)]`.
     :param float/array_like conf: relative error around indices. If float,
     same error is applied for all parameters. Otherwise shape
     ([min, n_features], [max, n_features])
+    :param list(str) p_lst: parameters' names.
+    :param array_like xdata: 1D discretization of the function (n_features,).
+    :param str xlabel: label of the discretization parameter.
     :param str fname: wether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
@@ -247,6 +250,96 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
         for fig in figures:
             pdf.savefig(fig, transparent=True, bbox_inches='tight')
         pdf.close()
+    else:
+        plt.show()
+    plt.close('all')
+
+    return figures
+
+
+def corr_cov(data, sample, xdata, xlabel='x', fname=None):
+    """Correlation and covariance matrices.
+
+    Compute the covariance regarding YY and XY as well as the correlation
+    regarding YY.
+
+    :param array_like data: function evaluations (n_sample, n_features).
+    :param array_like sample: sample (n_samples, n_featrues).
+    :param array_like xdata: 1D discretization of the function (n_features,).
+    :param str xlabel: label of the discretization parameter.
+    :param str fname: wether to export to filename or display the figures.
+    :returns: figure.
+    :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
+    """
+
+    p_len = np.asarray(sample).shape[1]
+    data_len = np.asarray(data).shape[1]
+    data = ot.Sample(data)
+
+    corr_yy = np.array(data.computePearsonCorrelation())
+    cov_yy = np.array(data.computeCovariance())
+    cov_matrix_xy = np.dot((np.mean(sample) - sample).T,
+                           np.mean(data, axis=0) - data) / (len(sample) - 1)
+
+    x_2d_yy, y_2d_yy = np.meshgrid(xdata, xdata)
+    x_2d_xy, y_2d_xy = np.meshgrid(xdata, np.arange(p_len))
+
+    c_map = cm.viridis
+
+    figures = []
+    fig = plt.figure('Covariance-matrix')
+    figures.append(fig)
+    plt.contourf(x_2d_yy, y_2d_yy, cov_yy, cmap=c_map)
+    cbar = plt.colorbar()
+    cbar.set_label(r"Covariance", size=26)
+    cbar.ax.tick_params(labelsize=23)
+    plt.xlabel(xlabel, fontsize=26)
+    plt.ylabel(xlabel, fontsize=26)
+    plt.tick_params(axis='x', labelsize=23)
+    plt.tick_params(axis='y', labelsize=23)
+
+    fig = plt.figure('Correlation-matrix-YY')
+    figures.append(fig)
+    plt.contourf(x_2d_yy, y_2d_yy, corr_yy, cmap=c_map)
+    cbar = plt.colorbar()
+    cbar.set_label(r"Correlation", size=26)
+    cbar.ax.tick_params(labelsize=23)
+    plt.xlabel(xlabel, fontsize=26)
+    plt.ylabel(xlabel, fontsize=26)
+    plt.tick_params(axis='x', labelsize=23)
+    plt.tick_params(axis='y', labelsize=23)
+
+    fig = plt.figure('Covariance-matrix-XY')
+    figures.append(fig)
+    plt.contourf(x_2d_xy, y_2d_xy, cov_matrix_xy, cmap=c_map)
+    cbar = plt.colorbar()
+    cbar.set_label(r"Covariance", size=26)
+    cbar.ax.tick_params(labelsize=23)
+    plt.xlabel(xlabel, fontsize=26)
+    plt.ylabel(xlabel, fontsize=26)
+    plt.tick_params(axis='x', labelsize=23)
+    plt.tick_params(axis='y', labelsize=23)
+
+    plt.tight_layout()
+
+    if fname is not None:
+        pdf = matplotlib.backends.backend_pdf.PdfPages(fname)
+        for fig in figures:
+            pdf.savefig(fig, transparent=True, bbox_inches='tight')
+        pdf.close()
+
+        data = np.append(x_2d_yy, [y_2d_yy, corr_yy, cov_yy])
+        dataset = Dataset(names=['x', 'y', 'Correlation-YY', 'Covariance'],
+                          shape=[data_len, data_len, 1],
+                          data=data)
+        io = IOFormatSelector('fmt_tp_fortran')
+        io.write(fname.split('.')[0] + '-correlation_covariance.dat', dataset)
+
+        data = np.append(x_2d_xy, [y_2d_xy, cov_matrix_xy])
+        dataset = Dataset(names=['x', 'y', 'Correlation-XY'],
+                          shape=[p_len, data_len, 1],
+                          data=data)
+        io.write(fname.split('.')[0] + '-correlation_XY.dat', dataset)
     else:
         plt.show()
     plt.close('all')

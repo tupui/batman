@@ -7,7 +7,7 @@ from scipy.io import wavfile
 import openturns as ot
 from mock import patch
 from batman.visualization import (HdrBoxplot, Kiviat3D, pdf, sobol, reshow,
-                                  response_surface, doe)
+                                  response_surface, doe, corr_cov)
 from batman.surrogate import SurrogateModel
 from batman.functions import Ishigami, Mascaret
 import matplotlib.pyplot as plt
@@ -355,3 +355,12 @@ def test_doe_3D(ishigami_data, tmp):
 def test_doe_mufi(ishigami_data, tmp):
     space = ishigami_data[5]
     doe(space, multifidelity=True, fname=os.path.join(tmp, 'DOE_mufi.pdf'))
+
+
+def test_corr_cov(mascaret_data, tmp):
+    fun = mascaret_data[0]
+    dist = ot.ComposedDistribution(mascaret_data[1], ot.IndependentCopula(2))
+    sample = np.array(ot.LHSExperiment(dist, 500).generate())
+    data = fun(sample)
+    corr_cov(data, sample, fun.x)
+    corr_cov(data, sample, fun.x, fname='./corr_cov.pdf')

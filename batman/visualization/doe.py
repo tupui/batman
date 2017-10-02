@@ -136,14 +136,13 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
         data = np.trapz(data[:], xdata) / (np.max(xdata) - np.min(xdata))
 
     if fun is None:
-        data = griddata(sample, data, tuple(grids), method='nearest') 
+        data = griddata(sample, data, tuple(grids), method='nearest')
 
     data = data.flatten()
 
     if plabels is None:
         plabels = ["x" + str(i) for i in range(dim)]
 
-    c_map = cm.viridis
     fig = plt.figure('Response Surface')
 
     if dim == 1:
@@ -151,7 +150,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
         plt.ylabel(flabel, fontsize=28)
     elif dim == 2:
         plt.tricontourf(xsample, ysample, data,
-                        antialiased=True, cmap=c_map)
+                        antialiased=True, cmap=cm.viridis)
         if doe is not None:
             doe = np.asarray(doe)
             len_sampling = len(doe) - resampling

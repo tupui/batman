@@ -512,29 +512,7 @@ class UQ:
         # Covariance and correlation matrices
         self.logger.info('Creating Covariance/correlation and figures...')
         if (self.output_len != 1) and (self.type_indices != 'block'):
-            corr_yy = np.array(self.output.computePearsonCorrelation())
-            cov_yy = np.array(self.output.computeCovariance())
-
-            x_input_2d, y_input_2d = np.meshgrid(self.f_input, self.f_input)
-            data = np.append(x_input_2d, [y_input_2d, corr_yy, cov_yy])
-            dataset = Dataset(names=['x', 'y', 'Correlation-YY', 'Covariance'],
-                              shape=[self.output_len, self.output_len, 1],
-                              data=data)
-            self.io.write(self.output_folder +
-                          '/correlation_covariance.dat', dataset)
-
-            cov_matrix_XY = np.dot((np.mean(self.sample) - self.sample).T,
-                                   np.mean(self.output, axis=0) - self.output)\
-                                / (self.points_sample - 1)
-
-            x_input_2d, y_input_2d = np.meshgrid(self.f_input,
-                                                 np.arange(self.p_len))
-            data = np.append(x_input_2d, [y_input_2d, cov_matrix_XY])
-            dataset = Dataset(names=['x', 'y', 'Correlation-XY'],
-                              shape=[self.p_len, self.output_len, 1],
-                              data=data)
-            self.io.write(os.path.join(self.output_folder,
-                                       'correlation_XY.dat'), dataset)
+            visualization.corr_cov(self.output, self.sample, self.f_input)
 
         # Create and plot the PDFs + moments
         self.logger.info('Creating PDF and figures...')

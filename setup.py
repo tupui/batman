@@ -1,7 +1,7 @@
 # coding: utf8
 """
-Setup script for JPOD
-=====================
+Setup script for BATMAN
+=======================
 
 This script allows to install jpod within the python environment.
 
@@ -41,8 +41,8 @@ class BuildSphinx(Command):
         import sphinx
         sphinx.build_main(
             ['setup.py', '-b', 'html', './doc', './doc/_build/html'])
-        sphinx.build_main(
-            ['setup.py', '-b', 'man', './doc', './doc/_build/man'])
+        # sphinx.build_main(
+        #     ['setup.py', '-b', 'man', './doc', './doc/_build/man'])
 
 
 class CompileSources(Command):
@@ -59,7 +59,6 @@ class CompileSources(Command):
         pass
 
     def run(self):
-        import os
         os.system('make')
         os.system('make clean')
 
@@ -151,5 +150,6 @@ setup(
     include_package_data=True,
     zip_safe=False,
     license="CERFACS",
-    url=["https://nitrox.cerfacs.fr/open-source/batman"],
+    url=["https://nitrox.cerfacs.fr/open-source/batman",
+         "http://open-source.pg.cerfacs.fr/batman"],
 )

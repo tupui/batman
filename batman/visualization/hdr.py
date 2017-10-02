@@ -3,7 +3,7 @@ High Density Region Boxplot
 ---------------------------
 """
 import logging
-from itertools import (combinations_with_replacement, compress)
+from itertools import compress
 from multiprocessing import Pool
 import numpy as np
 from scipy.optimize import differential_evolution

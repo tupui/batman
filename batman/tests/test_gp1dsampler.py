@@ -1,12 +1,13 @@
 # coding: utf8
-import pytest
+from mock import patch
 from batman.space import Gp1dSampler
 import numpy as np
 import numpy.testing as npt
 import openturns as ot
 
 
-def test_Gp1dSampler(tmp):
+@patch("matplotlib.pyplot.show")
+def test_Gp1dSampler(mock_show, tmp):
     sampler = Gp1dSampler(x=[[0.104], [1.]])
 
     print(sampler)

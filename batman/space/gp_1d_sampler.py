@@ -32,7 +32,6 @@ import openturns as ot
 import numpy as np
 import time
 import os
-plt.switch_backend('Agg')
 
 ot.RandomGenerator.SetSeed(int(time.time() * 1e10))
 
