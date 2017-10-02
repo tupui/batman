@@ -44,11 +44,15 @@ class Doe():
         If :attr:`kind` is ``discrete``, a join distribution between a discrete
         uniform distribution is made with continuous distributions.
 
-        :param int n_sample: number of samples
-        :param np.array bounds: Space's corners [[min, n dim], [max, n dim]]
-        :param str kind: Sampling Method ['halton', 'sobol', 'faure', 'lhs[c]',
-                                          'sobolscramble', 'uniform', discrete]
-        :param int var: Position of the discrete variable
+        Another possibility is to set a list of PDF to sample from. Thus one
+        can do: `kind=['Uniform(15., 60.)', 'Normal(4035., 400.)']`.
+
+        :param int n_sample: number of samples.
+        :param array_like bounds: Space's corners [[min, n dim], [max, n dim]]
+        :param str/list kind: Sampling Method if string can be one of 
+        ['halton', 'sobol', 'faure', 'lhs[c]', 'sobolscramble', 'uniform',
+        'discrete'] otherwize can be a list of openturns distributions.
+        :param int var: Position of the discrete variable.
         :return: Sampling
         :rtype: lst(array)
         """
@@ -80,6 +84,12 @@ class Doe():
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
                                                              distribution,
                                                              self.n_sample)
+        elif isinstance(self.kind, list):
+            dists = ','.join(['ot.' + self.kind[i] for i in range(self.dim)])
+            distribution = eval("ot.ComposedDistribution([" + dists + "])")
+            self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
+                                                             distribution,
+                                                             self.n_sample)
 
     def generate(self):
         """Generate the DOE."""
@@ -89,15 +99,17 @@ class Doe():
             sample = self.scrambled_sobol_generate()
         elif self.kind == 'uniform':
             sample = self.uniform()
+        elif isinstance(self.kind, list):
+            return np.array(self.sequence_type.generate())
         else:
             sample = self.sequence_type.generate(self.n_sample)
 
         # Scale the DOE from [0, 1] to bounds
         b = self.bounds[0]
         a = self.bounds[1] - b
-        if self.kind == 'lhsc':    
+        if self.kind == 'lhsc':
             r = a * ((np.floor_divide(sample, (1. / self.n_sample)) + 1)
-                          - 0.5) / self.n_sample + b
+                     - 0.5) / self.n_sample + b
         else:
             r = a * sample + b
 

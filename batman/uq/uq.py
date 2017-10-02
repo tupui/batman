@@ -115,11 +115,9 @@ class UQ:
 
         # Generate samples
         self.points_sample = settings['uq']['sample']
-        input_pdf = ','.join(['ot.' + settings['uq']['pdf'][i]
+        dists = ','.join(['ot.' + settings['uq']['pdf'][i]
                               for i in range(self.p_len)])
-        self.distribution = eval("ot.ComposedDistribution(["
-                                 + input_pdf
-                                 + "], ot.IndependentCopula(self.p_len))")
+        self.distribution = eval("ot.ComposedDistribution([" + dists + "])")
         self.experiment = ot.LHSExperiment(self.distribution,
                                            self.points_sample,
                                            True, True)

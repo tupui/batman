@@ -271,7 +271,6 @@ def corr_cov(data, sample, xdata, xlabel='x', fname=None):
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """
-
     p_len = np.asarray(sample).shape[1]
     data_len = np.asarray(data).shape[1]
     data = ot.Sample(data)
