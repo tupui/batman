@@ -133,7 +133,9 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
 
     Snapshot.initialize(settings_ishigami['snapshot']['io'])
 
-    surrogate = SurrogateModel('pc', space.corners)
+    # PC
+    pc_settings = {'total_deg': 10, 'strategy': 'LS', 'distributions': dists}
+    surrogate = SurrogateModel('pc', space.corners, pc=pc_settings)
     surrogate.fit(space, target_space)
     pred, sigma = surrogate(point)
     assert sigma is None
@@ -142,6 +144,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
         assert False
 
+    # Kriging
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
     surrogate.write(tmp)

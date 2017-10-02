@@ -9,6 +9,7 @@ from pathos.multiprocessing import (cpu_count, ProcessPool)
 from ..functions import multi_eval
 import logging
 import openturns as ot
+import os
 
 
 class PC(object):
@@ -49,8 +50,8 @@ class PC(object):
         if n_cpu_system // self.model_len < 1:
             self.n_cpu = n_cpu_system
 
-        if function:
-            self.logger.info("Polynomial Chaos without prior input/output")
+        if function is not None:
+            self.logger.info("Polynomial Chaos using custom configuration")
             in_dim = len(input_dists)
             if out_dim > 1:
                 def wrap_fun(x):
@@ -59,6 +60,9 @@ class PC(object):
                 def wrap_fun(x):
                     return [function(x)]
             model = ot.PythonFunction(in_dim, out_dim, wrap_fun)
+
+        if (output is not None) or (function is not None):
+            in_dim = len(input_dists)
 
             # distributions
             correl = ot.CorrelationMatrix(in_dim)
@@ -88,6 +92,10 @@ class PC(object):
 
             # strategy choice for expansion coefficient determination
             if strategy == "LS":   # least-squares method
+                try:
+                    n_sample = len(output)
+                except TypeError:
+                    pass
                 montecarlo_design = ot.MonteCarloExperiment(input_dists, n_sample)
                 proj_strategy = ot.LeastSquaresStrategy(montecarlo_design)
 
@@ -107,16 +115,27 @@ class PC(object):
                                       .format(strategy))
                 raise SystemExit
 
-            pc_algo = ot.FunctionalChaosAlgorithm(model, input_dists,
-                                                  trunc_strategy, proj_strategy)
-            pc_algo.run()
+            if function is not None:
+                pc_algo = ot.FunctionalChaosAlgorithm(model, input_dists,
+                                                      trunc_strategy,
+                                                      proj_strategy)
+            else:
+                input = ot.Sample(input)
+                output = ot.Sample(output.reshape(len(output), -1))
+                pc_algo = ot.FunctionalChaosAlgorithm(input, output,
+                                                      input_dists,
+                                                      trunc_strategy,
+                                                      proj_strategy)
+
             self.sample = np.array(pc_algo.getInputSample())
+            pc_algo.run()
             self.pc_result = pc_algo.getResult()
             self.pc = [self.pc_result.getMetaModel()]
         else:
-            self.logger.info("Polynomial Chaos with prior input/output")
+            self.logger.info("Polynomial Chaos with only input/output")
+
             def model_fitting(column):
-                column = column.reshape((len(input), 1))
+                column = column.reshape((-1, 1))
                 pc_algo = ot.FunctionalChaosAlgorithm(input, column)
                 pc_algo.run()
                 pc_result = pc_algo.getResult()
@@ -133,6 +152,10 @@ class PC(object):
 
             self.pc, self.pc_result = zip(*results)
             self.logger.info("Done")
+
+    # def _custom_configuration(self):
+
+
 
     @multi_eval
     def evaluate(self, point):
