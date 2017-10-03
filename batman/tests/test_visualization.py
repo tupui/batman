@@ -16,7 +16,7 @@ try:
     import matplotlib.animation as manimation
     manimation.writers['ffmpeg']
     have_ffmpeg = True
-except KeyError:
+except (RuntimeError, KeyError):
     have_ffmpeg = False
 
 # Water surface temperature data from:
