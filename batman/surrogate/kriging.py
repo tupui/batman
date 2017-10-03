@@ -60,9 +60,10 @@ class Kriging(object):
         In the end, there is :math:`N=n_{restart} \times n_{modes})` processes.
         If there is not enought CPU, :math:`N=\frac{n_{cpu}}{n_restart}`.
 
-        :param ndarray input: The input used to generate the output. (nb snapshots, nb parameters)
-        :param ndarray output: The observed data. (nb snapshots, [nb output dim])
-
+        :param array_like input: The input used to generate the output.
+        (n_samples, n_parameters)
+        :param array_like output: The observed data.
+        (n_samples, [n_features])
         """
         try:
             input[0][0]
@@ -95,7 +96,7 @@ class Kriging(object):
         def model_fitting(column):
             gp = GaussianProcessRegressor(kernel=self.kernel,
                                           n_restarts_optimizer=0,
-                                          optimizer=self.optim_evolution)
+                                          optimizer=self._optim_evolution)
             data = gp.fit(input, column)
             hyperparameter = np.exp(gp.kernel_.theta)
 
@@ -115,7 +116,7 @@ class Kriging(object):
 
         self.logger.debug("Hyperparameters: {}".format(self.hyperparameter))
 
-    def optim_evolution(self, obj_func, initial_theta, bounds):
+    def _optim_evolution(self, obj_func, initial_theta, bounds):
         """Genetic optimization of the hyperparameters.
 
         Use DE strategy to optimize theta. The process
@@ -165,7 +166,6 @@ class Kriging(object):
         :rtype: lst
         :return: The standard deviations.
         :rtype: lst
-
         """
         point_array = np.asarray(point).reshape(1, -1)
         prediction = np.empty((self.model_len))

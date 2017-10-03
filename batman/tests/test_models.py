@@ -13,13 +13,24 @@ from batman.tests.conftest import sklearn_q2
 def test_PC_1d(ishigami_data):
     f_3d, dists, model, point, target_point, space, target_space = ishigami_data
 
-    surrogate = PC(function=f_3d, input_dists=dists,
-                   out_dim=1, n_sample=1000, total_deg=10, strategy='LS')
+    surrogate = PC(dists=dists, n_sample=1000, total_deg=10, strategy='LS')
+    input_ = surrogate.sample
+    assert len(input_) == 1000
+    output = f_3d(input_)
+    surrogate.fit(input_, output)
     pred = np.array(surrogate.evaluate(point))
     assert pred == pytest.approx(target_point, 0.01)
 
-    surrogate = PC(function=f_3d, input_dists=dists,
-                   out_dim=1, total_deg=10, strategy='Quad')
+    # Compute predictivity coefficient Q2
+    surrogate = ot.PythonFunction(3, 1, surrogate.evaluate)
+    q2 = sklearn_q2(dists, model, surrogate)
+    assert q2 == pytest.approx(1, 0.1)
+
+    surrogate = PC(dists=dists, total_deg=10, strategy='Quad')
+    input_ = surrogate.sample
+    assert len(input_) == 1331
+    output = f_3d(input_)
+    surrogate.fit(input_, output)
     pred = np.array(surrogate.evaluate(point))
     assert pred == pytest.approx(target_point, 0.01)
 
