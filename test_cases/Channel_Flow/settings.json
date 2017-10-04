@@ -5,8 +5,8 @@
             [60.0, 6000.0]
         ],
         "sampling": {
-            "init_size": 4,
-            "method": "halton"
+            "init_size": 11,
+            "method": ["Uniform(15., 60.)", "BetaMuSigma(4035, 400, 2500, 6000).getDistribution()"]
         },
         "resampling":{
             "delta_space": 0.08,
@@ -51,7 +51,9 @@
     },
     "surrogate": {
         "predictions": [[30, 4000]],
-        "method": "kriging"
+        "method": "pc",
+        "strategy": "Quad",
+        "degree": 10
     },
     "uq": {
         "sample": 1000,

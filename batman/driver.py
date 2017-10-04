@@ -23,11 +23,11 @@ import os
 import numpy as np
 import pickle
 from concurrent import futures
-
+import openturns as ot
 from collections import OrderedDict
 from .pod import Pod
 from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
-from .surrogate import SurrogateModel
+from .surrogate import (SurrogateModel, PC)
 from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
 
@@ -53,10 +53,9 @@ class Driver(object):
 
         From settings, init snapshot, space and POD.
 
-        :param dict settings: settings
-        :param str script: settings path
-        :param str output: output path
-
+        :param dict settings: settings.
+        :param str script: settings path.
+        :param str output: output path.
         """
         self.settings = settings
         self.output = output
@@ -122,8 +121,27 @@ class Driver(object):
 
         # Surrogate model
         try:
+            if self.settings['surrogate']['method'] == 'pc':
+                dists = self.settings['space']['sampling']['method']
+                dists = [eval("ot." + dist) for dist in dists]
+                settings_ = {'strategy': self.settings['surrogate']['strategy'],
+                             'degree': self.settings['surrogate']['degree'],
+                             'distributions': dists,
+                             'n_sample': self.settings['space']['sampling']['init_size']}
+                pc = PC(**settings_)
+                self.space.empty()
+                try:
+                    self.space += pc.sample
+                except (AlienPointError, UnicityError, FullSpaceError) as tb:
+                    self.logger.warning("Ignoring: {}".format(tb))
+                finally:
+                    self.to_compute_points = pc.sample[:len(self.space)]
+            else:
+                settings_ = {}
+
             self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                            self.settings['space']['corners'])
+                                            self.settings['space']['corners'],
+                                            **settings_)
         except KeyError:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')

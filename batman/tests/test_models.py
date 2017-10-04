@@ -94,7 +94,6 @@ def test_PC_14d(mascaret_data):
     pred = np.array(surrogate.evaluate(point)).reshape(14)
     npt.assert_almost_equal(target_point, pred, decimal=1)
 
-    # dists[1] = ot.BetaMuSigma(4035, 400, 2500, 6000).getDistribution()
     surrogate = PC(distributions=dists, degree=10, strategy='Quad')
     input_ = surrogate.sample
     output = f(input_)
@@ -136,12 +135,12 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     Snapshot.initialize(settings_ishigami['snapshot']['io'])
 
     # PC
-    surrogate = PC(distributions=dists, n_sample=500, degree=10, strategy='LS')
+    pc_settings = {'strategy': 'LS', 'degree': 10,
+                   'distributions': dists, 'n_sample': 500}
+    surrogate = PC(**pc_settings)
     input_ = surrogate.sample
     output = f_3d(input_)
     surrogate.fit(input_, output)
-    pc_settings = {'strategy': 'LS', 'degree': 10,
-                   'distributions': dists, 'n_sample': 500}
     surrogate = SurrogateModel('pc', space.corners, **pc_settings)
     surrogate.fit(input_, output)
     pred, sigma = surrogate(point)

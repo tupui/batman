@@ -269,6 +269,17 @@
           "default": 30,
           "minimum": 4,
           "exclusiveMinimum": false
+        },
+        "strategy": {
+          "type": "string",
+          "default": "Quad",
+          "enum": ["Quad", "LS"]
+        },
+        "degree": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 1,
+          "exclusiveMinimum": false
         }
       },
       "required": [
