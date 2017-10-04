@@ -19,32 +19,33 @@ class PC(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, strategy, total_deg, dists, n_sample=None):
+    def __init__(self, strategy, degree, distributions, n_sample=None):
         """Generate truncature and projection strategies.
 
         Allong with the strategies the sample is storred as an attribute:
         :attr:`sample`.
 
         :param str strategy: Least square or Quadrature ['LS', 'Quad'].
-        :param int total_deg: Degree of the polynome.
-        :param lst(:class:`openturns.Distribution`) dists: distributions of
-        each input parameter.
+        :param int degree: Polynomial degree.
+        :param lst(:class:`openturns.Distribution`) distributions:
+        Distributions of each input parameter.
         :param int n_sample: Number of samples for least square.
         """
-        in_dim = len(dists)
+        in_dim = len(distributions)
 
         # distributions
         correl = ot.CorrelationMatrix(in_dim)
         copula = ot.NormalCopula.GetCorrelationFromSpearmanCorrelation(correl)
         in_copula = ot.NormalCopula(copula)
-        self.dist = ot.ComposedDistribution(dists, in_copula)
+        self.dist = ot.ComposedDistribution(distributions, in_copula)
 
         # Choice of orthogonal polynomial families
         # Hermite <-> gaussian, Legendre <-> uniform
         poly_coll = ot.PolynomialFamilyCollection(in_dim)
 
         for i in range(in_dim):
-            poly_coll[i] = ot.StandardDistributionPolynomialFactory(self.dist.getMarginal(i))
+            poly_coll[i] = ot.StandardDistributionPolynomialFactory(
+                self.dist.getMarginal(i))
 
         # Polynomial index definition
         poly_index = ot.LinearEnumerateFunction(in_dim)
@@ -54,38 +55,35 @@ class PC(object):
         multivar_basis = ot.OrthogonalProductPolynomialFactory(poly_coll,
                                                                poly_index)
         basis = ot.OrthogonalBasis(multivar_basis)
-        dim_basis = poly_index.getStrataCumulatedCardinal(total_deg)
+        dim_basis = poly_index.getStrataCumulatedCardinal(degree)
 
         # Strategy choice for truncature of the orthonormal basis
         self.trunc_strategy = ot.FixedStrategy(basis, dim_basis)
 
         # Strategy choice for expansion coefficient determination
         self.strategy = strategy
-        if self.strategy == "LS":      # least-squares method
+        if self.strategy == "LS": # least-squares method
             montecarlo_design = ot.MonteCarloExperiment(self.dist, n_sample)
             self.proj_strategy = ot.LeastSquaresStrategy(montecarlo_design)
             self.sample = np.array(self.proj_strategy.getExperiment().generate())
-        elif self.strategy == "Quad":  # integration method
+        else:  # integration method
             # redefinition of sample size
-            # n_sample = (total_deg + 1) ** in_dim
+            # n_sample = (degree + 1) ** in_dim
             # marginal degree definition
             # by default: the marginal degree for each input random
-            # variable is set to the total polynomial degree 'total_deg'+1
+            # variable is set to the total polynomial degree 'degree'+1
             measure = basis.getMeasure()
             quad = ot.Indices(in_dim)
             for i in range(in_dim):
-                quad[i] = total_deg + 1
+                quad[i] = degree + 1
 
-            self.proj_strategy = ot.IntegrationStrategy(ot.GaussProductExperiment(measure, quad))
+            self.proj_strategy = ot.IntegrationStrategy(
+                ot.GaussProductExperiment(measure, quad))
 
             # Convert from [-1, 1] -> input distributions
-            marg_inv_transf = ot.MarginalTransformationEvaluation(dists, 1)
+            marg_inv_transf = ot.MarginalTransformationEvaluation(distributions, 1)
             sample = (self.proj_strategy.getExperiment().generate() + 1) / 2.
             self.sample = np.array(marg_inv_transf(sample))
-        else:
-            self.logger.exception("Not implemented strategy: {}"
-                                  .format(self.strategy))
-            raise SystemExit
 
     def fit(self, input, output):
         """Create the predictor.

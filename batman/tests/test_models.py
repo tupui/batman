@@ -13,7 +13,7 @@ from batman.tests.conftest import sklearn_q2
 def test_PC_1d(ishigami_data):
     f_3d, dists, model, point, target_point, space, target_space = ishigami_data
 
-    surrogate = PC(dists=dists, n_sample=500, total_deg=10, strategy='LS')
+    surrogate = PC(distributions=dists, n_n_sample=500, degree=10, strategy='LS')
     input_ = surrogate.sample
     assert len(input_) == 500
     output = f_3d(input_)
@@ -26,7 +26,7 @@ def test_PC_1d(ishigami_data):
     q2 = sklearn_q2(dists, model, surrogate)
     assert q2 == pytest.approx(1, 0.1)
 
-    surrogate = PC(dists=dists, total_deg=10, strategy='Quad')
+    surrogate = PC(distributions=dists, degree=10, strategy='Quad')
     input_ = surrogate.sample
     assert len(input_) == 1331
     output = f_3d(input_)
@@ -87,7 +87,7 @@ def test_RBFnet_1d(ishigami_data):
 def test_PC_14d(mascaret_data):
     f, dists, model, point, target_point, space, target_space = mascaret_data
 
-    surrogate = PC(dists=dists, n_sample=100, total_deg=10, strategy='LS')
+    surrogate = PC(distributions=dists, n_sample=100, degree=10, strategy='LS')
     input_ = surrogate.sample
     output = f(input_)
     surrogate.fit(input_, output)
@@ -95,7 +95,7 @@ def test_PC_14d(mascaret_data):
     npt.assert_almost_equal(target_point, pred, decimal=1)
 
     # dists[1] = ot.BetaMuSigma(4035, 400, 2500, 6000).getDistribution()
-    surrogate = PC(dists=dists, total_deg=10, strategy='Quad')
+    surrogate = PC(distributions=dists, degree=10, strategy='Quad')
     input_ = surrogate.sample
     output = f(input_)
     surrogate.fit(input_, output)
@@ -136,10 +136,13 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     Snapshot.initialize(settings_ishigami['snapshot']['io'])
 
     # PC
-    pc_settings = {'total_deg': 10, 'strategy': 'LS', 'distributions': dists}
-    surrogate = SurrogateModel('pc', space.corners, pc=pc_settings)
+    surrogate = PC(distributions=dists, n_sample=500, degree=10, strategy='LS')
     input_ = surrogate.sample
     output = f_3d(input_)
+    surrogate.fit(input_, output)
+    pc_settings = {'strategy': 'LS', 'degree': 10,
+                   'distributions': dists, 'n_sample': 500}
+    surrogate = SurrogateModel('pc', space.corners, **pc_settings)
     surrogate.fit(input_, output)
     pred, sigma = surrogate(point)
     assert sigma is None

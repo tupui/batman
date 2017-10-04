@@ -44,13 +44,24 @@ class SurrogateModel(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, kind, corners, pc=None):
+    def __init__(self, kind, corners, **kwargs):
         """Init Surrogate model.
 
         :param np.array corners: space corners to normalize.
         :param str kind: name of prediction method, rbf or kriging.
-        :param np.array corners: parameter space corners (2 points extrema, n_features).
+        :param np.array corners: parameter space corners
+        (2 points extrema, n_features).
         :param dict pc: configuration of polynomial chaos.
+        :param \**kwargs: See below
+
+        :Keyword Arguments: For Polynomial Chaos the following keywords are
+        available
+
+            - 'strategy', str. Least square or Quadrature ['LS', 'Quad'].
+            - 'degree', int. Polynomial degree.
+            - 'distributions', lst(:class:`openturns.Distribution`).
+              Distributions of each input parameter.
+            - 'n_sample', int. Number of samples for least square.
         """
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
@@ -68,7 +79,7 @@ class SurrogateModel(object):
             'snapshot': 'Newsnap{}'
         }
 
-        self.pc = pc
+        self.settings = kwargs
 
     def fit(self, points, data, pod=None):
         """Construct the surrogate.
@@ -91,13 +102,11 @@ class SurrogateModel(object):
         elif self.kind == 'kriging':
             self.predictor = Kriging(points_scaled, data)
         elif self.kind == 'pc':
-            if self.pc is None:
-                self.logger.error('PC configuration is missing.')
-                raise SystemExit
-            self.predictor = PC(input=points_scaled, output=data,
-                                input_dists=self.pc['distributions'],
-                                strategy=self.pc['strategy'],
-                                total_deg=self.pc['total_deg'])
+            self.predictor = PC(strategy=self.settings['strategy'],
+                                degree=self.settings['degree'],
+                                distributions=self.settings['distributions'],
+                                n_sample=self.settings['n_sample'])
+            self.predictor.fit(points_scaled, data)
         elif self.kind == 'evofusion':
             self.predictor = Evofusion(points_scaled, data)
             self.space.multifidelity = True
