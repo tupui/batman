@@ -5,7 +5,8 @@ Polynomial Chaos class
 
 """
 import numpy as np
-from pathos.multiprocessing import (cpu_count, ProcessPool)
+from pathos.multiprocessing import cpu_count
+from ..misc import NestedPool
 from ..functions import multi_eval
 import logging
 import openturns as ot
@@ -59,11 +60,12 @@ class PC(object):
         self.trunc_strategy = ot.FixedStrategy(basis, dim_basis)
 
         # Strategy choice for expansion coefficient determination
-        if strategy == "LS":      # least-squares method
+        self.strategy = strategy
+        if self.strategy == "LS":      # least-squares method
             montecarlo_design = ot.MonteCarloExperiment(self.dist, n_sample)
             self.proj_strategy = ot.LeastSquaresStrategy(montecarlo_design)
             self.sample = np.array(self.proj_strategy.getExperiment().generate())
-        elif strategy == "Quad":  # integration method
+        elif self.strategy == "Quad":  # integration method
             # redefinition of sample size
             # n_sample = (total_deg + 1) ** in_dim
             # marginal degree definition
@@ -82,7 +84,7 @@ class PC(object):
             self.sample = np.array(marg_inv_transf(sample))
         else:
             self.logger.exception("Not implemented strategy: {}"
-                                  .format(strategy))
+                                  .format(self.strategy))
             raise SystemExit
 
     def fit(self, input, output):
@@ -116,19 +118,22 @@ class PC(object):
 
         def model_fitting(column):
             column = column.reshape((-1, 1))
-            pc_algo = ot.FunctionalChaosAlgorithm(input, column, self.dist,
-                                                  self.trunc_strategy)#,
-                                                  # self.proj_strategy)
+            if self.strategy == 'Quad':
+                pc_algo = ot.FunctionalChaosAlgorithm(input, column)
+            else:
+                pc_algo = ot.FunctionalChaosAlgorithm(input, column, self.dist,
+                                                      self.trunc_strategy)
             pc_algo.run()
             pc_result = pc_algo.getResult()
             pc = pc_result.getMetaModel()
             return pc, pc_result
 
         if self.model_len > 1:
-            pool = ProcessPool(self.n_cpu)
-            results = pool.map(model_fitting, output)
-            results = list(results)
-            pool.terminate()
+            # pool = NestedPool(self.n_cpu)
+            # results = pool.imap(model_fitting, output.T)
+            # results = list(results)
+            # pool.terminate()
+            results = [model_fitting(out) for out in output.T]
         else:
             results = [model_fitting(output)]
 
