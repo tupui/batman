@@ -13,13 +13,20 @@
         "sampling": {
           "anyOf":[
           {
-
             "type": "object",
             "properties": {
               "method": {
-                "type": "string",
-                "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", "discrete"],
-                "default": "halton"
+                "anyOf":[
+                  {
+                    "type": "string",
+                    "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", "discrete"],
+                    "default": "halton"
+                  },
+                  {
+                    "type": "array",
+                    "items": {}
+                  }
+                ]
               },
               "init_size": {
                 "type": "integer",
