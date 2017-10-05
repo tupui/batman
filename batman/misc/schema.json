@@ -240,5 +240,22 @@
       "required": ["sample", "pdf", "type", "method"]
     }
   },
-  "required": ["space", "snapshot"]
+  "required": ["space", "snapshot"],
+  "oneOf": [
+    {
+      "properties": {"surrogate": {"properties": {"method": {"enum":["pc"]}}},
+                     "space": {"properties":
+                      {"sampling": {"properties":
+                        {"method": {"type": "array", "items": {}}}}}
+                      },
+                     "space": {"properties":
+                      {"resampling": {"properties":
+                        {"resamp_size": {"type": "integer", "maximum": 0}}}}
+                      }                      
+                    }
+    },
+    {
+      "properties": {"surrogate": {"properties": {"method": {"enum":["evofusion", "kriging"]}}}}
+    }
+  ] 
 }
