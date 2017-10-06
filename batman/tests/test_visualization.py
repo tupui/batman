@@ -363,5 +363,5 @@ def test_corr_cov(mock_show, mascaret_data, tmp):
     dist = ot.ComposedDistribution(mascaret_data[1], ot.IndependentCopula(2))
     sample = np.array(ot.LHSExperiment(dist, 500).generate())
     data = fun(sample)
-    corr_cov(data, sample, fun.x, plabels=['Ks', 'Q'])
+    corr_cov(data, sample, fun.x, interpolation='lanczos', plabels=['Ks', 'Q'])
     corr_cov(data, sample, fun.x, fname='./corr_cov.pdf')

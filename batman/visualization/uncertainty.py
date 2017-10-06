@@ -257,7 +257,7 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
     return figures
 
 
-def corr_cov(data, sample, xdata, xlabel='x', plabels=None, fname=None):
+def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None, fname=None):
     """Correlation and covariance matrices.
 
     Compute the covariance regarding YY and XY as well as the correlation
@@ -268,6 +268,9 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, fname=None):
     :param array_like xdata: 1D discretization of the function (n_features,).
     :param str xlabel: label of the discretization parameter.
     :param list(str) plabels: parameters' labels.
+    :param str interpolation: If None, does not interpolate correlation and
+    covariance matrices (YY). Otherwize use Matplotlib methods from `imshow`
+    such as `['bilinear', 'lanczos', 'spline16', 'hermite', ...]`.
     :param str fname: wether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
@@ -292,8 +295,8 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, fname=None):
     fig, ax = plt.subplots()
     figures.append(fig)
     axs.append(ax)
-    plt.contourf(x_2d_yy, y_2d_yy, cov_yy, cmap=c_map)
-    cbar = plt.colorbar()
+    cax = ax.imshow(cov_yy, cmap=c_map, interpolation='bilinear', origin='lower')
+    cbar = fig.colorbar(cax)
     cbar.set_label(r"Covariance", size=26)
     cbar.ax.tick_params(labelsize=23)
     plt.xlabel(xlabel, fontsize=26)
@@ -304,8 +307,8 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, fname=None):
     # Correlation matrix YY
     fig, ax = plt.subplots()
     figures.append(fig)
-    plt.contourf(x_2d_yy, y_2d_yy, corr_yy, cmap=c_map)
-    cbar = plt.colorbar()
+    cax = ax.imshow(corr_yy, cmap=c_map, interpolation='bilinear', origin='lower')
+    cbar = fig.colorbar(cax)
     cbar.set_label(r"Correlation", size=26)
     cbar.ax.tick_params(labelsize=23)
     plt.xlabel(xlabel, fontsize=26)
@@ -322,7 +325,7 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, fname=None):
     fig, ax = plt.subplots()
     figures.append(fig)
     axs.append(ax)
-    cax = ax.imshow(cov_matrix_xy, cmap=c_map, interpolation="nearest")
+    cax = ax.imshow(cov_matrix_xy, cmap=c_map, interpolation='nearest')
     ax.set_yticklabels(plabels, fontsize=6)
     cbar = fig.colorbar(cax)
     cbar.set_label(r"Covariance", size=26)
