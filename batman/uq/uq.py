@@ -73,7 +73,8 @@ class UQ:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, settings, surrogate, space=None, data=None, output=None):
+    def __init__(self, settings, surrogate, space=None, data=None, xdata=None,
+                 fname=None):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -88,20 +89,21 @@ class UQ:
 
         Also, it creates the `model` and `int_model` as `ot.PythonFunction()`.
 
-        :param dict settings: The settings file
-        :param class:`surrogate.surrogate_model.SurrogateModel` surrogate: a surrogate
-        :param class:`space.space.Space` space: sample space (can be a list)
-        :param np.array data: snapshot's data
-        :param str output: output path
+        :param dict settings: The settings file.
+        :param class:`surrogate.surrogate_model.SurrogateModel` surrogate: 1 surrogate.
+        :param class:`space.space.Space` space: sample space (can be a list).
+        :param array_like data: Snapshot's data (n_samples, n_features).
+        :param array_like xdata: 1D discretization of the function (n_features,).
+        :param str fname: folder output path
         """
         self.logger.info("\n----- UQ module -----")
         try:
             self.test = settings['uq']['test']
         except KeyError:
             self.test = None
-        self.output_folder = output
+        self.output_folder = fname
         try:
-            os.mkdir(output)
+            os.mkdir(fname)
         except OSError:
             self.logger.debug("Output folder already exists.")
         except TypeError:
@@ -121,8 +123,7 @@ class UQ:
                                  + input_pdf
                                  + "], ot.IndependentCopula(self.p_len))")
         self.experiment = ot.LHSExperiment(self.distribution,
-                                           self.points_sample,
-                                           True, True)
+                                           self.points_sample, True, True)
         self.sample = self.experiment.generate()
         self.logger.info("Created {} samples with an LHS experiment"
                          .format(self.points_sample))
@@ -132,35 +133,29 @@ class UQ:
         except KeyError:
             self.resamp_size = 0
 
-        # Get discretization if functionnal output
         try:
             # With surrogate model
             try:
                 # Functional output
                 f_eval, _ = self.surrogate(self.sample[0])
-                self.f_input, _ = np.split(f_eval[0], 2)
-                self.output_len = len(self.f_input)
+                self.output_len = len(f_eval[0])
             except ValueError:
-                self.f_input = None
                 self.output_len = 1
 
             self.model = self.func
-            self.output = ot.Sample(self.model(self.sample))
+            self.output = self.model(self.sample)
             self.init_size = self.surrogate.space.doe_init
         except TypeError:
             self.sample = space
             self.init_size = len(space) - self.resamp_size
-            try:
-                f_input, output = np.split(np.array(data), 2, axis=1)
-                self.f_input = f_input[0]
-                self.output_len = len(self.f_input)
-            except ValueError:
-                self.f_input = None
-                self.output_len = 1
-                output = data
-
-            self.output = ot.Sample(output)
+            self.output_len = data.shape[1]
+            self.output = data
             self.points_sample = self.init_size
+
+        if xdata is None:
+            self.xdata = np.linspace(0, 1, self.output_len)
+        else:
+            self.xdata = xdata
 
     def __repr__(self):
         """Information about object."""
@@ -179,11 +174,7 @@ class UQ:
 
         """
         f_eval, _ = self.surrogate(coords)
-        try:
-            _, f_eval = np.split(f_eval[0], 2)
-        except:
-            pass
-        return f_eval
+        return f_eval[0]
 
     @multi_eval
     def int_func(self, coords):
@@ -198,12 +189,8 @@ class UQ:
 
         """
         f_eval, _ = self.surrogate(coords)
-        try:
-            f_input, f_eval = np.split(f_eval[0], 2)
-            int_f_eval = np.trapz(f_eval, f_input)
-        except:
-            int_f_eval = f_eval
-        return int_f_eval
+        f_eval = np.trapz(f_eval[0])
+        return f_eval
 
     def error_model(self, indices, function):
         r"""Compute the error between the POD and the analytic function.
@@ -386,7 +373,7 @@ class UQ:
                 names += ['S_T_' + str(p)]
             if (self.output_len != 1) and (self.type_indices != 'block'):
                 full_names = ['x'] + names
-                data = np.append(self.f_input, data)
+                data = np.append(self.xdata, data)
             else:
                 full_names = names
 
@@ -485,7 +472,7 @@ class UQ:
                             indices[1], indices[2]]
             path = os.path.join(self.output_folder, 'sensitivity.pdf')
             visualization.sobol(full_indices, p_lst=self.p_lst, conf=conf,
-                                xdata=self.f_input, fname=path)
+                                xdata=self.xdata, fname=path)
 
         # Compute error of the POD with a known function
         if (self.type_indices in ['aggregated', 'block']) and (self.test is not None):
@@ -512,10 +499,10 @@ class UQ:
         # Covariance and correlation matrices
         self.logger.info('Creating Covariance/correlation and figures...')
         if (self.output_len != 1) and (self.type_indices != 'block'):
-            visualization.corr_cov(self.output, self.sample, self.f_input)
+            visualization.corr_cov(self.output, self.sample, self.xdata)
 
         # Create and plot the PDFs + moments
         self.logger.info('Creating PDF and figures...')
-        visualization.pdf(np.array(self.output), self.f_input,
+        visualization.pdf(self.output, self.xdata,
                           fname=os.path.join(self.output_folder, 'pdf.pdf'),
                           moments=True)
