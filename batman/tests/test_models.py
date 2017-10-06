@@ -13,7 +13,7 @@ from batman.tests.conftest import sklearn_q2
 def test_PC_1d(ishigami_data):
     f_3d, dists, model, point, target_point, space, target_space = ishigami_data
 
-    surrogate = PC(distributions=dists, n_n_sample=500, degree=10, strategy='LS')
+    surrogate = PC(distributions=dists, n_sample=500, degree=10, strategy='LS')
     input_ = surrogate.sample
     assert len(input_) == 500
     output = f_3d(input_)

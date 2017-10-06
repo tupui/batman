@@ -5,7 +5,7 @@
             [60.0, 6000.0]
         ],
         "sampling": {
-            "init_size": 11,
+            "init_size": 12,
             "method": ["Uniform(15., 60.)", "BetaMuSigma(4035, 400, 2500, 6000).getDistribution()"]
         },
         "resampling":{

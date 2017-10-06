@@ -62,7 +62,7 @@ class PC(object):
 
         # Strategy choice for expansion coefficient determination
         self.strategy = strategy
-        if self.strategy == "LS": # least-squares method
+        if self.strategy == "LS":  # least-squares method
             montecarlo_design = ot.MonteCarloExperiment(self.dist, n_sample)
             self.proj_strategy = ot.LeastSquaresStrategy(montecarlo_design)
             self.sample = np.array(self.proj_strategy.getExperiment().generate())
@@ -72,18 +72,19 @@ class PC(object):
             # marginal degree definition
             # by default: the marginal degree for each input random
             # variable is set to the total polynomial degree 'degree'+1
+            basis = ot.AdaptiveStieltjesAlgorithm(self.dist)
             measure = basis.getMeasure()
             quad = ot.Indices(in_dim)
             for i in range(in_dim):
                 quad[i] = degree + 1
 
-            self.proj_strategy = ot.IntegrationStrategy(
-                ot.GaussProductExperiment(measure, quad))
+            comp_dist = ot.GaussProductExperiment(measure, quad)
 
-            # Convert from [-1, 1] -> input distributions
-            marg_inv_transf = ot.MarginalTransformationEvaluation(distributions, 1)
-            sample = (self.proj_strategy.getExperiment().generate() + 1) / 2.
-            self.sample = np.array(marg_inv_transf(sample))
+            self.proj_strategy = ot.IntegrationStrategy(comp_dist)
+
+            inv_trans = ot.Function(ot.MarginalTransformationEvaluation(
+                    [measure.getMarginal(i) for i in range(in_dim)], distributions))
+            self.sample = np.array(inv_trans(comp_dist.generate()))
 
     def fit(self, input, output):
         """Create the predictor.
