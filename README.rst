@@ -82,7 +82,7 @@ The required dependencies are:
 - `scikit-learn <http://scikit-learn.org>`_ >= 0.18
 - `numpy <http://www.numpy.org>`_ >= 1.13
 - `scipy <http://scipy.org>`_ >= 0.15
-- `OpenTURNS <http://www.openturns.org>`_ >= 1.7
+- `OpenTURNS <http://www.openturns.org>`_ >= 1.8
 - `pathos <https://github.com/uqfoundation/pathos>`_ >= 0.2
 - `matplotlib <http://matplotlib.org>`_ >= 1.5
 - `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_

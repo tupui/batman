@@ -3,9 +3,11 @@
 UQ class
 ========
 
-This class is intented to implement statistical tools provided by the OpenTURNS framework.
+This class is intented to implement statistical tools provided by the OpenTURNS
+framework.
 
-.. seealso:: The documentation of the used class :class:`openturns.SensitivityAnalysis`
+.. seealso:: The documentation of the used class
+             :class:`openturns.SensitivityAnalysis`.
 
 It is called using option `-u`. Configuration is done from *settings*:
 
@@ -46,11 +48,15 @@ The *settings* file must contains the following parameters::
 References
 ----------
 
-A. Marrel, N. Saint-Geours. M. De Lozzo: Sensitivity Analysis of Spatial and/or Temporal Phenomena. Handbook of Uncertainty Quantification. 2015.   DOI:10.1007/978-3-319-11259-6_39-1
+A. Marrel, N. Saint-Geours. M. De Lozzo: Sensitivity Analysis of Spatial and/or
+Temporal Phenomena. Handbook of Uncertainty Quantification. 2015.
+DOI:10.1007/978-3-319-11259-6_39-1
 
-B. Iooss: Revue sur l’analyse de sensibilité globale de modèles numériques. Journal de la Société Française de Statistique. 2010
+B. Iooss: Revue sur l’analyse de sensibilité globale de modèles numériques.
+Journal de la Société Française de Statistique. 2010
 
-M. Baudin, A. Dutfoy, B. Iooss, A. Popelin: OpenTURNS: An industrial software for uncertainty quantification in simulation. 2015. ArXiv ID: 1501.05242
+M. Baudin, A. Dutfoy, B. Iooss, A. Popelin: OpenTURNS: An industrial software
+for uncertainty quantification in simulation. 2015. ArXiv ID: 1501.05242
 
 
 """
@@ -87,10 +93,12 @@ class UQ:
         - The list of input variables,
         - The lengh of the output function.
 
-        Also, it creates the `model` and `int_model` as `ot.PythonFunction()`.
+        Also, it creates the `model` and `int_model` as
+        :class:`openturns.PythonFunction`.
 
         :param dict settings: The settings file.
-        :param class:`surrogate.surrogate_model.SurrogateModel` surrogate: 1 surrogate.
+        :param class:`surrogate.surrogate_model.SurrogateModel` surrogate:
+        Surrogate model.
         :param class:`space.space.Space` space: sample space (can be a list).
         :param array_like data: Snapshot's data (n_samples, n_features).
         :param array_like xdata: 1D discretization of the function (n_features,).
@@ -101,7 +109,7 @@ class UQ:
             self.test = settings['uq']['test']
         except KeyError:
             self.test = None
-        self.output_folder = fname
+        self.fname = fname
         try:
             os.mkdir(fname)
         except OSError:
@@ -114,6 +122,7 @@ class UQ:
         self.p_len = len(self.p_lst)
         self.method_sobol = settings['uq']['method']
         self.type_indices = settings['uq']['type']
+        self.space = space
 
         # Generate samples
         self.points_sample = settings['uq']['sample']
@@ -152,7 +161,7 @@ class UQ:
             self.output = data
             self.points_sample = self.init_size
 
-        if xdata is None:
+        if (xdata is None) and (self.output_len > 1):
             self.xdata = np.linspace(0, 1, self.output_len)
         else:
             self.xdata = xdata
@@ -247,8 +256,8 @@ class UQ:
                          .format(err_q2, mse, s_l2_2nd, s_l2_1st, s_l2_total))
 
         # Write error to file model_err.dat
-        if self.output_folder is not None:
-            with open(os.path.join(self.output_folder, 'model_err.dat'), 'w') as f:
+        if self.fname is not None:
+            with open(os.path.join(self.fname, 'model_err.dat'), 'w') as f:
                 f.writelines("{} {} {} {} {} {} {}".format(self.init_size,
                                                            self.resamp_size,
                                                            err_q2,
@@ -261,7 +270,7 @@ class UQ:
                 # cobweb = ot.VisualTest.DrawCobWeb(self.sample, y_pred, y_min, y_max, 'red', False)
                 # View(cobweb).show()
                 qq_plot = ot.VisualTest_DrawQQplot(y_ref, y_pred)
-                View(qq_plot).save(os.path.join(self.output_folder, 'qq_plot.png'))
+                View(qq_plot).save(os.path.join(self.fname, 'qq_plot.png'))
             else:
                 self.logger.debug("Cannot draw QQplot with output dimension > 1")
         else:
@@ -278,7 +287,8 @@ class UQ:
         - `sobol`
         - `FAST`
 
-        .. warning:: The second order indices are only available with the sobol method.
+        .. warning:: The second order indices are only available with the sobol
+        method.
 
         And three types of computation are availlable for the global indices:
 
@@ -288,7 +298,8 @@ class UQ:
 
         If *aggregated*, *map* indices are computed. In case of a scalar value,
         all types returns the same values. *map* or *block* indices are written
-        within `sensitivity.dat` and aggregated indices within `sensitivity_aggregated.dat`.
+        within `sensitivity.dat` and aggregated indices within
+        `sensitivity_aggregated.dat`.
 
         Finally, it calls :func:`error_pod` in order to compare the indices
         with their analytical values.
@@ -311,20 +322,14 @@ class UQ:
         if self.method_sobol == 'sobol':
             self.logger.info("\n----- Sobol' indices -----")
 
-            if float(ot.__version__[:3]) < 1.8:
-                sample2 = self.experiment.generate()
-                sobol = ot.SensitivityAnalysis(self.sample, sample2,
-                                               sobol_model)
-                sobol.setBlockSize(self.n_cpus)
-            else:
-                input_design = ot.SobolIndicesAlgorithmImplementation.Generate(
-                    self.distribution, self.points_sample, True)
-                output_design = sobol_model(input_design)
-                # Martinez, Saltelli, MauntzKucherenko, Jansen
-                ot.ResourceMap.SetAsBool('MartinezSensitivityAlgorithm-UseAsmpytoticInterval', True)
-                sobol = ot.SaltelliSensitivityAlgorithm(input_design,
-                                                        output_design,
-                                                        self.points_sample)
+            input_design = ot.SobolIndicesAlgorithmImplementation.Generate(
+                self.distribution, self.points_sample, True)
+            output_design = sobol_model(input_design)
+            # Martinez, Saltelli, MauntzKucherenko, Jansen
+            ot.ResourceMap.SetAsBool('MartinezSensitivityAlgorithm-UseAsmpytoticInterval', True)
+            sobol = ot.SaltelliSensitivityAlgorithm(input_design,
+                                                    output_design,
+                                                    self.points_sample)
 
             for i in range(sobol_len):
                 try:
@@ -362,7 +367,7 @@ class UQ:
                           .format(*indices[1:]))
 
         # Write Sobol' indices to file: block or map
-        if self.output_folder is not None:
+        if self.fname is not None:
             i1 = np.array(indices[1]).flatten('F')
             i2 = np.array(indices[2]).flatten('F')
             data = np.append(i1, i2)
@@ -371,7 +376,7 @@ class UQ:
                 names += ['S_' + str(p)]
             for p in self.p_lst:
                 names += ['S_T_' + str(p)]
-            if (self.output_len != 1) and (self.type_indices != 'block'):
+            if (self.output_len > 1) and (self.type_indices != 'block'):
                 full_names = ['x'] + names
                 data = np.append(self.xdata, data)
             else:
@@ -379,7 +384,7 @@ class UQ:
 
             dataset = Dataset(names=full_names, shape=[self.output_len, 1, 1],
                               data=data)
-            self.io.write(os.path.join(self.output_folder, 'sensitivity.dat'), dataset)
+            self.io.write(os.path.join(self.fname, 'sensitivity.dat'), dataset)
         else:
             self.logger.debug("No output folder to write indices in")
 
@@ -397,7 +402,7 @@ class UQ:
                                np.zeros((self.p_len)), np.zeros((self.p_len))]
 
             # Compute manually for FAST and second order, otherwise OT
-            if (self.method_sobol == 'FAST') or (float(ot.__version__[:3]) < 1.8):
+            if self.method_sobol == 'FAST':
                 agg_range = [0, 1, 2]
             else:
                 agg_range = [0]
@@ -411,14 +416,14 @@ class UQ:
             for i in range(3):
                 aggregated[i] = sum_var_indices[i] / sum_var
 
-            if (float(ot.__version__[:3]) >= 1.8) and (self.method_sobol != 'FAST'):
+            if self.method_sobol != 'FAST':
                 aggregated[1] = np.array(sobol.getAggregatedFirstOrderIndices())
                 aggregated[2] = np.array(sobol.getAggregatedTotalOrderIndices())
                 indices_conf[0] = sobol.getFirstOrderIndicesInterval()
                 indices_conf[1] = sobol.getTotalOrderIndicesInterval()
 
-                self.logger.info("First order confidence:\n{}\n"
-                                 "Total order confidence:\n{}\n"
+                self.logger.info("-> First order confidence:\n{}\n"
+                                 "-> Total order confidence:\n{}\n"
                                  .format(*indices_conf))
 
             self.logger.info("Aggregated_indices:\n"
@@ -428,11 +433,11 @@ class UQ:
                              .format(*aggregated))
 
             # Write aggregated indices to file
-            if self.output_folder is not None:
+            if self.fname is not None:
                 ind_total_first = np.array(aggregated[1:]).flatten('F')
                 i1 = np.array(aggregated[1]).flatten('F')
                 i2 = np.array(aggregated[2]).flatten('F')
-                if (float(ot.__version__[:3]) >= 1.8) and (self.method_sobol != 'FAST'):
+                if self.method_sobol != 'FAST':
                     i1_min = np.array(indices_conf[0].getLowerBound()).flatten('F')
                     i1_max = np.array(indices_conf[0].getUpperBound()).flatten('F')
                     i2_min = np.array(indices_conf[1].getLowerBound()).flatten('F')
@@ -457,7 +462,7 @@ class UQ:
                                                self.p_lst)]
                     data = np.append(i1, i2)
                 dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
-                self.io.write(os.path.join(self.output_folder,
+                self.io.write(os.path.join(self.fname,
                                            'sensitivity_aggregated.dat'),
                               dataset)
             else:
@@ -467,10 +472,10 @@ class UQ:
             aggregated = indices
 
         # Plot
-        if self.output_folder is not None:
+        if self.fname is not None:
             full_indices = [aggregated[1], aggregated[2],
                             indices[1], indices[2]]
-            path = os.path.join(self.output_folder, 'sensitivity.pdf')
+            path = os.path.join(self.fname, 'sensitivity.pdf')
             visualization.sobol(full_indices, p_lst=self.p_lst, conf=conf,
                                 xdata=self.xdata, fname=path)
 
@@ -494,15 +499,27 @@ class UQ:
         * :file:`correlation_XY.dat` -> correlation XY
         * :file:`pdf.pdf`, plot of the PDF (with moments if dim > 1)
         """
-        self.logger.info("\n----- Moments evaluation -----")
+        self.logger.info("\n----- Uncertainty Propagation -----")
+
+        # Response surface
+        if self.p_len < 3:
+            visualization.response_surface(bounds=[np.min(self.sample, axis=0),
+                                                   np.max(self.sample, axis=0)],
+                                           sample=self.sample[:1000],
+                                           data=self.output[:1000],
+                                           doe=self.space, xdata=self.xdata,
+                                           fname=os.path.join(self.fname,
+                                                              'response.pdf'))
 
         # Covariance and correlation matrices
         self.logger.info('Creating Covariance/correlation and figures...')
-        if (self.output_len != 1) and (self.type_indices != 'block'):
-            visualization.corr_cov(self.output, self.sample, self.xdata)
+        if (self.output_len > 1) and (self.type_indices != 'block'):
+            visualization.corr_cov(self.output, self.sample, self.f_input,
+                                   fname=os.path.join(self.fname,
+                                                      'corr_cov.pdf'))
 
         # Create and plot the PDFs + moments
         self.logger.info('Creating PDF and figures...')
         visualization.pdf(self.output, self.xdata,
-                          fname=os.path.join(self.output_folder, 'pdf.pdf'),
+                          fname=os.path.join(self.fname, 'pdf.pdf'),
                           moments=True)
