@@ -277,8 +277,7 @@ class HdrBoxplot:
         :returns: figures and all axis
         :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances
         """
-        figures = []
-        axs = []
+        figures, axs = [], []
 
         if samples is None:
             data = self.data

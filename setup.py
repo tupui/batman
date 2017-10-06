@@ -69,10 +69,10 @@ cmdclasses['build_fortran'] = CompileSources
 # Check some import before starting build process.
 try:
     import openturns
-    if float(openturns.__version__[0:3]) < 1.7:
+    if float(openturns.__version__[0:3]) < 1.8:
         raise ImportError
 except ImportError:
-    print('You need to install OpenTURNS >= 1.7')
+    print('You need to install OpenTURNS >= 1.8')
     raise SystemExit
 
 setup_requires = ['pytest-runner']
