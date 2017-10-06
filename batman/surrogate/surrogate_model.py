@@ -45,7 +45,7 @@ class SurrogateModel(object):
     logger = logging.getLogger(__name__)
 
     def __init__(self, kind, corners, **kwargs):
-        """Init Surrogate model.
+        r"""Init Surrogate model.
 
         :param np.array corners: space corners to normalize.
         :param str kind: name of prediction method, rbf or kriging.
@@ -106,7 +106,7 @@ class SurrogateModel(object):
                                 degree=self.settings['degree'],
                                 distributions=self.settings['distributions'],
                                 n_sample=self.settings['n_sample'])
-            self.predictor.fit(points_scaled, data)
+            self.predictor.fit(points, data)
         elif self.kind == 'evofusion':
             self.predictor = Evofusion(points_scaled, data)
             self.space.multifidelity = True
@@ -235,26 +235,26 @@ class SurrogateModel(object):
         return q2_loo, point
 
     def write(self, dir_path):
-            """Save model, data and space to disk.
+        """Save model, data and space to disk.
 
-            :param str path: path to a directory.
-            """
-            path = os.path.join(dir_path, self.dir['surrogate'])
-            with open(path, 'wb') as f:
-                pickler = pickle.Pickler(f)
-                pickler.dump(self.predictor)
-            self.logger.debug('Model wrote to {}'.format(path))
+        :param str path: path to a directory.
+        """
+        path = os.path.join(dir_path, self.dir['surrogate'])
+        with open(path, 'wb') as f:
+            pickler = pickle.Pickler(f)
+            pickler.dump(self.predictor)
+        self.logger.debug('Model wrote to {}'.format(path))
 
-            path = os.path.join(dir_path, self.dir['space'])
-            self.space.write(path)
+        path = os.path.join(dir_path, self.dir['space'])
+        self.space.write(path)
 
-            path = os.path.join(dir_path, self.dir['data'])
-            with open(path, 'wb') as f:
-                pickler = pickle.Pickler(f)
-                pickler.dump(self.data)
-            self.logger.debug('Data wrote to {}'.format(path))
+        path = os.path.join(dir_path, self.dir['data'])
+        with open(path, 'wb') as f:
+            pickler = pickle.Pickler(f)
+            pickler.dump(self.data)
+        self.logger.debug('Data wrote to {}'.format(path))
 
-            self.logger.info('Model, data and space wrote.')
+        self.logger.info('Model, data and space wrote.')
 
     def read(self, dir_path):
         """Load model, data and space from disk.

@@ -510,7 +510,8 @@ class UQ:
         # Covariance and correlation matrices
         self.logger.info('Creating Covariance/correlation and figures...')
         if (self.output_len != 1) and (self.type_indices != 'block'):
-            visualization.corr_cov(self.output, self.sample, self.f_input)
+            visualization.corr_cov(self.output, self.sample, self.f_input,
+                                   fname=os.path.join(self.output_folder, 'corr_cov.pdf'))
 
         # Create and plot the PDFs + moments
         self.logger.info('Creating PDF and figures...')

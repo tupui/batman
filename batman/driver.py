@@ -135,7 +135,8 @@ class Driver(object):
                 except (AlienPointError, UnicityError, FullSpaceError) as tb:
                     self.logger.warning("Ignoring: {}".format(tb))
                 finally:
-                    self.to_compute_points = pc.sample[:len(self.space)]
+                    if not self.provider.is_file:
+                        self.to_compute_points = pc.sample[:len(self.space)]
             else:
                 settings_ = {}
 
@@ -201,11 +202,7 @@ class Driver(object):
                 self.pod.decompose(snapshots)
 
             self.data = self.pod.VS()
-
-            try:  # if surrogate
-                self.surrogate.fit(self.pod.points, self.data, pod=self.pod)
-            except AttributeError:
-                pass
+            points = self.pod.points
         else:
             if self.provider.is_job:
                 _snapshots = []
@@ -232,10 +229,10 @@ class Driver(object):
 
             points = self.space
 
-            try:  # if surrogate
-                self.surrogate.fit(points, self.data, pod=self.pod)
-            except AttributeError:
-                pass
+        try:  # if surrogate
+            self.surrogate.fit(points, self.data, pod=self.pod)
+        except AttributeError:
+            pass
 
     def resampling(self):
         """Resampling of the parameter space.
