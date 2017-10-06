@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.interpolate import griddata
 from itertools import combinations_with_replacement
+from sklearn import preprocessing
 from matplotlib import cm
 import matplotlib.pyplot as plt
 
@@ -58,8 +59,10 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None,
             if i == j:  # diag
                 x_plot = np.linspace(min(sample[:, i]),
                                      max(sample[:, i]), 100)[:, np.newaxis]
-                _ks = kernel_smoothing(sample[:, i, np.newaxis], False)
-                pdf = np.exp(_ks.score_samples(x_plot))
+                scaler = preprocessing.MinMaxScaler().fit(sample[:, i, np.newaxis])
+                sample_scaled = scaler.transform(sample[:, i, np.newaxis])
+                _ks = kernel_smoothing(sample_scaled, False)
+                pdf = np.exp(_ks.score_samples(scaler.transform(x_plot)))
                 ax.plot(x_plot, pdf)
                 ax.fill_between(x_plot[:, 0], pdf, [0] * x_plot.shape[0],
                                 color='gray', alpha=0.1)

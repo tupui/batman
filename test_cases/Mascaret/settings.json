@@ -18,7 +18,7 @@
                 ]
             },
             "format": "fmt_tp_fortran",
-            "variables": ["X", "F"],
+            "variables": ["F"],
             "point_filename": "header.py",
             "filenames": {
                 "0": ["function.dat"]
