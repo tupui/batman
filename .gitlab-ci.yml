@@ -6,9 +6,6 @@ nemo_testing_python_3:
   stage: test
   tags:
     - sshroy.spike.batman
-  only:
-    - master
-    - develop
   script:
     - cd ../.
     - tar -cf batman_ci.tar batman
