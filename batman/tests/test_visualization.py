@@ -357,10 +357,11 @@ def test_doe_mufi(ishigami_data, tmp):
     doe(space, multifidelity=True, fname=os.path.join(tmp, 'DOE_mufi.pdf'))
 
 
-def test_corr_cov(mascaret_data, tmp):
+@patch("matplotlib.pyplot.show")
+def test_corr_cov(mock_show, mascaret_data, tmp):
     fun = mascaret_data[0]
     dist = ot.ComposedDistribution(mascaret_data[1], ot.IndependentCopula(2))
     sample = np.array(ot.LHSExperiment(dist, 500).generate())
     data = fun(sample)
-    corr_cov(data, sample, fun.x)
+    corr_cov(data, sample, fun.x, plabels=['Ks', 'Q'])
     corr_cov(data, sample, fun.x, fname='./corr_cov.pdf')
