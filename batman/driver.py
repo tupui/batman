@@ -334,7 +334,7 @@ class Driver(object):
             data = self.data
 
         analyse = UQ(self.settings, self.surrogate,
-                     space=self.space, data=data, output=output)
+                     space=self.space, data=data, fname=output)
 
         if self.surrogate is not None:
             analyse.sobol()
