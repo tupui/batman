@@ -11,11 +11,10 @@ from sklearn.neighbors import KernelDensity
 from sklearn.model_selection import GridSearchCV
 from scipy.optimize import differential_evolution
 from matplotlib import cm
-import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from ..input_output import (IOFormatSelector, Dataset)
 import batman as bat
+from ..input_output import (IOFormatSelector, Dataset)
 
 
 def kernel_smoothing(data, optimize=False):
@@ -150,7 +149,6 @@ def pdf(data, xdata=None, labels=None, moments=False, fname=None):
 
     plt.tight_layout()
     if fname is not None:
-        plt.savefig(fname, transparent=True, bbox_inches='tight')
         # Write PDF to file
         xdata_flattened = xdata.flatten('C')
         pdf = pdf.flatten('F')
@@ -176,9 +174,8 @@ def pdf(data, xdata=None, labels=None, moments=False, fname=None):
 
             dataset = Dataset(names=names, shape=[output_len, 1, 1], data=data)
             io.write(fname.split('.')[0] + '-moment.dat', dataset)
-    else:
-        plt.show()
-    plt.close('all')
+
+    bat.visualization.save_show(fname, [fig])
 
     return fig
 
@@ -242,16 +239,7 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
         plt.tick_params(axis='y', labelsize=23)
         plt.legend(fontsize=26, loc='center right')
 
-    plt.tight_layout()
-
-    if fname is not None:
-        pdf = matplotlib.backends.backend_pdf.PdfPages(fname)
-        for fig in figures:
-            pdf.savefig(fig, transparent=True, bbox_inches='tight')
-        pdf.close()
-    else:
-        plt.show()
-    plt.close('all')
+    bat.visualization.save_show(fname, [fig])
 
     return figures
 
@@ -294,7 +282,7 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None, 
     fig, ax = plt.subplots()
     figures.append(fig)
     axs.append(ax)
-    cax = ax.imshow(cov_yy, cmap=c_map, interpolation='bilinear', origin='lower')
+    cax = ax.imshow(cov_yy, cmap=c_map, interpolation=interpolation, origin='lower')
     cbar = fig.colorbar(cax)
     cbar.set_label(r"Covariance", size=26)
     cbar.ax.tick_params(labelsize=23)
@@ -306,7 +294,7 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None, 
     # Correlation matrix YY
     fig, ax = plt.subplots()
     figures.append(fig)
-    cax = ax.imshow(corr_yy, cmap=c_map, interpolation='bilinear', origin='lower')
+    cax = ax.imshow(corr_yy, cmap=c_map, interpolation=interpolation, origin='lower')
     cbar = fig.colorbar(cax)
     cbar.set_label(r"Correlation", size=26)
     cbar.ax.tick_params(labelsize=23)
@@ -334,14 +322,7 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None, 
     plt.tick_params(axis='x', labelsize=23)
     plt.tick_params(axis='y', labelsize=23)
 
-    plt.tight_layout()
-
     if fname is not None:
-        pdf = matplotlib.backends.backend_pdf.PdfPages(fname)
-        for fig in figures:
-            pdf.savefig(fig, transparent=True, bbox_inches='tight')
-        pdf.close()
-
         data = np.append(x_2d_yy, [y_2d_yy, corr_yy, cov_yy])
         dataset = Dataset(names=['x', 'y', 'Correlation-YY', 'Covariance'],
                           shape=[data_len, data_len, 1],
@@ -354,8 +335,7 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None, 
                           shape=[p_len, data_len, 1],
                           data=data)
         io.write(fname.split('.')[0] + '-correlation_XY.dat', dataset)
-    else:
-        plt.show()
-    plt.close('all')
+
+    bat.visualization.save_show(fname, [fig])
 
     return figures, axs

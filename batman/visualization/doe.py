@@ -10,7 +10,7 @@ from scipy.interpolate import griddata
 from sklearn import preprocessing
 from matplotlib import cm
 import matplotlib.pyplot as plt
-
+import batman as bat
 from .uncertainty import kernel_smoothing
 
 
@@ -85,13 +85,7 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None,
 
             sub_ax.append(ax)
 
-    plt.tight_layout()
-
-    if fname is not None:
-        plt.savefig(fname, transparent=True, bbox_inches='tight')
-    elif show:
-        plt.show()
-    plt.close('all')
+    bat.visualization.save_show(fname, [fig])
 
     return fig, sub_ax
 
@@ -174,11 +168,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
     plt.xlabel(plabels[0], fontsize=28)
     plt.tick_params(axis='x', labelsize=28)
     plt.tick_params(axis='y', labelsize=28)
-    plt.tight_layout()
-    if fname is not None:
-        plt.savefig(fname, transparent=True, bbox_inches='tight')
-    else:
-        plt.show()
-    plt.close('all')
+
+    bat.visualization.save_show(fname, [fig])
 
     return fig

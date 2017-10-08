@@ -20,6 +20,7 @@ from sklearn.ensemble import IsolationForest
 import matplotlib.animation as manimation
 import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
+import batman as bat
 from .uncertainty import kernel_smoothing
 from .doe import doe
 
@@ -360,16 +361,7 @@ class HdrBoxplot:
         by_label = dict(zip(labels, handles))
         plt.legend(by_label.values(), by_label.keys(), loc='best')
 
-        plt.tight_layout()
-
-        if fname is not None:
-            pdf = matplotlib.backends.backend_pdf.PdfPages(fname)
-            for fig in figures:
-                pdf.savefig(fig, transparent=True, bbox_inches='tight')
-            pdf.close()
-        else:
-            plt.show()
-        plt.close('all')
+        bat.visualization.save_show(fname, figures)
 
         return figures, axs
 

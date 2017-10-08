@@ -11,6 +11,7 @@ from matplotlib.colors import Normalize
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
+import batman as bat
 
 
 class Arrow3D(FancyArrowPatch):
@@ -159,13 +160,7 @@ class Kiviat3D:
 
         self._axis(ax)
 
-        plt.tight_layout()
-
-        if fname is not None:
-            plt.savefig(fname, transparent=True, bbox_inches='tight')
-        else:
-            plt.show()
-        plt.close('all')
+        bat.visualization.save_show(fname, [fig])
 
         return fig, ax
 

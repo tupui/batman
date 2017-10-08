@@ -265,12 +265,12 @@ def test_pdf_surrogate(mock_show, ishigami_data):
 
 
 @patch("matplotlib.pyplot.show")
-def test_pdf_nD(mock_show, tmp):
+def test_pdf_nD(tmp):
     fig_pdf = pdf(data, xdata=np.linspace(1, 12, 12),
                   fname=os.path.join(tmp, 'pdf_nd.pdf'))
-    fig = reshow(fig_pdf)
+    reshow(fig_pdf)
     plt.plot([0, 10], [25, 25])
-    fig.show()
+    plt.show()
 
 
 def test_pdf_nD_moments(tmp):
