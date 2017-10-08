@@ -10,14 +10,12 @@ from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KernelDensity
 from sklearn.model_selection import GridSearchCV
 from scipy.optimize import differential_evolution
-
-from ..input_output import (IOFormatSelector, Dataset)
-import batman as bat
-
 from matplotlib import cm
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from ..input_output import (IOFormatSelector, Dataset)
+import batman as bat
 
 
 def kernel_smoothing(data, optimize=False):
@@ -56,7 +54,7 @@ def kernel_smoothing(data, optimize=False):
     return ks_gaussian
 
 
-def pdf(data, xdata=None, labels=['x', 'F'], moments=False, fname=None):
+def pdf(data, xdata=None, labels=None, moments=False, fname=None):
     """Plot PDF in 1D or 2D.
 
     :param np.ndarray/dict data: array of shape (n_samples, n_features)
@@ -76,6 +74,7 @@ def pdf(data, xdata=None, labels=['x', 'F'], moments=False, fname=None):
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """
+    labels = ['x', 'F'] if labels is None else labels
     dx = 100
     if isinstance(data, dict):
         try:

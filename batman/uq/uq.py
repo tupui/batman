@@ -61,12 +61,12 @@ for uncertainty quantification in simulation. 2015. ArXiv ID: 1501.05242
 
 """
 import logging
-import numpy as np
-import openturns as ot
-from sklearn.metrics import (r2_score, mean_squared_error)
-from openturns.viewer import View
 import os
 import itertools
+import numpy as np
+import openturns as ot
+from openturns.viewer import View
+from sklearn.metrics import (r2_score, mean_squared_error)
 from ..functions import multi_eval
 from ..input_output import (IOFormatSelector, Dataset)
 from .. import functions as func_ref
@@ -349,18 +349,18 @@ class UQ:
             fast_model = ot.PythonFunction(self.p_len, self.output_len, wrap_fun)
             sobol = ot.FAST(ot.Function(fast_model),
                             self.distribution, self.points_sample)
-            self.logger.warn("No Second order indices with FAST")
+            self.logger.warning("No Second order indices with FAST")
 
         # try block used to handle boundary conditions with fixed values
         for i in range(sobol_len):
             try:
                 indices[1].append(np.array(sobol.getFirstOrderIndices(i)))
             except TypeError:
-                    indices[1].append(np.zeros(self.p_len))
+                indices[1].append(np.zeros(self.p_len))
             try:
                 indices[2].append(np.array(sobol.getTotalOrderIndices(i)))
             except TypeError:
-                    indices[2].append(np.zeros(self.p_len))
+                indices[2].append(np.zeros(self.p_len))
 
         self.logger.debug("First order: {}"
                           "Total: {}"

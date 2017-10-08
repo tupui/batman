@@ -3,8 +3,11 @@
 A simple class of points in space.
 
 A point is a tuple of coordinates, thus this class derives from the tuple class.
-A point can be created either from integer or float coordinates, they are stored internally as float values.
-Two points can be compared with the usual `==` or `!=`, it can be approximative in the sense that two close points can be equals. The comparison is done by computing the distance of the points and checking it against a predefined threshold.
+A point can be created either from integer or float coordinates, they are
+stored internally as float values.
+Two points can be compared with the usual `==` or `!=`, it can be approximative
+in the sense that two close points can be equals. The comparison is done by
+computing the distance of the points and checking it against a predefined threshold.
 """
 import logging
 import numpy as np

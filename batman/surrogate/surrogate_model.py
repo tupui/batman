@@ -20,7 +20,15 @@ It allows the creation of a surrogate model and making predictions.
 
 """
 
+import os
+import copy
 import logging
+import dill as pickle
+import numpy as np
+from sklearn import preprocessing
+from sklearn.model_selection import LeaveOneOut
+from sklearn.metrics import r2_score
+from pathos.multiprocessing import cpu_count
 from .kriging import Kriging
 from .polynomial_chaos import PC
 from .RBFnet import RBFnet
@@ -28,14 +36,6 @@ from .multifidelity import Evofusion
 from ..tasks import Snapshot
 from ..space import Space
 from ..misc import ProgressBar, NestedPool
-import dill as pickle
-import numpy as np
-from sklearn import preprocessing
-from sklearn.model_selection import LeaveOneOut
-from sklearn.metrics import r2_score
-import copy
-from pathos.multiprocessing import cpu_count
-import os
 
 
 class SurrogateModel(object):
@@ -55,8 +55,8 @@ class SurrogateModel(object):
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
         settings = {"space": {
-                        "corners": corners,
-                        "sampling": {"init_size": np.inf, "method": kind}}}
+            "corners": corners,
+            "sampling": {"init_size": np.inf, "method": kind}}}
         self.space = Space(settings)
         self.pod = None
         self.update = False  # switch: update model if POD update
@@ -212,26 +212,26 @@ class SurrogateModel(object):
         return q2_loo, point
 
     def write(self, dir_path):
-            """Save model, data and space to disk.
+        """Save model, data and space to disk.
 
-            :param str path: path to a directory.
-            """
-            path = os.path.join(dir_path, self.dir['surrogate'])
-            with open(path, 'wb') as f:
-                pickler = pickle.Pickler(f)
-                pickler.dump(self.predictor)
-            self.logger.debug('Model wrote to {}'.format(path))
+        :param str path: path to a directory.
+        """
+        path = os.path.join(dir_path, self.dir['surrogate'])
+        with open(path, 'wb') as f:
+            pickler = pickle.Pickler(f)
+            pickler.dump(self.predictor)
+        self.logger.debug('Model wrote to {}'.format(path))
 
-            path = os.path.join(dir_path, self.dir['space'])
-            self.space.write(path)
+        path = os.path.join(dir_path, self.dir['space'])
+        self.space.write(path)
 
-            path = os.path.join(dir_path, self.dir['data'])
-            with open(path, 'wb') as f:
-                pickler = pickle.Pickler(f)
-                pickler.dump(self.data)
-            self.logger.debug('Data wrote to {}'.format(path))
+        path = os.path.join(dir_path, self.dir['data'])
+        with open(path, 'wb') as f:
+            pickler = pickle.Pickler(f)
+            pickler.dump(self.data)
+        self.logger.debug('Data wrote to {}'.format(path))
 
-            self.logger.info('Model, data and space wrote.')
+        self.logger.info('Model, data and space wrote.')
 
     def read(self, dir_path):
         """Load model, data and space from disk.

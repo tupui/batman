@@ -40,6 +40,7 @@ class AntaresWrapper(IOBase):
         base = self.reader.read()
 
         def iteritems(base):
+            """Iterate over a base."""
             for zone in base:
                 for instant in base[zone]:
                     for i in base[zone][instant]:

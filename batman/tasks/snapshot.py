@@ -63,7 +63,8 @@ class Snapshot(object):
     '''File name for storing the coordinates of a point.'''
 
     point_format = '%s = %s\n'
-    '''Line format for writing a point coordinate to file, name and coordinate value, the value must be repr().'''
+    '''Line format for writing a point coordinate to file, name and coordinate
+    value, the value must be repr().'''
 
     template_directory = None
     '''Location of io templates.'''
@@ -230,7 +231,7 @@ class Snapshot(object):
         with open(path, 'rb') as f:
             for line in f:
                 line = line.decode('utf8')
-                p = re.findall('^\s*(\S+)\s*=\s*(\S+)\s*', line)
+                p = re.findall(r'^\s*(\S+)\s*=\s*(\S+)\s*', line)
 
                 # checks
                 if len(p) != 1:

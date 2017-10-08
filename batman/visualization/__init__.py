@@ -2,12 +2,11 @@
 Visualization module
 ********************
 """
-
+from matplotlib import pyplot as plt
 from .kiviat import Kiviat3D
 from .hdr import HdrBoxplot
 from .uncertainty import (kernel_smoothing, pdf, sobol, corr_cov)
 from .doe import (response_surface, doe)
-from matplotlib import pyplot as plt
 
 __all__ = ['Kiviat3D', 'HdrBoxplot', 'kernel_smoothing', 'pdf', 'sobol',
            'corr_cov', 'reshow', 'response_surface', 'doe']

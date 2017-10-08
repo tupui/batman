@@ -31,7 +31,7 @@ class TecplotAscii(IOBase):
         # provides an iterator with lazy evaluation over the quantities stored
         # in the file.
         def generator(path):
-            # TODO: check what's done with the fortran unit when the loop is
+            # verify what's done with the fortran unit when the loop is
             # broken
             unit = ascii.open_file(path, 'formatted', 'read', 'rewind')
             ascii.skip_header(unit)
@@ -90,7 +90,7 @@ class TecplotAscii(IOBase):
         with open(path, 'rb') as f:
             for line in f:
                 line = line.decode('utf8')
-                if re.match('^\s*VARIABLES', line, flags=re.IGNORECASE):
+                if re.match(r"^\s*VARIABLES", line, flags=re.IGNORECASE):
                     names = re.findall('"(.*?)"', line)
                     break
 
@@ -105,12 +105,12 @@ class TecplotAscii(IOBase):
             for line in f:
                 line = line.decode('utf8')
                 # assume shape are on the ZONE line
-                if re.match('^\s*ZONE', line, flags=re.IGNORECASE):
+                if re.match(r"^\s*ZONE", line, flags=re.IGNORECASE):
                     # must be block format, not point
-                    if re.match('.*=\s*POINT.*', line, flags=re.IGNORECASE):
+                    if re.match(r".*=\s*POINT.*", line, flags=re.IGNORECASE):
                         raise FormatError('data not in block format.')
 
-                    ids = re.findall('(I|J|K)\s*=\s*(\d+)',
+                    ids = re.findall(r"(I|J|K)\s*=\s*(\d+)",
                                      line, flags=re.IGNORECASE)
                     for i in ids:
                         try:

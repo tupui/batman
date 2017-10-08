@@ -27,11 +27,11 @@ steps:
 
 """
 import logging
+import time
+import os
 import matplotlib.pyplot as plt
 import openturns as ot
 import numpy as np
-import time
-import os
 
 ot.RandomGenerator.SetSeed(int(time.time() * 1e10))
 
@@ -147,7 +147,7 @@ class Gp1dSampler:
             format_.extend([temp_x, temp_idx])
         return s.format(*format_)
 
-    def sample(self, n_sample):
+    def sample(self, n_sample=1):
         """Compute realizations of the GP1D sampler.
 
         :param int n_sample: number of GP1D instances
@@ -208,7 +208,9 @@ class Gp1dSampler:
         fig.savefig(path, transparent=True, bbox_inches='tight')
         plt.close('all')
 
+
 class Gp2dSampler:
+
     '''The class "Gp_2d_sampler" computes instances of a two-dimensional Gaussian Process (GP) discretized over a mesh. It can be decomposed into three steps: 
         1) Compute the Karhunen Loeve decomposition (KLD); 
         2) Sample the weights of the KLD according to the standard normal distribution.
@@ -349,7 +351,9 @@ class Gp2dSampler:
         Y = np.dot(self.modes.T, X)
         return {'Values': Y.T, 'Coefficients': X}
 
+
 class Gp3dSampler:
+
     '''The class "Gp_nd_sampler" computes instances of a 3-dimensional Gaussian Process (GP) discretized over a mesh. It can be decomposed into three steps: 
         1) Compute the Karhunen Loeve decomposition (KLD); 
         2) Sample the weights of the KLD according to the standard normal distribution.

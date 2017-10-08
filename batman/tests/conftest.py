@@ -23,28 +23,30 @@ def settings_ishigami():
     f_ishigami = Ishigami()
     settings = {
         "space": {
-            "corners": [[-np.pi, -np.pi, -np.pi],[np.pi, np.pi, np.pi]],
-            "sampling": {"init_size": 150,"method": "halton"},
+            "corners": [[-np.pi, -np.pi, -np.pi], [np.pi, np.pi, np.pi]],
+            "sampling": {"init_size": 150, "method": "halton"},
             "resampling": {"delta_space": 0.08, "resamp_size": 1,
-                "method": "sigma", "q2_criteria": 0.9}},
-        "pod": { "dim_max": 100, "tolerance": 0.99, "server": None, "type": "static"},
+                           "method": "sigma", "q2_criteria": 0.9}},
+        "pod": {"dim_max": 100, "tolerance": 0.99, "server": None, "type": "static"},
         "snapshot": {"max_workers": 10,
-            "io": {"shapes": {"0": [[1]]}, "format": "fmt_tp_fortran",
-                "variables": ["F"], "point_filename": "header.py",
-                "filenames": {"0": ["function.dat"]}, "template_directory": None,
-                "parameter_names": ["x1", "x2", "x3"]},
-            "provider": f_ishigami},
+                     "io": {"shapes": {"0": [[1]]}, "format": "fmt_tp_fortran",
+                            "variables": ["F"], "point_filename": "header.py",
+                            "filenames": {"0": ["function.dat"]},
+                            "template_directory": None,
+                            "parameter_names": ["x1", "x2", "x3"]},
+                     "provider": f_ishigami},
         "surrogate": {"predictions": [[0, 2, 1]], "method": "kriging"},
         "uq": {
             "sample": 2000, "test": "Ishigami",
-            "pdf": ["Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)"],
-        "type": "aggregated","method": "sobol"}}
+            "pdf": ["Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)",
+                    "Uniform(-3.1415, 3.1415)"],
+            "type": "aggregated", "method": "sobol"}}
     return settings
 
 
 @pytest.fixture(scope="session")
 def driver_init(tmp, settings_ishigami):
-    """Initialize driver with settings from Ishigami"""
+    """Initialize driver with settings from Ishigami."""
     driver = Driver(settings_ishigami, tmp)
     driver.sampling()
     return driver

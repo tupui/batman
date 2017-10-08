@@ -16,12 +16,12 @@ import sys
 import logging
 import re
 import json
+import time
 import jsonschema
 import numpy as np
-import time
+from pathos.multiprocessing import cpu_count
 from scipy.optimize import (differential_evolution, basinhopping)
 from .nested_pool import NestedPool
-from pathos.multiprocessing import cpu_count
 
 
 def clean_path(path):
@@ -52,13 +52,13 @@ def check_yes_no(prompt, default):
         if not all(x in 'yesno ' for x in value.lower()):
             logger.error('Sorry, your response must be yes, or no.')
             continue
-        elif value is '':
+        elif value == '':
             value = default
             break
         else:
             break
 
-    answer = True if value.strip()[0] is 'y' else False
+    answer = True if value.strip()[0] == 'y' else False
 
     return answer
 
@@ -83,7 +83,7 @@ def ask_path(prompt, default, root):
             logger.error("Sorry, I didn't understand that.")
             continue
 
-        if path is '':
+        if path == '':
             path = default
 
         if not os.path.isdir(os.path.join(root, path)):
@@ -107,7 +107,8 @@ def import_config(path_config, path_schema):
     def minify_comments(file, **kwargs):
         """Minify comments in JSON file.
 
-        Deserialize `file` to a Python object using `commentjson <https://pypi.python.org/pypi/commentjson>`_ package.
+        Deserialize `file` to a Python object using
+        `commentjson <https://pypi.python.org/pypi/commentjson>`_ package.
 
         :param file: serialized JSON string with or without comments.
         :param kwargs: all the arguments that `json.loads <http://docs.python.org/
@@ -211,10 +212,10 @@ class ProgressBar(object):
         :param str eta: ETA in H:M:S
         :param str vel: iteration/second
         """
-        bar = int(np.floor(self.progress / 2))
+        p_bar = int(np.floor(self.progress / 2))
         sys.stdout.write("\rProgress | " +
-                         "-" * (bar - 1) + "~" +
-                         " " * (50 - bar - 1) +
+                         "-" * (p_bar - 1) + "~" +
+                         " " * (50 - p_bar - 1) +
                          " |" + str(self.progress) + "% ")
 
         if self.progress == 100:
@@ -252,7 +253,9 @@ def optimization(bounds, discrete=False):
             min_x = results.x
             min_fun = results.fun
             return min_x, min_fun
+
         def wrapper_fun_obj():
+            """Two behaviour depending on discrete."""
             if discrete:
                 start = int(np.ceil(bounds[0, 0]))
                 end = int(np.ceil(bounds[0, 1]))

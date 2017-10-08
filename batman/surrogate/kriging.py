@@ -11,9 +11,9 @@ Interpolation using Gaussian Process method.
 
     >> from kriging import Kriging
     >> import numpy as np
-    >> input = np.array([[2, 4], [3, 5], [6, 9]])
-    >> output = np.array([[12, 1], [10, 2], [9, 4]])
-    >> predictor = Kriging(input, output)
+    >> sample = np.array([[2, 4], [3, 5], [6, 9]])
+    >> data = np.array([[12, 1], [10, 2], [9, 4]])
+    >> predictor = Kriging(sample, data)
     >> point = (5.0, 8.0)
     >> predictor.evaluate(point)
     (array([ 8.4526528 ,  3.57976035]), array([ 0.40982369,  0.05522197]))
@@ -21,18 +21,19 @@ Interpolation using Gaussian Process method.
 Reference
 ---------
 
-F. Pedregosa et al.: Scikit-learn: Machine Learning in Python. Journal of Machine Learning Research. 2011. ArXiv ID: 1201.0490
+F. Pedregosa et al.: Scikit-learn: Machine Learning in Python. Journal of
+Machine Learning Research. 2011. ArXiv ID: 1201.0490
 
 """
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF
-import numpy as np
 import logging
+import os
+import numpy as np
 from scipy.optimize import differential_evolution
 from pathos.multiprocessing import cpu_count
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF
 from ..misc import NestedPool
 from ..functions import multi_eval
-import os
 
 
 class Kriging(object):
@@ -41,16 +42,16 @@ class Kriging(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, input, output):
+    def __init__(self, sample, data):
         r"""Create the predictor.
 
-        Uses input and output to construct a predictor using Gaussian Process.
+        Uses sample and data to construct a predictor using Gaussian Process.
         Input is to be normalized before and depending on the number of
         parameters, the kernel is adapted to be anisotropic.
 
         :attr:`self.data` contains the predictors as a list(array) of the size
-        of the `ouput`. A predictor per line of `output` is created. This leads
-        to a line of predictors that predicts a new column of `output`.
+        of the `ouput`. A predictor per line of `data` is created. This leads
+        to a line of predictors that predicts a new column of `data`.
 
         A multiprocessing strategy is used:
 
@@ -60,25 +61,25 @@ class Kriging(object):
         In the end, there is :math:`N=n_{restart} \times n_{modes})` processes.
         If there is not enought CPU, :math:`N=\frac{n_{cpu}}{n_restart}`.
 
-        :param ndarray input: The input used to generate the output. (nb snapshots, nb parameters)
-        :param ndarray output: The observed data. (nb snapshots, [nb output dim])
+        :param array_like sample: The sample used to generate the data. (n_samples, n_features)
+        :param array_like data: The observed data. (n_samples, [n_features])
 
         """
         try:
-            input[0][0]
+            sample[0][0]
         except (TypeError, IndexError):
             pass
         else:
-            input = np.array(input).reshape(len(input), -1)
+            sample = np.array(sample).reshape(len(sample), -1)
 
-        input_len = input.shape[1]
-        self.model_len = output.shape[1]
+        sample_len = sample.shape[1]
+        self.model_len = data.shape[1]
         if self.model_len == 1:
-            output = output.ravel()
+            data = data.ravel()
 
         # Define the model settings
-        l_scale = ((1.0),) * input_len
-        scale_bounds = [(1e-03, 1000.0)] * input_len
+        l_scale = ((1.0),) * sample_len
+        scale_bounds = [(1e-03, 1000.0)] * sample_len
         self.kernel = 1.0 * RBF(length_scale=l_scale,
                                 length_scale_bounds=scale_bounds)
 
@@ -96,19 +97,19 @@ class Kriging(object):
             gp = GaussianProcessRegressor(kernel=self.kernel,
                                           n_restarts_optimizer=0,
                                           optimizer=self.optim_evolution)
-            data = gp.fit(input, column)
+            data = gp.fit(sample, column)
             hyperparameter = np.exp(gp.kernel_.theta)
 
             return data, hyperparameter
 
-        # Create a predictor per output, parallelize if several output
+        # Create a predictor per data, parallelize if several data
         if self.model_len > 1:
             pool = NestedPool(self.n_cpu)
-            results = pool.imap(model_fitting, output.T)
+            results = pool.imap(model_fitting, data.T)
             results = list(results)
             pool.terminate()
         else:
-            results = [model_fitting(output)]
+            results = [model_fitting(data)]
 
         # Gather results
         self.data, self.hyperparameter = zip(*results)

@@ -4,8 +4,9 @@ Space class
 ===========
 
 Derives from :py:class:`list` and constitutes a groupment for points.
-The space can be filled using low discrepancy sequences from :class:`openturns.LowDiscrepancySequence`,
-it can be resampled or points can be added manually.
+The space can be filled using low discrepancy sequences from
+:class:`openturns.LowDiscrepancySequence`, it can be resampled or points can be
+added manually.
 
 :Example:
 
@@ -20,9 +21,9 @@ it can be resampled or points can be added manually.
 """
 import logging
 import os
+import itertools
 import numpy as np
 from scipy.optimize import differential_evolution
-import itertools
 from sklearn import preprocessing
 from .sampling import Doe
 from .point import Point
@@ -240,8 +241,6 @@ class Space(list):
                                                                      next(self.hybrid))
         elif method == 'optimization':
             new_point = self.refiner.optimization()
-        elif method == 'ego_discrepancy':
-            new_point = self.refiner.ego_discrepancy()
         elif method == 'sigma_discrepancy':
             new_point = self.refiner.sigma_discrepancy()
 

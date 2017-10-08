@@ -1,6 +1,6 @@
 # coding: utf8
-import pytest
 import os
+import pytest
 import numpy as np
 import numpy.testing as npt
 import matplotlib.pyplot as plt
@@ -83,12 +83,12 @@ def test_PC_14d(mascaret_data):
     f, dists, model, point, target_point, space, target_space = mascaret_data
 
     surrogate = PC(function=f, input_dists=dists,
-                   out_dim=14, n_sample=300, total_deg=10,  strategy='LS')
+                   out_dim=14, n_sample=300, total_deg=10, strategy='LS')
     pred = np.array(surrogate.evaluate(point)).reshape(14)
     npt.assert_almost_equal(target_point, pred, decimal=2)
 
     surrogate = PC(function=f, input_dists=dists,
-                   out_dim=14, total_deg=11,  strategy='Quad')
+                   out_dim=14, total_deg=11, strategy='Quad')
 
     # Test point evaluation
     pred = np.array(surrogate.evaluate(point)).reshape(14)
@@ -173,7 +173,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_quality(tmp, mufi_data):
+def test_quality(mufi_data):
     _, _, _, _, _, _, space, target_space = mufi_data
 
     surrogate = SurrogateModel('kriging', space.corners)

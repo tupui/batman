@@ -1,6 +1,12 @@
+"""
+Define function related to design of experiments.
+
+* :func:`doe`,
+* :func:`response_surface`.
+"""
+from itertools import combinations_with_replacement
 import numpy as np
 from scipy.interpolate import griddata
-from itertools import combinations_with_replacement
 from sklearn import preprocessing
 from matplotlib import cm
 import matplotlib.pyplot as plt

@@ -27,15 +27,15 @@ It implements the following methods:
 
 """
 import logging
+import copy
 from scipy.optimize import (differential_evolution, basinhopping)
 from scipy.stats import norm
 import numpy as np
 from sklearn import preprocessing
-import copy
+import batman as bat
 from ..uq import UQ
 from .sampling import Doe
 from ..misc import optimization
-import batman as bat
 
 
 class Refiner(object):
@@ -108,10 +108,6 @@ class Refiner(object):
         :rtype: float
         """
         f, _ = self.surrogate(coords)
-        try:
-            _, f = np.split(f, 2)
-        except (ValueError, TypeError):
-            pass
         modes_weights = np.array(self.pod_S ** 2).reshape(-1, 1)
         sum_f = np.average(f, weights=modes_weights)
 
@@ -230,7 +226,7 @@ class Refiner(object):
             except ZeroDivisionError:
                 return np.inf
             aspect = np.power(aspect, 1 / self.dim)
-            if not (aspect <= 1.5):
+            if not aspect <= 1.5:
                 return np.inf
 
             # Verify that LOO point is inside
@@ -453,7 +449,7 @@ class Refiner(object):
                 if sign * first_extremum.fun < sign * point_eval:
                     # Nelder-Mead expansion
                     first_extremum = np.array([first_extremum.x +
-                                              (first_extremum.x - point)])
+                                               (first_extremum.x - point)])
                     # Constrain to the hypercube
                     first_extremum = np.maximum(first_extremum,
                                                 hypercube[:, 0])
@@ -464,7 +460,7 @@ class Refiner(object):
                                       .format(first_extremum[0]))
                     if sign * second_extremum.fun > sign * point_eval:
                         second_extremum = np.array([second_extremum.x +
-                                                   (second_extremum.x - point)])
+                                                    (second_extremum.x - point)])
                         second_extremum = np.maximum(second_extremum,
                                                      hypercube[:, 0])
                         second_extremum = np.minimum(second_extremum,
@@ -543,7 +539,8 @@ class Refiner(object):
         def probability_improvement(x):
             """Do probability of improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
-            too_close = np.array([True if np.linalg.norm(x_scaled[0][discrete:] - p[discrete:], -1) < 0.02
+            too_close = np.array([True if np.linalg.norm(
+                x_scaled[0][discrete:] - p[discrete:], -1) < 0.02
                                   else False for p in self.points]).any()
             if too_close:
                 return np.inf
@@ -558,7 +555,8 @@ class Refiner(object):
         def expected_improvement(x):
             """Do expected improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
-            too_close = np.array([True if np.linalg.norm(x_scaled[0][discrete:] - p[discrete:], -1) < 0.02
+            too_close = np.array([True if np.linalg.norm(
+                x_scaled[0][discrete:] - p[discrete:], -1) < 0.02
                                   else False for p in self.points]).any()
             if too_close:
                 return np.inf
@@ -579,13 +577,14 @@ class Refiner(object):
 
         return max_ei
 
-    def sigma_discrepancy(self, weights=[0.5, 0.5]):
+    def sigma_discrepancy(self, weights=None):
         """Maximization of the composite indicator: sigma - discrepancy.
 
         :param list(float) weights: respectively weights of sigma and discrepancy
         :return: The coordinate of the point to add
         :rtype: lst(float)
         """
+        weights = [0.5, 0.5] if weights is None else weights
         doe = Doe(500, self.corners, 'halton')
         sample = doe.generate()
 

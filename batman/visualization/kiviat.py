@@ -201,7 +201,7 @@ class Kiviat3D:
         metadata = {'title': 'kiviat-HOPs',
                     'artist': 'batman',
                     'comment': "Kiviat Hypothetical Outcome Plots at {} ms"
-                              .format(frame_rate)}
+                               .format(frame_rate)}
 
         writer = movie_writer(fps=1000 / frame_rate, metadata=metadata)
 
