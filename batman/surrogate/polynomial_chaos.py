@@ -3,14 +3,34 @@
 Polynomial Chaos class
 ======================
 
+Interpolation using Polynomial Chaos method.
+
+:Example:
+
+::
+
+    >> from batman.surrogate import PC
+    >> from batman.functions import Michalewicz
+    >> import numpy as np
+    >> f = Michalewicz()
+    >> surrogate = PC('Quad', 5, [ot.Uniform(0, 1), ot.Uniform(0, 1)])
+    >> sample = np.array(surrogate.sample)
+    >> sample.shape
+    (36, 2)
+    >> data = f(sample)
+    >> surrogate.fit(sample, data)
+    >> point = [0.4, 0.6]
+    >> surrogate.evaluate(point)
+    array([ -8.642e-08])
+
 """
+import logging
+import os
+import openturns as ot
 import numpy as np
 from pathos.multiprocessing import cpu_count
 from ..misc import NestedPool
 from ..functions import multi_eval
-import logging
-import openturns as ot
-import os
 
 
 class PC(object):
@@ -23,7 +43,7 @@ class PC(object):
         """Generate truncature and projection strategies.
 
         Allong with the strategies the sample is storred as an attribute:
-        :attr:`sample`.
+        :attr:`sample` as well as the weights: :attr:`weights`.
 
         :param str strategy: Least square or Quadrature ['LS', 'Quad'].
         :param int degree: Polynomial degree.
@@ -46,7 +66,7 @@ class PC(object):
 
         # Strategy choice for expansion coefficient determination
         self.strategy = strategy
-        if self.strategy == "LS":  # least-squares method
+        if self.strategy == 'LS':  # least-squares method
             montecarlo_design = ot.MonteCarloExperiment(self.dist, n_sample)
             self.proj_strategy = ot.LeastSquaresStrategy(montecarlo_design)
             self.sample, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
@@ -63,25 +83,23 @@ class PC(object):
                 ot.GaussProductExperiment(measure, degrees))
             self.sample, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
 
-    def fit(self, input, output):
+    def fit(self, sample, data):
         """Create the predictor.
 
-        The result of the Polynomial Chaos is stored as ``self.pc_result`` and
-        the surrogate is stored as ``self.pc``.
+        The result of the Polynomial Chaos is stored as :attr:`pc_result` and
+        the surrogate is stored as :attr:`pc`.
 
-        :param array_like input: The input used to generate the output.
-        (n_samples, n_parameters)
-        :param array_like output: The observed data.
-        (n_samples, [n_features])
+        :param array_like sample: The sample used to generate the data. (n_samples, n_features)
+        :param array_like data: The observed data. (n_samples, [n_features])
         """
         try:
-            self.model_len = output.shape[1]
+            self.model_len = data.shape[1]
             if self.model_len == 1:
-                output = output.ravel()
+                data = data.ravel()
         except TypeError:
             self.model_len = 1
-            output = output.ravel()
-        except AttributeError:  # output is None
+            data = data.ravel()
+        except AttributeError:  # data is None
             self.model_len = 1
         # Define the CPU multi-threading/processing strategy
         try:
@@ -95,15 +113,15 @@ class PC(object):
         def model_fitting(column):
             column = column.reshape((-1, 1))
 
-            # Find correspondance between inputs and weights
+            # Find correspondance between samples and weights
             # Some points may not have been run
-            input_ = np.zeros_like(self.sample)
-            input_[:len(input)] = input
-            input_arg = np.where(np.linalg.norm(input_ - np.array(self.sample),
-                                                axis=1) <= 1e-2)[0]
-            weights = np.array(self.weights)[input_arg]
+            sample_ = np.zeros_like(self.sample)
+            sample_[:len(sample)] = sample
+            sample_arg = np.where(np.linalg.norm(sample_ - np.array(self.sample),
+                                                 axis=1) <= 1e-2)[0]
+            weights = np.array(self.weights)[sample_arg]
 
-            pc_algo = ot.FunctionalChaosAlgorithm(input, weights, column,
+            pc_algo = ot.FunctionalChaosAlgorithm(sample, weights, column,
                                                   self.dist, self.trunc_strategy,
                                                   self.proj_strategy)
             ot.Log.Show(ot.Log.ERROR)
@@ -114,12 +132,12 @@ class PC(object):
 
         if self.model_len > 1:
             # pool = NestedPool(self.n_cpu)
-            # results = pool.imap(model_fitting, output.T)
+            # results = pool.imap(model_fitting, data.T)
             # results = list(results)
             # pool.terminate()
-            results = [model_fitting(out) for out in output.T]
+            results = [model_fitting(out) for out in data.T]
         else:
-            results = [model_fitting(output)]
+            results = [model_fitting(data)]
 
         self.pc, self.pc_result = zip(*results)
 
