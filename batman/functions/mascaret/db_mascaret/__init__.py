@@ -1,6 +1,6 @@
 """
-Mascaret module
-***************
+Mascaret database module
+************************
 """
 
 from .mascaret import Mascaret

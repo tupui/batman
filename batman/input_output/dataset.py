@@ -1,4 +1,7 @@
-
+"""
+Dataset module
+**************
+"""
 __docformat__ = "reStructuredText"
 
 """This module contains the classes :class:`DatasetInfo` and :class:`Dataset`."""
@@ -68,7 +71,7 @@ class DatasetInfo(object):
 
     def _check_type(self, type_, sequence):
         ok = True
-        if not (isinstance(sequence, list) or isinstance(sequence, tuple)) \
+        if not isinstance(sequence, (list, tuple)) \
            or len(sequence) == 0:
             ok = False
         else:

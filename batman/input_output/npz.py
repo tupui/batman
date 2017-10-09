@@ -1,3 +1,7 @@
+"""
+Define numpy IO
+***************
+"""
 import numpy as np
 from .base import *
 
@@ -8,7 +12,7 @@ class Npz(IOBase):
     See numpy documentation for details.
     """
 
-    format    = 'numpy'
+    format = 'numpy'
     extension = '.npz'
 
 
@@ -30,6 +34,6 @@ class Npz(IOBase):
 
 
     def meta_data(self, path):
-        # TODO: make this more subtle
+        # make this more subtle
         d = self.read(path)
         self.info.set_shape(d.shape)

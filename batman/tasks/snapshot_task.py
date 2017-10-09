@@ -22,8 +22,8 @@ import re
 import time
 import logging
 import shutil
-from ..misc import clean_path
 import subprocess
+from ..misc import clean_path
 from .snapshot import Snapshot
 
 opj = os.path.join
@@ -39,11 +39,13 @@ class SnapshotTask(object):
     finished_file = 'job-finished'
     touch = 'touch'
 
-    dummy_line = '^(\s*#|\n)'
-    '''Regular expression used that match a non executable statement in a shell script.'''
+    dummy_line = r'^(\s*#|\n)'
+    '''Regular expression used that match a non executable statement in a shell
+    script.'''
 
     info_line = '# State file insertion <<<<<<<<<<<<<<<<<<<<<<<<<\n'
-    '''Commented lines to be inserted in the script before and after state file creation statements.'''
+    '''Commented lines to be inserted in the script before and after state file
+    creation statements.'''
 
     period = None
     '''Period of time in seconds between state files existence checking.'''
@@ -53,10 +55,12 @@ class SnapshotTask(object):
 
     # these attributes are settings common to all objects
     context = None
-    '''Path to the directory which contains the files required for running the snapshot producer.'''
+    '''Path to the directory which contains the files required for running the
+    snapshot producer.'''
 
     private_directory = None
-    '''Directory inside the task working_directory where batman stuff to keep will be located.'''
+    '''Directory inside the task working_directory where batman stuff to keep
+    will be located.'''
 
     command = None
     '''Command line used for executing the script.'''
@@ -68,7 +72,8 @@ class SnapshotTask(object):
     '''Period of time to wait before a task is considered to be failed.'''
 
     data_files = None
-    '''List of path to data files that defines a snapshot, paths must be relative to the context directory.'''
+    '''List of path to data files that defines a snapshot, paths must be
+    relative to the context directory.'''
 
     clean_working_directory = False
     '''Clean the working directory after a task is terminated.'''
@@ -129,7 +134,8 @@ class SnapshotTask(object):
     def run(self):
         """Return the result of the task.
 
-        If the task has already been completed, just return its result, otherwise try to run it first.
+        If the task has already been completed, just return its result,
+        otherwise try to run it first.
         """
         cls = self.__class__
         result = self._before_run()
@@ -149,7 +155,19 @@ class SnapshotTask(object):
     def _before_run(self):
         """Prepare the run.
 
-        The `working_directory` is created as a replica of the `context` directory tree with symbolic links. This is where the snapshot producer will be run, by issuing the command line generated with `command` and `script`. In addition to the files located in the directory `context`, the snapshot producer needs the parameters or the coordinates of the point in the parameters space bound to the snapshot to be created, this file is created here. In order to be informed about the state of the snapshot computation, without relying on querying a third party tool, the producer script is modified in order to create dummy state files in `working_directory`. A file which indicates that the script is starting (see `started_file`) is created right before any executable statements of the script and similarly right after all executable statements (see `finished_file`).
+        The `working_directory` is created as a replica of the `context`
+        directory tree with symbolic links. This is where the snapshot producer
+        will be run, by issuing the command line generated with `command` and
+        `script`. In addition to the files located in the directory `context`,
+        the snapshot producer needs the parameters or the coordinates of the
+        point in the parameters space bound to the snapshot to be created, this
+        file is created here. In order to be informed about the state of the
+        snapshot computation, without relying on querying a third party tool,
+        the producer script is modified in order to create dummy state files in
+        `working_directory`. A file which indicates that the script is starting
+        (see `started_file`) is created right before any executable statements
+        of the script and similarly right after all executable statements
+        (see `finished_file`).
         """
         cls = self.__class__
 

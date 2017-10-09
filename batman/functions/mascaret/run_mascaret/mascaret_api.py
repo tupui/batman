@@ -14,8 +14,8 @@ from collections import OrderedDict
 import ctypes
 import itertools
 import numpy as np
-from ...utils import multi_eval
 import batman as bat
+from ...utils import multi_eval
 
 # logging.basicConfig(level=logging.DEBUG)
 
@@ -84,7 +84,7 @@ class MascaretApi(object):
         # Initialize model
         self.init_model()
 
-       # Get Model.CrossSection
+        # Get Model.CrossSection
         self.cross_section
 
     def load_mascaret(self, libmascaret):
@@ -242,7 +242,8 @@ class MascaretApi(object):
         file_type_c = (ctypes.c_char_p * len_file)(*file_type)
         self.logger.debug('Importing a model...')
         self.error = self.libmascaret.C_IMPORT_MODELE_MASCARET(self.id_masc, file_name_c,
-                                                               file_type_c, len_file, self.iprint)
+                                                               file_type_c, len_file,
+                                                               self.iprint)
         self.logger.info("Model imported with:\n-> file_name: {}\n-> file_type: {}."
                          .format(file_name, file_type))
 
@@ -380,11 +381,17 @@ class MascaretApi(object):
 
         elif Qtime is not None:
             nb_timebc, tab_timebc_c, tab_CL1_c, tab_CL2_c = Qtime
-            self.error = self.libmascaret.C_CALCUL_MASCARET_CONDITION_LIMITE(self.id_masc, self.t0,
-                                                                             self.tend, self.dt, ctypes.byref(
+            self.error = self.libmascaret.C_CALCUL_MASCARET_CONDITION_LIMITE(self.id_masc,
+                                                                             self.t0,
+                                                                             self.tend,
+                                                                             self.dt,
+                                                                             ctypes.byref(
                                                                                  tab_timebc_c),
-                                                                             nb_timebc, ctypes.byref(
-                                                                                 tab_CL1_c), ctypes.byref(tab_CL2_c),
+                                                                             nb_timebc,
+                                                                             ctypes.byref(
+                                                                                 tab_CL1_c),
+                                                                             ctypes.byref(
+                                                                                 tab_CL2_c),
                                                                              self.iprint)
 
         else:
@@ -392,7 +399,8 @@ class MascaretApi(object):
             self.empty_opt()
             self.logger.info('Running Mascaret...')
             self.error = self.libmascaret.C_CALCUL_MASCARET(self.id_masc, self.t0,
-                                                            self.tend, self.dt, self.iprint)
+                                                            self.tend, self.dt,
+                                                            self.iprint)
 
         self.logger.info('Mascaret ran.')
 
@@ -411,8 +419,9 @@ class MascaretApi(object):
                     i += 1
             y1 = self.state(id_tick).value
             y2 = self.state(id_tick + 1).value
-            output = (y2 * (self.user_settings['misc']['curv_abs'] - ticks[id_tick]) + y1 * (ticks[
-                      id_tick + 1] - self.user_settings['misc']['curv_abs'])) / (ticks[id_tick + 1] - ticks[id_tick])
+            output = (y2 * (self.user_settings['misc']['curv_abs'] - ticks[id_tick])
+                      + y1 * (ticks[id_tick + 1] - self.user_settings['misc']['curv_abs']))\
+                          / (ticks[id_tick + 1] - ticks[id_tick])
             return output
         elif self.user_settings['misc']['all_outstate'] is True:
             return self.curv_abs(), self.allstate()
@@ -432,8 +441,8 @@ class MascaretApi(object):
             except KeyError:
                 n = 1
 
-            nx = ('distKs' in self.user_settings[
-                  'MC']) + ('distQ' in self.user_settings['MC'])
+            nx = ('distKs' in self.user_settings['MC'])\
+                + ('distQ' in self.user_settings['MC'])
             self.doe = np.empty((self.user_settings['MC']['Ne'], nx))
 
             if 'distKs' in self.user_settings['MC']:
@@ -546,7 +555,8 @@ class MascaretApi(object):
         size3 = ctypes.c_int()
         self.logger.debug('Getting the size of Model.Graph.Discharge...')
         self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
-            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
+            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2),
+            ctypes.byref(size3))
         self.logger.debug('Size Model.Graph.Discharge= {} {} {}.'
                           .format(size1.value, size2.value, size3.value))
 
@@ -568,8 +578,7 @@ class MascaretApi(object):
                 self.info_all_bc()
             for k in range(self.nb_bc):
                 self.logger.info("Info Getter Loi Q: {} {} {}".format(self.l_name_all_bc[k],
-                                                                      self.l_num_all_bc[
-                                                                          k],
+                                                                      self.l_num_all_bc[k],
                                                                       bc_qt[k, :]))
         return bc_qt
 
@@ -596,7 +605,8 @@ class MascaretApi(object):
         size3 = ctypes.c_int()
         self.logger.debug('Setting the size of Model.Graph.Discharge...')
         self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
-            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
+            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2),
+            ctypes.byref(size3))
         self.logger.debug('Size Model.Graph.Discharge= {} {} {}.'
                           .format(size1.value, size2.value, size3.value))
 
@@ -629,7 +639,8 @@ class MascaretApi(object):
         self.logger.debug(
             'Getting the size of Model.FrictionZone.FirstNode...')
         self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
-            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
+            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2),
+            ctypes.byref(size3))
         self.logger.debug(
             'Number of Friction Zones at first node: {}.'.format(size1.value))
 
@@ -645,7 +656,8 @@ class MascaretApi(object):
         var_name = ctypes.c_char_p(b'Model.FrictionZone.LastNode')
         self.logger.debug('Getting the size of Model.FrictionZone.LastNode...')
         self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
-            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2), ctypes.byref(size3))
+            self.id_masc, var_name, 0, ctypes.byref(size1), ctypes.byref(size2),
+            ctypes.byref(size3))
         self.logger.debug(
             'Number of Friction Zones at last node: {}.'.format(size1.value))
 
@@ -733,7 +745,7 @@ class MascaretApi(object):
 
     @friction_minor.setter
     def friction_minor(self, ks):
-        """Changes minor friction coefficient.
+        """Change minor friction coefficient.
 
         Use Mascaret Api :meth:`C_SET_DOUBLE_MASCARET`.
 
@@ -755,7 +767,7 @@ class MascaretApi(object):
         Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET` and
         :meth:`C_GET_DOUBLE_MASCARET`.
 
-        :boolean index: Flag to return all state 
+        :boolean index: Flag to return all state
         :return: State at each simulation point
         :rtype: list of floats
         """
@@ -813,7 +825,7 @@ class MascaretApi(object):
         return z_res_c
 
     def curv_abs(self):
-        """Get abscurv over entire domain
+        """Get abscurv over entire domain.
 
         Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET` and
         :meth:`C_GET_DOUBLE_MASCARET`.
@@ -931,7 +943,7 @@ class MascaretApi(object):
                 "table X bot unique: {}\n"
                 "table Z: {}\n"
                 "table Z bot: {}"
-                ).format(res_RelAbs, res_RelAbsBot, res_Z, res_Zbot)
+               ).format(res_RelAbs, res_RelAbsBot, res_Z, res_Zbot)
         self.logger.info(info)
 
         return res_RelAbsBot, res_Zbot, res_RelAbs, res_Z
@@ -967,12 +979,12 @@ class MascaretApi(object):
                           .format(sizeZ1.value, sizeZ2.value, sizeZ3.value))
 
         if 'Lp' in self.user_settings['bathy']:
-            # sampler = bat.space.Gp1dSampler(t0=self.cross_section[0][0],
-            #                                 T=self.cross_section[0][-1],
+            # sampler = bat.space.Gp1dSampler(t_ini=self.cross_section[0][0],
+            #                                 t_end=self.cross_section[0][-1],
             #                                 Nt=sizeZ1.value, sigma=bathy['dz'],
             #                                 theta=bathy['Lp'])
-            sampler = bat.space.Gp1dSampler(t0=self.cross_section[0][0],
-                                            T=self.cross_section[0][-1],
+            sampler = bat.space.Gp1dSampler(t_ini=self.cross_section[0][0],
+                                            t_end=self.cross_section[0][-1],
                                             Nt=sizeZ1.value, sigma=bathy['dz'],
                                             theta=bathy['Lp'],
                                             x=[[self.cross_section[0][0]],

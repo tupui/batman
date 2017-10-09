@@ -107,46 +107,54 @@ User installation
 
 Using the latest python version is prefered! Then to install::
 
-    cd BATMAN
+    git clone git@nitrox.cerfacs.fr:open-source/batman.git 
+    cd batman
     python setup.py build_fortran
     python setup.py install
     python setup.py test
     python setup.py build_sphinx
 
-The latter is optionnal as it build the documentation.
-The testing part is also optionnal but is recommanded. (~20mins).
+The latter is optionnal as it build the documentation. The testing part is also
+optionnal but is recommanded. (~20mins).
 
 .. note:: If you don't have install priviledge, add ``--user`` option after install.
+    But the simplest way might be to use a :ref:`conda` environment.
 
 Finally, to install the optionnal package ``Antares``::
 
-    pip install -e .[antares] --process-dependency-links
+    pip install --editable .[antares] --process-dependency-links
 
 If BATMAN has been correctly installed, you should be able to call it simply::
 
     batman -h
 
 .. warning:: Depending on your configuration, you might have to export your local path: 
- ``export PATH=$PATH:~/.local/bin``.
+    ``export PATH=$PATH:~/.local/bin``. Care to be taken with both your ``PATH``
+    and ``PYTHONPATH`` environment variables. Make sure you do not call different
+    installation folders. It is recommanded that you leave your ``PYTHONPATH`` empty.
+
+.. _conda:
+Otherwize (if you want Python 3 for instance) you can create your ``conda`` environment::
+
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash Miniconda3-latest-Linux-x86_64.sh
+    conda create -n bat_env -c conda-forge openturns matplotlib numpy scipy scikit-learn pathos jsonschema sphinx sphinx_rtd_theme pytest pytest-runner mock ffmpeg
+
+Then you can install all packages without ``root`` access. You can access
+the newly created environment with ``source activate bat_env``.
 
 .. note:: If using *NEMO* with Python 2.7::
 
+        module purge
         module load python/2.7
         module load python/2.7-shared
         module load application/openturns/1.7
 
     The last version of OpenTURNS can be loaded **after install** using instead::
 
+        module purge
         module load python/2.7
         module load python/2.7-shared
         module load python/miniconda2.7
 
     .. warning:: You cannot load application/openturns/1.7 and python/miniconda2.7 at the same time.
-
-    Otherwize (if you want Python 3 for instance) you can create your ``conda`` environment::
-
-        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-        bash Miniconda3-latest-Linux-x86_64.sh
-        conda create -n bat_env -c conda-forge openturns matplotlib numpy scipy scikit-learn pathos jsonschema sphinx sphinx_rtd_theme pytest pytest-runner mock ffmpeg
-
-    Then you can install all packages without ``root`` access.

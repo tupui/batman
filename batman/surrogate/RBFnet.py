@@ -1,35 +1,33 @@
-#  ==========================================================================
-#  Project: cfd - POD - Copyright (c) 2005 by CERFACS
-#  Type   : RBF network class definitions
-#  File   : RBFnet.py
-#  Vers   : V1.0
-#
-#     RBFnet librairie pour l'utilisation de reseaux
-#               de neurones a RBF
-#     Notation et fondement theoriques issus de
-#     "Introduction to Radial Basis Function Networks"
-#                  par Mark J.L. Orr
-#        www.anc.ed.ac.uk/~mjo/papers/intro.ps
-#
+"""
+RBFnet librairie pour l'utilisation de reseaux de neurones a RBF
+Notation et fondement theoriques issus de
+"Introduction to Radial Basis Function Networks" par Mark J.L. Orr
+www.anc.ed.ac.uk/~mjo/papers/intro.ps
+"""
+import numpy as np
 from .TreeCut import Tree
 from ..functions import multi_eval
-import numpy as np
 
 
 class RBFnet(object):
 
-    def __init__(self, trainIn, trainOut, regparam=0., radius=1.5, regtree=0,
-                   function='default', Pmin=2, Radscale=1.):
-        # initialise le reseau principal a partir d'un tableau de points
-        # d'entrainements de taille Setsize*(Ninputs) pour les inputs et
-        # Setsize*(Noutputs) pour les outputs ds trainOut
-        # possibilite d'utiliser d'arbre de regression sur les donnees (regtree=1)
-        # le reseau est ensuite entraine sur cet ensemble avec
-        # le parametere Regparam
+    """RBF class."""
 
-        # initialisation
-        # trainIn est copie pour le pas affecter l'original dans le prog
-        # appelant
+    def __init__(self, trainIn, trainOut, regparam=0., radius=1.5, regtree=0,
+                 function='default', Pmin=2, Radscale=1.):
+        """Initialization.
+
+        initialise le reseau principal a partir d'un tableau de points
+        d'entrainements de taille Setsize*(Ninputs) pour les inputs et
+        Setsize*(Noutputs) pour les outputs ds trainOut
+        possibilite d'utiliser d'arbre de regression sur les donnees (regtree=1)
+        le reseau est ensuite entraine sur cet ensemble avec
+        le parametere Regparam
+
+        initialisation
+        trainIn est copie pour le pas affecter l'original dans le prog
+        appelant
+        """
         self.trainIn = np.array(trainIn).copy()
         self.trainOut = trainOut.copy()
         self.radius = radius
@@ -66,12 +64,10 @@ class RBFnet(object):
                 for j in range(self.Ninput):
                     self.radii[i, j] = r
         else:
-
             # test
             if self.Noutput != 1:
                 raise 'Output Dim must be 1 with regression Trees'
             # creation de l'arbre de regression
-
             tree1 = Tree()
             tree1.TreeDecomp(self.trainIn, self.trainOut, self.Setsize,
                              self.Ninput, Pmin)
@@ -82,7 +78,7 @@ class RBFnet(object):
         self.regParam = np.array([regparam] * self.Ncenter, dtype=np.float64)
         self.funcType = np.array([0.] * self.Ncenter, dtype=np.int32)
 
-        self.Calc_Coefs_Moyenne()
+        self.coefs_mean()
         self.trainNet()
 
     def __repr__(self):
@@ -99,7 +95,6 @@ class RBFnet(object):
 
     @multi_eval
     def evaluate(self, point):
-
         outacc = np.zeros(self.Noutput, dtype=np.float64)
         # adim
         pts = []
@@ -118,7 +113,6 @@ class RBFnet(object):
         return out
 
     def RBFout(self, Point, neuroNum):
-        out = 0.
         distC = 0.
 
         for i in range(self.Ninput):
@@ -127,10 +121,13 @@ class RBFnet(object):
         return self.rfunction(np.sqrt(distC))
 
     def trainNet(self):
-        # entrainement du reseau de neurone principal : calcul des poids
-        # trainIn tableau de points d'entrainements
-        # de taille Setsize*(Ninputs) pour les inputs et Setsize pour les
-        # outputs ds trainOut
+        """Train.
+
+        entrainement du reseau de neurone principal : calcul des poids
+        trainIn tableau de points d'entrainements
+        de taille Setsize*(Ninputs) pour les inputs et Setsize pour les
+        outputs ds trainOut
+        """
         H = np.zeros((self.Setsize, self.Ncenter), dtype=np.float64)
         Hymoy = np.zeros((self.Setsize, self.Noutput), dtype=np.float64)
 
@@ -142,7 +139,7 @@ class RBFnet(object):
 
         HT = np.transpose(H)
         HTH = np.dot(HT, H)
-        putOnDiag(HTH, self.regParam)
+        put_on_diag(HTH, self.regParam)
         # les valeurs moyennes sont retranchees
         Hy = np.dot(HT, self.trainOut - Hymoy)
 
@@ -150,11 +147,12 @@ class RBFnet(object):
         # numpy.linalg.solve(a, b) ??
         self.weights = np.linalg.solve(HTH, Hy)
 
+    def coefs_mean(self):
+        """Mean coefficients.
 
-    def Calc_Coefs_Moyenne(self):
-        # fonction permettant de calculer le plan moyen a partir de laquelle
-        # partent les gaussiennes par regression lineaire multiple
-
+        fonction permettant de calculer le plan moyen a partir de laquelle
+        partent les gaussiennes par regression lineaire multiple
+        """
         X = np.ones((self.Ninput + 1, self.Setsize), dtype=np.float64)
         for i in range(1, self.Ninput + 1):
             for j in range(self.Setsize):
@@ -167,10 +165,12 @@ class RBFnet(object):
         # numpy.linalg.solve(a, b) ??
         self.cf_moyenne = np.linalg.solve(XXT, XY)
 
-
     def compute_radius(self, cel):
-        # calcule le rayon pour la cellule i lorsque on utilise pas l'arbre de regression
-        # ce rayon est calcule comme la demi distance a la plus proche cellule
+        """Radius.
+
+        calcule le rayon pour la cellule i lorsque on utilise pas l'arbre de regression
+        ce rayon est calcule comme la demi distance a la plus proche cellule
+        """
         distmin = 1.E99
         plusproche = 0
         for i in range(self.Ncenter):
@@ -198,7 +198,7 @@ class RBFnet(object):
 #   put on diagonale
 
 
-def putOnDiag(matrix, vect):
+def put_on_diag(matrix, vect):
     for i in range(matrix.shape[0]):
         matrix[i, i] = matrix[i, i] + vect[i]
 
@@ -219,7 +219,7 @@ if __name__ == '__main__':
                        [1., 0., 0.], [1., 1., 5.], [1., 2., 6.], [1., 3., 7.]])
     out = np.array([[0., 0], [0., 100], [0., 200], [0, 300], [10., 0], [10., 100],
                     [10., 200], [10., 300]])
-    point=[[0.7,0.2,.5],[0.6,0.1,.5]]
+    point = [[0.7, 0.2, .5], [0.6, 0.1, .5]]
 
     def my_function(radius):
         # radius > 0.

@@ -20,7 +20,15 @@ It allows the creation of a surrogate model and making predictions.
 
 """
 
+import os
+import copy
 import logging
+import dill as pickle
+import numpy as np
+from sklearn import preprocessing
+from sklearn.model_selection import LeaveOneOut
+from sklearn.metrics import r2_score
+from pathos.multiprocessing import cpu_count
 from .kriging import Kriging
 from .polynomial_chaos import PC
 from .RBFnet import RBFnet
@@ -28,14 +36,6 @@ from .multifidelity import Evofusion
 from ..tasks import Snapshot
 from ..space import Space
 from ..misc import ProgressBar, NestedPool
-import dill as pickle
-import numpy as np
-from sklearn import preprocessing
-from sklearn.model_selection import LeaveOneOut
-from sklearn.metrics import r2_score
-import copy
-from pathos.multiprocessing import cpu_count
-import os
 
 
 class SurrogateModel(object):
@@ -67,8 +67,8 @@ class SurrogateModel(object):
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
         settings = {"space": {
-                        "corners": corners,
-                        "sampling": {"init_size": np.inf, "method": kind}}}
+            "corners": corners,
+            "sampling": {"init_size": np.inf, "method": kind}}}
         self.space = Space(settings)
         self.pod = None
         self.update = False  # switch: update model if POD update

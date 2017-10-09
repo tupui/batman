@@ -4,6 +4,11 @@ High Density Region Boxplot
 """
 import logging
 from itertools import compress
+try:
+    import copyreg
+except ImportError:
+    import copy_reg as copyreg
+import types
 from multiprocessing import Pool
 import numpy as np
 from scipy.optimize import differential_evolution
@@ -12,18 +17,11 @@ from scipy.spatial.distance import cdist
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
-
+import matplotlib.animation as manimation
+import matplotlib.pyplot as plt
+import batman as bat
 from .uncertainty import kernel_smoothing
 from .doe import doe
-
-import matplotlib.animation as manimation
-import matplotlib.backends.backend_pdf
-import matplotlib.pyplot as plt
-try:
-    import copyreg
-except ImportError:
-    import copy_reg as copyreg
-import types
 
 np.set_printoptions(precision=3)
 
@@ -141,7 +139,7 @@ class HdrBoxplot:
                                            threshold=self.threshold)
 
         extra_alpha = [i for i in self.alpha
-                       if 0.5 != i and 0.9 != i and threshold != i]
+                       if i != 0.5 and i != 0.9 and i != threshold]
         if extra_alpha != []:
             self.extra_quantiles = [y for x in extra_alpha
                                     for y in self.band_quantiles([x])]
@@ -335,7 +333,7 @@ class HdrBoxplot:
                  c='c', alpha=.1, label='dataset')
         plt.plot(x_common, self.median, c='k', label='Median')
         plt.fill_between(x_common, *self.hdr_50,
-                         color='gray', alpha=.4,  label='50% HDR')
+                         color='gray', alpha=.4, label='50% HDR')
         plt.fill_between(x_common, *self.hdr_90,
                          color='gray', alpha=.3, label='90% HDR')
 
@@ -362,16 +360,7 @@ class HdrBoxplot:
         by_label = dict(zip(labels, handles))
         plt.legend(by_label.values(), by_label.keys(), loc='best')
 
-        plt.tight_layout()
-
-        if fname is not None:
-            pdf = matplotlib.backends.backend_pdf.PdfPages(fname)
-            for fig in figures:
-                pdf.savefig(fig, transparent=True, bbox_inches='tight')
-            pdf.close()
-        else:
-            plt.show()
-        plt.close('all')
+        bat.visualization.save_show(fname, figures)
 
         return figures, axs
 
@@ -399,7 +388,7 @@ class HdrBoxplot:
         metadata = {'title': 'f-HOPs',
                     'artist': 'batman',
                     'comment': "Functional Hypothetical Outcome Plots at {} ms"
-                              .format(frame_rate)}
+                               .format(frame_rate)}
 
         writer = movie_writer(fps=1000.0 / frame_rate, metadata=metadata)
 
@@ -464,7 +453,7 @@ class HdrBoxplot:
 
                 writer.grab_frame()
 
-    def sound(self, frame_rate=400, tone_range=[50, 1000], amplitude=1E3,
+    def sound(self, frame_rate=400, tone_range=None, amplitude=1E3,
               distance=True, samples=False, fname='song-fHOPs.wav'):
         """Make sound from curves.
 
@@ -482,6 +471,7 @@ class HdrBoxplot:
         :param False, int, list samples: Data selector
         :param str fname: export sound to filename
         """
+        tone_range = [50, 1000] if tone_range is None else tone_range
         duration = frame_rate / 1000.0
         amp = amplitude
         rate = 44100

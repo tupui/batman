@@ -2,7 +2,7 @@
 import pytest
 from batman.functions import (SixHumpCamel, Branin, Michalewicz, Rosenbrock,
                               Rastrigin, Ishigami, G_Function,
-                              Forrester,  Manning, Mascaret, ChemicalSpill)
+                              Forrester, Manning, Mascaret, ChemicalSpill)
 from scipy.optimize import differential_evolution
 import numpy as np
 import numpy.testing as npt

@@ -1,7 +1,7 @@
 # coding: utf8
-import pytest
 import os
 import copy
+import pytest
 import openturns as ot
 from batman.driver import Driver
 from batman.tests.conftest import sklearn_q2

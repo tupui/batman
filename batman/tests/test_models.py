@@ -1,6 +1,6 @@
 # coding: utf8
-import pytest
 import os
+import pytest
 import numpy as np
 import numpy.testing as npt
 import matplotlib.pyplot as plt
@@ -179,7 +179,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_quality(tmp, mufi_data):
+def test_quality(mufi_data):
     _, _, _, _, _, _, space, target_space = mufi_data
 
     surrogate = SurrogateModel('kriging', space.corners)
