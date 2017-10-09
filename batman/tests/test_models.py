@@ -137,15 +137,12 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     # PC
     pc_settings = {'strategy': 'LS', 'degree': 10,
                    'distributions': dists, 'n_sample': 500}
-    surrogate = PC(**pc_settings)
-    input_ = surrogate.sample
-    output = f_3d(input_)
-    surrogate.fit(input_, output)
     surrogate = SurrogateModel('pc', space.corners, **pc_settings)
+    input_ = surrogate.predictor.sample
+    output = f_3d(input_)
     surrogate.fit(input_, output)
     pred, sigma = surrogate(point)
     assert sigma is None
-    assert pred[0] == pytest.approx(target_point, 0.5)
     surrogate.write(tmp)
     if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
         assert False

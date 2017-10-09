@@ -81,6 +81,12 @@ class SurrogateModel(object):
 
         self.settings = kwargs
 
+        if self.kind == 'pc':
+            self.predictor = PC(strategy=self.settings['strategy'],
+                                degree=self.settings['degree'],
+                                distributions=self.settings['distributions'],
+                                n_sample=self.settings['n_sample'])
+
     def fit(self, points, data, pod=None):
         """Construct the surrogate.
 
@@ -102,10 +108,6 @@ class SurrogateModel(object):
         elif self.kind == 'kriging':
             self.predictor = Kriging(points_scaled, data)
         elif self.kind == 'pc':
-            self.predictor = PC(strategy=self.settings['strategy'],
-                                degree=self.settings['degree'],
-                                distributions=self.settings['distributions'],
-                                n_sample=self.settings['n_sample'])
             self.predictor.fit(points, data)
         elif self.kind == 'evofusion':
             self.predictor = Evofusion(points_scaled, data)

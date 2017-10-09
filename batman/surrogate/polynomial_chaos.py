@@ -95,6 +95,8 @@ class PC(object):
         def model_fitting(column):
             column = column.reshape((-1, 1))
 
+            # Find correspondance between inputs and weights
+            # Some points may not have been run
             input_ = np.zeros_like(self.sample)
             input_[:len(input)] = input
             input_arg = np.where(np.linalg.norm(input_ - np.array(self.sample),

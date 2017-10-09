@@ -128,21 +128,23 @@ class Driver(object):
                              'degree': self.settings['surrogate']['degree'],
                              'distributions': dists,
                              'n_sample': self.settings['space']['sampling']['init_size']}
-                pc = PC(**settings_)
+                self.surrogate = SurrogateModel('pc',
+                                                self.settings['space']['corners'],
+                                                **settings_)
                 self.space.empty()
+                sample = self.surrogate.predictor.sample
                 try:
-                    self.space += pc.sample
+                    self.space += sample
                 except (AlienPointError, UnicityError, FullSpaceError) as tb:
                     self.logger.warning("Ignoring: {}".format(tb))
                 finally:
                     if not self.provider.is_file:
-                        self.to_compute_points = pc.sample[:len(self.space)]
+                        self.to_compute_points = sample[:len(self.space)]
             else:
                 settings_ = {}
-
-            self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                            self.settings['space']['corners'],
-                                            **settings_)
+                self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
+                                                self.settings['space']['corners'],
+                                                **settings_)
         except KeyError:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')
