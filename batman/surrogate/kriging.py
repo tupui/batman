@@ -97,7 +97,7 @@ class Kriging(object):
             """Fit an instance of :claa:`sklearn.GaussianProcessRegressor`."""
             gp = GaussianProcessRegressor(kernel=self.kernel,
                                           n_restarts_optimizer=0,
-                                          optimizer=self.optim_evolution)
+                                          optimizer=self._optim_evolution)
             data = gp.fit(sample, column)
             hyperparameter = np.exp(gp.kernel_.theta)
 
