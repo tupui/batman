@@ -8,14 +8,15 @@ Defines the methods to compute the POD.
 References
 ----------
 
-M. Brand: Fast low-rank modifications of the thin singular value decomposition. 2006. DOI:10.1016/j.laa.2005.07.021
+M. Brand: Fast low-rank modifications of the thin singular value decomposition.
+2006. DOI:10.1016/j.laa.2005.07.021
 
 """
-import numpy as np
 import copy
+import numpy as np
+from pathos.multiprocessing import cpu_count
 from ..surrogate import SurrogateModel
 from ..misc import ProgressBar, NestedPool
-from pathos.multiprocessing import cpu_count
 
 
 class Core(object):

@@ -20,11 +20,10 @@ Defines all methods used to interact with other classes.
 """
 import logging
 import os
-import numpy as np
 import pickle
 from concurrent import futures
-
 from collections import OrderedDict
+import numpy as np
 from .pod import Pod
 from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
 from .surrogate import SurrogateModel
@@ -37,7 +36,8 @@ class Driver(object):
     """Driver class."""
 
     logger = logging.getLogger(__name__)
-    output_tree = {
+    # Structure of the output directory
+    fname_tree = {
         'snapshots': 'snapshots',
         'space': 'space.dat',
         'data': 'data.dat',
@@ -46,22 +46,20 @@ class Driver(object):
         'predictions': 'predictions',
         'uq': 'uq',
     }
-    '''Structure of the output directory.'''
 
-    def __init__(self, settings, output):
+    def __init__(self, settings, fname):
         """Initialize Driver.
 
-        From settings, init snapshot, space and POD.
+        From settings, init snapshot, space [POD, surrogate].
 
-        :param dict settings: settings
-        :param str script: settings path
-        :param str output: output path
-
+        :param dict settings: settings.
+        :param str script: settings path.
+        :param str fname: output folder path.
         """
         self.settings = settings
-        self.output = output
+        self.fname = fname
         try:
-            os.makedirs(self.output)
+            os.makedirs(self.fname)
         except OSError:
             pass
         self.snapshot_counter = 0
@@ -120,6 +118,8 @@ class Driver(object):
             self.pod = None
             self.logger.info('No POD is computed.')
 
+        self.data = None
+
         # Surrogate model
         try:
             self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
@@ -133,9 +133,8 @@ class Driver(object):
 
         Generates or retrieve the snapshots [and then perform the POD].
 
-        :param :class:`Space` points: points to perform the sample from
-        :param bool update: perform dynamic or static computation
-
+        :param :class:`Space` points: points to perform the sample from.
+        :param bool update: perform dynamic or static computation.
         """
         if points is None:
             points = self.to_compute_points
@@ -144,24 +143,24 @@ class Driver(object):
             snapshots = points.values()
         else:
             snapshots = []
-            for p in points:
+            for point in points:
                 if not self.provider.is_job:
                     # snapshots are in memory
                     path = None
                 else:
                     # snapshots are on disk
-                    path = os.path.join(self.output,
-                                        self.output_tree['snapshots'],
+                    path = os.path.join(self.fname,
+                                        self.fname_tree['snapshots'],
                                         str(self.snapshot_counter))
                     self.snapshot_counter += 1
 
                 if self.provider.is_function:
                     # create a snapshot on disk or in memory
-                    s = Snapshot(p, self.provider(p))
-                    snapshots += [Snapshot.convert(s, path=path)]
+                    snapshot = Snapshot(point, self.provider(point))
+                    snapshots += [Snapshot.convert(snapshot, path=path)]
                 elif self.provider.is_job:
                     # create a snapshot task
-                    t = SnapshotTask(p, path)
+                    t = SnapshotTask(point, path)
                     snapshots += [self.snapshooter.submit(t.run)]
 
         # Fit the Surrogate [and POD]
@@ -169,16 +168,16 @@ class Driver(object):
             if update:
                 self.surrogate.space.empty()
                 if self.provider.is_job:
-                    for s in futures.as_completed(snapshots):
-                        self.pod.update(s.result())
+                    for snapshot in futures.as_completed(snapshots):
+                        self.pod.update(snapshot.result())
                 else:
-                    for s in snapshots:
-                        self.pod.update(s)
+                    for snapshot in snapshots:
+                        self.pod.update(snapshot)
             else:
                 if self.provider.is_job:
                     _snapshots = []
-                    for s in futures.as_completed(snapshots):
-                        _snapshots += [s.result()]
+                    for snapshot in futures.as_completed(snapshots):
+                        _snapshots += [snapshot.result()]
                     snapshots = _snapshots
                 self.pod.decompose(snapshots)
 
@@ -191,13 +190,13 @@ class Driver(object):
         else:
             if self.provider.is_job:
                 _snapshots = []
-                for s in futures.as_completed(snapshots):
-                    _snapshots += [s.result()]
+                for snapshot in futures.as_completed(snapshots):
+                    _snapshots += [snapshot.result()]
                 snapshots = _snapshots
 
             if snapshots:
-                snapshots_ = [Snapshot.convert(s) for s in snapshots]
-                snapshots = np.vstack([s.data for s in snapshots_])
+                snapshots_ = [Snapshot.convert(snapshot) for snapshot in snapshots]
+                snapshots = np.vstack([snapshot.data for snapshot in snapshots_])
 
                 if update:
                     snapshots = np.vstack([self.data, snapshots])
@@ -246,46 +245,46 @@ class Driver(object):
     def write(self):
         """Write Surrogate [and POD] to disk."""
         if self.surrogate is not None:
-            path = os.path.join(self.output, self.output_tree['surrogate'])
+            path = os.path.join(self.fname, self.fname_tree['surrogate'])
             try:
                 os.makedirs(path)
             except OSError:
                 pass
             self.surrogate.write(path)
         else:
-            path = os.path.join(self.output, self.output_tree['space'])
+            path = os.path.join(self.fname, self.fname_tree['space'])
             self.space.write(path)
         if self.pod is not None:
-            path = os.path.join(self.output, self.output_tree['pod'])
+            path = os.path.join(self.fname, self.fname_tree['pod'])
             try:
                 os.makedirs(path)
             except OSError:
                 pass
             self.pod.write(path)
         elif (self.pod is None) and (self.surrogate is None):
-            path = os.path.join(self.output, self.output_tree['data'])
-            with open(path, 'wb') as f:
-                pickler = pickle.Pickler(f)
+            path = os.path.join(self.fname, self.fname_tree['data'])
+            with open(path, 'wb') as fdata:
+                pickler = pickle.Pickler(fdata)
                 pickler.dump(self.data)
             self.logger.debug('Wrote data to {}'.format(path))
 
     def read(self):
         """Read Surrogate [and POD] from disk."""
         if self.surrogate is not None:
-            self.surrogate.read(os.path.join(self.output,
-                                             self.output_tree['surrogate']))
+            self.surrogate.read(os.path.join(self.fname,
+                                             self.fname_tree['surrogate']))
             self.space[:] = self.surrogate.space[:]
             self.data = self.surrogate.data
         else:
-            path = os.path.join(self.output, self.output_tree['space'])
+            path = os.path.join(self.fname, self.fname_tree['space'])
             self.space.read(path)
         if self.pod is not None:
-            self.pod.read(os.path.join(self.output, self.output_tree['pod']))
+            self.pod.read(os.path.join(self.fname, self.fname_tree['pod']))
             self.surrogate.pod = self.pod
         elif (self.pod is None) and (self.surrogate is None):
-            path = os.path.join(self.output, self.output_tree['data'])
-            with open(path, 'rb') as f:
-                unpickler = pickle.Unpickler(f)
+            path = os.path.join(self.fname, self.fname_tree['data'])
+            with open(path, 'rb') as fdata:
+                unpickler = pickle.Unpickler(fdata)
                 self.data = unpickler.load()
             self.logger.debug('Data read from {}'.format(path))
 
@@ -318,7 +317,7 @@ class Driver(object):
         :rtype: lst(np.array)
         """
         if write:
-            output = os.path.join(self.output, self.output_tree['predictions'])
+            output = os.path.join(self.fname, self.fname_tree['predictions'])
         else:
             output = None
 
@@ -326,7 +325,7 @@ class Driver(object):
 
     def uq(self):
         """Perform UQ analysis."""
-        output = os.path.join(self.output, self.output_tree['uq'])
+        output = os.path.join(self.fname, self.fname_tree['uq'])
 
         if self.pod is not None:
             data = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T

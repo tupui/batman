@@ -19,9 +19,8 @@ This class wraps the core of POD computations and manages high level IO.
 import logging
 import os
 import copy
-
-from .core import Core
 import numpy as np
+from .core import Core
 from ..tasks import Snapshot
 from ..space import Space
 

@@ -31,9 +31,9 @@ sampler = Gp1dSampler(t_ini=0, t_end=1, Nt=3, sigma=1.0, theta=0.5,
 
 
 def test_Gp1dSampler_modes():
-    sol = np.array([[5.98847892e-01,   6.57519854e-01,   4.57218596e-01],
-                    [9.17674523e-01,  -1.81049751e-16,  -3.97332946e-01],
-                    [5.98847892e-01,  -6.57519854e-01,   4.57218596e-01]])
+    sol = np.array([[5.98847892e-01, 6.57519854e-01, 4.57218596e-01],
+                    [9.17674523e-01, -1.81049751e-16, -3.97332946e-01],
+                    [5.98847892e-01, -6.57519854e-01, 4.57218596e-01]])
     npt.assert_almost_equal(sampler.modes, sol, decimal=2)
 
 
@@ -41,7 +41,7 @@ def test_Gp1dSampler_sample_values():
     size = 2
     ot.RandomGenerator.SetSeed(0)
     Y = sampler.sample(size)
-    sol = np.array([[-0.92131796,  0.19442651],
+    sol = np.array([[-0.92131796, 0.19442651],
                     [1.42486738, -1.30101805],
                     [-0.34498127, -1.39082519]])
     npt.assert_almost_equal(Y['Values'], sol, decimal=2)
@@ -52,14 +52,14 @@ def test_Gp1dSampler_sample_coeff():
     ot.RandomGenerator.SetSeed(0)
     Y = sampler.sample(size)
     sol = np.array([[0.60820165, -0.43826562, -2.18138523],
-                    [-1.2661731,  1.2054782,  0.35004209]])
+                    [-1.2661731, 1.2054782, 0.35004209]])
     npt.assert_almost_equal(Y['Coefficients'], sol, decimal=2)
 
 
 def test_Gp1dSampler_build_values():
     coeff = [0.2, 0.7, -0.4, 1.6, 0.2, 0.8, 0.4]
     Y = sampler.build(coeff)
-    sol = np.array([0.39714604,  0.34246808, -0.52338176])
+    sol = np.array([0.39714604, 0.34246808, -0.52338176])
     npt.assert_almost_equal(Y['Values'], sol, decimal=2)
 
 

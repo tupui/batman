@@ -4,11 +4,12 @@ Polynomial Chaos class
 ======================
 
 """
+import os
+import logging
 import numpy as np
+import openturns as ot
 from pathos.multiprocessing import (cpu_count, ProcessPool)
 from ..functions import multi_eval
-import logging
-import openturns as ot
 
 
 class PC(object):
@@ -25,8 +26,8 @@ class PC(object):
         The result of the Polynomial Chaos is stored as ``self.pc_result`` and
         the surrogate is stored as ``self.pc``.
 
-        :param ndarray input:
-        :param ndarray output:
+        :param array_like input:
+        :param array_like output:
         :param callable function:
         :param lst(ot.Dist) input_dists:
         :param int out_dim:

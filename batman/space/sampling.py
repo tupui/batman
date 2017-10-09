@@ -95,9 +95,9 @@ class Doe():
         # Scale the DOE from [0, 1] to bounds
         b = self.bounds[0]
         a = self.bounds[1] - b
-        if self.kind == 'lhsc':    
+        if self.kind == 'lhsc':
             r = a * ((np.floor_divide(sample, (1. / self.n_sample)) + 1)
-                          - 0.5) / self.n_sample + b
+                     - 0.5) / self.n_sample + b
         else:
             r = a * sample + b
 

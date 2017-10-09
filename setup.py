@@ -15,11 +15,11 @@ Usage
 
 """
 
-from setuptools import (setup, find_packages, Command)
 import re
 import os
 import sys
 import subprocess
+from setuptools import (setup, find_packages, Command)
 
 cmdclasses = dict()
 

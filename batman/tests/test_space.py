@@ -1,11 +1,10 @@
 # coding: utf8
-import pytest
-from mock import patch
-import numpy as np
-import numpy.testing as npt
 import copy
 import os
 import itertools
+import pytest
+import numpy as np
+import numpy.testing as npt
 from batman.space import (Point, Space, Doe,
                           UnicityError, AlienPointError, FullSpaceError)
 from batman.functions import Ishigami
@@ -117,7 +116,7 @@ def test_space_evaluation():
     space.sampling(2)
     targets_space = f_3d(space)
 
-    f_data_base = np.array([8.10060038,  5.18818004]).reshape(2, 1)
+    f_data_base = np.array([8.10060038, 5.18818004]).reshape(2, 1)
     npt.assert_almost_equal(targets_space, f_data_base)
 
 

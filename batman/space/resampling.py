@@ -7,7 +7,7 @@
 ##           1.0 11/08/2009 Braconnier             0.1 Creation
 ##  ==========================================================================
 
-import numpy as N
+import numpy as np
 
 def mat_yy(dim):
     n = 2 ** dim
@@ -26,15 +26,15 @@ def splitelement(S, S0, DS):
     nn = 2 ** mm
     S1 = (S + S0) / 2.
     DS1 = S - S0
-    NewS = N.zeros([nn, mm])
-    NewS0 = N.zeros([nn, mm])
-    NewDS = N.zeros([nn, mm])
-    temp1 = N.zeros([1, mm])
-    temp2 = N.zeros([1, mm])
-    temp3 = N.zeros([1, mm])
-    NewS = N.zeros([nn, mm])
-    NewS0 = N.zeros([nn, mm])
-    NewDS = N.zeros([nn, mm])
+    NewS = np.zeros([nn, mm])
+    NewS0 = np.zeros([nn, mm])
+    NewDS = np.zeros([nn, mm])
+    temp1 = np.zeros([1, mm])
+    temp2 = np.zeros([1, mm])
+    temp3 = np.zeros([1, mm])
+    NewS = np.zeros([nn, mm])
+    NewS0 = np.zeros([nn, mm])
+    NewDS = np.zeros([nn, mm])
     icur = -1
     for i in range(nn):
         for j in range(mm):
@@ -48,7 +48,7 @@ def splitelement(S, S0, DS):
                 temp3[0, j] = DS[0, j] - DS1[0, j]
         temp4 = S == temp1
         temp5 = abs(temp3) < 1.e-10
-        if N.sum(temp4, 1) == 0. and N.sum(temp5, 1) == 0.:
+        if np.sum(temp4, 1) == 0. and np.sum(temp5, 1) == 0.:
             icur = icur + 1
             NewS[icur:icur + 1, :] = temp1
             NewS0[icur:icur + 1, :] = temp2
@@ -94,9 +94,9 @@ def find(x, valeur):
 
 
 def tri(x):
-    (n, m) = N.shape(x)
+    (n, m) = np.shape(x)
     index = []
-    temp = N.zeros([1, n], N.int)
+    temp = np.zeros([1, n], np.int)
     for i in range(n):
         icur = 0
         while temp[0, icur] < 0:
@@ -113,8 +113,8 @@ def tri(x):
 
 
 def rawswap(x, index):
-    (n, m) = N.shape(x)
-    x1 = N.zeros([n, m])
+    (n, m) = np.shape(x)
+    x1 = np.zeros([n, m])
     for j in range(m):
         for i in range(n):
             x1[i, j] = x[i, j]
@@ -124,13 +124,13 @@ def rawswap(x, index):
 
 
 def init_space_part(S):
-    (np, dim) = N.shape(S)
-    part = N.zeros([np, 3 * dim + 4])
-    Smm = N.zeros([3, dim])
+    (Np, dim) = np.shape(S)
+    part = np.zeros([Np, 3 * dim + 4])
+    Smm = np.zeros([3, dim])
     for i in range(dim):
         Smm[0, i] = 1e30
         Smm[1, i] = -1e30
-        for j in range(np):
+        for j in range(Np):
             if S[j, i] < Smm[0, i]:
                 Smm[0, i] = S[j, i]
             if S[j, i] > Smm[1, i]:
@@ -138,19 +138,19 @@ def init_space_part(S):
         Smm[2, i] = Smm[1, i] - Smm[0, i]
         part[0, dim + i] = Smm[0, i]
         part[0, 2 * dim + i] = Smm[2, i]
-    index = range(np)
+    index = range(Np)
     (indexin, indexout, indexbox) = comptnode(S, index, Smm[0, :], Smm[2, :])
-    part[0, 3 * dim] = np
+    part[0, 3 * dim] = Np
     part[0, 3 * dim + 3] = len(indexbox)
     endp = 0
     ilist = 0
-    while endp < np:
+    while endp < Np:
         index = find(part[:, 3 * dim + 1:3 * dim + 2], endp)
         if part[endp, 3 * dim] == 1.:
             endp = endp + 1
         else:
             mk = len(index)
-            S1 = N.zeros([mk, dim])
+            S1 = np.zeros([mk, dim])
             for i in range(mk):
                 S1[i:i + 1, :] = S[index[i], :]
             for i in range(dim):
@@ -169,7 +169,7 @@ def init_space_part(S):
                     dim1 = i
                     temp = Smm[2, i]
             part[ilist + 1:ilist + 2, :3 * dim + 1] = part[endp:endp + 1, :3
-                    * dim + 1]
+                                                           * dim + 1]
             test = 0
             alpha = 0.5
             ilist = ilist + 1
@@ -182,9 +182,11 @@ def init_space_part(S):
                 part[ilist, 2 * dim + dim1] = temp1 - delta
                 part[ilist, dim + dim1] = temp + delta
                 (indexin1, indexout1, indexbox1) = comptnode(S, index,
-                        part[endp, dim:2 * dim], part[endp, 2 * dim:3 * dim])
+                                                             part[endp, dim:2 * dim],
+                                                             part[endp, 2 * dim:3 * dim])
                 (indexin2, indexout2, indexbox2) = comptnode(S, index,
-                        part[ilist, dim:2 * dim], part[ilist, 2 * dim:3 * dim])
+                                                             part[ilist, dim:2 * dim],
+                                                             part[ilist, 2 * dim:3 * dim])
                 nbox = len(indexbox1) + len(indexbox2)
                 if nbox == part[endp, 3 * dim + 3]:
                     test = 1
@@ -205,7 +207,7 @@ def init_space_part(S):
                     part[endp, 3 * dim + 2] = indexbox1[0]
             if nout == 1:
                 part[ilist, 3 * dim + 2] = indexout1[0]
-    for i in range(np):
+    for i in range(Np):
         part[i:i + 1, :dim] = S[int(part[i, 3 * dim + 2]), :]
     index = tri(part[:, 3 * dim + 2:3 * dim + 3])
     part = rawswap(part, index)
@@ -214,7 +216,7 @@ def init_space_part(S):
 
 if __name__ == '__main__':
     dim = 2
-    S = N.zeros([15, dim])
+    S = np.zeros([15, dim])
     k = 0
     for i in range(3):
         for j in range(5):
@@ -226,12 +228,13 @@ if __name__ == '__main__':
             S[k, 0] = float(j)
             k = k + 1
     p = init_space_part(S)
-    print (p)
+    print(p)
     n = int(raw_input(' n'))
-    (NewS, NewS0, NewDS) = splitelement(p[n:n + 1, 0:dim], p[n:n + 1, dim:2
-                                        * dim], p[n:n + 1, 2 * dim:3 * dim])
-    (nn, mm) = N.shape(NewS)
-    print (N.shape(NewS), N.shape(NewS0), N.shape(NewDS))
+    (NewS, NewS0, NewDS) = splitelement(p[n:n + 1, 0:dim],
+                                        p[n:n + 1, dim:2 * dim],
+                                        p[n:n + 1, 2 * dim:3 * dim])
+    (nn, mm) = np.shape(NewS)
+    print(np.shape(NewS), np.shape(NewS0), np.shape(NewDS))
     for i in range(nn):
-        print ('newparam(%d):%s %s %s' % (i + 1, NewS[i, :], NewS0[i, :],
-                        NewDS[i, :]))
+        print('newparam(%d):%s %s %s' % (i + 1, NewS[i, :], NewS0[i, :],
+                                         NewDS[i, :]))

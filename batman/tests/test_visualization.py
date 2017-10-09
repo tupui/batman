@@ -1,6 +1,6 @@
 # coding: utf8
-import pytest
 import os
+import pytest
 import numpy as np
 import numpy.testing as npt
 from scipy.io import wavfile
@@ -268,9 +268,9 @@ def test_pdf_surrogate(mock_show, ishigami_data):
 def test_pdf_nD(mock_show, tmp):
     fig_pdf = pdf(data, xdata=np.linspace(1, 12, 12),
                   fname=os.path.join(tmp, 'pdf_nd.pdf'))
-    fig = reshow(fig_pdf)
+    reshow(fig_pdf)
     plt.plot([0, 10], [25, 25])
-    fig.show()
+    plt.show()
 
 
 def test_pdf_nD_moments(tmp):
@@ -364,4 +364,4 @@ def test_corr_cov(mock_show, mascaret_data, tmp):
     sample = np.array(ot.LHSExperiment(dist, 500).generate())
     data = fun(sample)
     corr_cov(data, sample, fun.x, interpolation='lanczos', plabels=['Ks', 'Q'])
-    corr_cov(data, sample, fun.x, fname='./corr_cov.pdf')
+    corr_cov(data, sample, fun.x, fname=os.path.join(tmp, 'corr_cov.pdf'))

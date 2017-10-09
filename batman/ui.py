@@ -40,7 +40,8 @@ def run(settings, options):
         console.setLevel(logging.DEBUG)
         logging.getLogger().removeHandler('console')
         logging.getLogger().addHandler(console)
-        logging.getLogger().handlers[0].formatter = logging.getLogger().handlers[1].formatter   
+        logging.getLogger().handlers[0].formatter = \
+            logging.getLogger().handlers[1].formatter
 
     logger = logging.getLogger('BATMAN main')
 
@@ -69,12 +70,13 @@ def run(settings, options):
                     raise SystemExit
 
                 def key(arg):
+                    """Get folder number."""
                     return int(os.path.basename(
                         os.path.dirname(os.path.normpath(arg))))
-                settings['snapshot']['provider'] = sorted([os.path.join(
-                    root, d, 'batman-data')
-                    for d in os.listdir(root)],
-                    key=key)
+                settings['snapshot']['provider'] = sorted([os.path.join(root, d,
+                                                                        'batman-data')
+                                                           for d in os.listdir(root)],
+                                                          key=key)
                 settings['snapshot']['io']['template_directory'] = \
                     os.path.join(root, '0', 'batman-data')
                 settings['snapshot']['io']['shapes'] = None

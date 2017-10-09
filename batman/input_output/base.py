@@ -1,4 +1,7 @@
-import os
+"""
+Base module
+***********
+"""
 import numpy as np
 from .dataset import DatasetInfo, Dataset, ShapeError, DataSizeError
 
@@ -7,7 +10,7 @@ __docformat__ = "reStructuredText"
 
 class FormatError(Exception):
 
-    """This exception can be raised in sub-classes."""
+    """Can be raised in sub-classes."""
 
     pass
 
@@ -58,7 +61,7 @@ class IOBase(object):
                     break
 
         # next build up data array in expected order
-        # TODO: check memory usage and layout of data
+        # verify memory usage and layout of data
         data = None
         for v in names:
             d = data_map[v][np.newaxis, ...]

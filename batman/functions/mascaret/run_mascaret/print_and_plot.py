@@ -1,6 +1,8 @@
+"""
+Some statistics and plots.
+"""
 from io import BytesIO
 import numpy as np
-# import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tick
 from matplotlib.patches import Polygon
@@ -18,11 +20,12 @@ def print_statistics(results):
            "-- Standard deviation {}\n"
            "-- 0.05-quantile: {}\n"
            "-- 0.95-quantile: {}\n")
-           .format(np.mean(results), np.median(results), np.std(results),
-                   np.percentile(results, 0.05), np.percentile(results, 0.95)))
+          .format(np.mean(results), np.median(results), np.std(results),
+                  np.percentile(results, 0.05), np.percentile(results, 0.95)))
 
 
-def histogram(results, xlab='Quantity of interest', ylab='Density', title='Histogram with a kernel density estimator'):
+def histogram(results, xlab='Quantity of interest', ylab='Density',
+              title='Histogram with a kernel density estimator'):
     """Plot an Histogram.
 
     :param np.array results: Results to process
@@ -64,8 +67,9 @@ def read_opt(filename='ResultatsOpthyca.opt'):
     return opt_data
 
 
-def plot_opt(filename='ResultatsOpthyca.opt', xlab='Curvilinear abscissa (m)', ylab1='Water level (m)',
-                 ylab2='Flow rate (m3/s)', title='Water level along the open-channel at final time'):
+def plot_opt(filename='ResultatsOpthyca.opt', xlab='Curvilinear abscissa (m)',
+             ylab1='Water level (m)', ylab2='Flow rate (m3/s)',
+             title='Water level along the open-channel at final time'):
     """Plots results contained in the results file :file:`ResultatsOpthyca.opt`.
 
     :param str xlab: label x
