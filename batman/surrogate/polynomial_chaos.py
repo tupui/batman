@@ -31,60 +31,37 @@ class PC(object):
         Distributions of each input parameter.
         :param int n_sample: Number of samples for least square.
         """
-        in_dim = len(distributions)
-
         # distributions
-        correl = ot.CorrelationMatrix(in_dim)
-        copula = ot.NormalCopula.GetCorrelationFromSpearmanCorrelation(correl)
-        in_copula = ot.NormalCopula(copula)
-        self.dist = ot.ComposedDistribution(distributions, in_copula)
+        in_dim = len(distributions)
+        self.dist = ot.ComposedDistribution(distributions)
 
-        # Choice of orthogonal polynomial families
-        # Hermite <-> gaussian, Legendre <-> uniform
-        poly_coll = ot.PolynomialFamilyCollection(in_dim)
+        enumerateFunction = ot.EnumerateFunction(in_dim)
+        basis = ot.OrthogonalProductPolynomialFactory(
+            [ot.StandardDistributionPolynomialFactory(ot.AdaptiveStieltjesAlgorithm(marginal))
+             for marginal in distributions], enumerateFunction)
 
-        for i in range(in_dim):
-            poly_coll[i] = ot.StandardDistributionPolynomialFactory(
-                self.dist.getMarginal(i))
-
-        # Polynomial index definition
-        poly_index = ot.LinearEnumerateFunction(in_dim)
-
-        # Construction of the polynomial basis forming an orthogonal
-        # basis with respect to the joint PDF basis construction
-        multivar_basis = ot.OrthogonalProductPolynomialFactory(poly_coll,
-                                                               poly_index)
-        basis = ot.OrthogonalBasis(multivar_basis)
-        dim_basis = poly_index.getStrataCumulatedCardinal(degree)
-
-        # Strategy choice for truncature of the orthonormal basis
-        self.trunc_strategy = ot.FixedStrategy(basis, dim_basis)
+        self.trunc_strategy = ot.FixedStrategy(
+            basis,
+            enumerateFunction.getStrataCumulatedCardinal(degree))
 
         # Strategy choice for expansion coefficient determination
         self.strategy = strategy
         if self.strategy == "LS":  # least-squares method
             montecarlo_design = ot.MonteCarloExperiment(self.dist, n_sample)
             self.proj_strategy = ot.LeastSquaresStrategy(montecarlo_design)
-            self.sample = np.array(self.proj_strategy.getExperiment().generate())
+            self.sample, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
         else:  # integration method
             # redefinition of sample size
             # n_sample = (degree + 1) ** in_dim
             # marginal degree definition
             # by default: the marginal degree for each input random
             # variable is set to the total polynomial degree 'degree'+1
-            basis = ot.AdaptiveStieltjesAlgorithm(self.dist)
             measure = basis.getMeasure()
-            quad = ot.Indices(in_dim)
-            for i in range(in_dim):
-                quad[i] = degree + 1
+            degrees = [degree + 1] * in_dim
 
-            comp_dist = ot.GaussProductExperiment(measure, quad)
-
-            self.proj_strategy = ot.IntegrationStrategy(comp_dist)
-
-            inv_trans = ot.Function(ot.MarginalTransformationEvaluation(
-                    [measure.getMarginal(i) for i in range(in_dim)], distributions))
-            self.sample = np.array(inv_trans(comp_dist.generate()))
+            self.proj_strategy = ot.IntegrationStrategy(
+                ot.GaussProductExperiment(measure, degrees))
+            self.sample, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
 
     def fit(self, input, output):
         """Create the predictor.
@@ -117,11 +94,17 @@ class PC(object):
 
         def model_fitting(column):
             column = column.reshape((-1, 1))
-            if self.strategy == 'Quad':
-                pc_algo = ot.FunctionalChaosAlgorithm(input, column)
-            else:
-                pc_algo = ot.FunctionalChaosAlgorithm(input, column, self.dist,
-                                                      self.trunc_strategy)
+
+            input_ = np.zeros_like(self.sample)
+            input_[:len(input)] = input
+            input_arg = np.where(np.linalg.norm(input_ - np.array(self.sample),
+                                                axis=1) <= 1e-2)[0]
+            weights = np.array(self.weights)[input_arg]
+
+            pc_algo = ot.FunctionalChaosAlgorithm(input, weights, column,
+                                                  self.dist, self.trunc_strategy,
+                                                  self.proj_strategy)
+            ot.Log.Show(ot.Log.ERROR)
             pc_algo.run()
             pc_result = pc_algo.getResult()
             pc = pc_result.getMetaModel()
