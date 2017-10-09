@@ -44,12 +44,24 @@ class SurrogateModel(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, kind, corners):
-        """Init Surrogate model.
+    def __init__(self, kind, corners, **kwargs):
+        r"""Init Surrogate model.
 
-        :param np.array corners: space corners to normalize
-        :param str kind: name of prediction method, rbf or kriging
-        :param np.array corners: parameter space corners (2 points extrema, n_features)
+        :param np.array corners: space corners to normalize.
+        :param str kind: name of prediction method, rbf or kriging.
+        :param np.array corners: parameter space corners
+        (2 points extrema, n_features).
+        :param dict pc: configuration of polynomial chaos.
+        :param \**kwargs: See below
+
+        :Keyword Arguments: For Polynomial Chaos the following keywords are
+        available
+
+            - 'strategy', str. Least square or Quadrature ['LS', 'Quad'].
+            - 'degree', int. Polynomial degree.
+            - 'distributions', lst(:class:`openturns.Distribution`).
+              Distributions of each input parameter.
+            - 'n_sample', int. Number of samples for least square.
         """
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
@@ -67,8 +79,21 @@ class SurrogateModel(object):
             'snapshot': 'Newsnap{}'
         }
 
+        self.settings = kwargs
+
+        if self.kind == 'pc':
+            self.predictor = PC(strategy=self.settings['strategy'],
+                                degree=self.settings['degree'],
+                                distributions=self.settings['distributions'],
+                                n_sample=self.settings['n_sample'])
+
     def fit(self, points, data, pod=None):
-        """Construct the surrogate."""
+        """Construct the surrogate.
+
+        :param array_like points: points of the sample (n_samples, n_features).
+        :param array_like data: function evaluations (n_samples, n_features).
+        :param :class:`batman.pod.pod.Pod` pod: POD instance.
+        """
         self.data = data
         points = np.array(points)
         try:
@@ -83,7 +108,7 @@ class SurrogateModel(object):
         elif self.kind == 'kriging':
             self.predictor = Kriging(points_scaled, data)
         elif self.kind == 'pc':
-            self.predictor = PC(input=points_scaled, output=data)
+            self.predictor.fit(points, data)
         elif self.kind == 'evofusion':
             self.predictor = Evofusion(points_scaled, data)
             self.space.multifidelity = True

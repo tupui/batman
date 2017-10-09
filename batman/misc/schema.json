@@ -5,32 +5,29 @@
     "space": {
       "type": "object",
       "properties": {
-        "corners": {
-          "type": "array",
-          "items": {}
-        },
+        "corners": {"type": "array", "items": {}},
 
         "sampling": {
-          "anyOf":[
+          "oneOf":[
           {
-
             "type": "object",
             "properties": {
               "method": {
-                "type": "string",
-                "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", "discrete"],
-                "default": "halton"
+                "oneOf":[
+                  {
+                    "type": "string",
+                    "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", "discrete"],
+                    "default": "halton"
+                  },
+                  {
+                    "type": "array",
+                    "items": {}
+                  }
+                ]
               },
-              "init_size": {
-                "type": "integer",
-                "default": 20,
-                "minimum": 4,
-                "exclusiveMinimum": false
-              },
-              "required": [
-                "method",
-                "init_size"
-              ]
+              "init_size": {"type": "integer", "default": 20, "minimum": 4,
+                            "exclusiveMinimum": false},
+              "required": ["method", "init_size"]
             }
           },
           {
@@ -48,69 +45,29 @@
               "enum": ["None", "discrepancy", "ego_discrepancy", "sigma_discrepancy", "sigma", "loo_sigma", "loo_sobol", "extrema", "hybrid", "optimization"],
               "default": "sigma"
             },
-            "resamp_size": {
-              "type": "integer",
-              "default": 2,
-              "minimum": 0
-            },
-            "delta_space": {
-              "type": "number",
-              "default": 0.08,
-              "minimum": 0
-            },
-            "q2_criteria": {
-              "type": "number",
-              "default": 0.9,
-              "minimum": 0,
-              "exclusiveMinimum": true,
-              "maximum": 1,
-              "exclusiveMaximum": true
-            },
-            "hybrid": {
-              "type": "array",
-              "items": {}
-            },
-            "required": [
-              "method",
-              "resamp_size",
-              "q2_criteria",
-              "delta_space"
-            ]
+            "resamp_size": {"type": "integer", "default": 2, "minimum": 0},
+            "delta_space": {"type": "number", "default": 0.08, "minimum": 0},
+            "q2_criteria": {"type": "number", "default": 0.9, "minimum": 0,
+                            "exclusiveMinimum": true, "maximum": 1,
+                            "exclusiveMaximum": true},
+            "hybrid": {"type": "array", "items": {}},
+            "required": ["method", "resamp_size", "q2_criteria", "delta_space"]
           }
         }
       },
-      "required": [
-        "corners",
-        "sampling"
-      ]
+      "required": ["corners", "sampling"]
     },
     "pod": {
       "type": "object",
       "properties": {
-        "dim_max": {
-          "type": "integer",
-          "default": 100,
-          "minimum": 1
-        },
-        "tolerance": {
-          "type": "number",
-          "default": 0.99,
-          "minimum": 0,
-          "exclusiveMinimum": true,
-          "maximum": 1,
-          "exclusiveMaximum": true
-        },
-        "type": {
-          "type": "string",
-          "default": "static",
-          "enum": ["static", "dynamic"]
-        }
+        "dim_max": {"type": "integer", "default": 100, "minimum": 1},
+        "tolerance": {"type": "number", "default": 0.99, "minimum": 0,
+                      "exclusiveMinimum": true, "maximum": 1,
+                      "exclusiveMaximum": true},
+        "type": {"type": "string", "default": "static",
+                 "enum": ["static", "dynamic"]}
       },
-      "required": [
-        "dim_max",
-        "tolerance",
-        "type"
-      ]
+      "required": ["dim_max", "tolerance", "type"]
     },
     "snapshot": {
       "type": "object",
@@ -242,68 +199,63 @@
     "surrogate": {
       "type": "object",
       "properties": {
-        "predictions": {
-          "type": "array",
-          "items": {}
-        },
-        "method": {
-          "type": "string",
-          "default": "kriging",
-          "enum": ["rbf", "kriging", "pc", "evofusion"]
-        },
-        "cost_ratio": {
-          "type": "number",
-          "default": 2.0,
-          "minimum": 1,
-          "exclusiveMinimum": true
-        },
-        "grand_cost": {
-          "type": "integer",
-          "default": 30,
-          "minimum": 4,
-          "exclusiveMinimum": false
-        }
+        "predictions": {"type": "array", "items": {}},
+        "method": {"type": "string", "default": "kriging",
+                   "enum": ["rbf", "kriging", "pc", "evofusion"]},
+        "cost_ratio": {"type": "number", "default": 2.0, "minimum": 1,
+                   "exclusiveMinimum": true},
+        "grand_cost": {"type": "integer", "default": 30, "minimum": 4,
+                   "exclusiveMinimum": false},
+        "strategy": {"type": "string", "default": "Quad",
+                   "enum": ["Quad", "LS"]},
+        "degree": {"type": "integer", "default": 10, "minimum": 1,
+                   "exclusiveMinimum": false}
       },
-      "required": [
-        "method"
+      "required": ["method"],
+      "oneOf": [
+        {
+          "properties": {"method": {"enum":["pc"]}},
+          "required": ["strategy", "degree"]
+        },
+        {
+          "properties": {"method": {"enum":["evofusion"]}},
+          "required": ["cost_ratio", "grand_cost"]
+        },
+        {
+          "properties": {"method": {"enum":["kriging"]}}
+        }
       ]
     },
     "uq": {
       "type": "object",
       "properties": {
-        "sample": {
-          "type": "integer",
-          "default": 50000,
-          "minimum": 1000
-        },
-        "test": {
-          "type": "string"
-        },
-        "pdf": {
-          "type": "array",
-          "items": {}
-        },
-        "type": {
-          "type": "string",
-          "default": "aggregated",
-          "enum": ["aggregated", "block"]
-        },
-        "method": {
-          "type": "string",
-          "default": "sobol",
-          "enum": ["sobol", "FAST"]
-        }
+        "sample": {"type": "integer", "default": 50000, "minimum": 1000},
+        "test": {"type": "string"},
+        "pdf": {"type": "array", "items": {}},
+        "type": {"type": "string", "default": "aggregated",
+                 "enum": ["aggregated", "block"]},
+        "method": {"type": "string", "default": "sobol",
+                   "enum": ["sobol", "FAST"]}
       },
-      "required": [
-        "sample",
-        "pdf",
-        "type",
-        "method"
-      ]
+      "required": ["sample", "pdf", "type", "method"]
     }
   },
-  "required": [
-    "space",
-    "snapshot"
-  ]
+  "required": ["space", "snapshot"],
+  "oneOf": [
+    {
+      "properties": {"surrogate": {"properties": {"method": {"enum":["pc"]}}},
+                     "space": {"properties":
+                      {"sampling": {"properties":
+                        {"method": {"type": "array", "items": {}}}}}
+                      },
+                     "space": {"properties":
+                      {"resampling": {"properties":
+                        {"resamp_size": {"type": "integer", "maximum": 0}}}}
+                      }                      
+                    }
+    },
+    {
+      "properties": {"surrogate": {"properties": {"method": {"enum":["evofusion", "kriging"]}}}}
+    }
+  ] 
 }

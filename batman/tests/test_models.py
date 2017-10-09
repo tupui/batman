@@ -13,24 +13,29 @@ from batman.tests.conftest import sklearn_q2
 def test_PC_1d(ishigami_data):
     f_3d, dists, model, point, target_point, space, target_space = ishigami_data
 
-    surrogate = PC(function=f_3d, input_dists=dists,
-                   out_dim=1, n_sample=1000, total_deg=10, strategy='LS')
+    surrogate = PC(distributions=dists, n_sample=500, degree=10, strategy='LS')
+    input_ = surrogate.sample
+    assert len(input_) == 500
+    output = f_3d(input_)
+    surrogate.fit(input_, output)
     pred = np.array(surrogate.evaluate(point))
     assert pred == pytest.approx(target_point, 0.01)
-
-    surrogate = PC(function=f_3d, input_dists=dists,
-                   out_dim=1, total_deg=10, strategy='Quad')
-    pred = np.array(surrogate.evaluate(point))
-    assert pred == pytest.approx(target_point, 0.01)
-
-    # Test space evaluation
-    pred = np.array(surrogate.evaluate(space))
-    npt.assert_almost_equal(target_space, pred, decimal=1)
 
     # Compute predictivity coefficient Q2
     surrogate = ot.PythonFunction(3, 1, surrogate.evaluate)
     q2 = sklearn_q2(dists, model, surrogate)
     assert q2 == pytest.approx(1, 0.1)
+
+    surrogate = PC(distributions=dists, degree=10, strategy='Quad')
+    input_ = surrogate.sample
+    assert len(input_) == 1331
+    output = f_3d(input_)
+    surrogate.fit(input_, output)
+
+    # Compute predictivity coefficient Q2
+    surrogate = ot.PythonFunction(3, 1, surrogate.evaluate)
+    q2 = sklearn_q2(dists, model, surrogate)
+    assert q2 == pytest.approx(1, 0.2)
 
 
 def test_GP_1d(ishigami_data):
@@ -82,21 +87,17 @@ def test_RBFnet_1d(ishigami_data):
 def test_PC_14d(mascaret_data):
     f, dists, model, point, target_point, space, target_space = mascaret_data
 
-    surrogate = PC(function=f, input_dists=dists,
-                   out_dim=14, n_sample=300, total_deg=10, strategy='LS')
+    surrogate = PC(distributions=dists, n_sample=100, degree=10, strategy='LS')
+    input_ = surrogate.sample
+    output = f(input_)
+    surrogate.fit(input_, output)
     pred = np.array(surrogate.evaluate(point)).reshape(14)
-    npt.assert_almost_equal(target_point, pred, decimal=2)
+    npt.assert_almost_equal(target_point, pred, decimal=1)
 
-    surrogate = PC(function=f, input_dists=dists,
-                   out_dim=14, total_deg=11, strategy='Quad')
-
-    # Test point evaluation
-    pred = np.array(surrogate.evaluate(point)).reshape(14)
-    npt.assert_almost_equal(target_point, pred, decimal=2)
-
-    # Test space evaluation
-    pred = np.array(surrogate.evaluate(space))
-    npt.assert_almost_equal(target_space, pred, decimal=0)
+    surrogate = PC(distributions=dists, degree=10, strategy='Quad')
+    input_ = surrogate.sample
+    output = f(input_)
+    surrogate.fit(input_, output)
 
     # Compute predictivity coefficient Q2
     surrogate_ot = ot.PythonFunction(2, 14, surrogate.evaluate)
@@ -133,15 +134,20 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
 
     Snapshot.initialize(settings_ishigami['snapshot']['io'])
 
-    surrogate = SurrogateModel('pc', space.corners)
-    surrogate.fit(space, target_space)
+    # PC
+    pc_settings = {'strategy': 'LS', 'degree': 10,
+                   'distributions': dists, 'n_sample': 500}
+    surrogate = SurrogateModel('pc', space.corners, **pc_settings)
+    input_ = surrogate.predictor.sample
+    output = f_3d(input_)
+    surrogate.fit(input_, output)
     pred, sigma = surrogate(point)
     assert sigma is None
-    assert pred[0] == pytest.approx(target_point, 0.5)
     surrogate.write(tmp)
     if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
         assert False
 
+    # Kriging
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, target_space)
     surrogate.write(tmp)

@@ -177,6 +177,7 @@ def test_resampling(tmp, case='Michalewicz'):
 # Ishigami: 3D -> 1D
 # Oakley & O'Hagan: 1D -> 1D
 # Channel_Flow: 2D -> 400D
+@pytest.mark.xfail(raises=NotImplementedError, reason='PC pickling')
 @pytest.mark.parametrize('name', [
     ('G_Function'),
     ('Basic_function'),

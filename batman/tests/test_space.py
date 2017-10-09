@@ -147,6 +147,14 @@ def test_doe():
     doe = Doe(n, bounds, kind, discrete_var)
     sample = doe.generate()
 
+    bounds = np.array([[15.0, 2500.0], [60.0, 6000.0]])
+    kind = ['Uniform(15., 60.)', 'Normal(4035., 400.)']
+    doe = Doe(n, bounds, kind)
+    sample = doe.generate()
+    out = np.array([[37.5, 3862.709], [26.25, 4207.291], [48.75, 3546.744],
+                    [20.625, 3979.116], [43.125, 4340.884]])
+    npt.assert_almost_equal(sample, out, decimal=1)
+
 
 def test_resampling(tmp, branin_data, settings_ishigami):
     f_2d, _, model, _, _, space, _ = branin_data

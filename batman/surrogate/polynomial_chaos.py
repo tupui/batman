@@ -3,12 +3,33 @@
 Polynomial Chaos class
 ======================
 
+Interpolation using Polynomial Chaos method.
+
+:Example:
+
+::
+
+    >> from batman.surrogate import PC
+    >> from batman.functions import Michalewicz
+    >> import numpy as np
+    >> f = Michalewicz()
+    >> surrogate = PC('Quad', 5, [ot.Uniform(0, 1), ot.Uniform(0, 1)])
+    >> sample = np.array(surrogate.sample)
+    >> sample.shape
+    (36, 2)
+    >> data = f(sample)
+    >> surrogate.fit(sample, data)
+    >> point = [0.4, 0.6]
+    >> surrogate.evaluate(point)
+    array([ -8.642e-08])
+
 """
-import os
 import logging
-import numpy as np
+import os
 import openturns as ot
-from pathos.multiprocessing import (cpu_count, ProcessPool)
+import numpy as np
+from pathos.multiprocessing import cpu_count
+from ..misc import NestedPool
 from ..functions import multi_eval
 
 
@@ -18,28 +39,67 @@ class PC(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, input=None, output=None,
-                 function=None, input_dists=None, out_dim=None,
-                 n_sample=None, strategy=None, total_deg=None):
+    def __init__(self, strategy, degree, distributions, n_sample=None):
+        """Generate truncature and projection strategies.
+
+        Allong with the strategies the sample is storred as an attribute:
+        :attr:`sample` as well as the weights: :attr:`weights`.
+
+        :param str strategy: Least square or Quadrature ['LS', 'Quad'].
+        :param int degree: Polynomial degree.
+        :param lst(:class:`openturns.Distribution`) distributions:
+        Distributions of each input parameter.
+        :param int n_sample: Number of samples for least square.
+        """
+        # distributions
+        in_dim = len(distributions)
+        self.dist = ot.ComposedDistribution(distributions)
+
+        enumerateFunction = ot.EnumerateFunction(in_dim)
+        basis = ot.OrthogonalProductPolynomialFactory(
+            [ot.StandardDistributionPolynomialFactory(ot.AdaptiveStieltjesAlgorithm(marginal))
+             for marginal in distributions], enumerateFunction)
+
+        self.trunc_strategy = ot.FixedStrategy(
+            basis,
+            enumerateFunction.getStrataCumulatedCardinal(degree))
+
+        # Strategy choice for expansion coefficient determination
+        self.strategy = strategy
+        if self.strategy == 'LS':  # least-squares method
+            montecarlo_design = ot.MonteCarloExperiment(self.dist, n_sample)
+            self.proj_strategy = ot.LeastSquaresStrategy(montecarlo_design)
+            self.sample, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
+        else:  # integration method
+            # redefinition of sample size
+            # n_sample = (degree + 1) ** in_dim
+            # marginal degree definition
+            # by default: the marginal degree for each input random
+            # variable is set to the total polynomial degree 'degree'+1
+            measure = basis.getMeasure()
+            degrees = [degree + 1] * in_dim
+
+            self.proj_strategy = ot.IntegrationStrategy(
+                ot.GaussProductExperiment(measure, degrees))
+            self.sample, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
+
+    def fit(self, sample, data):
         """Create the predictor.
 
-        The result of the Polynomial Chaos is stored as ``self.pc_result`` and
-        the surrogate is stored as ``self.pc``.
+        The result of the Polynomial Chaos is stored as :attr:`pc_result` and
+        the surrogate is stored as :attr:`pc`.
 
-        :param array_like input:
-        :param array_like output:
-        :param callable function:
-        :param lst(ot.Dist) input_dists:
-        :param int out_dim:
+        :param array_like sample: The sample used to generate the data. (n_samples, n_features)
+        :param array_like data: The observed data. (n_samples, [n_features])
         """
         try:
-            self.model_len = output.shape[1]
+            self.model_len = data.shape[1]
             if self.model_len == 1:
-                output = output.ravel()
+                data = data.ravel()
         except TypeError:
             self.model_len = 1
-            output = output.ravel()
-        except AttributeError:  # output is None
+            data = data.ravel()
+        except AttributeError:  # data is None
             self.model_len = 1
         # Define the CPU multi-threading/processing strategy
         try:
@@ -50,90 +110,36 @@ class PC(object):
         if n_cpu_system // self.model_len < 1:
             self.n_cpu = n_cpu_system
 
-        if function:
-            self.logger.info("Polynomial Chaos without prior input/output")
-            in_dim = len(input_dists)
-            if out_dim > 1:
-                def wrap_fun(x):
-                    return function(x)
-            else:
-                def wrap_fun(x):
-                    return [function(x)]
-            model = ot.PythonFunction(in_dim, out_dim, wrap_fun)
+        def model_fitting(column):
+            column = column.reshape((-1, 1))
 
-            # distributions
-            correl = ot.CorrelationMatrix(in_dim)
-            copula = ot.NormalCopula.GetCorrelationFromSpearmanCorrelation(correl)
-            in_copula = ot.NormalCopula(copula)
-            input_dists = ot.ComposedDistribution(input_dists, in_copula)
+            # Find correspondance between samples and weights
+            # Some points may not have been run
+            sample_ = np.zeros_like(self.sample)
+            sample_[:len(sample)] = sample
+            sample_arg = np.where(np.linalg.norm(sample_ - np.array(self.sample),
+                                                 axis=1) <= 1e-2)[0]
+            weights = np.array(self.weights)[sample_arg]
 
-            # choice of orthogonal polynomial families
-            # Hermite <-> gaussian, Legendre <-> uniform
-            poly_coll = ot.PolynomialFamilyCollection(in_dim)
-
-            for i in range(in_dim):
-                poly_coll[i] = ot.StandardDistributionPolynomialFactory(input_dists.getMarginal(i))
-
-            # polynomial index definition
-            poly_index = ot.LinearEnumerateFunction(in_dim)
-
-            # construction of the polynomial basis forming an orthogonal
-            # basis with respect to the joint PDF basis construction
-            multivar_basis = ot.OrthogonalProductPolynomialFactory(poly_coll,
-                                                                   poly_index)
-            basis = ot.OrthogonalBasis(multivar_basis)
-            dim_basis = poly_index.getStrataCumulatedCardinal(total_deg)
-
-            # strategy choice for truncature of the orthonormal basis
-            trunc_strategy = ot.FixedStrategy(basis, dim_basis)
-
-            # strategy choice for expansion coefficient determination
-            if strategy == "LS":   # least-squares method
-                montecarlo_design = ot.MonteCarloExperiment(input_dists, n_sample)
-                proj_strategy = ot.LeastSquaresStrategy(montecarlo_design)
-
-            elif strategy == "Quad":  # integration method
-                # redefinition of sample size
-                # n_sample = (total_deg + 1) ** in_dim
-                # marginal degree definition
-                # by default: the marginal degree for each input random
-                # variable is set to the total polynomial degree 'total_deg'+1
-                measure = basis.getMeasure()
-                quad = ot.Indices(in_dim)
-                for i in range(in_dim):
-                    quad[i] = total_deg + 1
-                proj_strategy = ot.IntegrationStrategy(ot.GaussProductExperiment(measure, quad))
-            else:
-                self.logger.exception("Not implemented strategy: {}"
-                                      .format(strategy))
-                raise SystemExit
-
-            pc_algo = ot.FunctionalChaosAlgorithm(model, input_dists,
-                                                  trunc_strategy, proj_strategy)
+            pc_algo = ot.FunctionalChaosAlgorithm(sample, weights, column,
+                                                  self.dist, self.trunc_strategy,
+                                                  self.proj_strategy)
+            ot.Log.Show(ot.Log.ERROR)
             pc_algo.run()
-            self.sample = np.array(pc_algo.getInputSample())
-            self.pc_result = pc_algo.getResult()
-            self.pc = [self.pc_result.getMetaModel()]
+            pc_result = pc_algo.getResult()
+            pc = pc_result.getMetaModel()
+            return pc, pc_result
+
+        if self.model_len > 1:
+            # pool = NestedPool(self.n_cpu)
+            # results = pool.imap(model_fitting, data.T)
+            # results = list(results)
+            # pool.terminate()
+            results = [model_fitting(out) for out in data.T]
         else:
-            self.logger.info("Polynomial Chaos with prior input/output")
-            def model_fitting(column):
-                column = column.reshape((len(input), 1))
-                pc_algo = ot.FunctionalChaosAlgorithm(input, column)
-                pc_algo.run()
-                pc_result = pc_algo.getResult()
-                pc = pc_result.getMetaModel()
-                return pc, pc_result
+            results = [model_fitting(data)]
 
-            if self.model_len > 1:
-                pool = ProcessPool(self.n_cpu)
-                results = pool.map(model_fitting, output)
-                results = list(results)
-                pool.terminate()
-            else:
-                results = [model_fitting(output)]
-
-            self.pc, self.pc_result = zip(*results)
-            self.logger.info("Done")
+        self.pc, self.pc_result = zip(*results)
 
     @multi_eval
     def evaluate(self, point):

@@ -22,11 +22,12 @@ import logging
 import os
 import pickle
 from concurrent import futures
+import openturns as ot
 from collections import OrderedDict
 import numpy as np
 from .pod import Pod
 from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
-from .surrogate import SurrogateModel
+from .surrogate import (SurrogateModel, PC)
 from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
 
@@ -122,8 +123,30 @@ class Driver(object):
 
         # Surrogate model
         try:
-            self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                            self.settings['space']['corners'])
+            if self.settings['surrogate']['method'] == 'pc':
+                dists = self.settings['space']['sampling']['method']
+                dists = [eval("ot." + dist) for dist in dists]
+                settings_ = {'strategy': self.settings['surrogate']['strategy'],
+                             'degree': self.settings['surrogate']['degree'],
+                             'distributions': dists,
+                             'n_sample': self.settings['space']['sampling']['init_size']}
+                self.surrogate = SurrogateModel('pc',
+                                                self.settings['space']['corners'],
+                                                **settings_)
+                self.space.empty()
+                sample = self.surrogate.predictor.sample
+                try:
+                    self.space += sample
+                except (AlienPointError, UnicityError, FullSpaceError) as tb:
+                    self.logger.warning("Ignoring: {}".format(tb))
+                finally:
+                    if not self.provider.is_file:
+                        self.to_compute_points = sample[:len(self.space)]
+            else:
+                settings_ = {}
+                self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
+                                                self.settings['space']['corners'],
+                                                **settings_)
         except KeyError:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')
@@ -182,11 +205,7 @@ class Driver(object):
                 self.pod.decompose(snapshots)
 
             self.data = self.pod.VS()
-
-            try:  # if surrogate
-                self.surrogate.fit(self.pod.points, self.data, pod=self.pod)
-            except AttributeError:
-                pass
+            points = self.pod.points
         else:
             if self.provider.is_job:
                 _snapshots = []
@@ -213,10 +232,10 @@ class Driver(object):
 
             points = self.space
 
-            try:  # if surrogate
-                self.surrogate.fit(points, self.data, pod=self.pod)
-            except AttributeError:
-                pass
+        try:  # if surrogate
+            self.surrogate.fit(points, self.data, pod=self.pod)
+        except AttributeError:
+            pass
 
     def resampling(self):
         """Resampling of the parameter space.

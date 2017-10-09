@@ -97,7 +97,7 @@ class Kriging(object):
             """Fit an instance of :claa:`sklearn.GaussianProcessRegressor`."""
             gp = GaussianProcessRegressor(kernel=self.kernel,
                                           n_restarts_optimizer=0,
-                                          optimizer=self.optim_evolution)
+                                          optimizer=self._optim_evolution)
             data = gp.fit(sample, column)
             hyperparameter = np.exp(gp.kernel_.theta)
 
@@ -117,7 +117,7 @@ class Kriging(object):
 
         self.logger.debug("Hyperparameters: {}".format(self.hyperparameter))
 
-    def optim_evolution(self, obj_func, initial_theta, bounds):
+    def _optim_evolution(self, obj_func, initial_theta, bounds):
         """Genetic optimization of the hyperparameters.
 
         Use DE strategy to optimize theta. The process
@@ -169,7 +169,6 @@ class Kriging(object):
         :rtype: lst
         :return: The standard deviations.
         :rtype: lst
-
         """
         point_array = np.asarray(point).reshape(1, -1)
         prediction = np.empty((self.model_len))
