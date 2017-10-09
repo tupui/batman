@@ -94,6 +94,7 @@ class Kriging(object):
             self.n_cpu = n_cpu_system // self.n_restart
 
         def model_fitting(column):
+            """Fit an instance of :claa:`sklearn.GaussianProcessRegressor`."""
             gp = GaussianProcessRegressor(kernel=self.kernel,
                                           n_restarts_optimizer=0,
                                           optimizer=self.optim_evolution)
@@ -130,9 +131,11 @@ class Kriging(object):
         :rtype: lst(float), float
         """
         def func(args):
+            """Get the output from sklearn."""
             return obj_func(args)[0]
 
         def fork_optimizer(i):
+            """Optimize hyperparameters."""
             results = differential_evolution(func, bounds,
                                              tol=0.001, popsize=15+i)
             theta_opt = results.x

@@ -265,7 +265,7 @@ def test_pdf_surrogate(mock_show, ishigami_data):
 
 
 @patch("matplotlib.pyplot.show")
-def test_pdf_nD(tmp):
+def test_pdf_nD(mock_show, tmp):
     fig_pdf = pdf(data, xdata=np.linspace(1, 12, 12),
                   fname=os.path.join(tmp, 'pdf_nd.pdf'))
     reshow(fig_pdf)

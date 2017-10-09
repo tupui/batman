@@ -3,7 +3,7 @@ Visualization module
 ********************
 """
 from matplotlib import pyplot as plt
-import matplotlib
+import matplotlib.backends.backend_pdf
 from .kiviat import Kiviat3D
 from .hdr import HdrBoxplot
 from .uncertainty import (kernel_smoothing, pdf, sobol, corr_cov)
@@ -27,6 +27,8 @@ def reshow(fig):
 
 def save_show(fname, figures):
     """Either show or save the figure[s].
+
+    If :attr:`fname` is `None` the figure will show.
 
     :param str fname: wether to export to filename or display the figures.
     :param list(Matplotlib figure instance) figures: Figures to handle.

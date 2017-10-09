@@ -1,4 +1,7 @@
 """
+Design of experiments
+---------------------
+
 Define function related to design of experiments.
 
 * :func:`doe`,
@@ -85,7 +88,13 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None,
 
             sub_ax.append(ax)
 
-    bat.visualization.save_show(fname, [fig])
+    plt.tight_layout()
+
+    if fname is not None:
+        plt.savefig(fname, transparent=True, bbox_inches='tight')
+    elif show:
+        plt.show()
+    plt.close('all')
 
     return fig, sub_ax
 

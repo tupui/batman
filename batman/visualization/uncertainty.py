@@ -3,6 +3,11 @@ Uncertainty visualization tools
 -------------------------------
 
 It regoups various functions for graph visualizations.
+
+* :func:`kernel_smoothing`,
+* :func:`pdf`,
+* :func:`sobol`,
+* :func:`corr_cov`.
 """
 import numpy as np
 import openturns as ot

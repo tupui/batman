@@ -18,7 +18,6 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 import matplotlib.animation as manimation
-import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
 import batman as bat
 from .uncertainty import kernel_smoothing
