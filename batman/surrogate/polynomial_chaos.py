@@ -39,7 +39,8 @@ class PC(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, strategy, degree, distributions, n_sample=None):
+    def __init__(self, strategy, degree, distributions, n_sample=None,
+                 stieltjes=True):
         """Generate truncature and projection strategies.
 
         Allong with the strategies the sample is storred as an attribute:
@@ -50,15 +51,23 @@ class PC(object):
         :param lst(:class:`openturns.Distribution`) distributions:
         Distributions of each input parameter.
         :param int n_sample: Number of samples for least square.
+        :param bool stieltjes: Wether to use Stieltjes algorithm for the basis.
         """
         # distributions
         in_dim = len(distributions)
         self.dist = ot.ComposedDistribution(distributions)
 
         enumerateFunction = ot.EnumerateFunction(in_dim)
-        basis = ot.OrthogonalProductPolynomialFactory(
-            [ot.StandardDistributionPolynomialFactory(ot.AdaptiveStieltjesAlgorithm(marginal))
-             for marginal in distributions], enumerateFunction)
+
+        if stieltjes:
+            # Tend to result in performance issue
+            basis = ot.OrthogonalProductPolynomialFactory(
+                [ot.StandardDistributionPolynomialFactory(ot.AdaptiveStieltjesAlgorithm(marginal))
+                 for marginal in distributions], enumerateFunction)
+        else:
+            basis = ot.OrthogonalProductPolynomialFactory(
+                [ot.StandardDistributionPolynomialFactory(margin)
+                 for margin in distributions], enumerateFunction)
 
         self.trunc_strategy = ot.FixedStrategy(
             basis,
@@ -82,6 +91,12 @@ class PC(object):
             self.proj_strategy = ot.IntegrationStrategy(
                 ot.GaussProductExperiment(measure, degrees))
             self.sample, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
+
+            if not stieltjes:
+                transformation = ot.Function(ot.MarginalTransformationEvaluation(
+                    [measure.getMarginal(i) for i in range(in_dim)],
+                    distributions, False))
+                self.sample = transformation(self.sample)
 
     def fit(self, sample, data):
         """Create the predictor.

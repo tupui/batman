@@ -62,7 +62,7 @@ The library `pytest <https://docs.pytest.org/en/latest/>`_ is used. It is simple
 Checkout their doc and replicate constructs from existing tests. If you are note
 already in love with it, you will soon be. All tests can be launched using::
 
-    coverage run -m pytest --basetemp=./TMP_CI --ignore=test_cases/Mascaret .
+    coverage run -m pytest --basetemp=./TMP_CI .
     coverage report -m
 
 These commands fire `coverage <http://coverage.readthedocs.io>`_ in the same time.
