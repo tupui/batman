@@ -1,6 +1,4 @@
-"""
-Some statistics and plots.
-"""
+"""Some statistics and plots."""
 from io import BytesIO
 import numpy as np
 import matplotlib.pyplot as plt
@@ -70,7 +68,7 @@ def read_opt(filename='ResultatsOpthyca.opt'):
 def plot_opt(filename='ResultatsOpthyca.opt', xlab='Curvilinear abscissa (m)',
              ylab1='Water level (m)', ylab2='Flow rate (m3/s)',
              title='Water level along the open-channel at final time'):
-    """Plots results contained in the results file :file:`ResultatsOpthyca.opt`.
+    """Plot results contained in the results file :file:`ResultatsOpthyca.opt`.
 
     :param str xlab: label x
     :param str ylab1: label y1

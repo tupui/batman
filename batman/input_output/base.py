@@ -42,7 +42,7 @@ class IOBase(object):
         '''Dataset meta-data.'''
 
     def _read(self, iterable, names):
-        """Same as `read()` with an iterable instead of a file path."""
+        """Read with an iterable instead of a file path."""
         # process names to be read
         if names is None:
             names = self.info.names

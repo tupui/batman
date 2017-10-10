@@ -27,7 +27,6 @@ In each case, Sobol' indices are declared.
 
 References
 ----------
-
 .. [Molga2005] Molga, M., & Smutnicki, C. Test functions for optimization needs
     (2005).
 .. [Dixon1978] Dixon, L. C. W., & Szego, G. P. (1978). The global optimization
@@ -51,6 +50,7 @@ References
 .. [Surjanovic2017] Surjanovic, S. & Bingham, D. (2013). Virtual Library of
     Simulation Experiments: Test Functions and Datasets. Retrieved September 11,
     2017, from http://www.sfu.ca/~ssurjano.
+
 """
 import itertools
 import logging

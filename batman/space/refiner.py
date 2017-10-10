@@ -76,7 +76,7 @@ class Refiner(object):
         try:
             self.discrete = True if self.settings['sampling']['method']\
                 == 'discrete' else False
-        except:
+        except KeyError:
             self.discrete = False
 
         self.corners = np.array(self.settings['corners']).T

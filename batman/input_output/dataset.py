@@ -118,7 +118,7 @@ class Dataset(DatasetInfo):
         if self.shape is None:
             self.shape = data.shape[1:]
         elif data.size != self.size:
-            msg = 'data size mismatch : %d != %d'%(data.size, self.size)
+            msg = 'data size mismatch : %d != %d' % (data.size, self.size)
             raise DataSizeError(msg)
 
         self.data = data.view()

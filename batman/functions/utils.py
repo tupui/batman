@@ -1,13 +1,10 @@
-# coding: utf8
-"""
-Utility for functions.
-"""
+"""Utility for functions."""
 import inspect
 import numpy as np
 
 
 def multi_eval(fun):
-    """Decorator to detect space or unique point."""
+    """Detect space or unique point."""
     def wrapper_fun(self, x_n, *args, **kwargs):
         """Get evaluation from space or point.
 

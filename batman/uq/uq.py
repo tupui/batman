@@ -27,7 +27,6 @@ It implements the following methods:
 
 Usage
 -----
-
 The *settings* file must contains the following parameters::
 
     'UQ' : {
@@ -47,7 +46,6 @@ The *settings* file must contains the following parameters::
 
 References
 ----------
-
 A. Marrel, N. Saint-Geours. M. De Lozzo: Sensitivity Analysis of Spatial and/or
 Temporal Phenomena. Handbook of Uncertainty Quantification. 2015.
 DOI:10.1007/978-3-319-11259-6_39-1

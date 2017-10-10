@@ -11,6 +11,8 @@ python_linter:
     - source activate bat_ci
     - python setup.py build_fortran
     - python setup.py install
+    - pycodestyle --max-line-length=120 --exclude=gp_1d_sampler.py,function*,TreeCut*,RBFnet*,tecplot* batman > pycodestyle.log || echo 0
+    - cat pycodestyle.log
     - pylint batman --rcfile=setup.cfg --ignore-patterns='gp_1d_sampler.py','RBFnet.py','TreeCut.py','resampling.py' > linter.log || echo 0
     - cat linter.log
     - lint=`cat linter.log`

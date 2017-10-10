@@ -421,7 +421,7 @@ class MascaretApi(object):
             y2 = self.state(id_tick + 1).value
             output = (y2 * (self.user_settings['misc']['curv_abs'] - ticks[id_tick])
                       + y1 * (ticks[id_tick + 1] - self.user_settings['misc']['curv_abs']))\
-                          / (ticks[id_tick + 1] - ticks[id_tick])
+                / (ticks[id_tick + 1] - ticks[id_tick])
             return output
         elif self.user_settings['misc']['all_outstate'] is True:
             return self.curv_abs(), self.allstate()
@@ -943,7 +943,7 @@ class MascaretApi(object):
                 "table X bot unique: {}\n"
                 "table Z: {}\n"
                 "table Z bot: {}"
-               ).format(res_RelAbs, res_RelAbsBot, res_Z, res_Zbot)
+                ).format(res_RelAbs, res_RelAbsBot, res_Z, res_Zbot)
         self.logger.info(info)
 
         return res_RelAbsBot, res_Zbot, res_RelAbs, res_Z

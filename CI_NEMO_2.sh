@@ -47,7 +47,7 @@ python setup.py install
 which batman
 
 # launch test suite and coverage
-pytest --cov=batman --cov-report term-missing --basetemp=./TMP_CI .
+pytest --cov --cov-report term-missing --basetemp=./TMP_CI .
 if [ $? -ne 0 ] ; then
     fail=1
 else

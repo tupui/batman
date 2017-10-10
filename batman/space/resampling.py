@@ -1,13 +1,6 @@
-##  ==========================================================================
-##                Project: cfd - POD - Copyright (c) 2009 by CERFACS
-##  Type   :
-##  File   : resampling.py
-##  Vers   : V1.0
-##  Chrono : No  Date       Author                 V   Comments
-##           1.0 11/08/2009 Braconnier             0.1 Creation
-##  ==========================================================================
-
+"""Deprecated/unsupported functions from original package."""
 import numpy as np
+
 
 def mat_yy(dim):
     n = 2 ** dim
@@ -19,6 +12,7 @@ def mat_yy(dim):
             yy[i * nk:(i + 1) * nk, j:j + 1] = (-1) ** (i + 1) * \
                 np.ones([nk, 1])
     return yy
+
 
 def splitelement(S, S0, DS):
     mm = S.shape[1]

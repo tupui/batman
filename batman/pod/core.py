@@ -1,4 +1,3 @@
-# coding: utf8
 """
 Core Class
 ==========
@@ -7,7 +6,6 @@ Defines the methods to compute the POD.
 
 References
 ----------
-
 M. Brand: Fast low-rank modifications of the thin singular value decomposition.
 2006. DOI:10.1016/j.laa.2005.07.021
 

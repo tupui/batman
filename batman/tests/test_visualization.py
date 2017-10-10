@@ -27,10 +27,10 @@ labels, data = np.loadtxt(os.path.join(path, 'functional_dataset/elnino.dat'),
 labels = labels.reshape(-1, 12)[:, 0]
 data = data.reshape(-1, 12)
 
-#labels_tahiti, *data_tahiti = np.loadtxt(os.path.join(path, 'functional_dataset/tahiti.dat'),
-#                                         skiprows=4, usecols=range(0, 13),
-#                                         unpack=True)
-#data_tahiti = np.array(data_tahiti).T
+# labels_tahiti, *data_tahiti = np.loadtxt(os.path.join(path, 'functional_dataset/tahiti.dat'),
+#                                          skiprows=4, usecols=range(0, 13),
+#                                          unpack=True)
+# data_tahiti = np.array(data_tahiti).T
 
 
 @pytest.fixture(scope="session")
@@ -307,6 +307,7 @@ def test_response_surface_1D(mock_show, tmp):
     response_surface(bounds=bounds, fun=fun, fname=path)
 
     xdata = np.linspace(0, 1, 10)
+
     def fun(x):
         return (xdata * x) ** 2
     sample = np.array(range(5)).reshape(-1, 1)

@@ -6,10 +6,13 @@ Input output management entry point.
 An input-output (io) is used to deal with the permanent storage of a dataset.
 """
 import logging
+import os
 from .base import FormatError
 from .dataset import Dataset
 from .tecplot import TecplotAscii
 from .npz import Npz
+
+__all__ = ['Dataset', 'IOFormatSelector']
 
 
 class IOFormatSelector(object):
@@ -21,6 +24,7 @@ class IOFormatSelector(object):
     # list of all supported io classes
     io_types = [TecplotAscii, Npz]
     try:
+        os.environ["ANTARES_VERBOSE"] = "0"
         from .antares_wrapper import AntaresWrapper
         io_types.append(AntaresWrapper)
         check_antares = True
