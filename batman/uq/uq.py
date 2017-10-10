@@ -127,7 +127,7 @@ class UQ:
         # Generate samples
         self.points_sample = settings['uq']['sample']
         dists = ','.join(['ot.' + settings['uq']['pdf'][i]
-                              for i in range(self.p_len)])
+                          for i in range(self.p_len)])
         self.distribution = eval("ot.ComposedDistribution([" + dists + "])")
         self.experiment = ot.LHSExperiment(self.distribution,
                                            self.points_sample, True, True)
@@ -518,4 +518,5 @@ class UQ:
         # Create and plot the PDFs + moments
         self.logger.info('Creating PDF and figures...')
         visualization.pdf(self.output, self.xdata,
-                          fname=os.path.join(self.fname, 'pdf.pdf'), moments=True)
+                          fname=os.path.join(self.fname, 'pdf.pdf'),
+                          moments=True)

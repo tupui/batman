@@ -47,7 +47,7 @@ python setup.py install
 which batman
 
 # launch test suite and coverage
-coverage run -m pytest -n4 --basetemp=./TMP_CI .
+coverage run -m pytest --basetemp=./TMP_CI .
 if [ $? -ne 0 ] ; then
     fail=1
 else

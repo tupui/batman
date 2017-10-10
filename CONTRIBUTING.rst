@@ -48,10 +48,20 @@ As a quick reference:
 And for a more Pythonic code: `PEP 20 <https://www.python.org/dev/peps/pep-0020/>`_
 Last but not least, avoid common pitfalls: `Anti-patterns <http://docs.quantifiedcode.com/python-code-patterns/>`_
 
+Linter
+------
+
+Appart from normal unit and integration tests, you can perform a static
+analysis of the code using `pylint <https://www.pylint.org>`_::
+
+    pylint batman --rcfile=setup.cfg --ignore-patterns='gp_1d_sampler.py','RBFnet.py','TreeCut.py','resampling.py'
+
+This allows to spot naming errors for example as well as style errors.
+
 Testing
 -------
 
-Test your code is paramount. Without continuous integration, you **cannot**
+Testing your code is paramount. Without continuous integration, you **cannot**
 guaranty the quality of the code. Some minor modification on a module can have
 unexpected implications. With a single commit, everything can go south!
 The ``master`` branch, and normally the ``develop`` branch, are always on a
@@ -83,9 +93,8 @@ You can commit any change you feel, start discussions about it, etc.
 Your request will only be considered for integration if in a **finished** state: 
 
 0. Respect python coding rules,
-1. The branch passes all tests,
-2. Have tests regarding the changes,
-3. Maintain test coverage,
-4. Have the respective documentation.
-
-For the testing part, prove your claims with a *pytest* and coverage reports.
+1. Maintain linting score (>9.5/10), 
+2. The branch passes all tests,
+3. Have tests regarding the changes,
+4. Maintain test coverage,
+5. Have the respective documentation.

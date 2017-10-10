@@ -49,7 +49,7 @@ class Doe():
 
         :param int n_sample: number of samples.
         :param array_like bounds: Space's corners [[min, n dim], [max, n dim]]
-        :param str/list kind: Sampling Method if string can be one of 
+        :param str/list kind: Sampling Method if string can be one of
         ['halton', 'sobol', 'faure', 'lhs[c]', 'sobolscramble', 'uniform',
         'discrete'] otherwize can be a list of openturns distributions.
         :param int var: Position of the discrete variable.

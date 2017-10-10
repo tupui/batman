@@ -21,13 +21,13 @@ Defines all methods used to interact with other classes.
 import logging
 import os
 import pickle
+from collections import OrderedDict
 from concurrent import futures
 import openturns as ot
-from collections import OrderedDict
 import numpy as np
 from .pod import Pod
 from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
-from .surrogate import (SurrogateModel, PC)
+from .surrogate import SurrogateModel
 from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
 

@@ -146,6 +146,7 @@ the newly created environment with ``source activate bat_env``.
 .. note:: If using *NEMO* with Python 2.7::
 
         module purge
+        module load openmpi/184_gcc
         module load python/2.7
         module load python/2.7-shared
         module load application/openturns/1.7
