@@ -98,6 +98,8 @@ Testing dependencies are:
 
 - `pytest <https://docs.pytest.org/en/latest/>`_ >= 2.8
 - `mock <https://pypi.python.org/pypi/mock>`_ >= 2.0
+- `pytest-xdist <https://github.com/pytest-dev/pytest-xdist>`_ >= 2.0
+- `pytest-cov <https://github.com/pytest-dev/pytest-cov>`_ >= 2.5.1
 
 .. note:: OpenTURNS and ffmpeg are available on *conda* through
     the *conda-forge* channel.

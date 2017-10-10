@@ -122,7 +122,7 @@ class Driver(object):
         self.data = None
 
         # Surrogate model
-        try:
+        if 'surrogate' in self.settings:
             if self.settings['surrogate']['method'] == 'pc':
                 dists = self.settings['space']['sampling']['method']
                 dists = [eval("ot." + dist) for dist in dists]
@@ -147,7 +147,7 @@ class Driver(object):
                 self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
                                                 self.settings['space']['corners'],
                                                 **settings_)
-        except KeyError:
+        else:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')
 

@@ -3,7 +3,6 @@ apipkg==1.4
 asn1crypto==0.22.0
 Babel==2.4.0
 backports.functools-lru-cache==1.4
-batman==1.6
 certifi==2017.7.27.1
 cffi==1.10.0
 chardet==3.0.4
@@ -46,6 +45,7 @@ pyOpenSSL==17.2.0
 pyparsing==2.2.0
 PySocks==1.6.7
 pytest==3.2.3
+pytest-cov==2.5.1
 pytest-forked==0.2
 pytest-xdist==1.20.1
 python-dateutil==2.6.1

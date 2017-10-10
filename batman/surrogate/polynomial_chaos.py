@@ -132,8 +132,8 @@ class PC(object):
             # Some points may not have been run
             sample_ = np.zeros_like(self.sample)
             sample_[:len(sample)] = sample
-            sample_arg = np.where(np.linalg.norm(sample_ - np.array(self.sample),
-                                                 axis=1) <= 1e-2)[0]
+            sample_arg = np.all(np.isin(sample_, self.sample,
+                                        assume_unique=True), axis=1)
             weights = np.array(self.weights)[sample_arg]
 
             pc_algo = ot.FunctionalChaosAlgorithm(sample, weights, column,

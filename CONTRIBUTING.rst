@@ -28,6 +28,9 @@ sources, you need to install it with::
 This will create a simlink to your python install folder. Thus you won't have
 to re-install the package after you modified it.
 
+Make sure you have installed the testing dependencies as detailed in the
+``README``.
+
 Python
 ------
 
@@ -72,10 +75,9 @@ The library `pytest <https://docs.pytest.org/en/latest/>`_ is used. It is simple
 Checkout their doc and replicate constructs from existing tests. If you are note
 already in love with it, you will soon be. All tests can be launched using::
 
-    coverage run -m pytest --basetemp=./TMP_CI .
-    coverage report -m
+    pytest --cov=batman --cov-report term-missing --basetemp=./TMP_CI .
 
-These commands fire `coverage <http://coverage.readthedocs.io>`_ in the same time.
+This command fires `coverage <http://coverage.readthedocs.io>`_ at the same time.
 The output consists in tests results and coverage report.
 
 GIT
