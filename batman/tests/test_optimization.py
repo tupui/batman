@@ -13,16 +13,15 @@ from mock import patch
 
 @patch("matplotlib.pyplot.show")
 def test_optimization(mock_show, tmp, branin_data, settings_ishigami):
-    f_2d, dists, model, point, target_point, space, target_space = branin_data
     test_settings = copy.deepcopy(settings_ishigami)
-    init_size = len(space)
+    init_size = len(branin_data.space)
     res_size = 2
     test_settings['space']['sampling']['init_size'] = init_size
     test_settings["space"]["sampling"]["method"] = 'discrete'
     test_settings['space']['resampling']['method'] = 'optimization'
     test_settings['space']['resampling']['resamp_size'] = res_size
     test_settings['space']['resampling']['delta_space'] = 0.1
-    test_settings["space"]["corners"] = space.corners
+    test_settings["space"]["corners"] = branin_data.space.corners
     test_settings["snapshot"]["io"]["parameter_names"] = ["x1", "x2"]
     f_obj = Branin()
     test_settings["snapshot"]["provider"] = f_obj
@@ -42,8 +41,8 @@ def test_optimization(mock_show, tmp, branin_data, settings_ishigami):
     sigma = np.array(sigma).flatten()
     space = np.array(driver.space[:])
 
-    arg_min = np.argmin(target_space)
-    min_value = target_space[arg_min]
+    arg_min = np.argmin(branin_data.target_space)
+    min_value = branin_data.target_space[arg_min]
 
     # Expected improvement
     ei = np.empty_like(pred)

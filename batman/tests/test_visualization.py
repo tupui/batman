@@ -250,16 +250,14 @@ def test_pdf_1D(tmp):
 
 @patch("matplotlib.pyplot.show")
 def test_pdf_surrogate(mock_show, ishigami_data):
-    dist = ot.ComposedDistribution(ishigami_data[1], ot.IndependentCopula(3))
-    f_3d = ishigami_data[0]
-    space = ishigami_data[5]
-    surrogate = SurrogateModel('kriging', space.corners)
-    surrogate.fit(space, f_3d(space))
+    dist = ot.ComposedDistribution(ishigami_data.dists)
+    surrogate = SurrogateModel('kriging', ishigami_data.space.corners)
+    surrogate.fit(ishigami_data.space, ishigami_data.target_space)
     settings = {
         "dist": dist,
         "model": surrogate,
         "method": 'kriging',
-        "bounds": space.corners
+        "bounds": ishigami_data.space.corners
     }
     pdf(settings)
 
@@ -318,35 +316,30 @@ def test_response_surface_1D(mock_show, tmp):
 @pytest.mark.xfail(raises=ValueError)
 @patch("matplotlib.pyplot.show")
 def test_response_surface_2D_scalar(mock_show, branin_data):
-    space = branin_data[5]
-    data = branin_data[6]
-    fun = branin_data[0]
-    bounds = [[-7, 0], [10, 15]]
-    response_surface(bounds=bounds, sample=space, data=data)
-    response_surface(bounds=bounds, fun=fun, doe=space, resampling=4)
+    bounds = branin_data.space.corners
+    response_surface(bounds=bounds, sample=branin_data.space,
+                     data=branin_data.target_space)
+    response_surface(bounds=bounds, fun=branin_data.func, doe=branin_data.space, resampling=4)
 
 
 @patch("matplotlib.pyplot.show")
 def test_response_surface_2D_vector(mock_show, mascaret_data, tmp):
-    space = mascaret_data[5]
-    data = mascaret_data[6]
-    xdata = mascaret_data[0].x
-    bounds = [[15.0, 2500.0], [60, 6000.0]]
-    response_surface(bounds=bounds, sample=space, data=data, xdata=xdata)
+    xdata = mascaret_data.func.x
+    bounds = mascaret_data.space.corners
+    response_surface(bounds=bounds, sample=mascaret_data.space,
+                     data=mascaret_data.target_space, xdata=xdata)
     path = os.path.join(tmp, 'rs_2D_vector.pdf')
-    response_surface(bounds=bounds, fun=mascaret_data[0], xdata=xdata,
+    response_surface(bounds=bounds, fun=mascaret_data.func, xdata=xdata,
                      plabels=['Ks', 'Q'], flabel='Z', fname=path)
 
 
 @patch("matplotlib.pyplot.show")
 def test_doe(mock_show, mascaret_data):
-    space = mascaret_data[5]
-    doe(space)
+    doe(mascaret_data.space)
 
 
 def test_doe_3D(ishigami_data, tmp):
-    space = ishigami_data[5]
-    fig, ax = doe(space, fname=os.path.join(tmp, 'DOE.pdf'))
+    fig, ax = doe(ishigami_data.space, fname=os.path.join(tmp, 'DOE.pdf'))
 
     fig = reshow(fig)
     ax[0].plot([0, 6], [4, -3])
@@ -354,15 +347,15 @@ def test_doe_3D(ishigami_data, tmp):
 
 
 def test_doe_mufi(ishigami_data, tmp):
-    space = ishigami_data[5]
-    doe(space, multifidelity=True, fname=os.path.join(tmp, 'DOE_mufi.pdf'))
+    doe(ishigami_data.space, multifidelity=True,
+        fname=os.path.join(tmp, 'DOE_mufi.pdf'))
 
 
 @patch("matplotlib.pyplot.show")
 def test_corr_cov(mock_show, mascaret_data, tmp):
-    fun = mascaret_data[0]
-    dist = ot.ComposedDistribution(mascaret_data[1], ot.IndependentCopula(2))
+    func = mascaret_data.func
+    dist = ot.ComposedDistribution(mascaret_data.dists)
     sample = np.array(ot.LHSExperiment(dist, 500).generate())
-    data = fun(sample)
-    corr_cov(data, sample, fun.x, interpolation='lanczos', plabels=['Ks', 'Q'])
-    corr_cov(data, sample, fun.x, fname=os.path.join(tmp, 'corr_cov.pdf'))
+    data = func(sample)
+    corr_cov(data, sample, func.x, interpolation='lanczos', plabels=['Ks', 'Q'])
+    corr_cov(data, sample, func.x, fname=os.path.join(tmp, 'corr_cov.pdf'))

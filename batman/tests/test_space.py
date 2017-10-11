@@ -14,23 +14,6 @@ from batman.space.refiner import Refiner
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
-settings = {
-    "space": {
-        "corners": [[1.0, 1.0, 1.0], [3.1415, 3.1415, 3.1415]],
-        "sampling": {
-            "init_size": 10,
-            "method": "halton"
-        },
-        "resampling": {
-            "delta_space": 0.08,
-            "resamp_size": 6,
-            "method": "sigma",
-            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
-            "q2_criteria": 0.8
-        }
-    }
-}
-
 
 def test_point():
     point_a = Point([2, 3, 9])
@@ -62,8 +45,11 @@ def test_point_evaluation():
     assert target_point == pytest.approx(14.357312835804658, 0.05)
 
 
-def test_space():
-    space = Space(settings)
+def test_space(settings_ishigami):
+    test_settings = copy.deepcopy(settings_ishigami)
+    test_settings['space']['sampling']['init_size'] = 10
+    test_settings['space']['resampling']['resamp_size'] = 6
+    space = Space(test_settings)
 
     assert space.max_points_nb == 16
 
@@ -77,7 +63,7 @@ def test_space():
     assert space[:] == [(1, 2, 3), (1, 1, 3)]
 
     s1 = space.sampling()
-    space2 = Space(settings)
+    space2 = Space(settings_ishigami)
     s2 = space2.sampling(10, kind='lhsc')
     assert s1[:] != s2[:]
 
@@ -95,7 +81,7 @@ def test_space():
     with pytest.raises(FullSpaceError):
         space.sampling(17)
 
-    test_settings = copy.deepcopy(settings)
+    test_settings = copy.deepcopy(test_settings)
     test_settings['space'].pop('resampling')
     space = Space(test_settings)
     assert space.max_points_nb == 10
@@ -105,18 +91,17 @@ def test_space():
     assert space.doe_init == 2
     assert space.max_points_nb == 2
 
-    test_settings['space']['corners'][1] = [3.1415, 1, 3.1415]
+    test_settings['space']['corners'][1] = [np.pi, -np.pi, np.pi]
     with pytest.raises(ValueError):
         space = Space(test_settings)
 
 
-def test_space_evaluation():
+def test_space_evaluation(settings_ishigami):
     f_3d = Ishigami()
-    space = Space(settings)
+    space = Space(settings_ishigami)
     space.sampling(2)
     targets_space = f_3d(space)
-
-    f_data_base = np.array([8.10060038, 5.18818004]).reshape(2, 1)
+    f_data_base = np.array([5.25 , 4.2344145]).reshape(2, 1)
     npt.assert_almost_equal(targets_space, f_data_base)
 
 
@@ -157,7 +142,9 @@ def test_doe():
 
 
 def test_resampling(tmp, branin_data, settings_ishigami):
-    f_2d, _, model, _, _, space, _ = branin_data
+    f_2d = branin_data.func
+    model = branin_data.model
+    space = branin_data.space
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings['space']['sampling']['init_size'] = 5
     test_settings['space']['sampling']['method'] = 'halton'
@@ -249,7 +236,7 @@ def test_resampling(tmp, branin_data, settings_ishigami):
 
 
 def test_discrepancy(settings_ishigami):
-    test_settings = copy.deepcopy(settings)
+    test_settings = copy.deepcopy(settings_ishigami)
     test_settings['space']['corners'] = [[0.5, 0.5], [6.5, 6.5]]
     space_1 = Space(test_settings)
     space_2 = Space(test_settings)

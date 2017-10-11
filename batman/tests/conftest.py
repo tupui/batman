@@ -12,6 +12,14 @@ from batman.space import (Space, Point)
 from batman.driver import Driver
 
 
+class Datatest(object):
+
+    """Wrap results."""
+
+    def __init__(self, kwds):
+        self.__dict__.update(kwds)
+
+
 @pytest.fixture(scope="session")
 def tmp(tmpdir_factory):
     """Create a common temp directory."""
@@ -54,62 +62,61 @@ def driver_init(tmp, settings_ishigami):
 
 @pytest.fixture(scope="session")
 def ishigami_data(settings_ishigami):
-    f_3d = Ishigami()
+    data = {}
+    data['func'] = Ishigami()
     x1 = ot.Uniform(-3.1415, 3.1415)
-    dists = [x1] * 3
-    model = ot.PythonFunction(3, 1, output_to_sequence(f_3d))
-    point = Point([2.20, 1.57, 3])
-    target_point = f_3d(point)
-    space = Space(settings_ishigami)
-    space.sampling(150)
-    target_space = f_3d(space)
-    return (f_3d, dists, model, point, target_point, space, target_space)
+    data['dists'] = [x1] * 3
+    data['point'] = Point([2.20, 1.57, 3])
+    data['target_point'] = data['func'](data['point'])
+    data['space'] = Space(settings_ishigami)
+    data['space'].sampling(150)
+    data['target_space'] = data['func'](data['space'])
+    return Datatest(data)
 
 
 @pytest.fixture(scope="session")
 def branin_data(settings_ishigami):
-    f_2d = Branin()
-    dists = [ot.Uniform(-5, 10), ot.Uniform(0, 15)]
-    model = ot.PythonFunction(2, 1, output_to_sequence(f_2d))
-    point = Point([2., 2.])
-    target_point = f_2d(point)
+    data = {}
+    data['func'] = Branin()
+    data['dists'] = [ot.Uniform(-5, 10), ot.Uniform(0, 15)]
+    data['point'] = Point([2., 2.])
+    data['target_point'] = data['func'](data['point'])
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings["space"]["corners"] = [[-7, 0], [10, 15]]
     test_settings["space"]["sampling"]["method"] = 'discrete'
     test_settings["snapshot"]["io"]["parameter_names"] = ["x1", "x2"]
-    space = Space(test_settings)
-    space.sampling(10)
-    target_space = f_2d(space)
-    return (f_2d, dists, model, point, target_point, space, target_space)
+    data['space'] = Space(test_settings)
+    data['space'].sampling(10)
+    data['target_space'] = data['func'](data['space'])
+    return Datatest(data)
 
 
 @pytest.fixture(scope="session")
 def mascaret_data(settings_ishigami):
-    f = Mascaret()
+    data = {}
+    data['func'] = Mascaret()
     x1 = ot.Uniform(15., 60.)
     x2 = ot.Normal(4035., 400.)
-    dists = [x1, x2]
-    model = ot.PythonFunction(2, 14, f)
-    point = [31.54, 4237.025]
-    target_point = f(point)
+    data['dists'] = [x1, x2]
+    data['point'] = [31.54, 4237.025]
+    data['target_point'] = data['func'](data['point'])
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings["space"]["corners"] = [[15.0, 2500.0], [60, 6000.0]]
     test_settings["snapshot"]["io"]["parameter_names"] = ["Ks", "Q"]
-    space = Space(test_settings)
-    space.sampling(50)
-    target_space = f(space)
-    return (f, dists, model, point, target_point, space, target_space)
+    data['space'] = Space(test_settings)
+    data['space'].sampling(50)
+    data['target_space'] = data['func'](data['space'])
+    return Datatest(data)
 
 
 @pytest.fixture(scope="session")
 def mufi_data(settings_ishigami):
     f_e = Forrester('e')
     f_c = Forrester('c')
-    dist = [ot.Uniform(0.0, 1.0)]
-    model = ot.PythonFunction(1, 1, output_to_sequence(f_e))
-    point = [0.65]
-    target_point = f_e(point)
+    data['dists'] = [ot.Uniform(0.0, 1.0)]
+    data['point'] = [0.65]
+    data['target_point'] = f_e(data['point'])
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings["space"]["corners"] = [[0.0], [1.0]]
     test_settings["space"]["sampling"]["init_size"] = 10
@@ -118,22 +125,22 @@ def mufi_data(settings_ishigami):
     test_settings["surrogate"]["cost_ratio"] = 5.1
     test_settings["surrogate"]["grand_cost"] = 13.0
 
-    space = Space(test_settings)
-    space.sampling()
+    data['space'] = Space(test_settings)
+    data['space'].sampling()
 
     working_space = np.array(space)
 
-    target_space = np.vstack([f_e(working_space[working_space[:, 0] == 0][:, 1:]),
+    data['target_space'] = np.vstack([f_e(working_space[working_space[:, 0] == 0][:, 1:]),
                               f_c(working_space[working_space[:, 0] == 1][:, 1:])])
+    data['func'] = [f_e, f_c]
 
-    return (f_e, f_c, dist, model, point, target_point, space, target_space)
+    return Datatest(data)
 
 
 def sklearn_q2(dists, model, surrogate):
-    dim = len(dists)
-    dists = ot.ComposedDistribution(dists, ot.IndependentCopula(dim))
+    dists = ot.ComposedDistribution(dists)
     experiment = ot.LHSExperiment(dists, 1000)
-    sample = experiment.generate()
+    sample = np.array(experiment.generate())
     ref = model(sample)
     pred = surrogate(sample)
 

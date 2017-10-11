@@ -6,11 +6,9 @@ from batman.tasks import Snapshot
 
 
 def test_indices(tmp, ishigami_data, settings_ishigami):
-    _, _, _, _, _, space, target_space = ishigami_data
-
     Snapshot.initialize(settings_ishigami['snapshot']['io'])
-    surrogate = SurrogateModel('kriging', space.corners)
-    surrogate.fit(space, target_space)
+    surrogate = SurrogateModel('kriging', ishigami_data.space.corners)
+    surrogate.fit(ishigami_data.space, ishigami_data.target_space)
 
     analyse = UQ(settings_ishigami, surrogate, tmp)
 
