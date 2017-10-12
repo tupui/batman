@@ -475,7 +475,7 @@ class MascaretApi(object):
 
         else:
             self.logger.info('Performing a single MASCARET simulation...')
-            h = self.run_mascaret(x=x, Qtime=Qtime, saveall=saveall)
+            h = self.run_mascaret(x, Qtime=Qtime, saveall=saveall)
 
         if self.user_settings['misc']['all_outstate'] is True:
             self.results = np.split(h, 2)
