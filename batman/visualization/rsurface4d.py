@@ -14,8 +14,9 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
 import batman as bat
 
+
 def response_surface_4d(bounds, sample=None, data=None, fun=None, doe=None,
-                        resampling=0, xdata=None, axis_disc=None, flabel='F', 
+                        resampling=0, xdata=None, axis_disc=None, flabel='F',
                         plabels=None, feat_order=None, ticks_nbr=10,
                         contours=None, fname=None):
     """Response surface visualization in 2d (image), 3d (movie) or 4d (movies).
@@ -59,7 +60,7 @@ def response_surface_4d(bounds, sample=None, data=None, fun=None, doe=None,
         n_samples = 625
     elif dim == 3:
         n_samples = 8000
-    elif dim ==4:
+    elif dim == 4:
         n_samples = 50625
     n_samples = int(np.floor(np.power(n_samples, 1.0 / dim)))
 
@@ -89,7 +90,7 @@ def response_surface_4d(bounds, sample=None, data=None, fun=None, doe=None,
     if axis_disc is None:
         axis_disc = [n_samples for i in range(dim)]
 
-    # Get the datas    
+    # Get the datas
     if fun is not None:
         data = fun(np.stack([grid.flatten() for grid in grids]).T)
 
@@ -122,25 +123,25 @@ def response_surface_4d(bounds, sample=None, data=None, fun=None, doe=None,
             isample[3] = zzsample
 
         for i in range(dim):
-            if (feat_order[0]==(i+1)):
+            if (feat_order[0] == (i + 1)):
                 xsample = isample[i]
                 plabels[0] = old_labels[i]
                 axis_disc[0] = old_axis_disc[i]
                 if doe is not None:
                     doe[:,0] = old_doe[:,i]
-            elif (feat_order[1]==(i+1)):
+            elif (feat_order[1] == (i + 1)):
                 ysample = isample[i]
                 plabels[1] = old_labels[i]
                 axis_disc[1] = old_axis_disc[i]
                 if doe is not None:
                     doe[:,1] = old_doe[:,i]
-            elif (feat_order[2]==(i+1)):
+            elif (feat_order[2] == (i + 1)):
                 zsample = isample[i]
                 plabels[2] = old_labels[i]
                 axis_disc[2] = old_axis_disc[i]
                 if doe is not None:
                     doe[:,2] = old_doe[:,i]
-            elif (feat_order[3]==(i+1)):
+            elif (feat_order[3] == (i + 1)):
                 zzsample = isample[i]
                 plabels[3] = old_labels[i]
                 axis_disc[3] = old_axis_disc[i]
@@ -286,7 +287,7 @@ def response_surface_4d(bounds, sample=None, data=None, fun=None, doe=None,
                         else:
                             plt.show()
                         plt.close('all')
-                    
+
                     # Grab the current response surface for movie generation
                     writer.grab_frame()
 
