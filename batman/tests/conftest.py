@@ -5,9 +5,8 @@ import numpy as np
 import copy
 from sklearn.metrics import r2_score
 import openturns as ot
-from batman.functions import (Ishigami, Michalewicz, Branin, G_Function
+from batman.functions import (Ishigami, Branin, G_Function,
                               Mascaret, Forrester)
-from batman.functions import output_to_sequence
 from batman.space import (Space, Point)
 from batman.driver import Driver
 
@@ -101,7 +100,7 @@ def g_function_data(settings_ishigami):
     data['target_point'] = data['func'](data['point'])
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['space']['corners'] = [[0, 1]] * 4
+    test_settings['space']['corners'] = [[0, 0, 0, 0], [1, 1, 1, 1]]
     test_settings['space']['sampling']['method'] = 'discrete'
     test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2', 'x3', 'x4']
     data['space'] = Space(test_settings)
@@ -130,6 +129,7 @@ def mascaret_data(settings_ishigami):
 
 @pytest.fixture(scope='session')
 def mufi_data(settings_ishigami):
+    data = {}
     f_e = Forrester('e')
     f_c = Forrester('c')
     data['dists'] = [ot.Uniform(0.0, 1.0)]
@@ -146,7 +146,7 @@ def mufi_data(settings_ishigami):
     data['space'] = Space(test_settings)
     data['space'].sampling()
 
-    working_space = np.array(space)
+    working_space = np.array(data['space'])
 
     data['target_space'] = np.vstack([f_e(working_space[working_space[:, 0] == 0][:, 1:]),
                                       f_c(working_space[working_space[:, 0] == 1][:, 1:])])

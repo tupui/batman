@@ -143,7 +143,6 @@ def test_doe():
 
 def test_resampling(tmp, branin_data, settings_ishigami):
     f_2d = branin_data.func
-    model = branin_data.model
     space = branin_data.space
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings['space']['sampling']['init_size'] = 5

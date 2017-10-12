@@ -180,6 +180,7 @@ def test_quality(mufi_data):
 
 
 def test_evofusion(mufi_data):
+    f_e, f_c = mufi_data.func
     surrogate = Evofusion(mufi_data.space, mufi_data.target_space)
 
     # Test one point evaluation
@@ -188,9 +189,9 @@ def test_evofusion(mufi_data):
 
     # Compute predictivity coefficient Q2
     def wrap_surrogate(x):
-        evaluation, _ = surrogate.evaluate([x])
+        evaluation, _ = surrogate.evaluate(x)
         return evaluation
-    q2 = sklearn_q2(mufi_data.dist, mufi_data.func, wrap_surrogate)
+    q2 = sklearn_q2(mufi_data.dists, f_e, wrap_surrogate)
     assert q2 == pytest.approx(1, 0.1)
 
     # Plotting
