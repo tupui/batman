@@ -5,7 +5,7 @@ import numpy as np
 import copy
 from sklearn.metrics import r2_score
 import openturns as ot
-from batman.functions import (Ishigami, Michalewicz, Branin,
+from batman.functions import (Ishigami, Michalewicz, Branin, G_Function
                               Mascaret, Forrester)
 from batman.functions import output_to_sequence
 from batman.space import (Space, Point)
@@ -26,7 +26,7 @@ def tmp(tmpdir_factory):
     return str(tmpdir_factory.mktemp('tmp_test'))
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def settings_ishigami():
     f_ishigami = Ishigami()
     settings = {
@@ -52,7 +52,7 @@ def settings_ishigami():
     return settings
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def driver_init(tmp, settings_ishigami):
     """Initialize driver with settings from Ishigami."""
     driver = Driver(settings_ishigami, tmp)
@@ -60,7 +60,7 @@ def driver_init(tmp, settings_ishigami):
     return driver
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def ishigami_data(settings_ishigami):
     data = {}
     data['func'] = Ishigami()
@@ -83,16 +83,34 @@ def branin_data(settings_ishigami):
     data['target_point'] = data['func'](data['point'])
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings["space"]["corners"] = [[-7, 0], [10, 15]]
-    test_settings["space"]["sampling"]["method"] = 'discrete'
-    test_settings["snapshot"]["io"]["parameter_names"] = ["x1", "x2"]
+    test_settings['space']['corners'] = [[-7, 0], [10, 15]]
+    test_settings['space']['sampling']['method'] = 'discrete'
+    test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2']
     data['space'] = Space(test_settings)
     data['space'].sampling(10)
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
+def g_function_data(settings_ishigami):
+    data = {}
+    data['func'] = G_Function()
+    data['dists'] = [ot.Uniform(0, 1)] * 4
+    data['point'] = Point([0.5, 0.2, 0.7, 0.1])
+    data['target_point'] = data['func'](data['point'])
+    test_settings = copy.deepcopy(settings_ishigami)
+    test_settings = copy.deepcopy(settings_ishigami)
+    test_settings['space']['corners'] = [[0, 1]] * 4
+    test_settings['space']['sampling']['method'] = 'discrete'
+    test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2', 'x3', 'x4']
+    data['space'] = Space(test_settings)
+    data['space'].sampling(10)
+    data['target_space'] = data['func'](data['space'])
+    return Datatest(data)
+
+
+@pytest.fixture(scope='session')
 def mascaret_data(settings_ishigami):
     data = {}
     data['func'] = Mascaret()
@@ -102,15 +120,15 @@ def mascaret_data(settings_ishigami):
     data['point'] = [31.54, 4237.025]
     data['target_point'] = data['func'](data['point'])
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings["space"]["corners"] = [[15.0, 2500.0], [60, 6000.0]]
-    test_settings["snapshot"]["io"]["parameter_names"] = ["Ks", "Q"]
+    test_settings['space']['corners'] = [[15.0, 2500.0], [60, 6000.0]]
+    test_settings['snapshot']['io']['parameter_names'] = ['Ks', 'Q']
     data['space'] = Space(test_settings)
     data['space'].sampling(50)
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def mufi_data(settings_ishigami):
     f_e = Forrester('e')
     f_c = Forrester('c')
@@ -118,12 +136,12 @@ def mufi_data(settings_ishigami):
     data['point'] = [0.65]
     data['target_point'] = f_e(data['point'])
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings["space"]["corners"] = [[0.0], [1.0]]
-    test_settings["space"]["sampling"]["init_size"] = 10
-    test_settings["snapshot"]["io"]["parameter_names"] = ["fidelity", "x"]
-    test_settings["surrogate"]["method"] = 'evofusion'
-    test_settings["surrogate"]["cost_ratio"] = 5.1
-    test_settings["surrogate"]["grand_cost"] = 13.0
+    test_settings['space']['corners'] = [[0.0], [1.0]]
+    test_settings['space']['sampling']['init_size'] = 10
+    test_settings['snapshot']['io']['parameter_names'] = ['fidelity', 'x']
+    test_settings['surrogate']['method'] = 'evofusion'
+    test_settings['surrogate']['cost_ratio'] = 5.1
+    test_settings['surrogate']['grand_cost'] = 13.0
 
     data['space'] = Space(test_settings)
     data['space'].sampling()
@@ -131,7 +149,7 @@ def mufi_data(settings_ishigami):
     working_space = np.array(space)
 
     data['target_space'] = np.vstack([f_e(working_space[working_space[:, 0] == 0][:, 1:]),
-                              f_c(working_space[working_space[:, 0] == 1][:, 1:])])
+                                      f_c(working_space[working_space[:, 0] == 1][:, 1:])])
     data['func'] = [f_e, f_c]
 
     return Datatest(data)
