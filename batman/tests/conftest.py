@@ -105,7 +105,7 @@ def g_function_data(settings_ishigami):
     test_settings['space']['sampling']['method'] = 'discrete'
     test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2', 'x3', 'x4']
     data['space'] = Space(test_settings)
-    data['space'].sampling(1000)
+    data['space'].sampling(100)
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)
 

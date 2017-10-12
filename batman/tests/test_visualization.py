@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 
 try:
     import matplotlib.animation as manimation
-manimation.writers['ffmpeg']
-have_ffmpeg = True
+    manimation.writers['ffmpeg']
+    have_ffmpeg = True
 except (RuntimeError, KeyError):
     have_ffmpeg = False
 
@@ -359,7 +359,7 @@ def test_response_surface4D_2D_scalar(branin_data):
     order = [2, 1]
     path = os.path.join('.', 'rs_2D_vector.pdf')
     response_surface_4d(bounds=bounds, sample=space, data=data)
-    response_surface_4d(bounds=bounds, fun=fun, doe=space, resampling=4, fname=path, featorder=order)
+    response_surface_4d(bounds=bounds, fun=fun, doe=space, resampling=4, fname=path, feat_order=order)
 
 def test_response_surface4D_2D_vector(mascaret_data, tmp):
     space = mascaret_data[5]
@@ -370,17 +370,18 @@ def test_response_surface4D_2D_vector(mascaret_data, tmp):
     path = os.path.join('.', 'rs_2D_vector.pdf')
     response_surface_4d(bounds=bounds, sample=space, data=data, xdata=xdata, fname=path)
     response_surface_4d(bounds=bounds, fun=mascaret_data[0], xdata=xdata,
-                     plabels=['Ks', 'Q'], featorder=order, flabel='Z')
+                     plabels=['Ks', 'Q'], feat_order=order, flabel='Z')
 
 
 def test_response_surface4D_3D(ishigami_data):
     space = ishigami_data[5]
     data = ishigami_data[6]
     fun = ishigami_data[0]
-    bounds = [[-7, 0, -2], [10, 15, 4]]
+    bounds = [[-4, -4, -4], [4, 4, 4]]
     order = [1, 2, 3]
     path = os.path.join('.', 'rs_3D_vector')
-    response_surface_4d(bounds=bounds, fun=fun, doe=space, resampling=4, fname=path, featorder=order)
+    response_surface_4d(bounds=bounds, fun=fun, doe=space, resampling=4,
+                        contours=[-20, 0, 20], fname=path, feat_order=order)
 
 
 def test_response_surface4D_4D(g_function_data):
@@ -390,7 +391,8 @@ def test_response_surface4D_4D(g_function_data):
     bounds = g_function_data.space.corners
     order = [2, 3, 4, 1]
     path = os.path.join('.', 'rs_4D_vector')
-    response_surface_4d(bounds=bounds, fun=fun, doe=space, resampling=4, fname=path, featorder=order)
+    response_surface_4d(bounds=bounds, fun=fun, doe=space, resampling=4,
+                        axis_disc=[2, 15, 15, 15], fname=path, feat_order=order)
 
 @patch("matplotlib.pyplot.show")
 def test_doe(mock_show, mascaret_data):

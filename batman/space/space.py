@@ -337,7 +337,7 @@ class Space(list):
     def write(self, path):
         """Write space in file.
 
-        After writting points, it plots them with :func:`Space.plot_space`
+        After writting points, it plots them.
 
         :param str path: folder to save the points in
         """
