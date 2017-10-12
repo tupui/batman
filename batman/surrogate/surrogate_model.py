@@ -101,12 +101,18 @@ class SurrogateModel(object):
         except ValueError:  # With multifidelity
             points_scaled = self.scaler.transform(points[:, 1:])
             points_scaled = np.hstack((points[:, 0].reshape(-1, 1), points_scaled))
+
         # predictor object
         self.logger.info('Creating predictor of kind {}...'.format(self.kind))
         if self.kind == 'rbf':
             self.predictor = RBFnet(points_scaled, data)
         elif self.kind == 'kriging':
+            print ('In self predictor')
+            print ('points_scaled = ', points_scaled)
+            print ('data = ', data)
             self.predictor = Kriging(points_scaled, data)
+            print ('attention :')
+            print ('self.predictor == ', self.predictor)
         elif self.kind == 'pc':
             self.predictor.fit(points, data)
         elif self.kind == 'evofusion':

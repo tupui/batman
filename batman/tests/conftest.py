@@ -5,11 +5,19 @@ import numpy as np
 import copy
 from sklearn.metrics import r2_score
 import openturns as ot
-from batman.functions import (Ishigami, Michalewicz, Branin,
+from batman.functions import (Ishigami, Michalewicz, Branin, G_Function,
                               Mascaret, Forrester)
 from batman.functions import output_to_sequence
 from batman.space import (Space, Point)
 from batman.driver import Driver
+
+
+class Datatest(object):
+
+    """Wrap results."""
+
+    def __init__(self, kwds):
+        self.__dict__.update(kwds)
 
 
 @pytest.fixture(scope="session")
@@ -82,6 +90,24 @@ def branin_data(settings_ishigami):
     space.sampling(10)
     target_space = f_2d(space)
     return (f_2d, dists, model, point, target_point, space, target_space)
+
+
+@pytest.fixture(scope='session')
+def g_function_data(settings_ishigami):
+    data = {}
+    data['func'] = G_Function()
+    data['dists'] = [ot.Uniform(0, 1)] * 4
+    data['point'] = Point([0.5, 0.2, 0.7, 0.1])
+    data['target_point'] = data['func'](data['point'])
+    test_settings = copy.deepcopy(settings_ishigami)
+    test_settings = copy.deepcopy(settings_ishigami)
+    test_settings['space']['corners'] = [[0, 0, 0, 0], [1, 1, 1, 1]]
+    test_settings['space']['sampling']['method'] = 'discrete'
+    test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2', 'x3', 'x4']
+    data['space'] = Space(test_settings)
+    data['space'].sampling(1000)
+    data['target_space'] = data['func'](data['space'])
+    return Datatest(data)
 
 
 @pytest.fixture(scope="session")

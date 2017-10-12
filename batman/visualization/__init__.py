@@ -8,9 +8,11 @@ from .kiviat import Kiviat3D
 from .hdr import HdrBoxplot
 from .uncertainty import (kernel_smoothing, pdf, sobol, corr_cov)
 from .doe import (response_surface, doe)
+from .rsurface4d import (response_surface_4d)
 
 __all__ = ['Kiviat3D', 'HdrBoxplot', 'kernel_smoothing', 'pdf', 'sobol',
-           'corr_cov', 'reshow', 'save_show', 'response_surface', 'doe']
+           'corr_cov', 'reshow', 'save_show', 'response_surface', 'response_surface_4d',
+           'doe']
 
 
 def reshow(fig):
