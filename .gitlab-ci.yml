@@ -8,7 +8,9 @@ python_linter:
   tags:
     - sshroy.spike.batman
   script:
-    - source activate bat_ci
+    - commit=`git rev-parse HEAD`
+    - conda create --name bat_ci_$commit --clone bat_ci
+    - source activate bat_ci_$commit
     - python setup.py build_fortran
     - python setup.py install
     - pycodestyle --max-line-length=120 --exclude=gp_1d_sampler.py,function*,TreeCut*,RBFnet*,tecplot* batman > pycodestyle.log || echo 0
@@ -18,18 +20,20 @@ python_linter:
     - lint=`cat linter.log`
     - regex='at ([0-9][-.][0-9]{2})[-/]10'
     - lint_res=`[[ $lint =~ $regex ]] && echo "${BASH_REMATCH[1]}"`
-    - pip uninstall -y batman
-    - if [[ "$lint_res" > "9.5" ]]; then exit 0; else exit 1;fi
+    - source deactivate
+    - conda remove --name bat_ci_$commit --all
+    - if [[ "$lint_res" > "9.5" ]]; then exit 0; else exit 1; fi
 
 nemo_testing_python_3:
   stage: test
   tags:
     - sshroy.spike.batman
   script:
+    - commit=`git rev-parse HEAD`
     - cd ../.
     - tar -cf batman_ci.tar batman
-    - scp batman_ci.tar batman/CI_NEMO.sh roy@nemo:~/.
-    - bash batman/CI_NEMO.sh
+    - rsync batman_ci.tar batman/CI_NEMO.sh roy@nemo:.ci_batman/$commit
+    - bash batman/CI_NEMO.sh $commit
 
 nemo_testing_python_2:
   stage: test
@@ -39,24 +43,28 @@ nemo_testing_python_2:
     - master
     - develop
   script:
+    - commit=`git rev-parse HEAD`
     - cd ../.
     - tar -cf batman_ci_2.tar batman
-    - scp batman_ci_2.tar batman/CI_NEMO_2.sh roy@nemo:~/.
-    - bash batman/CI_NEMO_2.sh
+    - rsync batman_ci_2.tar batman/CI_NEMO.sh roy@nemo:.ci_batman_2/$commit
+    - bash batman/CI_NEMO_2.sh $commit
 
 pages:
   stage: doc
   tags:
     - sshroy.spike.batman
   script:
-  - source activate bat_ci
-  - python setup.py build_fortran
-  - python setup.py install
-  - cd doc
-  - make html
-  - rm -rf ../public
-  - mv _build/html/ ../public/
-  - pip uninstall -y batman
+    - commit=`git rev-parse HEAD`
+    - conda create --name bat_ci_$commit --clone bat_ci
+    - source activate bat_ci_$commit
+    - python setup.py build_fortran
+    - python setup.py install
+    - cd doc
+    - make html
+    - rm -rf ../public
+    - mv _build/html/ ../public/
+    - source deactivate
+    - conda remove --name bat_ci_$commit --all
   artifacts:
     paths:
       - public
