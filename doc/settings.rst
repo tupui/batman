@@ -73,7 +73,7 @@ First of all, we define the parameter space using an hypercube. Taking the minim
 + ``sampling``: define the configuration of the sample,
 
     * ``init_size``: define the initial number of snapshots,
-    * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*, *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling) or *lhsc* (Latin Hypercube  Sampling Centered),
+    * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*, *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *lhsopt* (optimized LHS),
 
 + [``resampling``]: to do resampling, fill this dictionary
 
