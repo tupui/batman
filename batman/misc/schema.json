@@ -16,7 +16,7 @@
                 "oneOf":[
                   {
                     "type": "string",
-                    "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", "discrete"],
+                    "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "lhsopt", "faure", "uniform", "discrete"],
                     "default": "halton"
                   },
                   {"type": "array", "items": {}}
