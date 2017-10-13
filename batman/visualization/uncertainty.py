@@ -143,12 +143,13 @@ def pdf(data, xdata=None, labels=None, moments=False, fname=None):
             plt.plot(xdata[0], sd_max, color='k', ls='-.', linewidth=2, label=None)
             plt.legend(fontsize=26, loc='best')
     else:
-        plt.plot(xdata, pdf, color='k', ls='-', linewidth=3)
+        plt.plot(xdata, pdf, color='k', ls='-', linewidth=3, label=None)
         plt.fill_between(xdata[:, 0], pdf, [0] * xdata.shape[0],
                          color='gray', alpha=0.1)
         z_delta = np.max(z_array) * 5e-4
         plt.plot(z_array[:, 0],
-                 -z_delta - z_delta * np.random.random(z_array.shape[0]), '+k')
+                 -z_delta - z_delta * np.random.random(z_array.shape[0]), '+k',
+                 label=None)
         plt.xlabel(labels[1], fontsize=26)
         plt.ylabel("PDF", fontsize=26)
 
@@ -244,12 +245,13 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
         plt.tick_params(axis='y', labelsize=23)
         plt.legend(fontsize=26, loc='center right')
 
-    bat.visualization.save_show(fname, [fig])
+    bat.visualization.save_show(fname, figures)
 
     return figures
 
 
-def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None, fname=None):
+def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
+             fname=None):
     """Correlation and covariance matrices.
 
     Compute the covariance regarding YY and XY as well as the correlation
@@ -341,6 +343,6 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None, 
                           data=data)
         io.write(fname.split('.')[0] + '-correlation_XY.dat', dataset)
 
-    bat.visualization.save_show(fname, [fig])
+    bat.visualization.save_show(fname, figures)
 
     return figures, axs

@@ -501,8 +501,7 @@ class UQ:
         if self.p_len < 3:
             visualization.response_surface(bounds=[np.min(self.sample, axis=0),
                                                    np.max(self.sample, axis=0)],
-                                           sample=self.sample[:1000],
-                                           data=self.output[:1000],
+                                           fun=self.model,
                                            doe=self.space, xdata=self.xdata,
                                            fname=os.path.join(self.fname,
                                                               'response.pdf'))

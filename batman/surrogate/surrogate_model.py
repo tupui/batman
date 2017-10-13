@@ -143,7 +143,10 @@ class SurrogateModel(object):
             points = [points]
 
         points = np.array(points)
-        points = self.scaler.transform(points)
+
+        if self.kind != 'pc':
+            points = self.scaler.transform(points)
+
         if self.kind in ['kriging', 'evofusion']:
             results, sigma = self.predictor.evaluate(points)
         else:

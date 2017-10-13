@@ -19,16 +19,13 @@
                     "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", "discrete"],
                     "default": "halton"
                   },
-                  {
-                    "type": "array",
-                    "items": {}
-                  }
+                  {"type": "array", "items": {}}
                 ]
               },
               "init_size": {"type": "integer", "default": 20, "minimum": 4,
-                            "exclusiveMinimum": false},
-              "required": ["method", "init_size"]
-            }
+                            "exclusiveMinimum": false}
+            },
+            "required": ["method", "init_size"]
           },
           {
             "type": "array",
@@ -50,9 +47,9 @@
             "q2_criteria": {"type": "number", "default": 0.9, "minimum": 0,
                             "exclusiveMinimum": true, "maximum": 1,
                             "exclusiveMaximum": true},
-            "hybrid": {"type": "array", "items": {}},
-            "required": ["method", "resamp_size", "q2_criteria", "delta_space"]
-          }
+            "hybrid": {"type": "array", "items": {}}
+          },
+          "required": ["method", "resamp_size", "q2_criteria", "delta_space"]
         }
       },
       "required": ["corners", "sampling"]
@@ -82,47 +79,19 @@
           "properties": {
             "shapes": {
               "type": "object",
-              "properties": {
-                "0": {
-                  "type": "array",
-                  "items": {}
-                }
-              },
-              "required": [
-                "0"
-              ]
+              "properties": {"0": {"type": "array", "items": {}}},
+              "required": ["0"]
             },
-            "format": {
-              "type": "string",
-              "default": "fmt_tp_fortran"
-            },
-            "variables": {
-              "type": "array",
-              "items": {}
-            },
-            "point_filename": {
-              "type": "string",
-              "default": "header.py"
-            },
+            "format": {"type": "string", "default": "fmt_tp_fortran"},
+            "variables": {"type": "array", "items": {}},
+            "point_filename": {"type": "string", "default": "header.py"},
             "filenames": {
               "type": "object",
-              "properties": {
-                "0": {
-                  "type": "array",
-                  "items": {}
-                }
-              },
-              "required": [
-                "0"
-              ]
+              "properties": {"0": {"type": "array", "items": {}}},
+              "required": ["0"]
             },
-            "template_directory": {
-              "default": null
-            },
-            "parameter_names": {
-              "type": "array",
-              "items": {}
-            }
+            "template_directory": {"default": null},
+            "parameter_names": {"type": "array", "items": {}}
           },
           "required": [
             "shapes",
@@ -243,19 +212,20 @@
   "required": ["space", "snapshot"],
   "oneOf": [
     {
+      "required": ["surrogate"],
       "properties": {"surrogate": {"properties": {"method": {"enum":["pc"]}}},
                      "space": {"properties":
                       {"sampling": {"properties":
-                        {"method": {"type": "array", "items": {}}}}}
-                      },
-                     "space": {"properties":
-                      {"resampling": {"properties":
-                        {"resamp_size": {"type": "integer", "maximum": 0}}}}
-                      }                      
-                    }
+                        {"method": {"type": "array", "items": {}}}},
+                       "resampling": {"properties":
+                        {"resamp_size": {"type": "integer", "maximum": 0}}}
+                      }
+                    }}
     },
     {
+      "required": ["surrogate"],
       "properties": {"surrogate": {"properties": {"method": {"enum":["evofusion", "kriging"]}}}}
-    }
-  ] 
+    },
+    {"not": {"required": ["surrogate"]}}
+  ]
 }
