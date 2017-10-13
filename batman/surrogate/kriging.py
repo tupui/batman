@@ -94,7 +94,6 @@ class Kriging(object):
         self.n_cpu = self.model_len
         if n_cpu_system // (self.n_restart * self.model_len) < 1:
             self.n_cpu = n_cpu_system // self.n_restart
-        print ('Flag 1')
 
         def model_fitting(column):
             """Fit an instance of :claa:`sklearn.GaussianProcessRegressor`."""
@@ -108,7 +107,6 @@ class Kriging(object):
 
         # Create a predictor per data, parallelize if several data
         if self.model_len > 1:
-            print ('Flag In')
             pool = NestedPool(self.n_cpu)
             results = pool.imap(model_fitting, data.T)
             results = list(results)
@@ -117,11 +115,9 @@ class Kriging(object):
             results = [model_fitting(data)]
 
         # Gather results
-        print ('Init gather !!')
         self.data, self.hyperparameter = zip(*results)
 
         self.logger.debug("Hyperparameters: {}".format(self.hyperparameter))
-        print ('End Init--')
 
     def _optim_evolution(self, obj_func, initial_theta, bounds):
         """Genetic optimization of the hyperparameters.
@@ -185,7 +181,5 @@ class Kriging(object):
             prediction[i], sigma[i] = gp.predict(point_array,
                                                  return_std=True,
                                                  return_cov=False)
-        print ('prediction = ', prediction)
-        print ('sigma = ', sigma)
 
         return prediction, sigma
