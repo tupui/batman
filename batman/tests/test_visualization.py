@@ -380,8 +380,8 @@ def test_response_surface4D_3D(ishigami_data):
     bounds = [[-4, -4, -4], [4, 4, 4]]
     order = [1, 2, 3]
     path = os.path.join('.', 'rs_3D_vector')
-    response_surface(bounds=bounds, fun=fun, doe=space, resampling=4,
-                        contours=[-20, 0, 20], fname=path, feat_order=order)
+    response_surface(bounds=bounds, fun=fun, doe=space, resampling=30,
+                     contours=[-20, 0, 20], fname=path, feat_order=order)
 
 
 def test_response_surface4D_4D(g_function_data):
@@ -391,8 +391,8 @@ def test_response_surface4D_4D(g_function_data):
     bounds = g_function_data.space.corners
     order = [2, 3, 4, 1]
     path = os.path.join('.', 'rs_4D_vector')
-    response_surface(bounds=bounds, fun=fun, doe=space, resampling=4,
-                        axis_disc=[2, 15, 15, 15], fname=path, feat_order=order)
+    response_surface(bounds=bounds, fun=fun, doe=space, resampling=10,
+                     axis_disc=[2, 15, 15, 15], fname=path, feat_order=order)
 
 @patch("matplotlib.pyplot.show")
 def test_doe(mock_show, mascaret_data):

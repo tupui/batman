@@ -101,9 +101,9 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None,
 
 
 def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
-                        resampling=0, xdata=None, axis_disc=None, flabel='F',
-                        plabels=None, feat_order=None, ticks_nbr=10,
-                        contours=None, fname=None):
+                     resampling=0, xdata=None, axis_disc=None, flabel='F',
+                     plabels=None, feat_order=None, ticks_nbr=10,
+                     contours=None, fname=None):
     """Response surface visualization in 2d (image), 3d (movie) or 4d (movies).
 
     You have to set either (i) :attr:`sample` with :attr:`data` or  (ii)
@@ -128,7 +128,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
     :param list(str) plabels: parameters' labels.
     :param array_like feat_order: order of features for multi-dimensional plot
     (n_features).
-    :param int ticks_nbr: number of color isolines for response surfaces. 
+    :param int ticks_nbr: number of color isolines for response surfaces.
     :param array_like contours: isocontour values to plot on response surface.
     :param str fname: wether to export to filename or display the figures.
     :returns: figure.
@@ -228,7 +228,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
     n_movies = 1
     n_plot = 1
 
-    if (dim == 1):
+    if dim == 1:
         # Create the 1D response surface
         plt.plot(grids[0], data)
         plt.ylabel(flabel, fontsize=28)
@@ -307,11 +307,11 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
                     # If coutours option activated, generate contours
                     if contours is not None:
                         surface_contour = plt.tricontour(xsample_plot, ysample_plot, data_plot,
-                                               levels=contours, colors=('w',),
-                                               linestyles=('-',), linewidths=(1,))
+                                                         levels=contours, colors=('w',),
+                                                         linestyles=('-',), linewidths=(1,))
                     # Generate the response surface
                     plt.tricontourf(xsample_plot, ysample_plot, data_plot,
-                            vticks, antialiased=True, cmap=cm.viridis)
+                                    vticks, antialiased=True, cmap=cm.viridis)
 
                     # If doe option activated, generate the points corresponding to
                     # the doe and display them on the graph.
@@ -321,24 +321,25 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
                         doe = np.asarray(doe)
                         len_sampling = len(doe) - resampling
                         if dim == 4:
-                            msk_doe1 = [(doe[i, 3] > (min_zz + (movie - 0.5) * zz_step) and
-                                         doe[i, 3] < (min_zz + (movie + 0.5) * zz_step))
-                                        for i, _ in enumerate(doe)]
-                            msk_doe2 = [(doe[i, 2] > (min_z + (plot - 0.5) * z_step) and
-                                         doe[i, 2] < (min_z + (plot + 0.5) * z_step))
-                                        for i, _ in enumerate(doe)]
-                            msk_doe = [(msk_doe1[i] == msk_doe2[i])
+                            msk_doe = [(doe[i, 3] > (min_zz + (movie - 0.5) * zz_step) and
+                                        doe[i, 3] < (min_zz + (movie + 0.5) * zz_step) and
+                                        doe[i, 2] > (min_z + (plot - 0.5) * z_step) and
+                                        doe[i, 2] < (min_z + (plot + 0.5) * z_step))
                                        for i, _ in enumerate(doe)]
-                        if dim == 3:
+                        elif dim == 3:
                             msk_doe = [(doe[i, 2] > (min_z + (plot - 0.5) * z_step) and
                                         doe[i, 2] < (min_z + (plot + 0.5) * z_step))
                                        for i, _ in enumerate(doe)]
                         else:
                             msk_doe = msk_total
-                        doe_0 = [doe[i,0] for i, _ in enumerate(doe) if msk_doe[i]]
-                        doe_1 = [doe[i,1] for i, _ in enumerate(doe) if msk_doe[i]]
-                        plt.plot(doe_0[0:len_sampling], doe_1[0:len_sampling], 'ko')
-                        plt.plot(doe_0[len_sampling:], doe_1[len_sampling:], 'r^')
+                        doe_0 = [doe[i, 0] for i in range(len_sampling) if msk_doe[i]]
+                        doe_1 = [doe[i, 1] for i in range(len_sampling) if msk_doe[i]]
+                        plt.plot(doe_0, doe_1, 'ko')
+                        doe_0 = [doe[i, 0] for i in range(len_sampling, len(doe))
+                                 if msk_doe[i]]
+                        doe_1 = [doe[i, 1] for i in range(len_sampling, len(doe))
+                                 if msk_doe[i]]
+                        plt.plot(doe_0, doe_1, 'r^')
 
                     # Colorbar and axis display options
                     plt.xlabel(plabels[0])
@@ -365,4 +366,3 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
 
         # Return last response surface created
         return fig
-
