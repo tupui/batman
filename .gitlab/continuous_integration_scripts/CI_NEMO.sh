@@ -1,19 +1,19 @@
 #!/bin/sh
 #SBATCH --partition prod
-#SBATCH --job-name batCI2
+#SBATCH --job-name batCI3
 #SBATCH --time=01:20:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24
 #SBATCH --share
 
 commit=$1
-CI_HOME="$HOME/.ci_batman_2/$commit"
-CI_SCRATCH="/scratch/cfd/roy/CI_BATMAN_2_$commit"
+CI_HOME="$HOME/.ci_batman/$commit"
+CI_SCRATCH="/scratch/cfd/roy/CI_BATMAN_$commit"
 
 
 # On spike: send the job to the HPC scheduler and wait for completion
 if [ ${HOSTNAME:0:4} != 'nemo' ] && [ ${HOSTNAME:0:4} != 'node' ]; then
-    nojob=$(ssh roy@nemo "sbatch --share $CI_HOME/CI_NEMO_2.sh $commit" | awk '{print $NF}') 
+    nojob=$(ssh roy@nemo "sbatch --share $CI_HOME/CI_NEMO.sh $commit" | awk '{print $NF}') 
     echo "Job number: $nojob"
     
     resu=$(ssh roy@nemo "squeue -j $nojob -h -o %T 2>/dev/null")
@@ -32,14 +32,14 @@ if [ ${HOSTNAME:0:4} != 'nemo' ] && [ ${HOSTNAME:0:4} != 'node' ]; then
 fi
 
 # On HPC:
-conda create --name bat_ci_2_$commit --clone bat_ci_2
-source activate bat_ci_2_$commit
+conda create --name bat_ci_$commit --clone bat_ci
+source activate bat_ci_$commit
 export PYTHONPATH=
 python --version
 
 mkdir $CI_SCRATCH
-tar -xf $CI_HOME/batman_ci_2.tar -C $CI_SCRATCH/.
-rm $CI_HOME/batman_ci_2.tar $CI_HOME/CI_NEMO_2.sh
+tar -xf $CI_HOME/batman_ci.tar -C $CI_SCRATCH
+rm $CI_HOME/batman_ci.tar $CI_HOME/CI_NEMO.sh
 rmdir --ignore-fail-on-non-empty $CI_HOME
 
 cd $CI_SCRATCH/batman
@@ -56,7 +56,7 @@ else
 fi
 
 source deactivate
-conda remove --name bat_ci_2_$commit --all
+conda remove --name bat_ci_$commit --all
 rm -r $CI_SCRATCH
 
 if [ $fail -eq 1 ] ; then

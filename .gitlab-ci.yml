@@ -30,10 +30,11 @@ nemo_testing_python_3:
     - sshroy.spike.batman
   script:
     - commit=`git rev-parse HEAD`
-    - cd ../.
+    - cd ..
+    - scriptdir=batman/.gitlab/continuous_integration_scripts
     - tar -cf batman_ci.tar batman
-    - rsync batman_ci.tar batman/CI_NEMO.sh roy@nemo:.ci_batman/$commit
-    - bash batman/CI_NEMO.sh $commit
+    - rsync batman_ci.tar $scriptdir/CI_NEMO.sh roy@nemo:.ci_batman/$commit
+    - bash $scriptdir/CI_NEMO.sh $commit
 
 nemo_testing_python_2:
   stage: test
@@ -44,10 +45,11 @@ nemo_testing_python_2:
     - develop
   script:
     - commit=`git rev-parse HEAD`
-    - cd ../.
+    - cd ..
+    - scriptdir=batman/.gitlab/continuous_integration_scripts
     - tar -cf batman_ci_2.tar batman
-    - rsync batman_ci_2.tar batman/CI_NEMO.sh roy@nemo:.ci_batman_2/$commit
-    - bash batman/CI_NEMO_2.sh $commit
+    - rsync batman_ci_2.tar $scriptdir/CI_NEMO_2.sh roy@nemo:.ci_batman_2/$commit
+    - bash $scriptdir/CI_NEMO_2.sh $commit
 
 pages:
   stage: doc
