@@ -98,10 +98,7 @@ class Doe():
 
     def generate(self):
         """Generate the DOE."""
-        if self.kind in ['lhs', 'lhsc', 'discrete']:
-            sample = self.sequence_type.generate()
-        elif self.kind == 'lhsopt':
-            ot.RandomGenerator.SetSeed(15555235) # For reproducibility
+        if self.kind in ['lhs', 'lhsc', 'lhsopt', 'discrete']:
             sample = self.sequence_type.generate()
         elif self.kind == 'sobolscramble':
             sample = self.scrambled_sobol_generate()
