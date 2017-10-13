@@ -7,13 +7,13 @@
 #SBATCH --share
 
 commit=$1
-CI_HOME="$HOME/.ci_batman/$commit"
+CI_HOME="$HOME/.ci_batman_$commit"
 CI_SCRATCH="/scratch/cfd/roy/CI_BATMAN_$commit"
 
 
 # On spike: send the job to the HPC scheduler and wait for completion
 if [ ${HOSTNAME:0:4} != 'nemo' ] && [ ${HOSTNAME:0:4} != 'node' ]; then
-    nojob=$(ssh roy@nemo "sbatch --share $CI_HOME/CI_NEMO.sh $commit" | awk '{print $NF}') 
+    nojob=$(ssh roy@nemo "sbatch --share .ci_batman_$commit/CI_NEMO.sh $commit" | awk '{print $NF}') 
     echo "Job number: $nojob"
     
     resu=$(ssh roy@nemo "squeue -j $nojob -h -o %T 2>/dev/null")
@@ -32,7 +32,7 @@ if [ ${HOSTNAME:0:4} != 'nemo' ] && [ ${HOSTNAME:0:4} != 'node' ]; then
 fi
 
 # On HPC:
-conda create --name bat_ci_$commit --clone bat_ci
+conda create -y --name bat_ci_$commit --clone bat_ci
 source activate bat_ci_$commit
 export PYTHONPATH=
 python --version
@@ -56,7 +56,7 @@ else
 fi
 
 source deactivate
-conda remove --name bat_ci_$commit --all
+conda remove -y --name bat_ci_$commit --all
 rm -r $CI_SCRATCH
 
 if [ $fail -eq 1 ] ; then
