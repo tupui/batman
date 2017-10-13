@@ -162,7 +162,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
         plt.ylabel(flabel, fontsize=28)
     elif dim == 2:
         plt.tricontourf(xsample, ysample, data,
-                        antialiased=True, cmap=cm.viridis)
+                        antialiased=True, cmap=cm.viridis, label=None)
         if doe is not None:
             doe = np.asarray(doe)
             len_sampling = len(doe) - resampling
