@@ -32,7 +32,7 @@ if [ ${HOSTNAME:0:4} != 'nemo' ] && [ ${HOSTNAME:0:4} != 'node' ]; then
 fi
 
 # On HPC:
-conda create -y --name bat_ci_$commit --clone bat_ci
+conda create -yqf --name bat_ci_$commit --clone bat_ci
 source activate bat_ci_$commit
 export PYTHONPATH=
 python --version
@@ -48,7 +48,7 @@ python setup.py install
 which batman
 
 # launch test suite and coverage
-pytest --cov --cov-report term-missing --basetemp=./TMP_CI .
+pytest --cov --cov-report term-missing --basetemp=./TMP_CI batman/tests test_cases
 if [ $? -ne 0 ] ; then
     fail=1
 else
@@ -56,7 +56,7 @@ else
 fi
 
 source deactivate
-conda remove -y --name bat_ci_$commit --all
+conda remove -yq --name bat_ci_$commit --all
 rm -r $CI_SCRATCH
 
 if [ $fail -eq 1 ] ; then
