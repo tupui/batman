@@ -302,7 +302,7 @@ class Snapshot(object):
                 full_data = cls.io.read(template)
                 shape = full_data.shape
             else:
-                shape = cls.shapes[i]  # TODO: not necessary
+                shape = cls.shapes[i]  # not necessary
 
             # create a dataset
             size = len(cls.variables)

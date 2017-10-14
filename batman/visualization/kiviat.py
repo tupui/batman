@@ -148,7 +148,7 @@ class Kiviat3D:
         :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instances
         """
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
+        ax = fig.add_subplot(111, projection=Axes3D.name)
         ax.set_axis_off()
         m = cm.ScalarMappable(cmap=self.cmap, norm=self.scale_f)
         m.set_array(self.feval)
@@ -177,7 +177,7 @@ class Kiviat3D:
         # Base plot
         self.cmap = cm.get_cmap('gray')
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
+        ax = fig.add_subplot(111, projection=Axes3D.name)
         ax.set_axis_off()
 
         for i, (point, f_eval) in enumerate(zip(self.params, self.feval)):

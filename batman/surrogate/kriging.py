@@ -77,8 +77,6 @@ class Kriging(object):
         if self.model_len == 1:
             data = data.ravel()
 
-        #import pdb; pdb.set_trace()
-
         # Define the model settings
         l_scale = ((1.0),) * sample_len
         scale_bounds = [(1e-03, 1000.0)] * sample_len

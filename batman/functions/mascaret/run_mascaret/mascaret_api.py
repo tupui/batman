@@ -943,7 +943,7 @@ class MascaretApi(object):
                 "table X bot unique: {}\n"
                 "table Z: {}\n"
                 "table Z bot: {}"
-                ).format(res_RelAbs, res_RelAbsBot, res_Z, res_Zbot)
+               ).format(res_RelAbs, res_RelAbsBot, res_Z, res_Zbot)
         self.logger.info(info)
 
         return res_RelAbsBot, res_Zbot, res_RelAbs, res_Z

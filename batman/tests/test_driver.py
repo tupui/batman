@@ -18,11 +18,10 @@ def test_driver_chain(driver_init, tmp, ishigami_data):
         assert False
 
     driver.read()
-    _, _, _, point, target_point, _, _ = ishigami_data
-    pred, _ = driver.prediction(points=point, write=True)
+    pred, _ = driver.prediction(points=ishigami_data.point, write=True)
     if not os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0')):
         assert False
-    assert pred[0].data == pytest.approx(target_point, 0.1)
+    assert pred[0].data == pytest.approx(ishigami_data.target_point, 0.1)
 
 
 def test_no_pod(ishigami_data, tmp, settings_ishigami):
@@ -31,18 +30,15 @@ def test_no_pod(ishigami_data, tmp, settings_ishigami):
     driver = Driver(test_settings, tmp)
     driver.sampling()
 
-    f_3d, dists, model, point, target_point, space, target_space = ishigami_data
-
-    pred, _ = driver.prediction(write=True, points=point)
-    assert pred[0].data == pytest.approx(target_point, 0.1)
+    pred, _ = driver.prediction(write=True, points=ishigami_data.point)
+    assert pred[0].data == pytest.approx(ishigami_data.target_point, 0.1)
     if not os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0')):
         assert False
 
     def wrap_surrogate(x):
         evaluation, _ = driver.prediction(points=x)
-        return [evaluation]
-    surrogate_ot = ot.PythonFunction(3, 1, wrap_surrogate)
-    q2 = sklearn_q2(dists, model, surrogate_ot)
+        return evaluation
+    q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, wrap_surrogate)
     assert q2 == pytest.approx(1, 0.1)
 
 

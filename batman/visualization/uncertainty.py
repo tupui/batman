@@ -17,7 +17,6 @@ from sklearn.model_selection import GridSearchCV
 from scipy.optimize import differential_evolution
 from matplotlib import cm
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import batman as bat
 from ..input_output import (IOFormatSelector, Dataset)
 
@@ -36,6 +35,7 @@ def kernel_smoothing(data, optimize=False):
 
     if optimize:
         def bw_score(bw):
+            """Get the cross validation score for a given bandwidth."""
             score = cross_val_score(KernelDensity(bandwidth=bw),
                                     data, cv=cv, n_jobs=-1)
             return - score.mean()

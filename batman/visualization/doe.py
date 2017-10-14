@@ -14,7 +14,6 @@ from sklearn import preprocessing
 from matplotlib import cm
 import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
-import batman as bat
 from .uncertainty import kernel_smoothing
 
 
@@ -275,7 +274,8 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
                 # Loop on the response surface to create
                 for plot in range(n_plot):
                     plt.clf()
-                    vticks = np.linspace(np.min(data), np.max(data), num=ticks_nbr)
+                    vticks = np.linspace(np.min(data), np.max(data),
+                                         num=ticks_nbr)
 
                     # Create masks to apply on the data and sample points, in order
                     # to keep only the data to be plotted on the x and y axis
@@ -306,7 +306,8 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
 
                     # If coutours option activated, generate contours
                     if contours is not None:
-                        surface_contour = plt.tricontour(xsample_plot, ysample_plot, data_plot,
+                        surface_contour = plt.tricontour(xsample_plot,
+                                                         ysample_plot, data_plot,
                                                          levels=contours, colors=('w',),
                                                          linestyles=('-',), linewidths=(1,))
                     # Generate the response surface
