@@ -101,7 +101,6 @@ Testing dependencies are:
 
 Extra testing flavours: 
 
-- `pytest-xdist <https://github.com/pytest-dev/pytest-xdist>`_ >= 2.0
 - `pytest-cov <https://github.com/pytest-dev/pytest-cov>`_ >= 2.5.1
 - `pylint <https://www.pylint.org>`_ >= 1.6.0
 

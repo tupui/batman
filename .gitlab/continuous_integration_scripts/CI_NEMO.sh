@@ -24,7 +24,7 @@ if [ ${HOSTNAME:0:4} != 'nemo' ] && [ ${HOSTNAME:0:4} != 'node' ]; then
     
     ssh roy@nemo "cat slurm-$nojob.out"
     stat=$(ssh roy@nemo "sacct --format=state -j $nojob | awk 'NR>3 {print $1}'")
-    if [ $stat = 'FAILED' ]; then
+    if [ "$stat" = 'FAILED' ]; then
         exit 1
     else
         exit 0
@@ -35,6 +35,7 @@ fi
 conda create -yqf --name bat_ci_$commit --clone bat_ci
 source activate bat_ci_$commit
 export PYTHONPATH=
+which python
 python --version
 
 mkdir $CI_SCRATCH
@@ -48,12 +49,13 @@ python setup.py install
 which batman
 
 # launch test suite and coverage
-pytest --cov --cov-report term-missing --basetemp=./TMP_CI batman/tests test_cases
+coverage run -m pytest --basetemp=./TMP_CI batman/tests test_cases
 if [ $? -ne 0 ] ; then
     fail=1
 else
     fail=0
 fi
+coverage report -m
 
 source deactivate
 conda remove -yq --name bat_ci_$commit --all

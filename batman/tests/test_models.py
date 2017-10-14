@@ -4,7 +4,6 @@ import pytest
 import numpy as np
 import numpy.testing as npt
 import matplotlib.pyplot as plt
-import openturns as ot
 from batman.surrogate import (PC, Kriging, RBFnet, Evofusion, SurrogateModel)
 from batman.tasks import Snapshot
 from batman.tests.conftest import sklearn_q2
@@ -127,7 +126,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     surrogate.fit(input_, output)
     pred, sigma = surrogate(ishigami_data.point)
     assert sigma is None
-    assert pred[0] == pytest.approx(target_point, 0.5)
+    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.5)
     surrogate.write(tmp)
     if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
         assert False
