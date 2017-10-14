@@ -13,6 +13,7 @@ from batman.surrogate import SurrogateModel
 from batman.space.refiner import Refiner
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import openturns as ot
 
 
 def test_point():
@@ -131,6 +132,14 @@ def test_doe():
     kind = 'sobolscramble'
     doe = Doe(n, bounds, kind, discrete_var)
     sample = doe.generate()
+
+    kind = 'lhsopt'
+    doe = Doe(n, bounds, kind)
+    ot.RandomGenerator.SetSeed(123)
+    sample = doe.generate()
+    out = np.array([[8.097, 3.646], [6.592, 4.806], [0.622, 2.909], 
+                    [5.361, 2.162], [2.921, 4.041]])
+    npt.assert_almost_equal(sample, out, decimal=1)
 
     bounds = np.array([[15.0, 2500.0], [60.0, 6000.0]])
     kind = ['Uniform(15., 60.)', 'Normal(4035., 400.)']

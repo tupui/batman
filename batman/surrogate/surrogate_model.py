@@ -101,6 +101,7 @@ class SurrogateModel(object):
         except ValueError:  # With multifidelity
             points_scaled = self.scaler.transform(points[:, 1:])
             points_scaled = np.hstack((points[:, 0].reshape(-1, 1), points_scaled))
+
         # predictor object
         self.logger.info('Creating predictor of kind {}...'.format(self.kind))
         if self.kind == 'rbf':
@@ -142,7 +143,10 @@ class SurrogateModel(object):
             points = [points]
 
         points = np.array(points)
-        points = self.scaler.transform(points)
+
+        if self.kind != 'pc':
+            points = self.scaler.transform(points)
+
         if self.kind in ['kriging', 'evofusion']:
             results, sigma = self.predictor.evaluate(points)
         else:

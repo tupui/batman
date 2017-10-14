@@ -70,6 +70,11 @@ class Doe():
         elif (self.kind == 'lhs') or (self.kind == 'lhsc'):
             distribution = ot.ComposedDistribution([ot.Uniform(0, 1)] * self.dim)
             self.sequence_type = ot.LHSExperiment(distribution, self.n_sample)
+        elif (self.kind == 'lhsopt'):
+            distribution = ot.ComposedDistribution([ot.Uniform(0, 1)] * self.dim)
+            lhs = ot.LHSExperiment(distribution, self.n_sample)
+            self.sequence_type = ot.SimulatedAnnealingLHS(lhs, ot.GeometricProfile(),
+                                                          ot.SpaceFillingPhiP())
         elif self.kind == 'discrete':
             rv = randint(bounds[0, var], bounds[1, var] + 1)
 
@@ -93,7 +98,7 @@ class Doe():
 
     def generate(self):
         """Generate the DOE."""
-        if self.kind in ['lhs', 'lhsc', 'discrete']:
+        if self.kind in ['lhs', 'lhsc', 'lhsopt', 'discrete']:
             sample = self.sequence_type.generate()
         elif self.kind == 'sobolscramble':
             sample = self.scrambled_sobol_generate()

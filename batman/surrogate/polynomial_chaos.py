@@ -25,12 +25,11 @@ Interpolation using Polynomial Chaos method.
 
 """
 import logging
-import os
 import openturns as ot
 import numpy as np
-from pathos.multiprocessing import cpu_count
-from ..misc import NestedPool
 from ..functions import multi_eval
+
+ot.ResourceMap.SetAsUnsignedInteger("DesignProxy-DefaultCacheSize", 0)
 
 
 class PC(object):
@@ -107,53 +106,20 @@ class PC(object):
         :param array_like sample: The sample used to generate the data. (n_samples, n_features)
         :param array_like data: The observed data. (n_samples, [n_features])
         """
-        try:
-            self.model_len = data.shape[1]
-            if self.model_len == 1:
-                data = data.ravel()
-        except TypeError:
-            self.model_len = 1
-            data = data.ravel()
-        except AttributeError:  # data is None
-            self.model_len = 1
-        # Define the CPU multi-threading/processing strategy
-        try:
-            n_cpu_system = cpu_count()
-        except NotImplementedError:
-            n_cpu_system = os.sysconf('SC_NPROCESSORS_ONLN')
-        self.n_cpu = self.model_len
-        if n_cpu_system // self.model_len < 1:
-            self.n_cpu = n_cpu_system
+        sample_ = np.zeros_like(self.sample)
+        sample_[:len(sample)] = sample
+        sample_arg = np.all(np.isin(sample_, self.sample), axis=1)
+        weights = np.array(self.weights)[sample_arg]
 
-        def model_fitting(column):
-            column = column.reshape((-1, 1))
+        pc_algo = ot.FunctionalChaosAlgorithm(sample, weights, data,
+                                              self.dist, self.trunc_strategy,
+                                              self.proj_strategy)
+        ot.Log.Show(ot.Log.ERROR)
+        pc_algo.run()
+        self.pc_result = pc_algo.getResult()
+        self.pc = self.pc_result.getMetaModel()
 
-            # Find correspondance between samples and weights
-            # Some points may not have been run
-            sample_ = np.zeros_like(self.sample)
-            sample_[:len(sample)] = sample
-            sample_arg = np.all(np.isin(sample_, self.sample), axis=1)
-            weights = np.array(self.weights)[sample_arg]
-
-            pc_algo = ot.FunctionalChaosAlgorithm(sample, weights, column,
-                                                  self.dist, self.trunc_strategy,
-                                                  self.proj_strategy)
-            ot.Log.Show(ot.Log.ERROR)
-            pc_algo.run()
-            pc_result = pc_algo.getResult()
-            pc = pc_result.getMetaModel()
-            return pc, pc_result
-
-        if self.model_len > 1:
-            # pool = NestedPool(self.n_cpu)
-            # results = pool.imap(model_fitting, data.T)
-            # results = list(results)
-            # pool.terminate()
-            results = [model_fitting(out) for out in data.T]
-        else:
-            results = [model_fitting(data)]
-
-        self.pc, self.pc_result = zip(*results)
+        self.pc, self.pc_result
 
     @multi_eval
     def evaluate(self, point):
@@ -167,13 +133,6 @@ class PC(object):
 
         """
         point_array = np.asarray(point).reshape(1, -1)
-        prediction = np.empty((self.model_len))
-
-        # Compute a prediction per predictor
-        for i, pc in enumerate(self.pc):
-            try:
-                prediction[i] = np.array(pc(point_array))
-            except ValueError:
-                prediction = np.array(pc(point_array))
+        prediction = np.array(self.pc(point_array))
 
         return prediction
