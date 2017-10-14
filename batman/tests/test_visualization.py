@@ -301,7 +301,7 @@ def test_response_surface_1D(mock_show, tmp):
     def fun(x):
         return x ** 2
     bounds = [[-7], [10]]
-    path = os.path.join(tmp, 'rs_1D_vector.pdf')
+    path = os.path.join(tmp, 'rs_1D.pdf')
     response_surface(bounds=bounds, fun=fun, fname=path)
 
     xdata = np.linspace(0, 1, 10)
@@ -316,62 +316,30 @@ def test_response_surface_1D(mock_show, tmp):
 @pytest.mark.xfail(raises=ValueError)
 @patch("matplotlib.pyplot.show")
 def test_response_surface_2D_scalar(mock_show, branin_data):
-    bounds = branin_data.space.corners
-    response_surface(bounds=bounds, sample=branin_data.space,
-                     data=branin_data.target_space)
-    response_surface(bounds=bounds, fun=branin_data.func, doe=branin_data.space, resampling=4)
+    space = branin_data.space
+    bounds = [[-7, 0], [10, 15]]
+    path = os.path.join('.', 'rs_2D_vector.pdf')
+    response_surface(bounds=bounds, sample=space, data=branin_data.target_space)
+    response_surface(bounds=bounds, fun=branin_data.func, doe=space, resampling=4,
+                     fname=path, feat_order=[2, 1])
 
 
 @patch("matplotlib.pyplot.show")
 def test_response_surface_2D_vector(mock_show, mascaret_data, tmp):
+    space = mascaret_data.space
+    data = mascaret_data.target_space
     xdata = mascaret_data.func.x
-    bounds = mascaret_data.space.corners
-    response_surface(bounds=bounds, sample=mascaret_data.space,
-                     data=mascaret_data.target_space, xdata=xdata)
-    path = os.path.join(tmp, 'rs_2D_vector.pdf')
-    response_surface(bounds=bounds, fun=mascaret_data.func, xdata=xdata,
-                     plabels=['Ks', 'Q'], flabel='Z', fname=path)
-
-
-def test_response_surface4D_1D(tmp):
-    def fun(x):
-        return x ** 2
-    bounds = [[-7], [10]]
-    path = os.path.join('.', 'rs_1D_vector.pdf')
-    response_surface(bounds=bounds, fun=fun, fname=path)
-    xdata = np.linspace(0, 1, 10)
-    def fun(x):
-        return (xdata * x) ** 2
-    sample = np.array(range(5)).reshape(-1, 1)
-    data = fun(sample)
-    response_surface(bounds=bounds, sample=sample, data=data, xdata=xdata)
-
-def test_response_surface4D_2D_scalar(branin_data):
-    space = branin_data[5]
-    data = branin_data[6]
-    fun = branin_data[0]
-    bounds = [[-7, 0], [10, 15]]
-    order = [2, 1]
-    path = os.path.join('.', 'rs_2D_vector.pdf')
-    response_surface(bounds=bounds, sample=space, data=data)
-    response_surface(bounds=bounds, fun=fun, doe=space, resampling=4, fname=path, feat_order=order)
-
-def test_response_surface4D_2D_vector(mascaret_data, tmp):
-    space = mascaret_data[5]
-    data = mascaret_data[6]
-    xdata = mascaret_data[0].x
     bounds = [[15.0, 2500.0], [60, 6000.0]]
     order = [1, 2]
     path = os.path.join('.', 'rs_2D_vector.pdf')
     response_surface(bounds=bounds, sample=space, data=data, xdata=xdata, fname=path)
-    response_surface(bounds=bounds, fun=mascaret_data[0], xdata=xdata,
+    response_surface(bounds=bounds, fun=mascaret_data.func, xdata=xdata,
                      plabels=['Ks', 'Q'], feat_order=order, flabel='Z')
 
 
-def test_response_surface4D_3D(ishigami_data):
-    space = ishigami_data[5]
-    data = ishigami_data[6]
-    fun = ishigami_data[0]
+def test_response_surface_3D(ishigami_data):
+    space = ishigami_data.space
+    fun = ishigami_data.func
     bounds = [[-4, -4, -4], [4, 4, 4]]
     order = [1, 2, 3]
     path = os.path.join('.', 'rs_3D_vector')
@@ -379,15 +347,15 @@ def test_response_surface4D_3D(ishigami_data):
                      contours=[-20, 0, 20], fname=path, feat_order=order)
 
 
-def test_response_surface4D_4D(g_function_data):
+def test_response_surface_4D(g_function_data):
     space = g_function_data.space
-    data = g_function_data.target_space
     fun = g_function_data.func
     bounds = g_function_data.space.corners
     order = [2, 3, 4, 1]
     path = os.path.join('.', 'rs_4D_vector')
     response_surface(bounds=bounds, fun=fun, doe=space, resampling=10,
                      axis_disc=[2, 15, 15, 15], fname=path, feat_order=order)
+
 
 @patch("matplotlib.pyplot.show")
 def test_doe(mock_show, mascaret_data):
