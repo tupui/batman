@@ -16,7 +16,8 @@
                 "oneOf":[
                   {
                     "type": "string",
-                    "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", "discrete"],
+                    "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc",
+                             "lhsopt", "faure", "uniform", "discrete"],
                     "default": "halton"
                   },
                   {
@@ -30,10 +31,7 @@
               "required": ["method", "init_size"]
             }
           },
-          {
-            "type": "array",
-            "items": {}
-          }
+          {"type": "array", "items": {}}
           ]
         },
 
@@ -42,7 +40,9 @@
           "properties": {
             "method": {
               "type": "string",
-              "enum": ["None", "discrepancy", "ego_discrepancy", "sigma_discrepancy", "sigma", "loo_sigma", "loo_sobol", "extrema", "hybrid", "optimization"],
+              "enum": ["None", "discrepancy", "ego_discrepancy",
+                       "sigma_discrepancy", "sigma", "loo_sigma", "loo_sobol",
+                       "extrema", "hybrid", "optimization"],
               "default": "sigma"
             },
             "resamp_size": {"type": "integer", "default": 2, "minimum": 0},
@@ -72,11 +72,7 @@
     "snapshot": {
       "type": "object",
       "properties": {
-        "max_workers": {
-          "type": "integer",
-          "default": 2,
-          "minimum": 1
-        },
+        "max_workers": {"type": "integer", "default": 2, "minimum": 1},
         "io": {
           "type": "object",
           "properties": {
@@ -124,14 +120,8 @@
               "items": {}
             }
           },
-          "required": [
-            "shapes",
-            "format",
-            "variables",
-            "point_filename",
-            "filenames",
-            "template_directory",
-            "parameter_names"
+          "required": ["shapes", "format", "variables", "point_filename",
+                       "filenames", "template_directory", "parameter_names"
           ]
         },
         "provider": {
@@ -139,62 +129,23 @@
           {
             "type": "object",
             "properties": {
-            "command": {
-              "type": "string",
-              "default": "bash"
+            "command": {"type": "string", "default": "bash"},
+            "timeout": {"type": "integer", "default": 3600, "minimum": 0},
+            "context": {"type": "string", "default": "data"},
+            "script": {"type": "string", "default": "data/script.sh"},
+            "clean": {"type": "boolean", "default": false},
+            "private-directory": {"type": "string", "default": "batman-data"},
+            "data-directory": {"type": "string", "default": "cfd-output-data"},
+            "restart": {"type": "string", "default": "False"}
             },
-            "timeout": {
-              "type": "integer",
-              "default": 3600,
-              "minimum": 0
-            },
-            "context": {
-              "type": "string",
-              "default": "data"
-            },
-            "script": {
-              "type": "string",
-              "default": "data/script.sh"
-            },
-            "clean": {
-              "type": "boolean",
-              "default": false
-            },
-            "private-directory": {
-              "type": "string",
-              "default": "batman-data"
-            },
-            "data-directory": {
-              "type": "string",
-              "default": "cfd-output-data"
-            },
-            "restart": {
-              "type": "string",
-              "default": "False"
-            }
-            },
-            "required": [
-            "command",
-            "timeout",
-            "context",
-            "script",
-            "clean",
-            "private-directory",
-            "data-directory",
-            "restart"
-            ]
+            "required": ["command", "timeout", "context", "script", "clean",
+                         "private-directory", "data-directory", "restart"]
           },
-          {
-            "type": "string"
-          }
+          {"type": "string"}
           ]
         }
       },
-      "required": [
-        "max_workers",
-        "io",
-        "provider"
-      ]
+      "required": ["max_workers", "io", "provider"]
     },
     "surrogate": {
       "type": "object",
@@ -203,9 +154,9 @@
         "method": {"type": "string", "default": "kriging",
                    "enum": ["rbf", "kriging", "pc", "evofusion"]},
         "cost_ratio": {"type": "number", "default": 2.0, "minimum": 1,
-                   "exclusiveMinimum": true},
+                       "exclusiveMinimum": true},
         "grand_cost": {"type": "integer", "default": 30, "minimum": 4,
-                   "exclusiveMinimum": false},
+                       "exclusiveMinimum": false},
         "strategy": {"type": "string", "default": "Quad",
                    "enum": ["Quad", "LS"]},
         "degree": {"type": "integer", "default": 10, "minimum": 1,

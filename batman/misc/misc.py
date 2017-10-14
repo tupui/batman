@@ -129,7 +129,8 @@ def import_config(path_config, path_schema):
                     lines[index] = re.sub(regex_inline, r'\1', line)
 
         try:
-            return json.loads('\n'.join(lines), encoding="utf-8", **kwargs)
+            return json.loads('\n'.join(lines),
+                              encoding="utf-8", **kwargs)
         except Exception as tb:
             logger.exception("JSON error, cannot load configuration file: {}"
                              .format(tb))
@@ -139,14 +140,15 @@ def import_config(path_config, path_schema):
         settings = minify_comments(file)
 
     with open(path_schema, 'rb') as file:
-        schema = minify_comments(file)
+        schema = json.loads(file.read(), encoding="utf-8")
 
     error = False
     try:
         validator = jsonschema.Draft4Validator(schema)
         for error in sorted(validator.iter_errors(settings), key=str):
-            logger.error("Error: {}\n\tOrigin: {}"
-                         .format(error.message, error.path))
+            logger.error("Error: {}\n-> Origin: {}\n-> Schema: {}"
+                         .format(error.message, error.path,
+                                 json.dumps(error.schema, indent=1)))
             error = True
     except jsonschema.ValidationError as e:
         logger.exception(e.message)
