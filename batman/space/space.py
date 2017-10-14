@@ -139,6 +139,7 @@ class Space(list):
         except (TypeError, IndexError):
             points = [points]
 
+        points_set = set(self)
         for point in points:
             # check point dimension is correct
             if (len(point) - 1 if self.multifidelity else len(point)) != self.dim:
@@ -162,8 +163,9 @@ class Space(list):
                                       .format(point))
 
             # verify point is not already in space
-            if point not in self:
+            if point not in points_set:
                 self.append(point)
+                points_set.add(point)
             else:
                 raise UnicityError("Point {} already exists in the space"
                                    .format(point))

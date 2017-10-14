@@ -1,8 +1,10 @@
 ### Prerequisites
 
-* [ ] I have checked there is no similar issue on the [issue track](../),
+* [ ] I have checked there is no similar issue on the [issue track](../issues),
 * [ ] This is not a support question,
-* [ ] I can reproduce the problem. (for bugs),
+
+[For bugs, remove otherwise]
+* [ ] I can reproduce the problem,
 * [ ] I am running the latest version,
 * [ ] I am using the latest versions of all dependencies.
 
@@ -13,7 +15,8 @@ Do **NOT** use this for support. For python related questions go to [StackOverfl
 
 [Description of the bug or feature]
 
-### Steps to Reproduce (for bugs)
+[Next sections are for bugs, remove otherwise]
+### Steps to Reproduce
 
 1. [First Step]
 2. [Second Step]
@@ -23,11 +26,14 @@ Here is the relevant part of the logs (with ``batman -v``):
 
 [code]
 
-**Expected behavior:** [What you expected to happen]
+**Expected behavior:**
+[What you expected to happen]
 
-**Actual behavior:** [What actually happened]
+**Actual behavior:**
+[What actually happened]
 
-### Versions
+### Version and commit number
 
-You can get this information from the log.
-
+Python version: [``python --version``]
+Batman version: [``batman --version``]
+Commit: [``git log``]

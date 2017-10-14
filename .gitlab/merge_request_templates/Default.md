@@ -1,11 +1,13 @@
 ## Types of changes
 
 What types of changes does your code introduce? Check all the boxes that apply:
+- [ ] Bug fix (non-breaking change which fixes an issue),
+- [ ] New feature (non-breaking change which adds functionality),
+- [ ] Breaking change (fix or feature that would cause existing functionality to change),
+- [ ] Documentation.
 
-- [ ] I have checked there is no similar merge request on the [track](../)
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to change)
+All following must be checked:
+- [ ] I have checked there is no similar merge request on the [track](../issues),
 - [ ] I have read the **CONTRIBUTING** document.
 - [ ] My code follows the code style of this project.
 - [ ] I have updated the documentation accordingly.
@@ -13,3 +15,5 @@ What types of changes does your code introduce? Check all the boxes that apply:
 - [ ] All new and existing tests passed.
 
 ## Description
+
+[Detail your proposal]
