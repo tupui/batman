@@ -102,7 +102,7 @@ def test_space_evaluation(settings_ishigami):
     space = Space(settings_ishigami)
     space.sampling(2)
     targets_space = f_3d(space)
-    f_data_base = np.array([5.25 , 4.2344145]).reshape(2, 1)
+    f_data_base = np.array([5.25, 4.2344145]).reshape(2, 1)
     npt.assert_almost_equal(targets_space, f_data_base)
 
 
@@ -137,7 +137,7 @@ def test_doe():
     doe = Doe(n, bounds, kind)
     ot.RandomGenerator.SetSeed(123)
     sample = doe.generate()
-    out = np.array([[8.097, 3.646], [6.592, 4.806], [0.622, 2.909], 
+    out = np.array([[8.097, 3.646], [6.592, 4.806], [0.622, 2.909],
                     [5.361, 2.162], [2.921, 4.041]])
     npt.assert_almost_equal(sample, out, decimal=1)
 

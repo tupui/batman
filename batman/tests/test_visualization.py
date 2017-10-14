@@ -298,6 +298,7 @@ def test_sobols_map(mock_show, tmp):
 
 @patch("matplotlib.pyplot.show")
 def test_response_surface_1D(mock_show, tmp):
+
     def fun(x):
         return x ** 2
     bounds = [[-7], [10]]

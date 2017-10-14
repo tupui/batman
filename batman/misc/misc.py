@@ -20,7 +20,7 @@ import time
 import jsonschema
 import numpy as np
 from pathos.multiprocessing import cpu_count
-from scipy.optimize import (differential_evolution, basinhopping)
+from scipy.optimize import differential_evolution
 from .nested_pool import NestedPool
 
 
