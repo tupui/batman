@@ -27,6 +27,7 @@ def test_indices(tmp, ishigami_data, settings_ishigami):
 def test_block(tmp, mascaret_data, settings_ishigami):
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings['uq']['type'] = 'block'
+    test_settings['uq'].pop('test')
     test_settings['snapshot']['io']['shape'] = {"0": [[14]]}
     test_settings['snapshot']['io']['parameter_names'] = ['Ks', 'Q']
 

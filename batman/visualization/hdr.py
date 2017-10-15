@@ -464,12 +464,12 @@ class HdrBoxplot:
         it will samples *n* new samples ; and if
         `array_like, shape (n_samples, n_features)` it will use this.
 
-        :param int frame_rate: time between two outcomes (in milliseconds)
-        :param list(int) tone_range: range of frequencies of a tone (in hertz)
-        :param float amplitude: amplitude of the signal
-        :param bool distance: use distance from median for tone generation
-        :param False, int, list samples: Data selector
-        :param str fname: export sound to filename
+        :param int frame_rate: time between two outcomes (in milliseconds).
+        :param list(int) tone_range: range of frequencies of a tone (in hertz).
+        :param float amplitude: amplitude of the signal.
+        :param bool distance: use distance from median for tone generation.
+        :param False, int, list samples: Data selector.
+        :param str fname: export sound to filename.
         """
         tone_range = [50, 1000] if tone_range is None else tone_range
         duration = frame_rate / 1000.0
@@ -478,6 +478,12 @@ class HdrBoxplot:
         t = np.linspace(0.0, duration, duration * rate)
 
         def note(freq):
+            """Generate a sinusoidal note.
+
+            :param float freq: frequency to generate the note from.
+            :return: note
+            :rtype: array_like shape (duration * rate,)
+            """
             data = np.sin(2.0 * np.pi * freq * t) * amp
             return data
 

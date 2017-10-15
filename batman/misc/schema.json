@@ -143,6 +143,9 @@
         },
         {
           "properties": {"method": {"enum":["kriging"]}}
+        },
+        {
+          "properties": {"method": {"enum":["rbf"]}}
         }
       ]
     },
@@ -175,7 +178,7 @@
     },
     {
       "required": ["surrogate"],
-      "properties": {"surrogate": {"properties": {"method": {"enum":["evofusion", "kriging"]}}}}
+      "properties": {"surrogate": {"properties": {"method": {"enum":["evofusion", "kriging", "rbf"]}}}}
     },
     {"not": {"required": ["surrogate"]}}
   ]
