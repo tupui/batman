@@ -96,6 +96,7 @@ def test_hdr_alpha(mock_show):
                                 20.3, 19.5, 19.2, 19.5, 20.0, 21.2]])
     npt.assert_almost_equal(hdr.extra_quantiles, extra_quant_t, decimal=1)
     hdr.plot()
+    hdr.plot(samples=10)
 
 
 @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
@@ -245,13 +246,13 @@ def test_kiviat_plot(mock_show, kiviat_data, tmp):
 
 
 def test_pdf_1D(tmp):
-    pdf(data[:, 5].reshape(-1, 1), fname=os.path.join(tmp, 'pdf.pdf'))
+    pdf(data[:10, 5].reshape(-1, 1), fname=os.path.join(tmp, 'pdf.pdf'))
 
 
 @patch("matplotlib.pyplot.show")
 def test_pdf_surrogate(mock_show, ishigami_data):
     dist = ot.ComposedDistribution(ishigami_data.dists)
-    surrogate = SurrogateModel('kriging', ishigami_data.space.corners)
+    surrogate = SurrogateModel('rbf', ishigami_data.space.corners)
     surrogate.fit(ishigami_data.space, ishigami_data.target_space)
     settings = {
         "dist": dist,

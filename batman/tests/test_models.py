@@ -11,7 +11,7 @@ from batman.tests.conftest import sklearn_q2
 
 def test_PC_1d(ishigami_data):
     surrogate = PC(distributions=ishigami_data.dists, n_sample=500, degree=10,
-                   strategy='LS')
+                   strategy='LS', stieltjes=False)
     input_ = surrogate.sample
     assert len(input_) == 500
     output = ishigami_data.func(input_)
@@ -160,7 +160,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
 
 
 def test_quality(mufi_data):
-    surrogate = SurrogateModel('kriging', mufi_data.space.corners)
+    surrogate = SurrogateModel('rbf', mufi_data.space.corners)
 
     # Split into cheap and expensive arrays
     space = np.array(mufi_data.space)
@@ -194,43 +194,43 @@ def test_evofusion(mufi_data):
     q2 = sklearn_q2(mufi_data.dists, f_e, wrap_surrogate)
     assert q2 == pytest.approx(1, 0.1)
 
-    # Plotting
-    x = np.linspace(0, 1, 200).reshape(-1, 1)
+    # # Plotting
+    # x = np.linspace(0, 1, 200).reshape(-1, 1)
 
-    # Split into cheap and expensive arrays
-    space = np.array(mufi_data.space)
-    target_space = np.array(mufi_data.target_space)
-    space = [space[space[:, 0] == 0][:, 1],
-             space[space[:, 0] == 1][:, 1]]
-    n_e = space[0].shape[0]
-    n_c = space[1].shape[0]
-    space = [space[0].reshape((n_e, -1)),
-             space[1].reshape((n_c, -1))]
-    target_space = [target_space[:n_e].reshape((n_e, -1)),
-                    target_space[n_e:].reshape((n_c, -1))]
+    # # Split into cheap and expensive arrays
+    # space = np.array(mufi_data.space)
+    # target_space = np.array(mufi_data.target_space)
+    # space = [space[space[:, 0] == 0][:, 1],
+    #          space[space[:, 0] == 1][:, 1]]
+    # n_e = space[0].shape[0]
+    # n_c = space[1].shape[0]
+    # space = [space[0].reshape((n_e, -1)),
+    #          space[1].reshape((n_c, -1))]
+    # target_space = [target_space[:n_e].reshape((n_e, -1)),
+    #                 target_space[n_e:].reshape((n_c, -1))]
 
-    surrogate_e = Kriging(space[0], target_space[0])
-    surrogate_c = Kriging(space[1], target_space[1])
-    pred_evo, _ = np.array(surrogate.evaluate(x))
-    pred_e, _ = np.array(surrogate_e.evaluate(x))
-    pred_c, _ = np.array(surrogate_c.evaluate(x))
+    # surrogate_e = Kriging(space[0], target_space[0])
+    # surrogate_c = Kriging(space[1], target_space[1])
+    # pred_evo, _ = np.array(surrogate.evaluate(x))
+    # pred_e, _ = np.array(surrogate_e.evaluate(x))
+    # pred_c, _ = np.array(surrogate_c.evaluate(x))
 
-    # Plotting
-    fig = plt.figure("Evofusion on Forrester's functions")
-    plt.plot(space[0], target_space[0], 'o', label=r'$y_e$')
-    plt.plot(space[1], target_space[1], '^', label=r'$y_c$')
-    plt.plot(x, f_e(x), ls='-', label=r'$f_e$')
-    plt.plot(x, f_c(x), ls='--', label=r'$f_c$')
-    plt.plot(x, pred_evo, ls='-.', label=r'$evofusion$')
-    plt.plot(x, pred_e, '>', markevery=20, ls=':', label=r'kriging through $y_e$')
-    plt.plot(x, pred_c, '<', markevery=20, ls=':', label=r'kriging through $y_c$')
-    plt.xlabel('x', fontsize=28)
-    plt.ylabel('y', fontsize=28)
-    plt.tick_params(axis='x', labelsize=26)
-    plt.tick_params(axis='y', labelsize=26)
-    plt.legend(fontsize=26, loc='upper left')
-    fig.tight_layout()
-    path = 'evofusion_forrester.pdf'
-    fig.savefig(path, transparent=True, bbox_inches='tight')
-    # plt.show()
-    plt.close('all')
+    # # Plotting
+    # fig = plt.figure("Evofusion on Forrester's functions")
+    # plt.plot(space[0], target_space[0], 'o', label=r'$y_e$')
+    # plt.plot(space[1], target_space[1], '^', label=r'$y_c$')
+    # plt.plot(x, f_e(x), ls='-', label=r'$f_e$')
+    # plt.plot(x, f_c(x), ls='--', label=r'$f_c$')
+    # plt.plot(x, pred_evo, ls='-.', label=r'$evofusion$')
+    # plt.plot(x, pred_e, '>', markevery=20, ls=':', label=r'kriging through $y_e$')
+    # plt.plot(x, pred_c, '<', markevery=20, ls=':', label=r'kriging through $y_c$')
+    # plt.xlabel('x', fontsize=28)
+    # plt.ylabel('y', fontsize=28)
+    # plt.tick_params(axis='x', labelsize=26)
+    # plt.tick_params(axis='y', labelsize=26)
+    # plt.legend(fontsize=26, loc='upper left')
+    # fig.tight_layout()
+    # path = 'evofusion_forrester.pdf'
+    # fig.savefig(path, transparent=True, bbox_inches='tight')
+    # # plt.show()
+    # plt.close('all')

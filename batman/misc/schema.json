@@ -149,7 +149,7 @@
     "uq": {
       "type": "object",
       "properties": {
-        "sample": {"type": "integer", "default": 50000, "minimum": 1000},
+        "sample": {"type": "integer", "default": 5000, "minimum": 1000},
         "test": {"type": "string"},
         "pdf": {"type": "array", "items": {}},
         "type": {"type": "string", "default": "aggregated",

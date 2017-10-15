@@ -46,7 +46,7 @@
     },
     "surrogate": {
         "predictions": [2.2],
-        "method": "kriging"
+        "method": "rbf"
     },
     "uq": {
         "sample": 1000,

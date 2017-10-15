@@ -286,14 +286,13 @@ class UQ:
         .. warning:: The second order indices are only available with the sobol
         method.
 
-        And three types of computation are availlable for the global indices:
+        And two types of computation are availlable for the global indices:
 
         - `block`
-        - `map`
         - `aggregated`
 
         If *aggregated*, *map* indices are computed. In case of a scalar value,
-        all types returns the same values. *map* or *block* indices are written
+        all types returns the same values. *block* indices are written
         within `sensitivity.dat` and aggregated indices within
         `sensitivity_aggregated.dat`.
 
@@ -301,7 +300,7 @@ class UQ:
         with their analytical values.
 
         :return: Sobol' indices
-        :rtype: lst(np.array)
+        :rtype: lst(array_like)
 
         """
         indices = [[], [], []]
@@ -378,7 +377,7 @@ class UQ:
             else:
                 full_names = names
 
-            dataset = Dataset(names=full_names, shape=[self.output_len, 1, 1],
+            dataset = Dataset(names=full_names, shape=[sobol_len, 1, 1],
                               data=data)
             self.io.write(os.path.join(self.fname, 'sensitivity.dat'), dataset)
         else:
@@ -464,13 +463,17 @@ class UQ:
             else:
                 self.logger.debug(
                     "No output folder to write aggregated indices in")
+
+            full_indices = [aggregated[1], aggregated[2],
+                            indices[1], indices[2]]
         else:
-            aggregated = indices
+            full_indices = [indices[1][0], indices[2][0]]
+            aggregated = [indices[0][0], indices[1][0], indices[2][0]]
+            conf = None
+            self.xdata = None
 
         # Plot
         if self.fname is not None:
-            full_indices = [aggregated[1], aggregated[2],
-                            indices[1], indices[2]]
             path = os.path.join(self.fname, 'sensitivity.pdf')
             visualization.sobol(full_indices, p_lst=self.p_lst, conf=conf,
                                 xdata=self.xdata, fname=path)

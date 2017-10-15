@@ -1,7 +1,5 @@
 # coding: utf8
 import copy
-import os
-import itertools
 import pytest
 import numpy as np
 import numpy.testing as npt
@@ -11,8 +9,6 @@ from batman.functions import Ishigami
 from batman.tasks import Snapshot
 from batman.surrogate import SurrogateModel
 from batman.space.refiner import Refiner
-import matplotlib.pyplot as plt
-from matplotlib import cm
 import openturns as ot
 
 
@@ -204,43 +200,48 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     refiner = Refiner(space, test_settings)
     disc2 = refiner.discrepancy()
 
-    num = 25
-    x = np.linspace(-7, 10, num=num)
-    y = np.linspace(0, 15, num=num)
-    points = np.array([(float(i), float(j)) for i, j in itertools.product(x, y)])
-    x = points[:, 0].flatten()
-    y = points[:, 1].flatten()
-    pred, _ = surrogate(points)
-    pred = np.array(pred).flatten()
-    space = np.array(space[:])
+    print(sigma, optim_EI, optim_PI, disc, extrema, disc2)
+    # # Plotting
+    # import os
+    # import itertools
+    # import matplotlib.pyplot as plt
+    # from matplotlib import cm
+    # num = 25
+    # x = np.linspace(-7, 10, num=num)
+    # y = np.linspace(0, 15, num=num)
+    # points = np.array([(float(i), float(j)) for i, j in itertools.product(x, y)])
+    # x = points[:, 0].flatten()
+    # y = points[:, 1].flatten()
+    # pred, _ = surrogate(points)
+    # pred = np.array(pred).flatten()
+    # space = np.array(space[:])
 
-    # Plotting
-    color = True
-    c_map = cm.viridis if color else cm.gray
-    fig = plt.figure('Composite sigma/discrepancy')
-    plt.plot(space[:11, 0], space[:11, 1], 'ko', label='initial sample')
-    plt.plot(space[11:, 0], space[11:, 1], 'm^', label='firsts sigma')
-    plt.plot(-3.68928528, 13.62998774, 'rx')
-    plt.tricontourf(x, y, pred, antialiased=True, cmap=c_map)
-    plt.plot(sigma[0], sigma[1], '+', label='sigma')
-    plt.plot(optim_EI[0], optim_EI[1], 's', label='optimization EI')
-    plt.plot(optim_PI[0], optim_PI[1], 'p', label='optimization PI')
-    plt.plot(disc[0], disc[1], 'v', label='discrepancy')
-    plt.plot(disc[0], disc2[1], '-', label='discrepancy without surrogate')
-    plt.plot(extrema[:, 0], extrema[:, 1], '>', label='extrema')
-    plt.plot(base_sigma_disc[0], base_sigma_disc[1], '<', label='sigma+discrepancy')
-    cbar = plt.colorbar()
-    cbar.set_label(r'$f(x_1, x_2)$')
-    plt.xlabel(r'$x_1$', fontsize=24)
-    plt.ylabel(r'$x_2$', fontsize=24)
-    plt.tick_params(axis='y')
-    for txt, point in enumerate(space):
-        plt.annotate(txt, point, textcoords='offset points')
+    # color = True
+    # c_map = cm.viridis if color else cm.gray
+    # fig = plt.figure('Composite sigma/discrepancy')
+    # plt.plot(space[:11, 0], space[:11, 1], 'ko', label='initial sample')
+    # plt.plot(space[11:, 0], space[11:, 1], 'm^', label='firsts sigma')
+    # plt.plot(-3.68928528, 13.62998774, 'rx')
+    # plt.tricontourf(x, y, pred, antialiased=True, cmap=c_map)
+    # plt.plot(sigma[0], sigma[1], '+', label='sigma')
+    # plt.plot(optim_EI[0], optim_EI[1], 's', label='optimization EI')
+    # plt.plot(optim_PI[0], optim_PI[1], 'p', label='optimization PI')
+    # plt.plot(disc[0], disc[1], 'v', label='discrepancy')
+    # plt.plot(disc[0], disc2[1], '-', label='discrepancy without surrogate')
+    # plt.plot(extrema[:, 0], extrema[:, 1], '>', label='extrema')
+    # plt.plot(base_sigma_disc[0], base_sigma_disc[1], '<', label='sigma+discrepancy')
+    # cbar = plt.colorbar()
+    # cbar.set_label(r'$f(x_1, x_2)$')
+    # plt.xlabel(r'$x_1$', fontsize=24)
+    # plt.ylabel(r'$x_2$', fontsize=24)
+    # plt.tick_params(axis='y')
+    # for txt, point in enumerate(space):
+    #     plt.annotate(txt, point, textcoords='offset points')
 
-    plt.legend(fontsize=21, bbox_to_anchor=(1.3, 1), borderaxespad=0)
-    fig.tight_layout()
-    path = os.path.join(tmp, 'refinements.pdf')
-    fig.savefig(path, transparent=True, bbox_inches='tight')
+    # plt.legend(fontsize=21, bbox_to_anchor=(1.3, 1), borderaxespad=0)
+    # fig.tight_layout()
+    # path = os.path.join(tmp, 'refinements.pdf')
+    # fig.savefig(path, transparent=True, bbox_inches='tight')
 
 
 def test_discrepancy(settings_ishigami):
