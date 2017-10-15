@@ -507,7 +507,7 @@ class UQ:
                                            fun=self.model,
                                            doe=self.space, xdata=self.xdata,
                                            fname=os.path.join(self.fname,
-                                                              'response.pdf'))
+                                                              'response'))
 
         # Covariance and correlation matrices
         self.logger.info('Creating Covariance/correlation and figures...')

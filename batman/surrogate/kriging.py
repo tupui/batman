@@ -27,6 +27,7 @@ Machine Learning Research. 2011. ArXiv ID: 1201.0490
 """
 import logging
 import os
+import warnings
 import numpy as np
 from scipy.optimize import differential_evolution
 from pathos.multiprocessing import cpu_count
@@ -174,10 +175,12 @@ class Kriging(object):
         prediction = np.empty((self.model_len))
         sigma = np.empty((self.model_len))
 
-        # Compute a prediction per predictor
-        for i, gp in enumerate(self.data):
-            prediction[i], sigma[i] = gp.predict(point_array,
-                                                 return_std=True,
-                                                 return_cov=False)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            # Compute a prediction per predictor
+            for i, gp in enumerate(self.data):
+                prediction[i], sigma[i] = gp.predict(point_array,
+                                                     return_std=True,
+                                                     return_cov=False)
 
         return prediction, sigma

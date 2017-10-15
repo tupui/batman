@@ -221,10 +221,10 @@ class Refiner(object):
 
             # Check aspect ratio
             aspect = abs(diff)
-            try:
-                aspect = np.power(np.max(aspect), self.dim) / np.prod(aspect)
-            except ZeroDivisionError:
-                return np.inf
+            with np.errstate(divide='ignore', invalid='ignore'):
+                aspect = abs(np.divide(np.power(np.max(aspect), self.dim),
+                                       np.prod(aspect)))
+
             aspect = np.power(aspect, 1 / self.dim)
             if not aspect <= 1.5:
                 return np.inf

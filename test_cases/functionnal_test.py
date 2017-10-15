@@ -161,7 +161,6 @@ def test_resampling(tmp, case='Michalewicz'):
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
     settings = batman.misc.import_config(options.settings, schema)
-    settings['space']['sampling']['init_size'] = 10
     settings['space']['resampling']['resamp_size'] = 2
 
     for method in ['loo_sigma', 'hybrid']:
@@ -171,13 +170,12 @@ def test_resampling(tmp, case='Michalewicz'):
             settings['space']['resampling']['resamp_size'] = 4
         batman.ui.run(settings, options)
         check_output(tmp)
-        if not os.path.isdir(os.path.join(tmp, 'snapshots/11')):
+        if not os.path.isdir(os.path.join(tmp, 'snapshots/5')):
             assert False
 
 # Ishigami: 3D -> 1D
 # Oakley & O'Hagan: 1D -> 1D
 # Channel_Flow: 2D -> nD
-@pytest.mark.xfail(raises=NotImplementedError, reason='PC pickling')
 @pytest.mark.parametrize('name', [
     ('G_Function'),
     ('Basic_function'),
@@ -185,9 +183,11 @@ def test_resampling(tmp, case='Michalewicz'):
 ])
 def test_cases(tmp, name):
     test_init(tmp, case=name)
-    test_quality(tmp, case=name)
-    test_uq(tmp, case=name)
-    test_restart_pod(tmp, case=name)
+
+    if name != 'Channel_Flow':
+        test_quality(tmp, case=name)
+        test_uq(tmp, case=name)
+        test_restart_pod(tmp, case=name)
 
 
 def test_simple_settings(tmp):

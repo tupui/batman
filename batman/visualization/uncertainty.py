@@ -51,7 +51,7 @@ def kernel_smoothing(data, optimize=False):
         bandwidth = np.hstack([np.linspace(0.1, 5.0, 30), scott, silverman])
         grid = GridSearchCV(KernelDensity(),
                             {'bandwidth': bandwidth},
-                            cv=cv, n_jobs=-1)  # 20-fold cross-validation
+                            cv=cv, n_jobs=-1)  # 30-fold cross-validation
         grid.fit(data)
         ks_gaussian = grid.best_estimator_
 
@@ -132,7 +132,7 @@ def pdf(data, xdata=None, labels=None, moments=False, fname=None):
         max_pdf_bound = np.max(pdf)
         max_pdf_bound = max_pdf_bound if max_pdf_bound < 1 else 1
         bound_pdf = np.linspace(0., max_pdf_bound, 50, endpoint=True)
-        plt.contourf(xdata, ydata, pdf, bound_pdf, cmap=c_map, label=None)
+        plt.contourf(xdata, ydata, pdf, bound_pdf, cmap=c_map)
         cbar = plt.colorbar()
         cbar.set_label(r"PDF")
         plt.xlabel(labels[0], fontsize=26)
@@ -141,7 +141,7 @@ def pdf(data, xdata=None, labels=None, moments=False, fname=None):
             plt.plot(xdata[0], sd_min, color='k', ls='-.', linewidth=2, label="Standard Deviation")
             plt.plot(xdata[0], mean, color='k', ls='-', linewidth=2, label="Mean")
             plt.plot(xdata[0], sd_max, color='k', ls='-.', linewidth=2, label=None)
-            plt.legend(fontsize=26, loc='best')
+            plt.legend(loc='best')
     else:
         plt.plot(xdata, pdf, color='k', ls='-', linewidth=3, label=None)
         plt.fill_between(xdata[:, 0], pdf, [0] * xdata.shape[0],

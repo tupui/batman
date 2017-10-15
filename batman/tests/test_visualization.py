@@ -339,22 +339,24 @@ def test_response_surface_2D_vector(mock_show, mascaret_data, tmp):
                      plabels=['Ks', 'Q'], feat_order=order, flabel='Z')
 
 
-def test_response_surface_3D(ishigami_data):
+@pytest.mark.skipif(not have_ffmpeg, reason='ffmpeg not available')
+def test_response_surface_3D(ishigami_data, tmp):
     space = ishigami_data.space
     fun = ishigami_data.func
     bounds = [[-4, -4, -4], [4, 4, 4]]
     order = [1, 2, 3]
-    path = os.path.join('.', 'rs_3D_vector')
+    path = os.path.join(tmp, 'rs_3D_vector')
     response_surface(bounds=bounds, fun=fun, doe=space, resampling=30,
                      contours=[-20, 0, 20], fname=path, feat_order=order)
 
 
-def test_response_surface_4D(g_function_data):
+@pytest.mark.skipif(not have_ffmpeg, reason='ffmpeg not available')
+def test_response_surface_4D(g_function_data, tmp):
     space = g_function_data.space
     fun = g_function_data.func
     bounds = g_function_data.space.corners
     order = [2, 3, 4, 1]
-    path = os.path.join('.', 'rs_4D_vector')
+    path = os.path.join(tmp, 'rs_4D_vector')
     response_surface(bounds=bounds, fun=fun, doe=space, resampling=10,
                      axis_disc=[2, 15, 15, 15], fname=path, feat_order=order)
 
