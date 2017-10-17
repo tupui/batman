@@ -62,12 +62,12 @@ def pdf(data, xdata=None, labels=None, moments=False, fname=None):
     """Plot PDF in 1D or 2D.
 
     :param np.ndarray/dict data: array of shape (n_samples, n_features)
-    or a dictionary with the following::
+        or a dictionary with the following:
 
         - `bounds`, array like of shape (2, n_features) first line is mins and
-            second line is maxs.
+          second line is maxs.
         - `model`, :class:`batman.surrogate.SurrogateModel` instance or str
-            path to the surrogate data.
+          path to the surrogate data.
         - `method`, str, surrogate model method.
         - `dist`, :class:`openturns.ComposedDistribution` instance.
 
@@ -193,10 +193,10 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
     indices.
 
     :param array_like sobols: `[first (n_params), total (n_params),
-    first (xdata, n_params), total (xdata, n_params)]`.
+        first (xdata, n_params), total (xdata, n_params)]`.
     :param float/array_like conf: relative error around indices. If float,
-    same error is applied for all parameters. Otherwise shape
-    ([min, n_features], [max, n_features])
+        same error is applied for all parameters. Otherwise shape
+        ([min, n_features], [max, n_features])
     :param list(str) p_lst: parameters' names.
     :param array_like xdata: 1D discretization of the function (n_features,).
     :param str xlabel: label of the discretization parameter.
@@ -263,8 +263,8 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
     :param str xlabel: label of the discretization parameter.
     :param list(str) plabels: parameters' labels.
     :param str interpolation: If None, does not interpolate correlation and
-    covariance matrices (YY). Otherwize use Matplotlib methods from `imshow`
-    such as `['bilinear', 'lanczos', 'spline16', 'hermite', ...]`.
+        covariance matrices (YY). Otherwize use Matplotlib methods from `imshow`
+        such as `['bilinear', 'lanczos', 'spline16', 'hermite', ...]`.
     :param str fname: wether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.

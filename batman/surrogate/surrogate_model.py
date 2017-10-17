@@ -16,7 +16,7 @@ It allows the creation of a surrogate model and making predictions.
     >> predictor.fit(space, target_space)
     >> predictor.save('.')
     >> points = [(12.5, 56.8), (2.2, 5.3)]
-    >> predictions = SurrogateModel(points)
+    >> predictions = predictor(points)
 
 """
 
@@ -49,13 +49,13 @@ class SurrogateModel(object):
 
         :param np.array corners: space corners to normalize.
         :param str kind: name of prediction method, rbf or kriging.
-        :param np.array corners: parameter space corners
-        (2 points extrema, n_features).
+        :param array_like corners: parameter space corners
+          (2 points extrema, n_features).
         :param dict pc: configuration of polynomial chaos.
         :param \**kwargs: See below
 
         :Keyword Arguments: For Polynomial Chaos the following keywords are
-        available
+          available
 
             - 'strategy', str. Least square or Quadrature ['LS', 'Quad'].
             - 'degree', int. Polynomial degree.
@@ -92,7 +92,8 @@ class SurrogateModel(object):
 
         :param array_like points: points of the sample (n_samples, n_features).
         :param array_like data: function evaluations (n_samples, n_features).
-        :param :class:`batman.pod.pod.Pod` pod: POD instance.
+        :param pod: POD instance.
+        :type pod: :class:`batman.pod.pod.Pod`
         """
         self.data = data
         points = np.array(points)

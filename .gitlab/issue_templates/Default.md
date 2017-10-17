@@ -8,8 +8,8 @@
 * [ ] I am running the latest version,
 * [ ] I am using the latest versions of all dependencies.
 
-For more information, see the `CONTRIBUTING` guide.
-Do **NOT** use this for support. For python related questions go to [StackOverflow](https://stackoverflow.com/questions/tagged/python). Otherwize use the chat channel.
+[For more information, see the `CONTRIBUTING` guide.
+Do **NOT** use this for support. For python related questions go to [StackOverflow](https://stackoverflow.com/questions/tagged/python). Otherwize use the chat channel.]
 
 ### Description
 

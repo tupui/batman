@@ -123,7 +123,7 @@ The latter is optionnal as it build the documentation. The testing part is also
 optionnal but is recommanded. (~20mins).
 
 .. note:: If you don't have install priviledge, add ``--user`` option after install.
-    But the simplest way might be to use a :ref:`conda` environment.
+    But the simplest way might be to use a conda environment.
 
 Finally, to install the optionnal package ``Antares``::
 
@@ -138,7 +138,6 @@ If BATMAN has been correctly installed, you should be able to call it simply::
     and ``PYTHONPATH`` environment variables. Make sure you do not call different
     installation folders. It is recommanded that you leave your ``PYTHONPATH`` empty.
 
-.. _conda:
 Otherwize (if you want Python 3 for instance) you can create your ``conda`` environment::
 
     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh

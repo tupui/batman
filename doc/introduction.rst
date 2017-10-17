@@ -51,11 +51,12 @@ The package is composed of several python modules which are self contained withi
 Following is a quick reference:
 
 * :py:mod:`ui`: command line interface,
-* :py:mod:`driver`: contains the main functions,
-* :py:mod:`uq`: uncertainty quantification,
-* :py:mod:`surrogate`: constructs the surrogate model,
 * :py:mod:`space`: defines the (re)sampling space,
+* :py:mod:`surrogate`: constructs the surrogate model,
+* :py:mod:`uq`: uncertainty quantification,
+* :py:mod:`visualization`: uncertainty visualization,
 * :py:mod:`pod`: constructs the POD,
+* :py:mod:`driver`: contains the main functions,
 * :py:mod:`tasks`: defines the context to compute each snapshot from,
 * :py:mod:`functions`: defines usefull test functions,
 * :py:mod:`misc`: defines the logging configuration and the settings schema.

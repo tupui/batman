@@ -47,8 +47,8 @@ class PC(object):
 
         :param str strategy: Least square or Quadrature ['LS', 'Quad'].
         :param int degree: Polynomial degree.
-        :param lst(:class:`openturns.Distribution`) distributions:
-        Distributions of each input parameter.
+        :param  distributions: Distributions of each input parameter.
+        :type distributions: lst(:class:`openturns.Distribution`)
         :param int n_sample: Number of samples for least square.
         :param bool stieltjes: Wether to use Stieltjes algorithm for the basis.
         """

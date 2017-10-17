@@ -59,6 +59,8 @@ def setup(app):
 autosummary_generate = True
 # autoclass_content = 'both'
 
+autodoc_mock_imports = ["antares"]
+
 mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML'
 
 # Add any paths that contain templates here, relative to this directory.
@@ -79,7 +81,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'BATMAN'
-copyright = '2017, Pamphile ROY'
+copyright = '2017, CERFACS'
 author = 'Pamphile ROY'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -88,12 +90,14 @@ author = 'Pamphile ROY'
 #
 # The short X.Y version.
 
+
 def read(*names, **kwargs):
     with io.open(
         os.path.join(os.path.dirname(__file__), *names),
         encoding=kwargs.get("encoding", "utf8")
     ) as fp:
         return fp.read()
+
 
 def find_version(*file_paths):
     version_file = read(*file_paths)
@@ -102,6 +106,7 @@ def find_version(*file_paths):
     if version_match:
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
+
 
 version = find_version("../batman", "__init__.py")
 # The full version, including alpha/beta/rc tags.
@@ -304,10 +309,10 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (master_doc, 'batman.tex', 'BATMAN Documentation',
-     'Pamphile ROY', 'manual'),
-]
+# latex_documents = [
+#     (master_doc, 'batman.tex', 'BATMAN Documentation',
+#      'Pamphile ROY', 'manual'),
+# ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -340,10 +345,10 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'batman', 'BATMAN Documentation',
-     [author], 1)
-]
+# man_pages = [
+#     (master_doc, 'batman', 'BATMAN Documentation',
+#      [author], 1)
+# ]
 
 # If true, show URL addresses after external links.
 #
@@ -355,11 +360,11 @@ man_pages = [
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-    (master_doc, 'batman', 'BATMAN Documentation',
-     author, 'BATMAN', 'One line description of project.',
-     'Miscellaneous'),
-]
+# texinfo_documents = [
+#     (master_doc, 'batman', 'BATMAN Documentation',
+#      author, 'BATMAN', 'One line description of project.',
+#      'Miscellaneous'),
+# ]
 
 # Documents to append as an appendix to all manuals.
 #

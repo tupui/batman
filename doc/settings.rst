@@ -7,7 +7,7 @@ Command Line Interface
 Introduction
 ------------
 
-The file ``settings.py`` contains the configuration of BATMAN. It can be devided into 3 mandatory blocks and 2 optionnal block. Fields in brackets are optionnal and there is no specific order to respect.
+The file ``settings.py`` contains the configuration of BATMAN. It can be devided into 2 mandatory blocks and 3 optionnal block. Fields in brackets are optionnal and there is no specific order to respect.
 
 .. note:: A prefilled example is shown in ``settings.json`` located in ``test_cases/Snippets``.
 
@@ -70,16 +70,21 @@ First of all, we define the parameter space using an hypercube. Taking the minim
     }
 
 + ``corners``: define the space using the two corners of the hypercube ``[[min], [max]]``,
-+ ``sampling``: define the configuration of the sample,
++ ``sampling``: define the configuration of the sample. This can either be; a list of sample
+  as an array_like of shape (n_samples, n_features); or a dictionary with
+  the following:
 
     * ``init_size``: define the initial number of snapshots,
-    * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*, *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *lhsopt* (optimized LHS),
+    * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*,
+      *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *lhsopt* (optimized LHS).
+      Another possibilitie is to set a list of distributions. Ex for two input variables: ``["Uniform(15., 60.)", "Normal(4035., 400.)"]``
 
 + [``resampling``]: to do resampling, fill this dictionary
 
-    * ``delta_space``
-    * ``resamp_size``
-    * ``method``: to be choosen from ``sigma``, ``loo_sigma``, ``loo_sobol``, ``hybrid``,
+    * ``delta_space``: the percentage of space to shrink to not resample close to boundaries. For ``0.08``,
+      the available space for resampling will be shrinked by 8%.
+    * ``resamp_size``: number of point to add in the parameter space.
+    * ``method``: to be choosen from ``sigma``, ``loo_sigma``, ``loo_sobol``, ``hybrid``, ``discrepancy``, ``optimization``, ``extrema``.
     * [``hybrid``]: if method is ``hybrid``. You have to define a generator which is a list
       ``[["method", n_snapshot]]``
     * ``q2_criteria``: stopping criterion based on the quality estimation of the model.
@@ -87,6 +92,8 @@ First of all, we define the parameter space using an hypercube. Taking the minim
 The method used to create the DoE is paramount. It ensures that that the physics will be captured correclty all over the domain of interest, see :ref:`Space <space>`. All *faure*, *halton* and *sobol* methods are low discrepancy sequences with good filling properties.
 
 Regarding the resampling, all methods need a good initial sample. Meanning that the quality is about :math:`Q_2\sim0.5`. ``loo_sigma, loo_sobol`` work better than ``sigma`` in high dimentionnal cases (>2).
+
+.. warning:: If using a PC surrogate model, the only possibilities are ``discrepancy`` and ``extrema``. Furthermore, sampling ``method`` must be set as a list of distributions.
 
 Block 2 - Snapshot provider
 ---------------------------
@@ -143,8 +150,8 @@ The ``provider`` defines what is a simulation. If we simply want to evaluate a p
 + ``data-directory``: output folder to store the ``filenames``,
 + ``restart``: restart the computation if the job has failed.
 
-Block 3 - Surrogate
--------------------
+Optionnal Block 3 - Surrogate
+-----------------------------
 
 Set up the surrogate model strategy to use. See :ref:`Surrogate <surrogate>`.
 
@@ -155,8 +162,20 @@ Set up the surrogate model strategy to use. See :ref:`Surrogate <surrogate>`.
         "predictions": [[30, 4000], [35, 3550]]
     }
 
-+ ``method``: method used to generate a snapshot one of *rbf* (Radial Basic Function), *kriging* or *pc* (polynomial chaos expension) method.
++ ``method``: method used to generate a snapshot one of *rbf* (Radial Basic Function), *kriging*, *pc* (polynomial chaos expension) or *evofusion* method.
 + ``predictions``: set of points to predict.
+
+For *pc* the following extra attributes must be set: 
+
++ ``strategy``: either using quadrature or least square one of *Quad* or *LS*.
++ ``degree``: the polynomial degree.
+
+.. note:: When using *pc*, the ``sampling`` must be set to a list of distributions.
+
+For *evofusion* the following extra attributes must be set: 
+
++ ``cost_ratio``: cost ratio in terms of function evaluation between high and low fidelity models.
++ ``grand_cost``: total cost of the study in terms of number of function evaluation of the high fidelity model.
 
 .. note:: We can fill *directly* the number of points into the brackets or *indirectly* using the script ``prediction.py`` located in ``test_cases/Snippets``.
 
@@ -182,7 +201,9 @@ Uncertainty Quantification (UQ), see :ref:`UQ <uq>`.
 + ``method``: type of Sobol analysis: *sobol*, *FAST* (Fourier Amplitude Sensitivity Testing) (if FAST, no second-order indices).
 + ``type``: type of indices: *aggregated* or *block*.
 
-+ ``pdf`` *Probability density function* for uncertainty propagation. Enter the PDF of the inputs, ex: x1-Normal(mu, sigma), x2-Uniform(inf, sup).
++ ``pdf`` *Probability density function* for uncertainty propagation. Enter the PDF of the inputs,
+  as list of openturns distributions. Ex: x1-Normal(mu, sigma), x2-Uniform(inf, sup)
+  => ``["Uniform(15., 60.)", "Normal(4035., 400.)"]``
 
 
 Optionnal Block 5 - POD

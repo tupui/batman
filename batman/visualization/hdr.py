@@ -76,7 +76,7 @@ class HdrBoxplot:
         1. Compute a 2D kernel smoothing with a Gaussian kernel,
         2. Compute contour lines for quantiles 90, 50 and :attr:`alpha`,
         3. Compute mediane curve along with quantiles regions and outlier
-        curves.
+           curves.
 
         :param array_like data: dataset (n_samples, n_features)
         :param float variance: percentage of total variance to conserve
@@ -230,9 +230,9 @@ class HdrBoxplot:
         cause any overhead.
 
         :param array_like, shape (n_samples, n_features) data: data from which
-        to extract outliers
+          to extract outliers
         :param array_like, shape (n_samples, n_features/n_components) samples:
-        samples values to examine
+          samples values to examine
         :param str method: detection method ['kde', 'forest']
         :param float threshold: detection sensitivity
         """

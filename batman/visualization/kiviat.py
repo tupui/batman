@@ -43,11 +43,11 @@ class Kiviat3D:
         """Prepare params for Kiviat plot.
 
         :param array_like params: sample of parameters of Shape
-        (n_samples, n_params)
+          (n_samples, n_params)
         :param array_like bounds: boundaries to scale the colors.
-        shape ((min, n_features), (max, n_features))
+           shape ((min, n_features), (max, n_features))
         :param array_like feval: sample of realization which corresponds to the
-        sample of parameters :attr:`params`. Shape (n_samples, n_features)
+          sample of parameters :attr:`params`. Shape (n_samples, n_features)
         :param list(str) param_names: names of each parameters (n_params)
         """
         self.params = np.asarray(params)

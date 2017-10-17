@@ -1,5 +1,37 @@
 .. _visualization:
 
+Uncertainty Visualization
+*************************
+
+Be able to visualize uncertainty is often neglected but it is a challenging topic.
+Depending on the number of input parameters and the dimension of the quantitie of interest,
+there are several options implemented in the package.
+
++---------------------------------------------------+----------------------------+---------------------------------------+
+|                 Function or class                 | Dimensionality             | Description                           |
++                                                   +----------------------------+                                       +
+|                                                   | Input     | Output         |                                       |
++---------------------------------------------------+-----------+----------------+---------------------------------------+
+| :func:`batman.visualization.doe.doe`              | n-scalar  | scalar, vector | Design of Experiment                  |
++---------------------------------------------------+-----------+----------------+---------------------------------------+
+| :func:`batman.visualization.doe.response_surface` | <5 scalar | scalar, vector | Response surface (fig or movies)      |
++---------------------------------------------------+-----------+----------------+---------------------------------------+
+| :class:`batman.visualization.hdr.HdrBoxplot`      | vector    | vector         | Median realization with PCA           |
++---------------------------------------------------+-----------+----------------+---------------------------------------+
+| :class:`batman.visualization.kiviat.Kiviat3D`     | >3 scalar | scalar, vector | 3D version of the radar/spider plot   |
++---------------------------------------------------+-----------+----------------+---------------------------------------+
+| :func:`batman.visualization.uncertainty.pdf`      |           | scalar, vector | Output PDF                            |
++---------------------------------------------------+-----------+----------------+---------------------------------------+
+| :func:`batman.visualization.uncertainty.corr_cov` | scalar    | vector         | Correlation of the inputs and outputs |
++---------------------------------------------------+-----------+----------------+---------------------------------------+
+| :func:`batman.visualization.uncertainty.sobol`    | scalar    | scalar, vector | Sensitivity indices                   |
++---------------------------------------------------+-----------+----------------+---------------------------------------+
+
+All options return a figure object that can be reuse using :func:`batman.visualization.reshow`.
+This enables some modification of the graph. In most cases, the first parameter ``data`` is
+of shape ``(n_samples, n_features)``.
+
+
 HDR-Boxplot
 ===========
 
@@ -21,7 +53,7 @@ This module allows you to do exactly this:
     data = np.loadtxt('data/elnino.dat')
     print('Data shape: ', data.shape)
 
-    hdr = HdrBoxplot(data)
+    hdr = batman.visualization.HdrBoxplot(data)
     hdr.plot()
 
 The output is the following figure: 
@@ -46,7 +78,7 @@ curve lead to common components. The center of the cluster is the mediane curve.
 An the more you get away from the cluster, the more the curve is unlikely to be
 similar to the other curves.
 
-Using a kernel smoothing technique, the probability density function (PDF) of
+Using a kernel smoothing technique (see :ref:`PDF <PDF>`), the probability density function (PDF) of
 the multivariate space can be recover. From this PDF, it is possible to compute
 the density probability linked to the cluster and plot its contours.
 
@@ -99,7 +131,7 @@ colored by the value of the function.
 To be able to get a whole set of sample, a 3D version of the Kiviat plot is
 used [Hackstadt1994]_. Thus, each sample corresponds to a 2D Kiviat plot::
 
-    kiviat = Kiviat3D(space, bounds, feval, param_names)
+    kiviat = batman.visualization.Kiviat3D(space, bounds, feval, param_names)
     kiviat.plot()
 
 .. image::  fig/kiviat_3D.pdf
@@ -109,19 +141,65 @@ all the information on a sample as it can only display a single information:
 the median value in this case. Hence, the proposed approach is to combine a
 functional-HOPs-Kiviat with sound::
 
-    kiviat.f_hops(fname=os.path.join(tmp, 'kiviat.mp4'))
-    hdr = HdrBoxplot(feval)
+    batman.visualization.kiviat.f_hops(fname=os.path.join(tmp, 'kiviat.mp4'))
+    hdr = batman.visualization.HdrBoxplot(feval)
     hdr.sound()
 
 .. image::  fig/kiviat_3D.gif
 
 
+Probability Density Function
+============================
+.. _PDF:
+
+A multivariate kernel density estimation [Wand1995]_ technique is used to find the probability density function (PDF) :math:`\hat{f}(\mathbf{x_r})` of the multivariate space. This density estimator is given by
+
+.. math:: \hat{f}(\mathbf{x_r}) = \frac{1}{N_{s}}\sum_{i=1}^{N_{s}} K_{h_i}(\mathbf{x_r}-\mathbf{x_r}_i),
+
+With :math:`h_{i}` the bandwidth for the *i* th component and :math:`K_{h_i}(.) = K(./h_i)/h_i` the kernel which is chosen as a modal probability density function that is symmetric about zero. Also, :math:`K` is the Gaussian kernel and :math:`h_{i}` are optimized on the data.
+
+So taking a case with a functionnal output [Roy2017]_, we can recover its PDF with::
+
+    fig_pdf = batman.visualization.pdf(data)
+
+.. image::  fig/pdf_ls89.pdf
+
+
+Correlation matrix
+==================
+
+The correlation and covariance matrices are also availlable::
+
+    batman.visualization.corr_cov(data, sample, func.x, plabels=['Ks', 'Q'])
+
+.. image::  fig/corr.pdf
+
+*Sobol'*
+========
+
+Once *Sobol'* indices are computed , it is easy to plot them with::
+
+    indices = [s_first, s_total]
+    batman.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'])
+
+.. image::  fig/sobol_aggregated.pdf
+
+In case of functionnal data [Roy2017b]_, both aggregated and map indices can be
+passed to the function and both plot are made::
+
+    indices = [s_first, s_total, s_first_full, s_total_full]
+    batman.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'], xdata=x)
+
+.. image::  fig/sobol_map.pdf
+
 References
 ==========
 
 .. [Hyndman2009] Rob J. Hyndman and Han Lin Shang. Rainbow plots, bagplots and boxplots for functional data. Journal of Computational and Graphical Statistics, 19:29-45, 2009 :download:`pdf <ref/Hyndman2009.pdf>`
-.. [Hullman2015] Jessica Hullman and Paul Resnick and Eytan Adar. Hypothetical Outcome Plots Outperform Error Bars and Violin Plots for Inferences About Reliability of Variable Ordering. PLoS ONE 10(11): e0142444. https://doi.org/10.1371/journal.pone.0142444, 2015 :download:`pdf <ref/Hullman2015.pdf>`
+.. [Hullman2015] Jessica Hullman and Paul Resnick and Eytan Adar. Hypothetical Outcome Plots Outperform Error Bars and Violin Plots for Inferences About Reliability of Variable Ordering. PLoS ONE 10(11): e0142444. 2015. DOI: 10.1371/journal.pone.0142444 :download:`pdf <ref/Hullman2015.pdf>`
 .. [Hackstadt1994] Steven T. Hackstadt and Allen D. Malony and Bernd Mohr. Scalable Performance Visualization for Data-Parallel Programs. IEEE. 1994. DOI: 10.1109/SHPCC.1994.296663 :download:`pdf <ref/Hackstadt1994.pdf>`
+.. [Wand1995] M.P. Wand and M.C. Jones. Kernel Smoothing. 1995. DOI: 10.1007/978-1-4899-4493-1 :download:`pdf <ref/Wand1995.pdf>`
+.. [Roy2017b] P.T. Roy et al.: Comparison of Polynomial Chaos and Gaussian Process surrogates for uncertainty quantification and correlation estimation of spatially distributed open-channel steady flows. SERRA. 2017. DOI: 10.1007/s00477-017-1470-4 :download:`pdf <ref/Roy2017b.pdf>`
 
 Acknowledgement
 ===============
@@ -130,6 +208,10 @@ We are gratefull to the help and support on OpenTURNS Michaël Baudin has provid
 
 Sources
 =======
+.. py:module:: visualization
+.. automodule:: batman.visualization.doe
+   :members:
+   :undoc-members:
 
 .. automodule:: batman.visualization.hdr
    :members:

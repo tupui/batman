@@ -95,9 +95,10 @@ class UQ:
         :class:`openturns.PythonFunction`.
 
         :param dict settings: The settings file.
-        :param class:`surrogate.surrogate_model.SurrogateModel` surrogate:
-        Surrogate model.
-        :param class:`space.space.Space` space: sample space (can be a list).
+        :param surrogate: Surrogate model.
+        :type surrogate: class:`batman.surrogate.surrogate_model.SurrogateModel`
+        :param space: sample space (can be a list).
+        :type space: class:`batman.space.space.Space`
         :param array_like data: Snapshot's data (n_samples, n_features).
         :param array_like xdata: 1D discretization of the function (n_features,).
         :param str fname: folder output path
@@ -284,7 +285,7 @@ class UQ:
         - `FAST`
 
         .. warning:: The second order indices are only available with the sobol
-        method.
+          method.
 
         And two types of computation are availlable for the global indices:
 

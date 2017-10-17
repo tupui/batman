@@ -50,8 +50,9 @@ class Refiner(object):
         Points data are scaled between ``[0, 1]`` based on the size of the
         corners taking into account a :param:``delta_space`` factor.
 
-        :param :class:`surrogate.surrogate_model.SurrogateModel` or
-        :class:`space.space.Space` data: Surrogate or space
+        :param data: Surrogate or space
+        :type data: :class:`batman.surrogate.surrogate_model.SurrogateModel` or
+          :class:`batman.space.space.Space`
         :param dict settings: parameters
         """
         if isinstance(data, bat.surrogate.SurrogateModel):
@@ -488,8 +489,9 @@ class Refiner(object):
         Uses all methods one after another to add new points.
         It uses the navigator defined within settings file.
 
-        :param lst(int) refined_pod_points: points' idx not to consider for extrema
-        :param :class:`batman.space.point.Point` point_loo: leave one out point
+        :param lst(int) refined_pod_points: points idx not to consider for extrema
+        :param point_loo: leave one out point
+        :type point_loo: :class:`batman.space.point.Point`
         :param str strategy: resampling method
         :return: The coordinate of the point to add
         :rtype: lst(float)

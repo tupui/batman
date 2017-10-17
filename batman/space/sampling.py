@@ -50,8 +50,8 @@ class Doe():
         :param int n_sample: number of samples.
         :param array_like bounds: Space's corners [[min, n dim], [max, n dim]]
         :param str/list kind: Sampling Method if string can be one of
-        ['halton', 'sobol', 'faure', 'lhs[c]', 'sobolscramble', 'uniform',
-        'discrete'] otherwize can be a list of openturns distributions.
+          ['halton', 'sobol', 'faure', 'lhs[c]', 'sobolscramble', 'uniform',
+          'discrete'] otherwize can be a list of openturns distributions.
         :param int var: Position of the discrete variable.
         :return: Sampling
         :rtype: lst(array)
@@ -145,10 +145,6 @@ class Doe():
         """Scrambled Sobol.
 
         Scramble function as in Owen (1997)
-
-        Reference:
-
-        .. [1] Saltelli, A., Chan, K., Scott, E.M., "Sensitivity Analysis"
         """
         # Generate sobol sequence
         self.sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(self.dim))

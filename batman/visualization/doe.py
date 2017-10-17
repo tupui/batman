@@ -114,7 +114,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
     :attr:`resampling`.
 
     :param array_like bounds: sample boundaries
-    ([min, n_features], [max, n_features]).
+        ([min, n_features], [max, n_features]).
     :param array_like sample: sample (n_samples, n_features).
     :param array_like data: function evaluations(n_samples, [n_features]).
     :param callable fun: function to plot the response from.
@@ -122,11 +122,11 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
     :param int resampling: number of resampling points.
     :param array_like xdata: 1D discretization of the function (n_features,).
     :param array_like axis_disc: discretisation of the sample on each axis
-    (n_features).
+        (n_features).
     :param str flabel: name of the quantity of interest.
     :param list(str) plabels: parameters' labels.
     :param array_like feat_order: order of features for multi-dimensional plot
-    (n_features).
+        (n_features).
     :param int ticks_nbr: number of color isolines for response surfaces.
     :param array_like contours: isocontour values to plot on response surface.
     :param str fname: wether to export to filename or display the figures.

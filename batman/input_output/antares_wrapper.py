@@ -3,7 +3,7 @@
 AntaresWrapper class
 ====================
 
-Manages IO with :module:`Antares`.
+Manages IO with *Antares*.
 
 See `Antares <http://www.cerfacs.fr/antares>`_ documentation for details.
 """
@@ -15,7 +15,7 @@ class AntaresWrapper(IOBase):
 
     """AntaresWrapper class.
 
-    Inherit from :clase:`IOBase`
+    Inherit from :class:`IOBase`
     """
 
     format = []

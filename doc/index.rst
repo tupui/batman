@@ -13,13 +13,13 @@ Contents:
    settings
    tutorial
    space
-   tasks
    surrogate
-   pod
    uq
    visualization
+   pod
    misc
    io
+   tasks
    functions
 
 Indices and tables

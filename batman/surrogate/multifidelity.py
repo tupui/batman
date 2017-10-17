@@ -33,7 +33,7 @@ class Evofusion(object):
         corresponds to the highest fidelity.
 
         :param array_like sample: The sample used to generate the data.
-        (fidelity, n_samples, n_features)
+          (fidelity, n_samples, n_features)
         :param array_like data: The observed data. (fidelity, n_samples, [n_features])
 
         """
