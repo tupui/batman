@@ -43,10 +43,15 @@ def test_point_evaluation():
 
 
 def test_space(settings_ishigami):
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['space']['sampling']['init_size'] = 10
-    test_settings['space']['resampling']['resamp_size'] = 6
-    space = Space(test_settings)
+    corners = settings_ishigami['space']['corners']
+    space = Space(corners)
+    assert space.max_points_nb == np.inf
+
+    space = Space(corners, sample=10)
+    assert space.max_points_nb == 10
+
+    space = Space(corners, sample=10, nrefine=6,
+                  p_lst=['x', 'y', 'z'])
 
     assert space.max_points_nb == 16
 
@@ -60,8 +65,12 @@ def test_space(settings_ishigami):
     assert space[:] == [(1, 2, 3), (1, 1, 3)]
 
     s1 = space.sampling()
-    space2 = Space(settings_ishigami)
+    assert len(s1) == 10
+    space2 = Space(corners,
+                   sample=settings_ishigami['space']['sampling']['init_size'],
+                   nrefine=settings_ishigami['space']['resampling']['resamp_size'])
     s2 = space2.sampling(10, kind='lhsc')
+    assert len(s2) == 10
     assert s1[:] != s2[:]
 
     space.empty()
@@ -78,25 +87,19 @@ def test_space(settings_ishigami):
     with pytest.raises(FullSpaceError):
         space.sampling(17)
 
-    test_settings = copy.deepcopy(test_settings)
-    test_settings['space'].pop('resampling')
-    space = Space(test_settings)
-    assert space.max_points_nb == 10
-
-    test_settings['space']['sampling'] = [(1, 2, 3), (1, 1, 3)]
-    space = Space(test_settings)
+    space = Space(corners, sample=np.array([(1, 2, 3), (1, 1, 3)]))
     assert space.doe_init == 2
     assert space.max_points_nb == 2
 
-    test_settings['space']['corners'][1] = [np.pi, -np.pi, np.pi]
+    corners[1] = [np.pi, -np.pi, np.pi]
     with pytest.raises(ValueError):
-        space = Space(test_settings)
+        space = Space(corners)
 
 
 def test_space_evaluation(settings_ishigami):
     f_3d = Ishigami()
-    space = Space(settings_ishigami)
-    space.sampling(2)
+    space = Space(settings_ishigami['space']['corners'])
+    space.sampling(2, 'halton')
     targets_space = f_3d(space)
     f_data_base = np.array([5.25, 4.2344145]).reshape(2, 1)
     npt.assert_almost_equal(targets_space, f_data_base)
@@ -161,8 +164,7 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2']
     test_settings['snapshot']['provider'] = f_2d
     space.empty()
-    space.settings['space']['sampling']['method'] = 'halton'
-    space.sampling(5)
+    space.sampling(5, 'halton')
 
     Snapshot.initialize(test_settings['snapshot']['io'])
     surrogate = SurrogateModel('kriging', space.corners)
@@ -246,10 +248,9 @@ def test_resampling(tmp, branin_data, settings_ishigami):
 
 
 def test_discrepancy(settings_ishigami):
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['space']['corners'] = [[0.5, 0.5], [6.5, 6.5]]
-    space_1 = Space(test_settings)
-    space_2 = Space(test_settings)
+    corners = [[0.5, 0.5], [6.5, 6.5]]
+    space_1 = Space(corners)
+    space_2 = Space(corners)
 
     space_1 += [[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]]
     space_2 += [[1, 5], [2, 4], [3, 3], [4, 2], [5, 1], [6, 6]]
