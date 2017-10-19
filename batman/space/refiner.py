@@ -44,7 +44,7 @@ class Refiner(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, data, settings):
+    def __init__(self, data, corners, delta_space=0.08, discrete=False):
         """Initialize the refiner with the Surrogate and space corners.
 
         Points data are scaled between ``[0, 1]`` based on the size of the
@@ -53,7 +53,7 @@ class Refiner(object):
         :param data: Surrogate or space
         :type data: :class:`batman.surrogate.surrogate_model.SurrogateModel` or
           :class:`batman.space.space.Space`
-        :param dict settings: parameters
+
         """
         if isinstance(data, bat.surrogate.SurrogateModel):
             self.surrogate = data
@@ -71,17 +71,9 @@ class Refiner(object):
         self.space = self.surrogate.space
         self.points = copy.deepcopy(self.space[:])
 
-        self.settings_full = settings
-        self.settings = settings['space']
+        self.discrete = discrete
 
-        try:
-            self.discrete = True if self.settings['sampling']['method']\
-                == 'discrete' else False
-        except KeyError:
-            self.discrete = False
-
-        self.corners = np.array(self.settings['corners']).T
-        delta_space = self.settings['resampling']['delta_space']
+        self.corners = np.array(corners).T
         self.dim = len(self.corners)
 
         # Inner delta space contraction: delta_space * 2 factor
@@ -322,7 +314,6 @@ class Refiner(object):
         min_x, _ = func_sigma()
 
         return min_x
-        # return result.x
 
     def leave_one_out_sigma(self, point_loo):
         """Mixture of Leave-one-out and Sigma.
@@ -351,7 +342,7 @@ class Refiner(object):
 
         return point
 
-    def leave_one_out_sobol(self, point_loo):
+    def leave_one_out_sobol(self, point_loo, pdf):
         """Mixture of Leave-one-out and Sobol' indices.
 
         Same as function :func:`leave_one_out_sigma` but change the shape
@@ -367,7 +358,7 @@ class Refiner(object):
         point = np.array(point_loo)
 
         # Get Sobol' indices
-        analyse = UQ(self.settings_full, self.surrogate)
+        analyse = UQ(self.surrogate, pdf=pdf)
         indices = analyse.sobol()[2]
         indices = indices * (indices > 0)
         indices = preprocessing.normalize(indices.reshape(1, -1), norm='max')
@@ -483,7 +474,7 @@ class Refiner(object):
 
         return new_points, refined_pod_points
 
-    def hybrid(self, refined_pod_points, point_loo, method):
+    def hybrid(self, refined_pod_points, point_loo, method, pdf):
         """Composite resampling strategy.
 
         Uses all methods one after another to add new points.
@@ -505,7 +496,7 @@ class Refiner(object):
         elif method == 'loo_sigma':
             new_point = self.leave_one_out_sigma(point_loo)
         elif method == 'loo_sobol':
-            new_point = self.leave_one_out_sobol(point_loo)
+            new_point = self.leave_one_out_sobol(point_loo, pdf)
         elif method == 'extrema':
             new_point, refined_pod_points = self.extrema(refined_pod_points)
         elif method == 'discrepancy':

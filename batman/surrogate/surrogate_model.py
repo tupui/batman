@@ -66,10 +66,7 @@ class SurrogateModel(object):
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
-        settings = {"space": {
-            "corners": corners,
-            "sampling": {"init_size": np.inf, "method": kind}}}
-        self.space = Space(settings)
+        self.space = Space(corners)
         self.pod = None
         self.update = False  # switch: update model if POD update
         self.dir = {
@@ -86,6 +83,9 @@ class SurrogateModel(object):
                                 degree=self.settings['degree'],
                                 distributions=self.settings['distributions'],
                                 n_sample=self.settings['n_sample'])
+        elif self.kind == 'evofusion':
+            self.space.multifidelity = [self.settings['cost_ratio'],
+                                        self.settings['grand_cost']]
 
     def fit(self, points, data, pod=None):
         """Construct the surrogate.
@@ -113,7 +113,6 @@ class SurrogateModel(object):
             self.predictor.fit(points, data)
         elif self.kind == 'evofusion':
             self.predictor = Evofusion(points_scaled, data)
-            self.space.multifidelity = True
 
         self.pod = pod
         self.space.empty()

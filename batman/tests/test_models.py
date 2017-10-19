@@ -3,7 +3,6 @@ import os
 import pytest
 import numpy as np
 import numpy.testing as npt
-import matplotlib.pyplot as plt
 from batman.surrogate import (PC, Kriging, RBFnet, Evofusion, SurrogateModel)
 from batman.tasks import Snapshot
 from batman.tests.conftest import sklearn_q2
@@ -195,6 +194,7 @@ def test_evofusion(mufi_data):
     assert q2 == pytest.approx(1, 0.1)
 
     # # Plotting
+    # import matplotlib.pyplot as plt
     # x = np.linspace(0, 1, 200).reshape(-1, 1)
 
     # # Split into cheap and expensive arrays

@@ -154,39 +154,33 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     f_2d = branin_data.func
     space = branin_data.space
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['space']['sampling']['init_size'] = 5
-    test_settings['space']['sampling']['method'] = 'halton'
-    test_settings['space']['resampling']['method'] = 'sigma'
-    test_settings['space']['resampling']['resamp_size'] = 2
-    test_settings['space']['resampling']['delta_space'] = 0.1
-    test_settings['space']['corners'] = space.corners
-    test_settings['uq']['test'] = 'Branin'
     test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2']
-    test_settings['snapshot']['provider'] = f_2d
     space.empty()
     space.sampling(5, 'halton')
+    space.max_points_nb = 100
 
     Snapshot.initialize(test_settings['snapshot']['io'])
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, f_2d(space))
 
     # LOO tests on small set
-    refiner = Refiner(surrogate, test_settings)
+    refiner = Refiner(surrogate, space.corners, delta_space=0.1)
     point_loo = refiner.points[1]
     refiner.leave_one_out_sigma(point_loo)
-    refiner.leave_one_out_sobol(point_loo)
+    refiner.leave_one_out_sobol(point_loo, ['Uniform(-5, 0)',
+                                            'Uniform(10, 15)'])
 
     # Larger dataset to ensure stable results
     space.empty()
-    space.sampling(11)
+    space.sampling(11, 'halton')
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, f_2d(space))
     for _ in range(2):
-        space.refine(surrogate)
+        space.refine(surrogate, 'sigma')
         surrogate.fit(space, f_2d(space))
     assert len(space) == 13
 
-    refiner = Refiner(surrogate, test_settings)
+    refiner = Refiner(surrogate, space.corners, delta_space=0.1)
 
     sigma = refiner.sigma()
     optim_EI = refiner.optimization(method='EI')
@@ -200,7 +194,7 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     assert (base_sigma_disc != refiner.sigma_discrepancy([-0.1, 1.])).any()
 
     # Refiner without surrogate
-    refiner = Refiner(space, test_settings)
+    refiner = Refiner(surrogate, space.corners, delta_space=0.1)
     disc2 = refiner.discrepancy()
 
     print(sigma, optim_EI, optim_PI, disc, extrema, disc2)

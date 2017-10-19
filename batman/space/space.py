@@ -213,7 +213,8 @@ class Space(list):
         self.logger.info("Discrepancy is {}".format(self.discrepancy()))
         return self
 
-    def refine(self, surrogate, point_loo=None):
+    def refine(self, surrogate, method, point_loo=None, delta_space=0.08,
+               pdf=None, hybrid=None, discrete=False):
         """Refine the sample, update space points and return the new point(s).
 
         :param :class:`surrogate.surrogate_model.SurrogateModel` surrogate: surrogate
@@ -221,13 +222,12 @@ class Space(list):
         :rtype: :class:`space.point.Point` -> lst(tuple(float))
         """
         # Refinement strategy
-        if (self.refiner is None) and (self.settings['space']['resampling']['method'] == 'hybrid'):
-            strategy = [[m[0]] * m[1] for m in self.settings['space']['resampling']['hybrid']]
+        if (self.refiner is None) and (method == 'hybrid'):
+            strategy = [[m[0]] * m[1] for m in hybrid]
             self.hybrid = itertools.cycle(itertools.chain.from_iterable(strategy))
 
-        self.refiner = Refiner(surrogate, self.settings)
+        self.refiner = Refiner(surrogate, self.corners, delta_space, discrete)
 
-        method = self.settings['space']['resampling']['method']
         if method == 'sigma':
             new_point = self.refiner.sigma()
         elif method == 'discrepancy':
@@ -235,13 +235,14 @@ class Space(list):
         elif method == 'loo_sigma':
             new_point = self.refiner.leave_one_out_sigma(point_loo)
         elif method == 'loo_sobol':
-            new_point = self.refiner.leave_one_out_sobol(point_loo)
+            new_point = self.refiner.leave_one_out_sobol(point_loo, pdf)
         elif method == 'extrema':
             new_point, self.refined_pod_points = self.refiner.extrema(self.refined_pod_points)
         elif method == 'hybrid':
             new_point, self.refined_pod_points = self.refiner.hybrid(self.refined_pod_points,
                                                                      point_loo,
-                                                                     next(self.hybrid))
+                                                                     next(self.hybrid),
+                                                                     pdf)
         elif method == 'optimization':
             new_point = self.refiner.optimization()
         elif method == 'sigma_discrepancy':

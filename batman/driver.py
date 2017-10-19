@@ -66,7 +66,10 @@ class Driver(object):
         self.snapshot_counter = 0
 
         # Space
-        self.space = Space(self.settings)
+        self.space = Space(self.settings['space']['corners'],
+                           self.settings['space']['sampling']['init_size'],
+                           self.settings['space']['resampling']['resamp_size'],
+                           self.settings['snapshot']['io']['parameter_names'])
 
         # Snapshots
         Snapshot.initialize(self.settings['snapshot']['io'])
@@ -107,7 +110,8 @@ class Driver(object):
                 self.space += space_provider
             elif isinstance(space_provider, dict):
                 # use sampling method
-                self.to_compute_points = self.space.sampling(space_provider['init_size'])
+                self.to_compute_points = self.space.sampling(space_provider['init_size'],
+                                                             space_provider['method'])
             else:
                 self.logger.error('Bad space provider.')
                 raise SystemError
@@ -142,6 +146,12 @@ class Driver(object):
                 finally:
                     if not self.provider.is_file:
                         self.to_compute_points = sample[:len(self.space)]
+            elif self.settings['surrogate']['method'] == 'evofusion':
+                settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
+                             'grand_cost': self.settings['surrogate']['grand_cost']}
+                self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
+                                                self.settings['space']['corners'],
+                                                **settings_)
             else:
                 settings_ = {}
                 self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
@@ -251,8 +261,15 @@ class Driver(object):
             if quality >= self.settings['space']['resampling']['q2_criteria']:
                 break
 
+            pdf = self.settings['uq']['pdf'] if 'uq' in self.settings else None
+            hybrid = self.settings['space']['resampling']['hybrid']\
+                if 'hybrid' in self.settings['space']['resampling'] else None
+            discrete = True if self.settings['space']['sampling']['method']\
+                == 'discrete' else False
+
             try:
-                new_point = self.space.refine(self.surrogate, point_loo)
+                new_point = self.space.refine(self.surrogate, point_loo,
+                                              pdf, hybrid, discrete)
             except FullSpaceError:
                 break
 
@@ -351,8 +368,13 @@ class Driver(object):
         else:
             data = self.data
 
-        analyse = UQ(self.settings, self.surrogate,
-                     space=self.space, data=data, fname=output)
+        analyse = UQ(self.surrogate, nsample=self.settings['uq'],
+                     pdf=self.settings['uq']['pdf'],
+                     p_lst=self.settings['snapshot']['io']['parameter_names'],
+                     method=self.settings['uq']['method'],
+                     indices=self.settings['uq']['type'],
+                     space=self.space, data=data, fname=output,
+                     test=self.settings['uq']['test'])
 
         if self.surrogate is not None:
             analyse.sobol()
