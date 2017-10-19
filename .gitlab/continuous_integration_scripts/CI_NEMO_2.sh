@@ -23,7 +23,7 @@ if [ ${HOSTNAME:0:4} != 'nemo' ] && [ ${HOSTNAME:0:4} != 'node' ]; then
     done
     
     ssh roy@nemo "cat slurm-$nojob.out"
-    ssh roy@nemo "sacct --format=state -j $nojob | grep COMPLETED | tail -n 1"
+    ssh roy@nemo "sacct --format=state -j $nojob | grep COMPLETED"
     if [ $? -ne 0 ]; then
         exit 1
     else
