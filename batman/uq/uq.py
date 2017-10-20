@@ -77,8 +77,9 @@ class UQ:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, settings, surrogate, space=None, data=None, xdata=None,
-                 fname=None):
+    def __init__(self, surrogate, pdf=None, nsample=5000, p_lst=None,
+                 method='sobol', indices='aggregated', space=None, data=None,
+                 xdata=None, fname=None, test=None):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -104,28 +105,33 @@ class UQ:
         :param str fname: folder output path
         """
         self.logger.info("\n----- UQ module -----")
-        try:
-            self.test = settings['uq']['test']
-        except KeyError:
-            self.test = None
+        self.test = test
         self.fname = fname
-        try:
-            os.mkdir(fname)
-        except OSError:
-            self.logger.debug("Output folder already exists.")
-        except TypeError:
+
+        if self.fname is not None:
+            try:
+                os.mkdir(fname)
+            except OSError:
+                self.logger.debug("Output folder already exists.")
+            finally:
+                self.io = IOFormatSelector('fmt_tp_fortran')
+        else:
             self.logger.debug("Not using output folder.")
-        self.io = IOFormatSelector(settings['snapshot']['io']['format'])
+
         self.surrogate = surrogate
-        self.p_lst = settings['snapshot']['io']['parameter_names']
-        self.p_len = len(self.p_lst)
-        self.method_sobol = settings['uq']['method']
-        self.type_indices = settings['uq']['type']
+
+        self.p_len = len(pdf)
+        if p_lst is None:
+            self.p_lst = ["x" + str(i) for i in range(self.p_len)]
+        else:
+            self.p_lst = p_lst
+        self.method_sobol = method
+        self.type_indices = indices
         self.space = space
 
         # Generate samples
-        self.points_sample = settings['uq']['sample']
-        dists = ','.join(['ot.' + settings['uq']['pdf'][i]
+        self.points_sample = nsample
+        dists = ','.join(['ot.' + pdf[i]
                           for i in range(self.p_len)])
         self.distribution = eval("ot.ComposedDistribution([" + dists + "])")
         self.experiment = ot.LHSExperiment(self.distribution,
@@ -133,11 +139,6 @@ class UQ:
         self.sample = self.experiment.generate()
         self.logger.info("Created {} samples with an LHS experiment"
                          .format(self.points_sample))
-
-        try:
-            self.resamp_size = settings['space']['resampling']['resamp_size']
-        except KeyError:
-            self.resamp_size = 0
 
         try:
             # With surrogate model
@@ -153,7 +154,7 @@ class UQ:
             self.init_size = self.surrogate.space.doe_init
         except TypeError:
             self.sample = space
-            self.init_size = len(space) - self.resamp_size
+            self.init_size = len(space)
             self.output_len = data.shape[1]
             self.output = data
             self.points_sample = self.init_size
@@ -255,13 +256,10 @@ class UQ:
         # Write error to file model_err.dat
         if self.fname is not None:
             with open(os.path.join(self.fname, 'model_err.dat'), 'w') as f:
-                f.writelines("{} {} {} {} {} {} {}".format(self.init_size,
-                                                           self.resamp_size,
-                                                           err_q2,
-                                                           self.points_sample,
-                                                           s_l2_2nd,
-                                                           s_l2_1st,
-                                                           s_l2_total))
+                f.writelines("{} {} {} {} {} {}".format(self.init_size, err_q2,
+                                                        self.points_sample,
+                                                        s_l2_2nd, s_l2_1st,
+                                                        s_l2_total))
             # Visual tests
             if fun.d_out == 1:
                 # cobweb = ot.VisualTest.DrawCobWeb(self.sample, y_pred, y_min, y_max, 'red', False)

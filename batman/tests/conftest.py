@@ -67,8 +67,11 @@ def ishigami_data(settings_ishigami):
     data['dists'] = [x1] * 3
     data['point'] = Point([2.20, 1.57, 3])
     data['target_point'] = data['func'](data['point'])
-    data['space'] = Space(settings_ishigami)
-    data['space'].sampling(150)
+    data['space'] = Space(settings_ishigami['space']['corners'],
+                          settings_ishigami['space']['sampling']['init_size'],
+                          settings_ishigami['space']['resampling']['resamp_size'],
+                          settings_ishigami['snapshot']['io']['parameter_names'])
+    data['space'].sampling(150, settings_ishigami['space']['sampling']['method'])
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)
 
@@ -80,13 +83,11 @@ def branin_data(settings_ishigami):
     data['dists'] = [ot.Uniform(-5, 10), ot.Uniform(0, 15)]
     data['point'] = Point([2., 2.])
     data['target_point'] = data['func'](data['point'])
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['space']['corners'] = [[-7, 0], [10, 15]]
-    test_settings['space']['sampling']['method'] = 'discrete'
-    test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2']
-    data['space'] = Space(test_settings)
-    data['space'].sampling(10)
+    data['space'] = Space([[-7, 0], [10, 15]],
+                          settings_ishigami['space']['sampling']['init_size'],
+                          settings_ishigami['space']['resampling']['resamp_size'],
+                          ['x1', 'x2'])
+    data['space'].sampling(10, 'discrete')
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)
 
@@ -98,13 +99,11 @@ def g_function_data(settings_ishigami):
     data['dists'] = [ot.Uniform(0, 1)] * 4
     data['point'] = Point([0.5, 0.2, 0.7, 0.1])
     data['target_point'] = data['func'](data['point'])
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['space']['corners'] = [[0, 0, 0, 0], [1, 1, 1, 1]]
-    test_settings['space']['sampling']['method'] = 'discrete'
-    test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2', 'x3', 'x4']
-    data['space'] = Space(test_settings)
-    data['space'].sampling(10)
+    data['space'] = Space([[0, 0, 0, 0], [1, 1, 1, 1]],
+                          settings_ishigami['space']['sampling']['init_size'],
+                          settings_ishigami['space']['resampling']['resamp_size'],
+                          ['x1', 'x2', 'x3', 'x4'])
+    data['space'].sampling(10, 'discrete')
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)
 
@@ -118,11 +117,11 @@ def mascaret_data(settings_ishigami):
     data['dists'] = [x1, x2]
     data['point'] = [31.54, 4237.025]
     data['target_point'] = data['func'](data['point'])
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['space']['corners'] = [[15.0, 2500.0], [60, 6000.0]]
-    test_settings['snapshot']['io']['parameter_names'] = ['Ks', 'Q']
-    data['space'] = Space(test_settings)
-    data['space'].sampling(50)
+    data['space'] = Space([[15.0, 2500.0], [60, 6000.0]],
+                          settings_ishigami['space']['sampling']['init_size'],
+                          settings_ishigami['space']['resampling']['resamp_size'],
+                          ['Ks', 'Q'])
+    data['space'].sampling(50, settings_ishigami['space']['sampling']['method'])
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)
 
@@ -135,16 +134,11 @@ def mufi_data(settings_ishigami):
     data['dists'] = [ot.Uniform(0.0, 1.0)]
     data['point'] = [0.65]
     data['target_point'] = f_e(data['point'])
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['space']['corners'] = [[0.0], [1.0]]
-    test_settings['space']['sampling']['init_size'] = 10
-    test_settings['snapshot']['io']['parameter_names'] = ['fidelity', 'x']
-    test_settings['surrogate']['method'] = 'evofusion'
-    test_settings['surrogate']['cost_ratio'] = 5.1
-    test_settings['surrogate']['grand_cost'] = 13.0
-
-    data['space'] = Space(test_settings)
-    data['space'].sampling()
+    data['space'] = Space([[0.0], [1.0]],
+                          10,
+                          settings_ishigami['space']['resampling']['resamp_size'],
+                          ['fidelity', 'x'], multifidelity=[5.1, 13.0])
+    data['space'].sampling(10, 'halton')
 
     working_space = np.array(data['space'])
 

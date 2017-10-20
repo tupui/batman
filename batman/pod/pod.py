@@ -49,7 +49,14 @@ class Pod(Core):
         self.quality = None
         self.predictor = None
         self.corners = settings['space']['corners']
-        self.points = Space(settings)  # A space to record the points
+
+        if 'resampling' in settings['space']:
+            resamp_size = settings['space']['resampling']['resamp_size']
+        else:
+            resamp_size = 0
+        self.points = Space(self.corners,
+                            settings['space']['sampling']['init_size'],
+                            resamp_size)
 
         super(Pod, self).__init__(settings['pod']['tolerance'],
                                   settings['pod']['dim_max'])

@@ -58,45 +58,47 @@ class Space(list):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, settings):
+    def __init__(self, corners, sample=np.inf, nrefine=0, p_lst=None,
+                 multifidelity=None):
         """Generate a Space.
 
-        :param dict settings: space settings
+        :param array_like corners:
+        :param int/array_like sample:
+        :param bool refiner:
+        :param int nrefine: number of point to use for refinement.
+        :param list(str) p_lst: parameters' names.
+        :param list(float) multifidelity: Whether to consider the first
+          parameter as the fidelity level. It is a list of ['cost_ratio',
+          'grand_cost']
         """
-        self.settings = settings
-        try:
-            self.doe_init = settings['space']['sampling']['init_size']
-            self.doe_method = settings['space']['sampling']['method']
-        except TypeError:
-            self.doe_init = len(settings['space']['sampling'])
-            self.doe_method = None
-        if 'resampling' in settings['space']:
+        if isinstance(sample, (int, float)):
+            self.doe_init = sample
+        else:
+            self.doe_init = len(sample)
+
+        if nrefine > 0:
             self.refiner = None
-            self.max_points_nb = settings['space']['resampling']['resamp_size'] + self.doe_init
+            self.max_points_nb = nrefine + self.doe_init
         else:
             self.max_points_nb = self.doe_init
-        corners = settings['space']['corners']
+
         self.dim = len(corners[0])
-        self.multifidelity = False
+        self.multifidelity = multifidelity
 
         # Multifidelity configuration
-        try:
-            if settings['surrogate']['method'] == 'evofusion':
-                self.multifidelity = True
-                self.doe_cheap = self.cheap_doe_from_expensive(self.doe_init)
-                self.logger.info('Multifidelity with Ne: {} and Nc: {}'
-                                 .format(self.doe_init, self.doe_cheap))
-        except KeyError:
-            pass
+        if multifidelity is not None:
+            self.doe_cheap = self._cheap_doe_from_expensive(self.doe_init)
+            self.logger.info('Multifidelity with Ne: {} and Nc: {}'
+                             .format(self.doe_init, self.doe_cheap))
 
         # create parameter list and omit fidelity if relevent
-        try:
-            self.p_lst = settings['snapshot']['io']['parameter_names']
+        if p_lst is not None:
+            self.p_lst = p_lst
             try:
                 self.p_lst.remove('fidelity')
             except ValueError:
                 pass
-        except KeyError:
+        else:
             self.p_lst = ["x" + str(i) for i in range(self.dim)]
 
         # corner points
@@ -171,7 +173,7 @@ class Space(list):
                                    .format(point))
         return self
 
-    def sampling(self, n=None, kind=None):
+    def sampling(self, n=None, kind='halton'):
         """Create point samples in the parameter space.
 
         Minimum number of samples for halton and sobol : 4
@@ -183,12 +185,10 @@ class Space(list):
         :return: List of points
         :rtype: self
         """
-        if kind is None:
-            kind = self.doe_method
         if self.multifidelity and n is None:
-            n = self.cheap_doe_from_expensive(self.doe_init)
+            n = self._cheap_doe_from_expensive(self.doe_init)
         elif self.multifidelity and n is not None:
-            n = self.cheap_doe_from_expensive(n)
+            n = self._cheap_doe_from_expensive(n)
         elif not self.multifidelity and n is None:
             n = self.doe_init
 
@@ -212,7 +212,8 @@ class Space(list):
         self.logger.info("Discrepancy is {}".format(self.discrepancy()))
         return self
 
-    def refine(self, surrogate, point_loo=None):
+    def refine(self, surrogate, method, point_loo=None, delta_space=0.08,
+               pdf=None, hybrid=None, discrete=False):
         """Refine the sample, update space points and return the new point(s).
 
         :param :class:`surrogate.surrogate_model.SurrogateModel` surrogate: surrogate
@@ -220,13 +221,12 @@ class Space(list):
         :rtype: :class:`space.point.Point` -> lst(tuple(float))
         """
         # Refinement strategy
-        if (self.refiner is None) and (self.settings['space']['resampling']['method'] == 'hybrid'):
-            strategy = [[m[0]] * m[1] for m in self.settings['space']['resampling']['hybrid']]
+        if (self.refiner is None) and (method == 'hybrid'):
+            strategy = [[m[0]] * m[1] for m in hybrid]
             self.hybrid = itertools.cycle(itertools.chain.from_iterable(strategy))
 
-        self.refiner = Refiner(surrogate, self.settings)
+        self.refiner = Refiner(surrogate, self.corners, delta_space, discrete)
 
-        method = self.settings['space']['resampling']['method']
         if method == 'sigma':
             new_point = self.refiner.sigma()
         elif method == 'discrepancy':
@@ -234,13 +234,14 @@ class Space(list):
         elif method == 'loo_sigma':
             new_point = self.refiner.leave_one_out_sigma(point_loo)
         elif method == 'loo_sobol':
-            new_point = self.refiner.leave_one_out_sobol(point_loo)
+            new_point = self.refiner.leave_one_out_sobol(point_loo, pdf)
         elif method == 'extrema':
             new_point, self.refined_pod_points = self.refiner.extrema(self.refined_pod_points)
         elif method == 'hybrid':
             new_point, self.refined_pod_points = self.refiner.hybrid(self.refined_pod_points,
                                                                      point_loo,
-                                                                     next(self.hybrid))
+                                                                     next(self.hybrid),
+                                                                     pdf)
         elif method == 'optimization':
             new_point = self.refiner.optimization()
         elif method == 'sigma_discrepancy':
@@ -266,15 +267,14 @@ class Space(list):
         """Return whether the maximum number of points is reached."""
         return len(self) >= self.max_points_nb
 
-    def cheap_doe_from_expensive(self, n):
+    def _cheap_doe_from_expensive(self, n):
         """Compute the number of points required for the cheap DOE.
 
         :param int n: size of the expensive design
         :return: size of the cheap design
         :rtype: int
         """
-        doe_cheap = (self.settings['surrogate']['grand_cost'] - n)\
-            * self.settings['surrogate']['cost_ratio']
+        doe_cheap = (self.multifidelity[1] - n) * self.multifidelity[0]
         doe_cheap = int(doe_cheap)
         if doe_cheap / float(n) <= 1:
             self.logger.error('Nc/Ne must be positive')
