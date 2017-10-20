@@ -138,7 +138,7 @@ def mufi_data(settings_ishigami):
                           10,
                           settings_ishigami['space']['resampling']['resamp_size'],
                           ['fidelity', 'x'], multifidelity=[5.1, 13.0])
-    data['space'].sampling('evofusion')
+    data['space'].sampling(10, 'halton')
 
     working_space = np.array(data['space'])
 

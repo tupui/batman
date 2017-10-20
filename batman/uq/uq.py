@@ -123,6 +123,8 @@ class UQ:
         self.p_len = len(pdf)
         if p_lst is None:
             self.p_lst = ["x" + str(i) for i in range(self.p_len)]
+        else:
+            self.p_lst = p_lst
         self.method_sobol = method
         self.type_indices = indices
         self.space = space

@@ -91,9 +91,10 @@ def test_space(settings_ishigami):
     assert space.doe_init == 2
     assert space.max_points_nb == 2
 
-    corners[1] = [np.pi, -np.pi, np.pi]
+    test_settings = copy.deepcopy(settings_ishigami)
+    test_settings['space']['corners'][1] = [np.pi, -np.pi, np.pi]
     with pytest.raises(ValueError):
-        space = Space(corners)
+        space = Space(test_settings['space']['corners'])
 
 
 def test_space_evaluation(settings_ishigami):

@@ -24,7 +24,7 @@ python_linter:
     - conda remove -yq --name bat_ci_$commit --all &
     - if [[ "$lint_res" > "9.5" ]]; then exit 0; else exit 1; fi
 
-nemo_testing_python_3:
+.nemo_template_python_3: &nemo_template_python_3
   stage: test
   tags:
     - sshroy.spike.batman
@@ -35,6 +35,19 @@ nemo_testing_python_3:
     - tar -cf batman_ci.tar batman
     - rsync batman_ci.tar $scriptdir/CI_NEMO.sh roy@nemo:.ci_batman_$commit
     - bash $scriptdir/CI_NEMO.sh $commit
+
+nemo_python_3:
+  <<: *nemo_template_python_3
+  only:
+    - master
+    - develop
+
+nemo_python_3_feature_branch:
+  <<: *nemo_template_python_3
+  when: manual
+  except:
+    - master
+    - develop
 
 nemo_testing_python_2:
   stage: test

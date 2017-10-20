@@ -83,11 +83,10 @@ class Space(list):
             self.max_points_nb = self.doe_init
 
         self.dim = len(corners[0])
-        self.multifidelity = False
+        self.multifidelity = multifidelity
 
         # Multifidelity configuration
         if multifidelity is not None:
-            self.multifidelity = multifidelity
             self.doe_cheap = self._cheap_doe_from_expensive(self.doe_init)
             self.logger.info('Multifidelity with Ne: {} and Nc: {}'
                              .format(self.doe_init, self.doe_cheap))

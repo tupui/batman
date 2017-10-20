@@ -65,7 +65,7 @@ def test_init(tmp, case='Michalewicz'):
         check_output(tmp)
 
 
-def test_no_pod(tmp, case='Michalewicz'):
+def test_no_model(tmp, case='Michalewicz'):
     init_case(tmp, case)
     sys.argv = ['batman', 'settings.json', '-n', '-o', tmp]
     batman.ui.main()

@@ -66,9 +66,13 @@ class Driver(object):
         self.snapshot_counter = 0
 
         # Space
+        if 'resampling' in self.settings['space']:
+            resamp_size = self.settings['space']['resampling']['resamp_size']
+        else:
+            resamp_size = 0
         self.space = Space(self.settings['space']['corners'],
                            self.settings['space']['sampling']['init_size'],
-                           self.settings['space']['resampling']['resamp_size'],
+                           resamp_size,
                            self.settings['snapshot']['io']['parameter_names'])
 
         # Snapshots
@@ -117,9 +121,9 @@ class Driver(object):
                 raise SystemError
 
         # Pod
-        try:
+        if 'pod' in self.settings:
             self.pod = Pod(self.settings)
-        except KeyError:
+        else:
             self.pod = None
             self.logger.info('No POD is computed.')
 
@@ -266,10 +270,16 @@ class Driver(object):
                 if 'hybrid' in self.settings['space']['resampling'] else None
             discrete = True if self.settings['space']['sampling']['method']\
                 == 'discrete' else False
+            delta_space = self.settings['space']['resampling']['delta_space']
+            method = self.settings['space']['resampling']['method']
 
             try:
-                new_point = self.space.refine(self.surrogate, point_loo,
-                                              pdf, hybrid, discrete)
+                new_point = self.space.refine(self.surrogate,
+                                              method,
+                                              point_loo=point_loo,
+                                              delta_space=delta_space,
+                                              pdf=pdf, hybrid=hybrid,
+                                              discrete=discrete)
             except FullSpaceError:
                 break
 
@@ -368,13 +378,15 @@ class Driver(object):
         else:
             data = self.data
 
-        analyse = UQ(self.surrogate, nsample=self.settings['uq'],
+        test = self.settings['uq']['test'] if 'test' in self.settings['uq'] else None
+
+        analyse = UQ(self.surrogate, nsample=self.settings['uq']['sample'],
                      pdf=self.settings['uq']['pdf'],
                      p_lst=self.settings['snapshot']['io']['parameter_names'],
                      method=self.settings['uq']['method'],
                      indices=self.settings['uq']['type'],
                      space=self.space, data=data, fname=output,
-                     test=self.settings['uq']['test'])
+                     test=test)
 
         if self.surrogate is not None:
             analyse.sobol()
