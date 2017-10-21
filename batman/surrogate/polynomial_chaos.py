@@ -60,17 +60,15 @@ class PC(object):
 
         if stieltjes:
             # Tend to result in performance issue
-            basis = ot.OrthogonalProductPolynomialFactory(
+            self.basis = ot.OrthogonalProductPolynomialFactory(
                 [ot.StandardDistributionPolynomialFactory(ot.AdaptiveStieltjesAlgorithm(marginal))
                  for marginal in distributions], enumerateFunction)
         else:
-            basis = ot.OrthogonalProductPolynomialFactory(
+            self.basis = ot.OrthogonalProductPolynomialFactory(
                 [ot.StandardDistributionPolynomialFactory(margin)
                  for margin in distributions], enumerateFunction)
 
-        self.trunc_strategy = ot.FixedStrategy(
-            basis,
-            enumerateFunction.getStrataCumulatedCardinal(degree))
+        self.n_basis = enumerateFunction.getStrataCumulatedCardinal(degree)
 
         # Strategy choice for expansion coefficient determination
         self.strategy = strategy
@@ -84,7 +82,7 @@ class PC(object):
             # marginal degree definition
             # by default: the marginal degree for each input random
             # variable is set to the total polynomial degree 'degree'+1
-            measure = basis.getMeasure()
+            measure = self.basis.getMeasure()
             degrees = [degree + 1] * in_dim
 
             self.proj_strategy = ot.IntegrationStrategy(
@@ -111,8 +109,10 @@ class PC(object):
         sample_arg = np.all(np.isin(sample_, self.sample), axis=1)
         weights = np.array(self.weights)[sample_arg]
 
+        trunc_strategy = ot.FixedStrategy(self.basis, self.n_basis)
+
         pc_algo = ot.FunctionalChaosAlgorithm(sample, weights, data,
-                                              self.dist, self.trunc_strategy,
+                                              self.dist, trunc_strategy,
                                               self.proj_strategy)
         ot.Log.Show(ot.Log.ERROR)
         pc_algo.run()
