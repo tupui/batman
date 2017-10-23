@@ -164,12 +164,12 @@ As the design being nested, the number of cheap experiments must be strictly sup
 References
 ----------
 
-.. [Krige1989] D.G. Krige, et al. “Early South African geostatistical techniques in today’s perspective”. Geostatistics 1. 1989. :download:`pdf <ref/Krige1989.pdf>`
-.. [Matheron1963] G. Matheron. “Principles of Geostatistics”. Economic Geology 58. 1963. :download:`pdf <ref/Matheron1963.pdf>`
-.. [Robinson1991] G.K.Robinson.“That BLUP is a good thing: the estimation of random effects”. Statistical Science 6.1. 1991. DOI: 10.1214/ss/1177011926. :download:`pdf <ref/Robinson1991.pdf>`
-.. [Bohling2005] G. Bohling. "Kriging". Tech.rep. 2005. :download:`pdf <ref/Bohling2005.pdf>`
-.. [Forrester2006] Forrester, Alexander I.J, et al. "Optimization using surrogate models and partially converged computational fluid dynamics simulations". Proceedings of the Royal Society A: Mathematical, Physical and Engineering Science. 2006. DOI: 10.1098/rspa.2006.1679 :download:`pdf <ref/Forrester2006.pdf>`
-.. [Forrester2009] Forrester and A.J. Keane.“Recent advances in surrogate-based optimization”. Progress in Aerospace Sciences 2009. DOI: 10.1016/j.paerosci.2008.11.001 :download:`pdf <ref/Forrester2009.pdf>`
+.. [Krige1989] D.G. Krige, et al. “Early South African geostatistical techniques in today’s perspective”. Geostatistics 1. 1989. 
+.. [Matheron1963] G. Matheron. “Principles of Geostatistics”. Economic Geology 58. 1963. 
+.. [Robinson1991] G.K.Robinson.“That BLUP is a good thing: the estimation of random effects”. Statistical Science 6.1. 1991. DOI: 10.1214/ss/1177011926. 
+.. [Bohling2005] G. Bohling. "Kriging". Tech.rep. 2005. 
+.. [Forrester2006] Forrester, Alexander I.J, et al. "Optimization using surrogate models and partially converged computational fluid dynamics simulations". Proceedings of the Royal Society A: Mathematical, Physical and Engineering Science. 2006. DOI: 10.1098/rspa.2006.1679 
+.. [Forrester2009] Forrester and A.J. Keane.“Recent advances in surrogate-based optimization”. Progress in Aerospace Sciences 2009. DOI: 10.1016/j.paerosci.2008.11.001 
 
 Sources
 -------

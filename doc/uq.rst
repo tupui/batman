@@ -77,12 +77,12 @@ Hence the need of a surrogate model (see :ref:`Surrogate <surrogate>`).
 References
 ==========
 
-.. [iooss2015] Iooss B. and Saltelli A.: Introduction to Sensitivity Analysis. Handbook of UQ. 2015. DOI: 10.1007/978-3-319-11259-6_31-1 :download:`pdf <ref/Iooss2015.pdf>`
-.. [ferretti2016] Ferretti F. and Saltelli A. et al.: Trends in sensitivity analysis practice in the last decade. Science of the Total Environment. 2016. DOI: 10.1016/j.scitotenv.2016.02.133 :download:`pdf <ref/Ferretti2016.pdf>`
-.. [Sobol1993] Sobol' I.M. Sensitivity analysis for nonlinear mathematical models. Mathematical Modeling and Computational Experiment. 1993. :download:`pdf <ref/Sobol1993.pdf>`
-.. [iooss2010] Iooss B. et al.: Numerical studies of the metamodel fitting and validation processes. International Journal on Advances in Systems and Measurements. 2010 :download:`pdf <ref/Iooss2010.pdf>`
-.. [marrel2015] Marrel A. et al.: Sensitivity Analysis of Spatial and/or Temporal Phenomena. Handbook of Uncertainty Quantification. 2015. DOI: 10.1007/978-3-319-11259-6_39-1 :download:`pdf <ref/Marrel2015.pdf>`
-.. [baudin2016] Baudin M. et al.: Numerical stability of Sobol’ indices estimation formula. 8th International Conference on Sensitivity Analysis of Model Output. 2016. :download:`pdf <ref/Baudin2016.pdf>`
+.. [iooss2015] Iooss B. and Saltelli A.: Introduction to Sensitivity Analysis. Handbook of UQ. 2015. DOI: 10.1007/978-3-319-11259-6_31-1 
+.. [ferretti2016] Ferretti F. and Saltelli A. et al.: Trends in sensitivity analysis practice in the last decade. Science of the Total Environment. 2016. DOI: 10.1016/j.scitotenv.2016.02.133 
+.. [Sobol1993] Sobol' I.M. Sensitivity analysis for nonlinear mathematical models. Mathematical Modeling and Computational Experiment. 1993. 
+.. [iooss2010] Iooss B. et al.: Numerical studies of the metamodel fitting and validation processes. International Journal on Advances in Systems and Measurements. 2010 
+.. [marrel2015] Marrel A. et al.: Sensitivity Analysis of Spatial and/or Temporal Phenomena. Handbook of Uncertainty Quantification. 2015. DOI: 10.1007/978-3-319-11259-6_39-1 
+.. [baudin2016] Baudin M. et al.: Numerical stability of Sobol’ indices estimation formula. 8th International Conference on Sensitivity Analysis of Model Output. 2016. 
 
 Sources
 =======

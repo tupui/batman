@@ -4,7 +4,7 @@ Welcome to BATMAN's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    readme_link
    changes_link
@@ -29,3 +29,7 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+About
+=====
+
+See :ref:`about`.

@@ -10,24 +10,11 @@
 
 .. image:: https://img.shields.io/badge/release-v1.6_Selina-blue.svg
 
+
 BATMAN
 ======
 
-:Authors: 
-    Pamphile Roy,
-    Romain Dupuis,
-    Jean-Christophe Jouhaud,
-    Marc Montagnac,
-    Jean-François Boussuge,
-    Florent Duchaine,
-    Melanie Rochoux,
-    Sophie Ricci.
-
-
-What is BATMAN?
----------------
-
-**BATMAN** stands for Bayesian Analysis Tool for Modelling And uNcertainty quantification.
+**BATMAN** stands for Bayesian Analysis Tool for Modelling and uncertAinty quaNtification.
 It aims at:
 
 - Build a metamodel for design, optimization and database exchange (loads, MDO, identification),
@@ -52,7 +39,7 @@ within the respectives ``README.rst`` file. A detailled example can be found in
 Aside from the documentation folder, the HTML documentation is available
 `here <http://open-source.pg.cerfacs.fr/batman/>`_.
 
-Shoud you be interested by BATMAN's implementation, consider
+Shoud you be interested by batman's implementation, consider
 reading :ref:`introduction`.
 
 If you encounter a bug (or have a feature request), please report it via
@@ -61,7 +48,7 @@ falling but "Why do we fall sir? So we can learn to pick ourselves up".
 
 Last but not least, if you consider contributing check-out :ref:`contributing`.
 
-Happy BATMAN.
+Happy batman.
 
 How to get it?
 --------------
@@ -120,16 +107,16 @@ Using the latest python version is prefered! Then to install::
     python setup.py build_sphinx
 
 The latter is optionnal as it build the documentation. The testing part is also
-optionnal but is recommanded. (~20mins).
+optionnal but is recommanded. (<30mins).
 
 .. note:: If you don't have install priviledge, add ``--user`` option after install.
     But the simplest way might be to use a conda environment.
 
-Finally, to install the optionnal package ``Antares``::
+Finally, if you want to install the optionnal package ``Antares``::
 
     pip install --editable .[antares] --process-dependency-links
 
-If BATMAN has been correctly installed, you should be able to call it simply::
+If batman has been correctly installed, you should be able to call it simply::
 
     batman -h
 
@@ -147,19 +134,20 @@ Otherwize (if you want Python 3 for instance) you can create your ``conda`` envi
 Then you can install all packages without ``root`` access. You can access
 the newly created environment with ``source activate bat_env``.
 
-.. note:: If using *NEMO* with Python 2.7::
+Help and Support
+----------------
 
-        module purge
-        module load openmpi/184_gcc
-        module load python/2.7
-        module load python/2.7-shared
-        module load application/openturns/1.7
+About us
+........
 
-    The last version of OpenTURNS can be loaded **after install** using instead::
+See authors and project history at: :ref:`about`.
 
-        module purge
-        module load python/2.7
-        module load python/2.7-shared
-        module load python/miniconda2.7
+Communication
+.............
 
-    .. warning:: You cannot load application/openturns/1.7 and python/miniconda2.7 at the same time.
+- IRC channel: ``#batman`` at ``cerfacs.slack.com``
+
+Citation
+........
+
+If you use batman in a scientific publication, we would appreciate :ref:`citations <citing-batman>`.

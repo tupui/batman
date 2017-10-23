@@ -92,6 +92,30 @@ If you want to add a modification, create a new branch branching off ``develop``
 Then you can create a merge request on *gitlab*. From here, the fun beggins.
 You can commit any change you feel, start discussions about it, etc.
 
+1. Clone this copy to your local disk::
+
+        $ git clone git@nitrox.cerfacs.fr:open-source/batman.git
+
+2. Create a branch to hold your changes::
+
+        $ git checkout -b my-feature
+
+   and start making changes. Never work in the ``master`` branch!
+
+3. Work on this copy, on your computer, using Git to do the version
+   control. When you're done editing, do::
+
+        $ git add modified_files
+        $ git commit
+
+   to record your changes in Git, then push them to GitHub with::
+
+        $ git push -u origin my-feature
+
+4. Finally, follow `these <https://docs.gitlab.com/ee/gitlab-basics/add-merge-request.html>`_
+   instructions to create a merge request from your fork. This will send an
+   email to the committers.
+
 Your request will only be considered for integration if in a **finished** state: 
 
 0. Respect python coding rules,
