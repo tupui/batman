@@ -95,10 +95,11 @@ class Kriging(object):
             self.n_cpu = n_cpu_system // self.n_restart
 
         def model_fitting(column):
-            """Fit an instance of :claa:`sklearn.GaussianProcessRegressor`."""
+            """Fit an instance of :class:`sklearn.GaussianProcessRegressor`."""
             gp = GaussianProcessRegressor(kernel=self.kernel,
                                           n_restarts_optimizer=0,
-                                          optimizer=self._optim_evolution)
+                                          optimizer=self._optim_evolution,
+                                          normalize_y=True)
             data = gp.fit(sample, column)
             hyperparameter = np.exp(gp.kernel_.theta)
 
