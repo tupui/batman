@@ -1,5 +1,5 @@
 .. _space:
-.. py:module:: space
+.. currentmodule:: batman.space
 
 Sampling the Space of Parameters
 ================================
@@ -10,10 +10,8 @@ Design of Experiments
 
 Whatever method is used, the first step consists in defining how we are going to modify input variables to retrieve the evolution of the response surface. This is called a Design of Experiments (DoE) as defined by [Sacks1989]_. The parameter space is called a ``Space``::
 
-    settings = {"space": {
-                "corners": [[1, 1], [3, 3]],
-                "sampling": {"init_size": 10, "method": "halton"}}}
-    space = batman.space.Space(settings)
+    space = batman.space.Space([[1, 1], [3, 3]])
+    space.sampling(10, 'halton')
     space.write('.')
 
 .. image:: ./fig/halton_25.pdf
@@ -96,23 +94,3 @@ References
 .. [Scheidt] C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptative de réponses non régulières par Krigeage et plans d'expériences, Application à la quantification des incertitudes en ingénierie des réservoirs pétroliers. Université Louis Pasteur. 2006 
 .. [Roy2017] P.T. Roy et al.: Resampling Strategies to Improve Surrogate Model-based Uncertainty Quantification - Application to LES of LS89. IJNMF. 2017 
 .. [Jones1998] D. Jones et al.: Efficient Global Optimization of Expensive Black-Box Functions. Journal of Global Optimization 1998. DOI: 10.1023/a:1008306431147 
-
-Sources
--------
-
-.. automodule:: batman.space.point
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.space.space
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.space.sampling
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.space.refiner
-   :members:
-   :undoc-members:
-

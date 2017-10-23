@@ -119,6 +119,7 @@ def test_hdr_multiple_alpha(mock_show):
     hdr.plot()
 
 
+@pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
 def test_hdr_threshold():
     hdr = HdrBoxplot(data, alpha=[0.8], threshold=0.93)
     labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)
@@ -126,6 +127,7 @@ def test_hdr_threshold():
     npt.assert_equal([1982, 1983, 1997, 1998], outliers)
 
 
+@pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
 def test_hdr_outliers_method():
     hdr = HdrBoxplot(data, threshold=0.93, outliers_method='forest')
     labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)

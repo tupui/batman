@@ -17,10 +17,7 @@ Contents:
    uq
    visualization
    pod
-   misc
-   io
-   tasks
-   functions
+   api
 
 Indices and tables
 ==================

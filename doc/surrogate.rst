@@ -1,5 +1,5 @@
 .. _surrogate:
-.. py:module:: surrogate
+.. currentmodule:: batman.surrogate
 
 Surrogate model
 ===============
@@ -170,30 +170,3 @@ References
 .. [Bohling2005] G. Bohling. "Kriging". Tech.rep. 2005. 
 .. [Forrester2006] Forrester, Alexander I.J, et al. "Optimization using surrogate models and partially converged computational fluid dynamics simulations". Proceedings of the Royal Society A: Mathematical, Physical and Engineering Science. 2006. DOI: 10.1098/rspa.2006.1679 
 .. [Forrester2009] Forrester and A.J. Keane.“Recent advances in surrogate-based optimization”. Progress in Aerospace Sciences 2009. DOI: 10.1016/j.paerosci.2008.11.001 
-
-Sources
--------
-
-.. automodule:: batman.surrogate.surrogate_model
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.surrogate.kriging
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.surrogate.polynomial_chaos
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.surrogate.RBFnet
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.surrogate.TreeCut
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.surrogate.multifidelity
-   :members:
-   :undoc-members:

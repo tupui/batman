@@ -1,7 +1,7 @@
 .. _introduction:
 
-BATMAN introduction
-===================
+Introduction
+============
 
 A surrogate tool
 ----------------
@@ -51,10 +51,10 @@ The package is composed of several python modules which are self contained withi
 Following is a quick reference:
 
 * :py:mod:`ui`: command line interface,
-* :py:mod:`space`: defines the (re)sampling space,
+* :mod:`space`: defines the (re)sampling space,
 * :py:mod:`surrogate`: constructs the surrogate model,
 * :py:mod:`uq`: uncertainty quantification,
-* :py:mod:`visualization`: uncertainty visualization,
+* :mod:`visualization`: uncertainty visualization,
 * :py:mod:`pod`: constructs the POD,
 * :py:mod:`driver`: contains the main functions,
 * :py:mod:`tasks`: defines the context to compute each snapshot from,

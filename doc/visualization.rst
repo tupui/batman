@@ -1,4 +1,5 @@
 .. _visualization:
+.. currentmodule:: batman.visualization
 
 Uncertainty Visualization
 *************************
@@ -7,27 +8,27 @@ Be able to visualize uncertainty is often neglected but it is a challenging topi
 Depending on the number of input parameters and the dimension of the quantitie of interest,
 there are several options implemented in the package.
 
-+---------------------------------------------------+----------------------------+---------------------------------------+
-|                 Function or class                 | Dimensionality             | Description                           |
-+                                                   +----------------------------+                                       +
-|                                                   | Input     | Output         |                                       |
-+---------------------------------------------------+-----------+----------------+---------------------------------------+
-| :func:`batman.visualization.doe.doe`              | n-scalar  | scalar, vector | Design of Experiment                  |
-+---------------------------------------------------+-----------+----------------+---------------------------------------+
-| :func:`batman.visualization.doe.response_surface` | <5 scalar | scalar, vector | Response surface (fig or movies)      |
-+---------------------------------------------------+-----------+----------------+---------------------------------------+
-| :class:`batman.visualization.hdr.HdrBoxplot`      | vector    | vector         | Median realization with PCA           |
-+---------------------------------------------------+-----------+----------------+---------------------------------------+
-| :class:`batman.visualization.kiviat.Kiviat3D`     | >3 scalar | scalar, vector | 3D version of the radar/spider plot   |
-+---------------------------------------------------+-----------+----------------+---------------------------------------+
-| :func:`batman.visualization.uncertainty.pdf`      |           | scalar, vector | Output PDF                            |
-+---------------------------------------------------+-----------+----------------+---------------------------------------+
-| :func:`batman.visualization.uncertainty.corr_cov` | scalar    | vector         | Correlation of the inputs and outputs |
-+---------------------------------------------------+-----------+----------------+---------------------------------------+
-| :func:`batman.visualization.uncertainty.sobol`    | scalar    | scalar, vector | Sensitivity indices                   |
-+---------------------------------------------------+-----------+----------------+---------------------------------------+
++----------------------------------+----------------------------+---------------------------------------+
+|        Function or class         |       Dimensionality       |            Description                |
++                                  +----------------------------+                                       +
+|                                  | Input     | Output         |                                       |
++----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`doe.doe`                  | n-scalar  | scalar, vector | Design of Experiment                  |
++----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`doe.response_surface`     | <5 scalar | scalar, vector | Response surface (fig or movies)      |
++----------------------------------+-----------+----------------+---------------------------------------+
+| :class:`hdr.HdrBoxplot`          | vector    | vector         | Median realization with PCA           |
++----------------------------------+-----------+----------------+---------------------------------------+
+| :class:`kiviat.Kiviat3D`         | >3 scalar | scalar, vector | 3D version of the radar/spider plot   |
++----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`uncertainty.pdf`          |           | scalar, vector | Output PDF                            |
++----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`uncertainty.corr_cov`     | scalar    | vector         | Correlation of the inputs and outputs |
++----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`uncertainty.sobol`        | scalar    | scalar, vector | Sensitivity indices                   |
++----------------------------------+-----------+----------------+---------------------------------------+
 
-All options return a figure object that can be reuse using :func:`batman.visualization.reshow`.
+All options return a figure object that can be reuse using :func:`reshow`.
 This enables some modification of the graph. In most cases, the first parameter ``data`` is
 of shape ``(n_samples, n_features)``.
 
@@ -205,22 +206,3 @@ Acknowledgement
 ===============
 
 We are gratefull to the help and support on OpenTURNS Michaël Baudin has provided.
-
-Sources
-=======
-.. py:module:: visualization
-.. automodule:: batman.visualization.doe
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.visualization.hdr
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.visualization.kiviat
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.visualization.uncertainty
-   :members:
-   :undoc-members:

@@ -52,10 +52,10 @@ class Gp1dSampler:
             :param float sigma: GP standard deviation
             :param float theta: GP correlation length
             :param float threshold: minimal relative amplitude of the
-            eigenvalues to consider in the KLD wrt the maximum eigenvalue
+              eigenvalues to consider in the KLD wrt the maximum eigenvalue
             :param str cov: covariance model ['SquaredExponential',
-            'AbsoluteExponential', 'Matern32', 'Matern52', 'Exponential',
-            'Spherical']
+              'AbsoluteExponential', 'Matern32', 'Matern52', 'Exponential',
+              'Spherical']
             """
         self.t_ini = t_ini
         self.t_end = t_end
@@ -152,7 +152,7 @@ class Gp1dSampler:
 
         :param int n_sample: number of GP1D instances
         :return: instances of GP discretized over the mesh
-        [t_ini:(T-T_ini)/(Nt-1):T] and Coefficients for the KLD
+          [t_ini:(T-T_ini)/(Nt-1):T] and Coefficients for the KLD
         :rtype: np.array([Nm x Nt]), np.array([Nm x Nmodes])
         """
         dist = ot.ComposedDistribution([ot.Normal(0., 1.)] * self.n_modes,
@@ -171,7 +171,7 @@ class Gp1dSampler:
         :param list coeff: coefficients of the Karhunen Loeve decomposition
         :param bool plot: boolean for plotting the GP1D realization
         :return: Instance of the 1D GP discretized over the mesh
-        [t_ini:(T-T_ini)/(Nt-1):T] and Coefficients for the KLD
+          [t_ini:(T-T_ini)/(Nt-1):T] and Coefficients for the KLD
         :rtype: dict([1 x Nt], [1 x Nmodes])
         """
         X = list(coeff[0:self.n_modes]) + \

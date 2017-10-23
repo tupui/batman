@@ -1,4 +1,5 @@
 .. _uq:
+.. currentmodule:: batman.uq
 
 Uncertainty Quantification
 **************************
@@ -83,10 +84,3 @@ References
 .. [iooss2010] Iooss B. et al.: Numerical studies of the metamodel fitting and validation processes. International Journal on Advances in Systems and Measurements. 2010 
 .. [marrel2015] Marrel A. et al.: Sensitivity Analysis of Spatial and/or Temporal Phenomena. Handbook of Uncertainty Quantification. 2015. DOI: 10.1007/978-3-319-11259-6_39-1 
 .. [baudin2016] Baudin M. et al.: Numerical stability of Sobol’ indices estimation formula. 8th International Conference on Sensitivity Analysis of Model Output. 2016. 
-
-Sources
-=======
-.. py:module:: uq
-.. automodule:: batman.uq.uq
-   :members:
-   :undoc-members:
