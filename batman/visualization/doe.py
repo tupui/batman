@@ -278,6 +278,8 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
                     if range_cbar is None:
                         vticks = np.linspace(np.min(data), np.max(data),
                                              num=ticks_nbr)
+                        range_cbar[0] = np.min(data)
+                        range_cbar[1] = np.max(data)
                     else:
                         vticks = np.linspace(range_cbar[0], range_cbar[1],
                                              num=ticks_nbr)
@@ -317,7 +319,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
                                                          linestyles=('-',), linewidths=(1,))
                     # Generate the response surface
                     plt.tricontourf(xsample_plot, ysample_plot, data_plot,
-                                    vticks, antialiased=True, vmin=0.373, vmax=1.536, cmap=cm.viridis)
+                                    vticks, antialiased=True, vmin=range_cbar[0], vmax=range_cbar[1], cmap=cm.viridis)
 
                     # If doe option activated, generate the points corresponding to
                     # the doe and display them on the graph.
