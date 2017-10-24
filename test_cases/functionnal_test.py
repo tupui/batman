@@ -232,6 +232,19 @@ def test_uq_no_surrogate(tmp, case='Ishigami'):
     batman.ui.run(settings, options)
 
 
+def test_doe_as_list(tmp, case='Ishigami'):
+    init_case(tmp, case, output=False)
+    sys.argv = ['batman', 'settings.json', '-u', '-o', tmp]
+    options = batman.ui.parse_options()
+    settings = batman.misc.import_config(options.settings, schema)
+    settings['space'].pop('resampling')
+    settings.pop('pod')
+    settings.pop('surrogate')
+    settings['space']['sampling'] = [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]
+    shutil.rmtree(tmp)
+    batman.ui.run(settings, options)
+
+
 def test_wrong_settings(tmp, case='Ishigami'):
     init_case(tmp, case, output=False)
 
