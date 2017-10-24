@@ -44,14 +44,14 @@ number of input parameters, a Kiviat-3D graph is plotted instead (see Kiviat 3D
 section).
 
 If only 1 input parameter is involved, the response surface reduces to a response
-function:
+function. The default display is the following:
 
 .. image::  fig/response_function.png
 
 If exactly 2 input parameters are involved, it is then possible to generate the
 response surface, the surface itself being colored by the value of the function.
 The corresponding values of the 2 input parameters are displayed on the x and y
-axis:
+axis, with the following default display:
 
 .. image:: fig/response_surface.png
 
@@ -67,7 +67,61 @@ several movies is created, the value of the 4th parameter being fixed to a
 different value on each movie.
 
 Several display options can be set by the user to modify the created response
-surface.
+surface:
+
+.. code-block:: python
+
+* doe: array-like. Default = None.
+
+  Display the DOE points on the response surface, represented by a black dot.
+
+* resampling: integer, activates only if 'doe' is not None. Default = None.
+
+  Display the n last point of the DOE in a different color to easily identify
+  the resampling.
+
+* xdata:
+
+* axis_disc: integer list, 1 integer per input parameter. Default = [50] in 1D,
+  [25, 25] in 2D, [20, 20, 20] in 3D and [15, 15, 15, 15] in 4D.
+
+  Discretisation of the response surface on each input parameters. Values used for
+  the discretisation of the 1st and 2nd parameters influence the response surface
+  resolution. Values used for the discretisation of the 3rd parameter and the 4th 
+  input parameters influence the number of frames per movie and the number of
+  created movies respectively.
+
+* flabel: string. Default = 'F'.
+
+  Name of the variable of interest.
+
+* plabels: string. Default = 'x0' in 1D, 'x0, x1' in 2D, 'x0, x1, x2' in 3D and
+  'x0, x1, x2, x3' in 4D.
+
+  Names of the input parameters to be plotted on the axis.
+
+* feat_order: integer list, 1 integer per input parameter. All values from 1 to
+  the ndim should be used. Default = [1] in 1D, [1, 2] in 2D, [1, 2, 3] in 3D and
+  [1, 2, 3, 4] in 4D.
+
+  Axis on which each input parameter should be plotted. The input parameter in first
+  position is plotted on the x-axis, the parameter in second position is plotted on
+  the y-axis. Parameters in third and fourth positions are plotted on the frames of
+  the movies and on different movies respectively.
+
+* ticks_nbr: integer. Default = 10.
+
+  Number of ticks to be used in the colorbar (n-1 different colors in total).
+
+* contours: real list. Default = None.
+
+  Values of the iso-contours to be plotted on the response surface.
+
+* fname: string. Default = 'Response_surface.pdf'.
+
+  Name of the response surface(s) to be plotted. This name can be followed by an
+  integer number when several files are generated.
+
 
 
 HDR-Boxplot
