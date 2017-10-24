@@ -33,6 +33,43 @@ This enables some modification of the graph. In most cases, the first parameter 
 of shape ``(n_samples, n_features)``.
 
 
+Response surface
+================
+
+A response surface can be created to visualize the surrogate model as a function
+of two input parameters, the surface itself being colored by the value of the
+function. The response surface is automatically plotted when requesting uncertainty
+quantification if the number of input parameters is less than 5. For a larger
+number of input parameters, a Kiviat-3D graph is plotted instead (see Kiviat 3D
+section).
+
+If only 1 input parameter is involved, the response surface reduces to a response
+function:
+
+.. image::  fig/response_function.png
+
+If exactly 2 input parameters are involved, it is then possible to generate the
+response surface, the surface itself being colored by the value of the function.
+The corresponding values of the 2 input parameters are displayed on the x and y
+axis:
+
+.. image:: fig/response_surface.png
+
+Because the response surface is a 2D picture, a set of response surface is generated
+when dealing with 3 input parameters. The value of the 3rd input parameter is fixed
+to a different value on each plot. The obtained set of pictures is concatenated
+to one single movie file in mp4 format:
+
+.. image:: fig/response_surface.gif
+
+Finally, response surfaces are also plotted for 4 input parameters. a set of
+several movies is created, the value of the 4th parameter being fixed to a
+different value on each movie.
+
+Several display options can be set by the user to modify the created response
+surface.
+
+
 HDR-Boxplot
 ===========
 
