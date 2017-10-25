@@ -66,11 +66,11 @@ def check_yes_no(prompt, default):
 def ask_path(prompt, default, root):
     """Ask user for a folder path.
 
-    :param str prompt: Ask
-    :param str default: default value
-    :param str root: root path
-    :returns: path if folder exists
-    :rtype: str
+    :param str prompt: Ask.
+    :param str default: default value.
+    :param str root: root path.
+    :returns: path if folder exists.
+    :rtype: str.
     """
     logger = logging.getLogger('User checking')
     while True:
@@ -235,7 +235,7 @@ def optimization(bounds, discrete=False):
     If a variable is discrete, the decorator allows to find the optimum by
     doing an optimization per discrete value and then returns the optimum.
 
-    :param ndarray bounds: bounds for optimization (nb param, (min, max))
+    :param array_like bounds: bounds for optimization ([min, n_features], [max, n_features])
     :param bool discrete: whether to perform a discrete optimization
     """
     def optimize(fun):

@@ -15,7 +15,6 @@ class NoDaemonProcess(multiprocess.Process):
 
     Inherit from :class:`multiprocessing.Process`.
     The ``daemon`` attribute always returns False.
-
     """
 
     def _get_daemon(self):
@@ -33,7 +32,6 @@ class NestedPool(pathos.multiprocessing.Pool):
 
     Inherit from :class:`pathos.multiprocessing.Pool`.
     Enable nested process pool.
-
     """
 
     Process = NoDaemonProcess

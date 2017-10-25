@@ -306,8 +306,8 @@ class Snapshot(object):
 
             # create a dataset
             size = len(cls.variables)
-            for i in shape:
-                size *= i
+            for j in shape:
+                size *= j
             end = start + size
             dataset = Dataset(names=cls.variables, shape=shape,
                               data=data[start:end])

@@ -26,6 +26,7 @@ def kernel_smoothing(data, optimize=False):
 
     The optimization option could lead to longer computation of the PDF.
 
+    :param array_like data: output sample to draw a PDF from (n_samples, n_features).
     :param bool optimize: use global optimization of grid search.
     :return: gaussian kernel.
     :rtype: :class:`sklearn.neighbors.KernelDensity`.
@@ -61,15 +62,16 @@ def kernel_smoothing(data, optimize=False):
 def pdf(data, xdata=None, labels=None, moments=False, fname=None):
     """Plot PDF in 1D or 2D.
 
-    :param np.ndarray/dict data: array of shape (n_samples, n_features)
+    :param nd_array/dict data: array of shape (n_samples, n_features)
         or a dictionary with the following:
 
-        - `bounds`, array like of shape (2, n_features) first line is mins and
-          second line is maxs.
-        - `model`, :class:`batman.surrogate.SurrogateModel` instance or str
+        - **bounds** (array_like) -- first line is mins and
+          second line is maxs (2, n_features).
+        - **model** (:class:`batman.surrogate.SurrogateModel`/str) --
           path to the surrogate data.
-        - `method`, str, surrogate model method.
-        - `dist`, :class:`openturns.ComposedDistribution` instance.
+        - **method** (str) -- surrogate model method.
+        - **dist** (:class:`openturns.ComposedDistribution`) --
+          joint distribution.
 
     :param array_like xdata: 1D discretization of the function (n_features,).
     :param list(str) labels: `x` label and `PDF` label.
@@ -86,7 +88,6 @@ def pdf(data, xdata=None, labels=None, moments=False, fname=None):
             f.read(data['model'])
         except (AttributeError, TypeError):
             f = data['model']
-        output_len = len(data['bounds'][0])
         sample = np.array(ot.LHSExperiment(data['dist'], 500).generate())
         z_array, _ = f(sample)
     else:
@@ -196,7 +197,7 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
         first (xdata, n_params), total (xdata, n_params)]`.
     :param float/array_like conf: relative error around indices. If float,
         same error is applied for all parameters. Otherwise shape
-        ([min, n_features], [max, n_features])
+        ([min, n_features], [max, n_features]).
     :param list(str) p_lst: parameters' names.
     :param array_like xdata: 1D discretization of the function (n_features,).
     :param str xlabel: label of the discretization parameter.

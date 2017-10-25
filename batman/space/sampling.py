@@ -53,8 +53,6 @@ class Doe():
           ['halton', 'sobol', 'faure', 'lhs[c]', 'sobolscramble', 'uniform',
           'discrete'] otherwize can be a list of openturns distributions.
         :param int var: Position of the discrete variable.
-        :return: Sampling
-        :rtype: lst(array)
         """
         self.n_sample = n_sample
         self.bounds = bounds
@@ -97,7 +95,11 @@ class Doe():
                                                              self.n_sample)
 
     def generate(self):
-        """Generate the DOE."""
+        """Generate the DOE.
+
+        :return: Sampling.
+        :rtype: array_like (n_samples, n_features).
+        """
         if self.kind in ['lhs', 'lhsc', 'lhsopt', 'discrete']:
             sample = self.sequence_type.generate()
         elif self.kind == 'sobolscramble':
@@ -144,7 +146,7 @@ class Doe():
     def scrambled_sobol_generate(self):
         """Scrambled Sobol.
 
-        Scramble function as in Owen (1997)
+        Scramble function as in Owen (1997).
         """
         # Generate sobol sequence
         self.sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(self.dim))

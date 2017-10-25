@@ -329,14 +329,14 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
                         doe = np.asarray(doe)
                         len_sampling = len(doe) - resampling
                         if dim == 4:
-                            msk_doe = [(doe[i, 3] > (min_zz + (movie - 0.5) * zz_step) and
-                                        doe[i, 3] < (min_zz + (movie + 0.5) * zz_step) and
-                                        doe[i, 2] > (min_z + (plot - 0.5) * z_step) and
-                                        doe[i, 2] < (min_z + (plot + 0.5) * z_step))
+                            msk_doe = [((min_zz + (movie - 0.5) * zz_step) < doe[i, 3]
+                                        < (min_zz + (movie + 0.5) * zz_step)) and
+                                       ((min_z + (plot - 0.5) * z_step) < doe[i, 2]
+                                        < (min_z + (plot + 0.5) * z_step))
                                        for i, _ in enumerate(doe)]
                         elif dim == 3:
-                            msk_doe = [(doe[i, 2] > (min_z + (plot - 0.5) * z_step) and
-                                        doe[i, 2] < (min_z + (plot + 0.5) * z_step))
+                            msk_doe = [((min_z + (plot - 0.5) * z_step) < doe[i, 2]
+                                        < (min_z + (plot + 0.5) * z_step))
                                        for i, _ in enumerate(doe)]
                         else:
                             msk_doe = msk_total

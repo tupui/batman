@@ -97,12 +97,12 @@ class UQ:
 
         :param dict settings: The settings file.
         :param surrogate: Surrogate model.
-        :type surrogate: class:`batman.surrogate.surrogate_model.SurrogateModel`
+        :type surrogate: class:`batman.surrogate.SurrogateModel`.
         :param space: sample space (can be a list).
-        :type space: class:`batman.space.space.Space`
+        :type space: class:`batman.space.Space`.
         :param array_like data: Snapshot's data (n_samples, n_features).
         :param array_like xdata: 1D discretization of the function (n_features,).
-        :param str fname: folder output path
+        :param str fname: folder output path.
         """
         self.logger.info("\n----- UQ module -----")
         self.test = test
@@ -177,7 +177,7 @@ class UQ:
 
         :param lst coords: The parameters set to calculate the solution from.
         :return: The fonction evaluation.
-        :rtype: float
+        :rtype: float.
 
         """
         f_eval, _ = self.surrogate(coords)
@@ -192,7 +192,7 @@ class UQ:
 
         :param lst coords: The parameters set to calculate the solution from.
         :return: The integral of the function.
-        :rtype: float
+        :rtype: float.
 
         """
         f_eval, _ = self.surrogate(coords)
@@ -219,10 +219,10 @@ class UQ:
 
         A summary is written within `model_err.dat`.
 
-        :param lst(array) indices: Sobol first order indices computed using the POD.
+        :param array_like indices: Sobol first order indices computed using the POD.
         :param str function: name of the analytic function.
-        :return: err_q2, mse, s_l2_2nd, s_l2_1st, s_l2_total
-        :rtype: float
+        :return: err_q2, mse, s_l2_2nd, s_l2_1st, s_l2_total.
+        :rtype: array_like.
         """
         fun = func_ref.__dict__[function]()
 
@@ -298,8 +298,8 @@ class UQ:
         Finally, it calls :func:`error_pod` in order to compare the indices
         with their analytical values.
 
-        :return: Sobol' indices
-        :rtype: lst(array_like)
+        :return: Sobol' indices.
+        :rtype: array_like.
 
         """
         indices = [[], [], []]
@@ -319,6 +319,8 @@ class UQ:
             input_design = ot.SobolIndicesAlgorithmImplementation.Generate(
                 self.distribution, self.points_sample, True)
             output_design = sobol_model(input_design)
+            self.logger.info("Created {} samples for Sobol"
+                             .format(len(output_design)))
             # Martinez, Saltelli, MauntzKucherenko, Jansen
             ot.ResourceMap.SetAsBool('MartinezSensitivityAlgorithm-UseAsmpytoticInterval', True)
             sobol = ot.SaltelliSensitivityAlgorithm(input_design,
@@ -501,6 +503,7 @@ class UQ:
 
         # Response surface
         if self.p_len < 3:
+            self.logger.info('Creating response surface...')
             visualization.response_surface(bounds=[np.min(self.sample, axis=0),
                                                    np.max(self.sample, axis=0)],
                                            fun=self.model,

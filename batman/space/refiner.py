@@ -51,9 +51,11 @@ class Refiner(object):
         corners taking into account a :param:``delta_space`` factor.
 
         :param data: Surrogate or space
-        :type data: :class:`batman.surrogate.surrogate_model.SurrogateModel` or
-          :class:`batman.space.space.Space`
-
+        :type data: :class:`batman.surrogate.SurrogateModel` or
+          :class:`batman.space.Space`.
+        :param array_like corners: hypercube ([min, n_features], [max, n_features]).
+        :param float delta_space: Shrinking factor for the parameter space.
+        :param bool discrete: whether one parameter is discrete.
         """
         if isinstance(data, bat.surrogate.SurrogateModel):
             self.surrogate = data
@@ -132,9 +134,9 @@ class Refiner(object):
         It returns the minimal distance. :attr:`point` needs to be scaled by
         :attr:`self.corners` so the returned distance is scaled.
 
-        :param np.array point: Anchor point
-        :return: The distance to the nearest point
-        :rtype: float
+        :param array_like point: Anchor point.
+        :return: The distance to the nearest point.
+        :rtype: float.
         """
         point = self.scaler.transform(point.reshape(1, -1))[0]
         distances = np.array([np.linalg.norm(pod_point - point)
@@ -153,10 +155,10 @@ class Refiner(object):
         :attr:`point` is scaled by :attr:`self.corners` and input distance has
         to be. Ensure that new values are bounded by corners.
 
-        :param np.array point: Anchor point
-        :param float distance: The distance of influence
-        :return: The hypercube around the point
-        :rtype: np.array
+        :param array_like point: Anchor point.
+        :param float distance: The distance of influence.
+        :return: The hypercube around the point.
+        :rtype: array_like.
         """
         point = self.scaler.transform(point.reshape(1, -1))[0]
         hypercube = np.array([point - distance, point + distance])
@@ -178,9 +180,9 @@ class Refiner(object):
         Ensure that only the *leave-one-out* point lies within it.
         Ensure that new values are bounded by corners.
 
-        :param np.array point: Anchor point
-        :return: The hypercube around the point (a point per column)
-        :rtype: np.array
+        :param np.array point: Anchor point.
+        :return: The hypercube around the point (a point per column).
+        :rtype: array_like.
         """
         distance = self.distance_min(point) / 3
         x0 = self.hypercube_distance(point, distance).flatten('F')
@@ -254,8 +256,8 @@ class Refiner(object):
     def discrepancy(self):
         """Find the point that minimize the discrepancy.
 
-        :return: The coordinate of the point to add
-        :rtype: lst(float)
+        :return: The coordinate of the point to add.
+        :rtype: lst(float).
         """
         hypercube = self.corners
         self.logger.debug("Discrepancy strategy")
@@ -282,9 +284,9 @@ class Refiner(object):
         To do so, it uses Gaussian Process information.
         A genetic algorithm get the global maximum of the function.
 
-        :param np.array hypercube: Corners of the hypercube
-        :return: The coordinate of the point to add
-        :rtype: lst(float)
+        :param array_like hypercube: Corners of the hypercube.
+        :return: The coordinate of the point to add.
+        :rtype: lst(float).
         """
         if hypercube is None:
             hypercube = self.corners
@@ -302,9 +304,9 @@ class Refiner(object):
             Function returns `- sum_sigma` in order to have a minimization
             problem.
 
-            :param lst(float) coords: coordinate of the point
-            :return: - sum_sigma
-            :rtype: float
+            :param lst(float) coords: coordinate of the point.
+            :return: - sum_sigma.
+            :rtype: float.
             """
             _, sigma = self.surrogate(coords)
             sum_sigma = np.sum(self.pod_S ** 2 * sigma)
@@ -324,9 +326,9 @@ class Refiner(object):
         The size of the hypercube is equal to the distance with
         the nearest point.
 
-        :param tuple point_loo: leave-one-out point
-        :return: The coordinate of the point to add
-        :rtype: lst(float)
+        :param tuple point_loo: leave-one-out point.
+        :return: The coordinate of the point to add.
+        :rtype: lst(float).
         """
         self.logger.info("Leave-one-out + Sigma strategy")
         # Get the point of max error by LOOCV
@@ -349,9 +351,9 @@ class Refiner(object):
         of the hypercube. Using Sobol' indices, the corners are shrinked
         by the corresponding percentage of the total indices.
 
-        :param tuple point_loo: leave-one-out point
-        :return: The coordinate of the point to add
-        :rtype: lst(float)
+        :param tuple point_loo: leave-one-out point.
+        :return: The coordinate of the point to add.
+        :rtype: lst(float).
         """
         self.logger.info("Leave-one-out + Sobol strategy")
         # Get the point of max error by LOOCV
@@ -512,9 +514,9 @@ class Refiner(object):
     def optimization(self, method='EI'):
         """Maximization of the Probability/Expected Improvement.
 
-        :param str method: Flag ['EI', 'PI']
-        :return: The coordinate of the point to add
-        :rtype: lst(float)
+        :param str method: Flag ['EI', 'PI'].
+        :return: The coordinate of the point to add.
+        :rtype: lst(float).
         """
         gen = [self.func(x) for x in self.scaler.inverse_transform(self.points)]
         arg_min = np.argmin(gen)
@@ -573,9 +575,9 @@ class Refiner(object):
     def sigma_discrepancy(self, weights=None):
         """Maximization of the composite indicator: sigma - discrepancy.
 
-        :param list(float) weights: respectively weights of sigma and discrepancy
-        :return: The coordinate of the point to add
-        :rtype: lst(float)
+        :param list(float) weights: respectively weights of sigma and discrepancy.
+        :return: The coordinate of the point to add.
+        :rtype: lst(float).
         """
         weights = [0.5, 0.5] if weights is None else weights
         doe = Doe(500, self.corners, 'halton')

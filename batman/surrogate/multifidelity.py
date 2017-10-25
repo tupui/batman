@@ -67,12 +67,11 @@ class Evofusion(object):
 
         From a point, make a new prediction.
 
-        :param tuple(float) point: The point to evaluate.
+        :param array_like point: The point to evaluate (n_features,).
         :return: The predictions.
-        :rtype: lst
+        :rtype: array_like (n_features,).
         :return: The standard deviations.
-        :rtype: lst
-
+        :rtype: array_like (n_features,).
         """
         f_c, sigma_c = self.model_c.evaluate(point)
         f_err, sigma_err = self.model_err.evaluate(point)

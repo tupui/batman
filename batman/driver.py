@@ -54,7 +54,7 @@ class Driver(object):
         From settings, init snapshot, space [POD, surrogate].
 
         :param dict settings: settings.
-        :param str script: settings path.
+
         :param str fname: output folder path.
         """
         self.settings = settings
@@ -72,7 +72,7 @@ class Driver(object):
             resamp_size = 0
         if 'init_size' in self.settings['space']['sampling']:
             init_size = self.settings['space']['sampling']['init_size']
-        else: # when providing DoE as a list
+        else:  # when providing DoE as a list
             init_size = self.settings['space']['sampling']
         self.space = Space(self.settings['space']['corners'],
                            init_size,
@@ -359,12 +359,13 @@ class Driver(object):
     def prediction(self, points, write=False):
         """Perform a prediction.
 
-        :param :class:`space.point.Point` points: point(s) to predict
-        :param bool write: write a snapshot or not
-        :return: Result
-        :rtype: lst(:class:`tasks.snapshot.Snapshot`) or np.array(n_points, n_features)
-        :return: Standard deviation
-        :rtype: lst(np.array)
+        :param points: point(s) to predict.
+        :type points: :class:`space.point.Point` or array_like (n_samples, n_features).
+        :param bool write: write a snapshot or not.
+        :return: Result.
+        :rtype: lst(:class:`tasks.snapshot.Snapshot`) or array_like (n_samples, n_features).
+        :return: Standard deviation.
+        :rtype: array_like (n_samples, n_features).
         """
         if write:
             output = os.path.join(self.fname, self.fname_tree['predictions'])

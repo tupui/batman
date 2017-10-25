@@ -94,7 +94,7 @@ def test_space(settings_ishigami):
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings['space']['corners'][1] = [np.pi, -np.pi, np.pi]
     with pytest.raises(ValueError):
-        space = Space(test_settings['space']['corners'])
+        Space(test_settings['space']['corners'])
 
 
 def test_space_evaluation(settings_ishigami):
@@ -242,7 +242,7 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     # fig.savefig(path, transparent=True, bbox_inches='tight')
 
 
-def test_discrepancy(settings_ishigami):
+def test_discrepancy():
     corners = [[0.5, 0.5], [6.5, 6.5]]
     space_1 = Space(corners)
     space_2 = Space(corners)

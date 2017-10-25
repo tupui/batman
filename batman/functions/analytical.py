@@ -580,7 +580,6 @@ class ChemicalSpill(object):
                     * np.exp(-(self.s[i] - second_spill) ** 2
                              / (4 * diff_rate * (self.t[j] - tau)))
 
-            C = term1 + term2
-            f[i, j] = np.sqrt(4 * np.pi) * C
+            f[i, j] = np.sqrt(4 * np.pi) * (term1 + term2)
 
         return f

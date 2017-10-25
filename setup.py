@@ -76,7 +76,7 @@ except ImportError:
     raise SystemExit
 
 setup_requires = ['pytest-runner']
-tests_require = ['pytest', 'mock', 'pytest-cov', 'pylint']
+tests_require = ['pytest', 'mock', 'coverage', 'pylint']
 install_requires = ['sphinx_rtd_theme',
                     'sphinx>=1.4',
                     'scipy>=0.15',

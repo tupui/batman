@@ -78,7 +78,7 @@ class Pod(Core):
     def decompose(self, snapshots):
         """Create a pod from a set of snapshots.
 
-        :param lst(array) snapshots: snapshots matrix
+        :param lst(array) snapshots: snapshots matrix.
         """
         snapshots = [Snapshot.convert(s) for s in snapshots]
 
@@ -95,7 +95,7 @@ class Pod(Core):
     def update(self, snapshot):
         """Update pod with a new snapshot.
 
-        :param snapshot: new snapshot to update the pod with
+        :param snapshot: new snapshot to update the pod with.
         """
         self.logger.info('Updating pod basis...')
         snapshot = Snapshot.convert(snapshot)
@@ -109,8 +109,8 @@ class Pod(Core):
 
         Estimate the quality of the pod by the leave-one-out method.
 
-        :return: Q2
-        :rtype: float
+        :return: Q2.
+        :rtype: float.
         """
         self.logger.info('Estimating pod quality...')
 

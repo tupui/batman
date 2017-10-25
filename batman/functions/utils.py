@@ -15,11 +15,9 @@ def multi_eval(fun):
         """
         try:
             x_n[0][0]
-            n_eval = len(x_n)
-            shape_eval = (n_eval, -1)
+            shape_eval = (len(x_n), -1)
         except (TypeError, IndexError):
             x_n = [x_n]
-            n_eval = 1
             shape_eval = (-1)
 
         feval = [fun(self, x_i, *args, **kwargs) for x_i in x_n]
