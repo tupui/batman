@@ -43,7 +43,7 @@ class Kriging(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, sample, data):
+    def __init__(self, sample, data, **kwargs):
         r"""Create the predictor.
 
         Uses sample and data to construct a predictor using Gaussian Process.
@@ -59,7 +59,7 @@ class Kriging(object):
         1. Create a process per mode, do not create if only one,
         2. Create `n_restart` (3 by default) processes by process.
 
-        In the end, there is :math:`N=n_{restart} \times n_{modes}` processes.
+        In the end, there is :math:`N=n_{restart} \times n_{modes})` processes.
         If there is not enought CPU, :math:`N=\frac{n_{cpu}}{n_restart}`.
 
         :param array_like sample: The sample used to generate the data. (n_samples, n_features)
@@ -77,12 +77,18 @@ class Kriging(object):
         self.model_len = data.shape[1]
         if self.model_len == 1:
             data = data.ravel()
+        self.settings = kwargs       
+        
 
-        # Define the model settings
-        l_scale = (1.0,) * sample_len
-        scale_bounds = [(1e-03, 1000.0)] * sample_len
-        self.kernel = 1.0 * RBF(length_scale=l_scale,
+         if 'kernel' in self.settings:
+             self.kernel = self.settings['kernel']
+         else:
+            # Define the model settings
+            l_scale = ((1.0),) * sample_len
+            scale_bounds = [(1e-03, 1000.0)] * sample_len
+            self.kernel = 1.0 * RBF(length_scale=l_scale,
                                 length_scale_bounds=scale_bounds)
+
 
         self.n_restart = 3
         # Define the CPU multi-threading/processing strategy
@@ -126,11 +132,11 @@ class Kriging(object):
         is done several times using multiprocessing.
         The best results are returned.
 
-        :param callable obj_func: function to optimize.
-        :param lst(float) initial_theta: initial guess.
-        :param lst(lst(float)) bounds: bounds.
-        :return: theta_opt and func_min.
-        :rtype: lst(float), float.
+        :param callable obj_func: function to optimize
+        :param lst(float) initial_theta: initial guess
+        :param lst(lst(float)) bounds: bounds
+        :return: theta_opt and func_min
+        :rtype: lst(float), float
         """
         def func(args):
             """Get the output from sklearn."""
@@ -166,15 +172,15 @@ class Kriging(object):
 
         From a point, make a new prediction.
 
-        :param array_like point: The point to evaluate (n_features,).
+        :param tuple(float) point: The point to evaluate.
         :return: The predictions.
-        :rtype: array_like (n_features,).
+        :rtype: lst
         :return: The standard deviations.
-        :rtype: array_like (n_features,).
+        :rtype: lst
         """
         point_array = np.asarray(point).reshape(1, -1)
-        prediction = np.empty(self.model_len)
-        sigma = np.empty(self.model_len)
+        prediction = np.empty((self.model_len))
+        sigma = np.empty((self.model_len))
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")

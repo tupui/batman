@@ -129,7 +129,8 @@
         "strategy": {"type": "string", "default": "Quad",
                    "enum": ["Quad", "LS"]},
         "degree": {"type": "integer", "default": 10, "minimum": 1,
-                   "exclusiveMinimum": false}
+                   "exclusiveMinimum": false},
+        "kernel": {"type":"string"}
       },
       "required": ["method"],
       "oneOf": [

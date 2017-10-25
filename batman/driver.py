@@ -30,6 +30,7 @@ from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
 from .surrogate import SurrogateModel
 from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
+import sklearn.gaussian_process.kernels as kernels
 
 
 class Driver(object):
@@ -161,10 +162,18 @@ class Driver(object):
                                                 self.settings['space']['corners'],
                                                 **settings_)
             else:
-                settings_ = {}
-                self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                                self.settings['space']['corners'],
-                                                **settings_)
+                if 'kernel' not in self.settings['surrogate']:
+                    settings_ = {}
+                    self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
+                                                    self.settings['space']['corners'],
+                                                    **settings_)
+                else:
+                    mykernel=  self.settings['surrogate']['other_options']['kernel']
+                    mykernel = eval("kernels." + mykernel)
+                    settings_ = {'kernel': mykernel}
+                    self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
+                                                    self.settings['space']['corners'],
+                                                    **settings_)
         else:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')
