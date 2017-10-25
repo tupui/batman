@@ -70,8 +70,12 @@ class Driver(object):
             resamp_size = self.settings['space']['resampling']['resamp_size']
         else:
             resamp_size = 0
+        if 'init_size' in self.settings['space']['sampling']:
+            init_size = self.settings['space']['sampling']['init_size']
+        else: # when providing DoE as a list
+            init_size = self.settings['space']['sampling']
         self.space = Space(self.settings['space']['corners'],
-                           self.settings['space']['sampling']['init_size'],
+                           init_size,
                            resamp_size,
                            self.settings['snapshot']['io']['parameter_names'])
 
