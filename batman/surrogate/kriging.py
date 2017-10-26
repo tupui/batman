@@ -43,7 +43,7 @@ class Kriging(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, sample, data, **kwargs):
+    def __init__(self, sample, data, kernel=None, noise=False):
         r"""Create the predictor.
 
         Uses sample and data to construct a predictor using Gaussian Process.
@@ -77,19 +77,14 @@ class Kriging(object):
         self.model_len = data.shape[1]
         if self.model_len == 1:
             data = data.ravel()
-        self.settings = kwargs       
-        
-
-         if 'kernel' in self.settings:
-             self.kernel = self.settings['kernel']
-         else:
+        if kernel is not None:
+            self.kernel = kernel
+        else:
             # Define the model settings
-            l_scale = ((1.0),) * sample_len
+            l_scale = (1.0,) * sample_len
             scale_bounds = [(1e-03, 1000.0)] * sample_len
             self.kernel = 1.0 * RBF(length_scale=l_scale,
-                                length_scale_bounds=scale_bounds)
-
-
+                                    length_scale_bounds=scale_bounds)
         self.n_restart = 3
         # Define the CPU multi-threading/processing strategy
         try:

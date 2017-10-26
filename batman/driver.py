@@ -143,9 +143,22 @@ class Driver(object):
                              'degree': self.settings['surrogate']['degree'],
                              'distributions': dists,
                              'n_sample': self.settings['space']['sampling']['init_size']}
-                self.surrogate = SurrogateModel('pc',
-                                                self.settings['space']['corners'],
-                                                **settings_)
+            elif self.settings['surrogate']['method'] == 'evofusion':
+                settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
+                             'grand_cost': self.settings['surrogate']['grand_cost']}
+            elif self.settings['surrogate']['method'] == 'kriging':
+                if 'kernel' not in self.settings['surrogate']:
+                    settings_ = {}
+                else:
+                    kernel=  self.settings['surrogate']['kernel']
+                    kernel = eval("kernels." + kernel)
+                    settings_ = {'kernel': kernel}
+            else:
+                settings_ = {}
+            self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
+                                            self.settings['space']['corners'],
+                                            **settings_)
+            if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
                 sample = self.surrogate.predictor.sample
                 try:
@@ -155,25 +168,6 @@ class Driver(object):
                 finally:
                     if not self.provider.is_file:
                         self.to_compute_points = sample[:len(self.space)]
-            elif self.settings['surrogate']['method'] == 'evofusion':
-                settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
-                             'grand_cost': self.settings['surrogate']['grand_cost']}
-                self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                                self.settings['space']['corners'],
-                                                **settings_)
-            else:
-                if 'kernel' not in self.settings['surrogate']:
-                    settings_ = {}
-                    self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                                    self.settings['space']['corners'],
-                                                    **settings_)
-                else:
-                    mykernel=  self.settings['surrogate']['other_options']['kernel']
-                    mykernel = eval("kernels." + mykernel)
-                    settings_ = {'kernel': mykernel}
-                    self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                                    self.settings['space']['corners'],
-                                                    **settings_)
         else:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')

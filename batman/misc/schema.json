@@ -130,7 +130,7 @@
                    "enum": ["Quad", "LS"]},
         "degree": {"type": "integer", "default": 10, "minimum": 1,
                    "exclusiveMinimum": false},
-        "kernel": {"type":"string"}
+        "kernel": {"type": "string"}
       },
       "required": ["method"],
       "oneOf": [
