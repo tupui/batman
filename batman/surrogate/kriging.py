@@ -35,6 +35,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 from ..misc import NestedPool
 from ..functions import multi_eval
+import sklearn.gaussian_process.kernels as kernels
 
 
 class Kriging(object):
@@ -85,6 +86,18 @@ class Kriging(object):
             scale_bounds = [(1e-03, 1000.0)] * sample_len
             self.kernel = 1.0 * RBF(length_scale=l_scale,
                                     length_scale_bounds=scale_bounds)
+
+        #Up to now, we stick to the defaults noise_level=1.0, 
+        #noise_level_bounds=(1e-05, 100000.0) for the white noise
+        if noise:
+            if isinstance(noise, bool):
+                noise = WhiteKernel() if noise else 0.0
+            else:
+                noise = kernels.WhiteKernel(noise)
+        else:
+            noise = 0.0
+        self.kernel = self.kernel + noise
+
         self.n_restart = 3
         # Define the CPU multi-threading/processing strategy
         try:

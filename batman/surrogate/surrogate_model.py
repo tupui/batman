@@ -49,19 +49,23 @@ class SurrogateModel(object):
 
         :param np.array corners: space corners to normalize.
         :param str kind: name of prediction method, rbf or kriging.
-        :param array_like corners: parameter space corners
-          (2 points extrema, n_features).
+        :param array_like corners: hypercube ([min, n_features], [max, n_features]).
         :param dict pc: configuration of polynomial chaos.
         :param \**kwargs: See below
 
         :Keyword Arguments: For Polynomial Chaos the following keywords are
           available
 
-            - 'strategy', str. Least square or Quadrature ['LS', 'Quad'].
-            - 'degree', int. Polynomial degree.
-            - 'distributions', lst(:class:`openturns.Distribution`).
+            - **strategy** (str) -- Least square or Quadrature ['LS', 'Quad'].
+            - **degree** (int) -- Polynomial degree.
+            - **distributions** (lst(:class:`openturns.Distribution`)) --
               Distributions of each input parameter.
-            - 'n_sample', int. Number of samples for least square.
+            - **n_sample** (int) -- Number of samples for least square.
+
+          For Kriging the following keywords are available
+
+            - **kernel** (:class:`sklearn.gaussian_process.kernels`.*) --
+              Kernel used into krigings scheme.
         """
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
@@ -123,27 +127,15 @@ class SurrogateModel(object):
         self.update = False
 
     def __call__(self, points, path=None):
-        r"""Init Surrogate model.
+        """Predict snapshots.
 
-        :param np.array corners: space corners to normalize.
-        :param str kind: name of prediction method, rbf or kriging.
-        :param array_like corners: hypercube ([min, n_features], [max, n_features]).
-        :param dict pc: configuration of polynomial chaos.
-        :param \**kwargs: See below
-
-        :Keyword Arguments: For Polynomial Chaos the following keywords are
-          available
-
-            - **strategy** (str) -- Least square or Quadrature ['LS', 'Quad'].
-            - **degree** (int) -- Polynomial degree.
-            - **distributions** (lst(:class:`openturns.Distribution`)) --
-              Distributions of each input parameter.
-            - **n_sample** (int) -- Number of samples for least square.
-
-          For Kriging the following keywords are available
-
-            - **kernel** (:class:`sklearn.gaussian_process.kernels`.*) --
-              Kernel used into krigings scheme.
+        :param :class:`space.point.Point` points: point(s) to predict
+        :param str path: if not set, will return a list of predicted snapshots
+        instances, otherwise write them to disk.
+        :return: Result
+        :rtype: lst(:class:`tasks.snapshot.Snapshot`) or np.array(n_points, n_features)
+        :return: Standard deviation
+        :rtype: lst(np.array)
         """
 
         if self.update:

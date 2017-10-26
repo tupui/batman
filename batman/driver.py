@@ -150,11 +150,14 @@ class Driver(object):
                 if 'kernel' not in self.settings['surrogate']:
                     settings_ = {}
                 else:
-                    kernel=  self.settings['surrogate']['kernel']
+                    kernel = self.settings['surrogate']['kernel']
                     kernel = eval("kernels." + kernel)
                     settings_ = {'kernel': kernel}
+                if 'noise' in self.settings['surrogate']:
+                    settings_.update({'noise': self.settings['surrogate']['noise']})
             else:
                 settings_ = {}
+
             self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
                                             self.settings['space']['corners'],
                                             **settings_)
