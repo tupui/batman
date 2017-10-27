@@ -23,14 +23,13 @@ import os
 import pickle
 from collections import OrderedDict
 from concurrent import futures
-import openturns as ot
 import numpy as np
+import sklearn.gaussian_process.kernels as kernels
 from .pod import Pod
 from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
 from .surrogate import SurrogateModel
 from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
-import sklearn.gaussian_process.kernels as kernels
 
 
 class Driver(object):
@@ -138,7 +137,14 @@ class Driver(object):
         if 'surrogate' in self.settings:
             if self.settings['surrogate']['method'] == 'pc':
                 dists = self.settings['space']['sampling']['method']
-                dists = [eval("ot." + dist) for dist in dists]
+                try:
+                    dists = [eval('ot.' + dist, {'__builtins__': None},
+                                  {'ot': __import__('openturns')})
+                             for dist in dists]
+                except (TypeError, AttributeError):
+                    self.logger.error('OpenTURNS distribution unknown.')
+                    raise SystemError
+
                 settings_ = {'strategy': self.settings['surrogate']['strategy'],
                              'degree': self.settings['surrogate']['degree'],
                              'distributions': dists,
@@ -151,7 +157,12 @@ class Driver(object):
                     settings_ = {}
                 else:
                     kernel = self.settings['surrogate']['kernel']
-                    kernel = eval('kernels.' + kernel)
+                    try:
+                        kernel = eval(kernel, {'__builtins__': None},
+                                      kernels.__dict__)
+                    except (TypeError, AttributeError):
+                        self.logger.error('Scikit-Learn kernel unknown.')
+                        raise SystemError
                     settings_ = {'kernel': kernel}
                 if 'noise' in self.settings['surrogate']:
                     settings_.update({'noise': self.settings['surrogate']['noise']})

@@ -185,8 +185,7 @@ def test_cases(tmp, name):
     test_init(tmp, case=name)
     test_quality(tmp, case=name)
     test_uq(tmp, case=name)
-    if name != 'Channel_Flow':
-        test_restart_pod(tmp, case=name)
+    test_restart_pod(tmp, case=name)
 
 
 def test_simple_settings(tmp):
@@ -229,7 +228,8 @@ def test_only_surrogate_kernel_noise(tmp, case='Ishigami'):
     settings.pop('pod')
     settings.pop('uq')
     settings['surrogate'].update({
-        'kernel': 'Matern(length_scale=1., length_scale_bounds=(0.1, 10.), nu=1.5)',
+        'kernel': "ConstantKernel() + "
+                  "Matern(length_scale=1., nu=1.5)",
         'noise': 0.85})
     shutil.rmtree(tmp)
     batman.ui.run(settings, options)
