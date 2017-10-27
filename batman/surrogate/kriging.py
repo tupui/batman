@@ -61,11 +61,15 @@ class Kriging(object):
         2. Create `n_restart` (3 by default) processes by process.
 
         In the end, there is :math:`N=n_{restart} \times n_{modes})` processes.
-        If there is not enought CPU, :math:`N=\frac{n_{cpu}}{n_restart}`.
+        If there is not enought CPU, :math:`N=\frac{n_{cpu}}{n_{restart}}`.
 
         :param array_like sample: The sample used to generate the data. (n_samples, n_features)
         :param array_like data: The observed data. (n_samples, [n_features])
-
+        :param string kernel: Kernel used into krigings scheme. It has to be a valid OpenTurns kernel  (:class:`sklearn.gaussian_process.kernels.*`). 
+        :param :class:`(float, bool)` noise: Noise used into krigings scheme, its default is false. If it is a float >0, it will provide a 
+            :class:`sklearn.gaussian_process.kernels.WhiteNoise()` with the given noise_level = noise, otherwise, if noise = true, 
+            it adopts :class:`WhiteNoise()` default values. If noise = false, no noise is added. 
+            REMARK: Noise could be put manually using the OpenTurns syntax in **kernel**
         """
         try:
             sample[0][0]
@@ -87,16 +91,17 @@ class Kriging(object):
             self.kernel = 1.0 * RBF(length_scale=l_scale,
                                     length_scale_bounds=scale_bounds)
 
-        #Up to now, we stick to the defaults noise_level=1.0, 
-        #noise_level_bounds=(1e-05, 100000.0) for the white noise
+        # Up to now, we stick to the default  
+        # noise_level_bounds=(1e-05, 100000.0) for the white noise.
+        # The default is  noise_level = 1, if not provided in noise setting. 
         if noise:
             if isinstance(noise, bool):
                 noise = WhiteKernel() if noise else 0.0
             else:
-                noise = kernels.WhiteKernel(noise)
+                noise = kernels.WhiteKernel(noise_level = noise)
         else:
             noise = 0.0
-        self.kernel = self.kernel + noise
+        self.kernel +=  noise
 
         self.n_restart = 3
         # Define the CPU multi-threading/processing strategy

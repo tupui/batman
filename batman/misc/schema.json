@@ -131,7 +131,7 @@
         "degree": {"type": "integer", "default": 10, "minimum": 1,
                    "exclusiveMinimum": false},
         "kernel": {"type": "string"},
-        "noise": {"type": ["number","boolean"], "default": false}
+        "noise": {"type": ["number", "boolean"], "default": false}
       },
       "required": ["method"],
       "oneOf": [

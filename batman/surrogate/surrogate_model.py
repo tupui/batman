@@ -66,6 +66,11 @@ class SurrogateModel(object):
 
             - **kernel** (:class:`sklearn.gaussian_process.kernels`.*) --
               Kernel used into krigings scheme.
+            - **noise** (float, bool) -- 
+              noise used into krigings scheme, its default is false. 
+              if it is a float >0, it will provide a 
+              WhiteNoise() with the given noise_level = noise, otherwise, if noise = true, 
+              it adopts WhiteNoise() default values.
         """
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
