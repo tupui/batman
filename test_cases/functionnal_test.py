@@ -220,19 +220,6 @@ def test_only_surrogate(tmp, case='Ishigami'):
     check_output(tmp)
 
 
-def test_only_surrogate_kernel(tmp, case='Ishigami'):
-    init_case(tmp, case, output=False)
-    sys.argv = ['batman', 'settings.json', '-o', tmp]
-    options = batman.ui.parse_options()
-    settings = batman.misc.import_config(options.settings, schema)
-    settings['space'].pop('resampling')
-    settings.pop('pod')
-    settings.pop('uq')
-    settings['surrogate'].update({'kernel': '1.0 * Matern(length_scale=1.0, length_scale_bounds=(1e-1, 10.0),nu=1.5)'})
-    shutil.rmtree(tmp)
-    batman.ui.run(settings, options)
-
-
 def test_only_surrogate_kernel_noise(tmp, case='Ishigami'):
     init_case(tmp, case, output=False)
     sys.argv = ['batman', 'settings.json', '-o', tmp]
@@ -241,8 +228,9 @@ def test_only_surrogate_kernel_noise(tmp, case='Ishigami'):
     settings['space'].pop('resampling')
     settings.pop('pod')
     settings.pop('uq')
-    settings['surrogate'].update({'kernel': '1.0 * RationalQuadratic(length_scale=1.0, alpha=0.1)'})
-    settings['surrogate'].update({'noise': 0.85})
+    settings['surrogate'].update({
+        'kernel': 'Matern(length_scale=1., length_scale_bounds=(0.1, 10.), nu=1.5)',
+        'noise': 0.85})
     shutil.rmtree(tmp)
     batman.ui.run(settings, options)
 

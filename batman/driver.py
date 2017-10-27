@@ -151,7 +151,7 @@ class Driver(object):
                     settings_ = {}
                 else:
                     kernel = self.settings['surrogate']['kernel']
-                    kernel = eval("kernels." + kernel)
+                    kernel = eval('kernels.' + kernel)
                     settings_ = {'kernel': kernel}
                 if 'noise' in self.settings['surrogate']:
                     settings_.update({'noise': self.settings['surrogate']['noise']})
