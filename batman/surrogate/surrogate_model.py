@@ -47,7 +47,6 @@ class SurrogateModel(object):
     def __init__(self, kind, corners, **kwargs):
         r"""Init Surrogate model.
 
-        :param np.array corners: space corners to normalize.
         :param str kind: name of prediction method, rbf or kriging.
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
         :param \**kwargs: See below
@@ -64,7 +63,8 @@ class SurrogateModel(object):
           For Kriging the following keywords are available
 
             - **kernel** (:class:`sklearn.gaussian_process.kernels`.*) --
-              Kernel or composed kernel.
+              Kernel.
+            - **noise** (float/bool) -- noise level.
         """
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
@@ -91,29 +91,29 @@ class SurrogateModel(object):
     def fit(self, sample, data, pod=None):
         """Construct the surrogate.
 
-        :param array_like sample: points of the sample (n_samples, n_features).
+        :param array_like sample: sample of the sample (n_samples, n_features).
         :param array_like data: function evaluations (n_samples, n_features).
         :param pod: POD instance.
-        :type pod: :class:`batman.pod.Pod`
+        :type pod: :class:`batman.pod.Pod`.
         """
         self.data = data
         sample = np.array(sample)
         try:
-            points_scaled = self.scaler.transform(sample)
+            sample_scaled = self.scaler.transform(sample)
         except ValueError:  # With multifidelity
-            points_scaled = self.scaler.transform(sample[:, 1:])
-            points_scaled = np.hstack((sample[:, 0].reshape(-1, 1), points_scaled))
+            sample_scaled = self.scaler.transform(sample[:, 1:])
+            sample_scaled = np.hstack((sample[:, 0].reshape(-1, 1), sample_scaled))
 
         # predictor object
         self.logger.info('Creating predictor of kind {}...'.format(self.kind))
         if self.kind == 'rbf':
-            self.predictor = RBFnet(points_scaled, data)
+            self.predictor = RBFnet(sample_scaled, data)
         elif self.kind == 'kriging':
-            self.predictor = Kriging(points_scaled, data)
+            self.predictor = Kriging(sample_scaled, data, **self.settings)
         elif self.kind == 'pc':
             self.predictor.fit(sample, data)
         elif self.kind == 'evofusion':
-            self.predictor = Evofusion(points_scaled, data)
+            self.predictor = Evofusion(sample_scaled, data)
 
         self.pod = pod
         self.space.empty()
@@ -242,21 +242,21 @@ class SurrogateModel(object):
 
         return q2_loo, point
 
-    def write(self, dir_path):
+    def write(self, fname):
         """Save model, data and space to disk.
 
-        :param str dir_path: path to a directory.
+        :param str fname: path to a directory.
         """
-        path = os.path.join(dir_path, self.dir['surrogate'])
+        path = os.path.join(fname, self.dir['surrogate'])
         with open(path, 'wb') as f:
             pickler = pickle.Pickler(f)
             pickler.dump(self.predictor)
         self.logger.debug('Model wrote to {}'.format(path))
 
-        path = os.path.join(dir_path, self.dir['space'])
+        path = os.path.join(fname, self.dir['space'])
         self.space.write(path)
 
-        path = os.path.join(dir_path, self.dir['data'])
+        path = os.path.join(fname, self.dir['data'])
         with open(path, 'wb') as f:
             pickler = pickle.Pickler(f)
             pickler.dump(self.data)
@@ -264,21 +264,21 @@ class SurrogateModel(object):
 
         self.logger.info('Model, data and space wrote.')
 
-    def read(self, dir_path):
+    def read(self, fname):
         """Load model, data and space from disk.
 
-        :param str dir_path: path to a output/surrogate directory.
+        :param str fname: path to a directory.
         """
-        path = os.path.join(dir_path, self.dir['surrogate'])
+        path = os.path.join(fname, self.dir['surrogate'])
         with open(path, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.predictor = unpickler.load()
         self.logger.debug('Model read from {}'.format(path))
 
-        path = os.path.join(dir_path, self.dir['space'])
+        path = os.path.join(fname, self.dir['space'])
         self.space.read(path)
 
-        path = os.path.join(dir_path, self.dir['data'])
+        path = os.path.join(fname, self.dir['data'])
         with open(path, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.data = unpickler.load()

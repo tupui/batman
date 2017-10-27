@@ -95,7 +95,6 @@ class UQ:
         Also, it creates the `model` and `int_model` as
         :class:`openturns.PythonFunction`.
 
-        :param dict settings: The settings file.
         :param surrogate: Surrogate model.
         :type surrogate: class:`batman.surrogate.SurrogateModel`.
         :param space: sample space (can be a list).
@@ -131,9 +130,14 @@ class UQ:
 
         # Generate samples
         self.points_sample = nsample
-        dists = ','.join(['ot.' + pdf[i]
-                          for i in range(self.p_len)])
-        self.distribution = eval("ot.ComposedDistribution([" + dists + "])")
+        dists = ','.join(['ot.' + pdf[i] for i in range(self.p_len)])
+        try:
+            self.distribution = eval('ot.ComposedDistribution([' + dists + '])',
+                                     {'__builtins__': None},
+                                     {'ot': __import__('openturns')})
+        except (TypeError, AttributeError):
+            self.logger.error('OpenTURNS distribution unknown.')
+            raise SystemError
         self.experiment = ot.LHSExperiment(self.distribution,
                                            self.points_sample, True, True)
         self.sample = self.experiment.generate()

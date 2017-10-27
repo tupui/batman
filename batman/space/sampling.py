@@ -25,6 +25,7 @@ and the method.
        [ 6.        ,  4.33333333]])
 
 """
+import logging
 from scipy import stats
 from scipy.stats import randint
 import numpy as np
@@ -34,6 +35,8 @@ import openturns as ot
 class Doe():
 
     """DOE class."""
+
+    logger = logging.getLogger(__name__)
 
     def __init__(self, n_sample, bounds, kind, var=0):
         """Initialize the DOE generation.
@@ -89,7 +92,13 @@ class Doe():
                                                              self.n_sample)
         elif isinstance(self.kind, list):
             dists = ','.join(['ot.' + self.kind[i] for i in range(self.dim)])
-            distribution = eval("ot.ComposedDistribution([" + dists + "])")
+            try:
+                distribution = eval('ot.ComposedDistribution([' + dists + '])',
+                                    {'__builtins__': None},
+                                    {'ot': __import__('openturns')})
+            except (TypeError, AttributeError):
+                self.logger.error('OpenTURNS distribution unknown.')
+                raise SystemError
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
                                                              distribution,
                                                              self.n_sample)

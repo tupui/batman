@@ -142,6 +142,11 @@ def test_doe():
     npt.assert_almost_equal(sample, out, decimal=1)
 
     bounds = np.array([[15.0, 2500.0], [60.0, 6000.0]])
+
+    with pytest.raises(SystemError):
+        kind = ['Um(15., 60.)', 'Normal(4035., 400.)']
+        doe = Doe(n, bounds, kind)
+
     kind = ['Uniform(15., 60.)', 'Normal(4035., 400.)']
     doe = Doe(n, bounds, kind)
     sample = doe.generate()
