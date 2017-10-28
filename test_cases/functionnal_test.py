@@ -185,7 +185,8 @@ def test_cases(tmp, name):
     test_init(tmp, case=name)
     test_quality(tmp, case=name)
     test_uq(tmp, case=name)
-    test_restart_pod(tmp, case=name)
+    if name != 'Channel_Flow':
+        test_restart_pod(tmp, case=name)
 
 
 def test_simple_settings(tmp):
@@ -201,7 +202,7 @@ def test_simple_settings(tmp):
     batman.ui.run(settings, options)
 
 
-def test_only_surrogate(tmp, case='Ishigami'):
+def test_only_surrogate(tmp, case='Michalewicz'):
     init_case(tmp, case, output=False)
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
