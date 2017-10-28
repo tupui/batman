@@ -28,6 +28,7 @@ It implements the following methods:
 """
 import logging
 import copy
+import warnings
 from scipy.optimize import (differential_evolution, basinhopping)
 from scipy.stats import norm
 import numpy as np
@@ -564,11 +565,13 @@ class Refiner(object):
 
             return - ei
 
-        if method == 'PI':
-            target = min_value - 0.1 * np.abs(min_value)
-            max_ei, _ = probability_improvement()
-        else:
-            max_ei, _ = expected_improvement()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            if method == 'PI':
+                target = min_value - 0.1 * np.abs(min_value)
+                max_ei, _ = probability_improvement()
+            else:
+                max_ei, _ = expected_improvement()
 
         return max_ei
 

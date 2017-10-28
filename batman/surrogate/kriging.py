@@ -120,7 +120,9 @@ class Kriging(object):
                                           n_restarts_optimizer=0,
                                           optimizer=self._optim_evolution,
                                           normalize_y=True)
-            data = gp.fit(sample, column)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                data = gp.fit(sample, column)
             hyperparameter = np.exp(gp.kernel_.theta)
 
             return data, hyperparameter
