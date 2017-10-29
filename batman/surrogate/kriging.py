@@ -97,12 +97,10 @@ class Kriging(object):
         # Add a noise on the kernel using WhiteKernel
         if noise:
             if isinstance(noise, bool):
-                noise = WhiteKernel() if noise else 0
+                noise = WhiteKernel()
             else:
                 noise = kernels.WhiteKernel(noise_level=noise)
-        else:
-            noise = 0
-        self.kernel += noise
+            self.kernel += noise
 
         self.n_restart = 3
         # Define the CPU multi-threading/processing strategy
