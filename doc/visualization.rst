@@ -36,6 +36,9 @@ of shape ``(n_samples, n_features)``.
 Response surface
 ================
 
+What is it?
+-----------
+
 A response surface can be created to visualize the surrogate model as a function
 of two input parameters, the surface itself being colored by the value of the
 function. The response surface is automatically plotted when requesting uncertainty
@@ -66,66 +69,73 @@ Finally, response surfaces can also be plotted for 4 input parameters. A set of
 several movies is created, the value of the 4th parameter being fixed to a
 different value on each movie.
 
+Options
+-----------
+
 Several display options can be set by the user to modify the created response
-surface:
+surface. All the available options are listed in the following table:
 
-* doe: array-like. Default = None.
 
-  Display the DOE points on the response surface, represented by a black dot.
++-------------+-------------------+-------------------+-----------------------------------------+
+| Option      || Dimensionality   || Default          ||              Description               |
++ name        +                   +                   +                                         +
++=============+===================+===================+=========================================+
+| doe         || Array-like.      || None             || Display the Design of Experiment on    |
+|             |                   |                   || graph, represented by black dots.      |
++-------------+-------------------+-------------------+-----------------------------------------+
+| resampling  || Integer.         || None             || Display the n last DoE points in red   |
+|             |                   |                   || to easily identify the resampling.     |
++-------------+-------------------+-------------------+-----------------------------------------+
+| xdata       || List of          || If output is a   || Only used if the output is a vector.   |
+|             || real numbers.    || scalar: None     || Specify the discretisation of the      |
+|             ||                  || If output is a   || output vector for 1D response function |
+|             || Size = length    || vector: regular  || and for integration of the output      |
+|             || of the output    || discretisation   || before plotting 2D response function.  |
+|             || vector.          || between 0 and 1  |                                         |
++-------------+-------------------+-------------------+-----------------------------------------+
+| axis_disc   || List of          || 50 in 1D         || Discretisation of the response surface |
+|             || integers.        || 25,25 in 2D      || on each axis. Values of the 1st and 2nd|
+|             ||                  || 20,20,20 in 3D   || parameters influence the resolution,   | 
+|             || One              || 15,15,15,15 in 4D|| values for the 3rd and 4th parameters  |
+|             || value per        |                   || influence the number of frame per movie|
+|             || parameter.       |                   || and the movie number respectively.     |
++-------------+-------------------+-------------------+-----------------------------------------+
+| flabel      || String.          || 'F'              || Name of the output function.           |
++-------------+-------------------+-------------------+-----------------------------------------+
+| plabels     || List of          || 'x0' for 1st dim || Name of the input parameters to be     |
+|             || string.          || 'x1' for 2nd dim || on each axis.                          |
+|             || One chain per    || 'x2' for 3rd dim |                                         |
+|             || parameter.       || 'x3' for 4th dim |                                         |
++-------------+-------------------+-------------------+-----------------------------------------+
+| feat_order  || List of          || 1 in 1D          || Axis on which each parameter should be |
+|             || integers.        || 1,2 in 2D        || plotted. The parameter in 1st position |
+|             ||                  || 1,2,3 in 3D      || is plotted on the x-axis and so on...  |
+|             || One value per    || 1,2,3,4 in 4D    || All integer values from 1 to the total |
+|             || parameter.       |                   || dimension number should be specified.  |
++-------------+-------------------+-------------------+-----------------------------------------+
+| ticks_nbr   || Integer.         || 10               || Number of ticks in the colorbar.       |
++-------------+-------------------+-------------------+-----------------------------------------+
+| range_cbar  || List of          || Minimal and      || Minimal and maximal values in the      |
+|             || real numbers.    || maximal values in|| colorbar. Output values that are out   |
+|             || Two values.      || output data      || of this scope are plotted in white.    |
++-------------+-------------------+-------------------+-----------------------------------------+
+| contours    || List of          || None             || Values of the iso-contours to plot.    |
+|             || real numbers.    |                   |                                         |
++-------------+-------------------+-------------------+-----------------------------------------+
+| fname       || String.          || 'Response_surface|| Name of the response surface file(s).  |
+|             |                   || .pdf'            || Can be followed by an additional int.  |
++-------------+-------------------+-------------------+-----------------------------------------+
 
-* resampling: integer, activates only if 'doe' is not None. Default = None.
-
-  Display the n last point of the DOE in a different color to easily identify
-  the resampling.
-
-* xdata:
-
-* axis_disc: integer list, 1 integer per input parameter. Default = [50] in 1D,
-  [25, 25] in 2D, [20, 20, 20] in 3D and [15, 15, 15, 15] in 4D.
-
-  Discretisation of the response surface on each input parameters. Values used for
-  the discretisation of the 1st and 2nd parameters influence the response surface
-  resolution. Values used for the discretisation of the 3rd parameter and the 4th 
-  input parameters influence the number of frames per movie and the number of
-  created movies respectively.
-
-* flabel: string. Default = 'F'.
-
-  Name of the variable of interest.
-
-* plabels: string. Default = 'x0' in 1D, 'x0, x1' in 2D, 'x0, x1, x2' in 3D and
-  'x0, x1, x2, x3' in 4D.
-
-  Names of the input parameters to be plotted on the axis.
-
-* feat_order: integer list, 1 integer per input parameter. All values from 1 to
-  the ndim should be used. Default = [1] in 1D, [1, 2] in 2D, [1, 2, 3] in 3D and
-  [1, 2, 3, 4] in 4D.
-
-  Axis on which each input parameter should be plotted. The input parameter in first
-  position is plotted on the x-axis, the parameter in second position is plotted on
-  the y-axis. Parameters in third and fourth positions are plotted on the frames of
-  the movies and on different movies respectively.
-
-* ticks_nbr: integer. Default = 10.
-
-  Number of ticks to be used in the colorbar (n-1 different colors in total).
-
-* contours: real list. Default = None.
-
-  Values of the iso-contours to be plotted on the response surface.
-
-* fname: string. Default = 'Response_surface.pdf'.
-
-  Name of the response surface(s) to be plotted. This name can be followed by an
-  integer number when several files are generated.
+Example
+-----------
 
 As an example, the previous response surface for 2 input parameters is now plotted
 with its design of experiment, 4 of the points being indicated as a later resampling
 (4 red triangles amongs the black dots). Additional iso-contours are added to the graph
-and the axis corresponding the each input parameters are interverted. Note also the
-modification in color numbers in the colorbar. Finally, the names of the input parameters
-and of the cost function are also modified for more explicit ones.
+and the axis corresponding the each input parameters are interverted. Note also the new
+minimal and maximal values in the colorbar and the increased color number. Finally, the
+names of the input parameters and of the cost function are also modified for more explicit
+ones.
 
 .. image:: fig/response_surface_options.png
 
