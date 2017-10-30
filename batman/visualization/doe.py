@@ -102,7 +102,7 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None,
 def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
                      resampling=0, xdata=None, axis_disc=None, flabel='F',
                      plabels=None, feat_order=None, ticks_nbr=10,
-                     contours=None, fname=None):
+                     range_cbar=None, contours=None, fname=None):
     """Response surface visualization in 2d (image), 3d (movie) or 4d (movies).
 
     You have to set either (i) :attr:`sample` with :attr:`data` or  (ii)
@@ -128,6 +128,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
     :param array_like feat_order: order of features for multi-dimensional plot
         (n_features).
     :param int ticks_nbr: number of color isolines for response surfaces.
+    :param array_like range_cbar: min and max values for colorbar range (2).
     :param array_like contours: isocontour values to plot on response surface.
     :param str fname: wether to export to filename or display the figures.
     :returns: figure.
@@ -147,7 +148,12 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
         n_samples = 50625
     n_samples = int(np.floor(np.power(n_samples, 1.0 / dim)))
 
-    grids = [np.linspace(bounds[0][i], bounds[1][i], n_samples) for i in range(dim)]
+    # If axis discretisation is not given through option axis_disc,
+    # apply default discretisation (same discretisation for every dimension).
+    if axis_disc is None:
+        axis_disc = [n_samples for i in range(dim)]
+
+    grids = [np.linspace(bounds[0][i], bounds[1][i], axis_disc[i]) for i in range(dim)]
     grids = np.meshgrid(*grids)
     list_grid = [grid.flatten() for grid in grids]
 
@@ -157,11 +163,6 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
         xsample, ysample, zsample = list_grid
     if dim == 4:
         xsample, ysample, zsample, zzsample = list_grid
-
-    # If axis discretisation is not given through option axis_disc,
-    # apply default discretisation (same discretisation for every dimension).
-    if axis_disc is None:
-        axis_disc = [n_samples for i in range(dim)]
 
     # Get the data
     if fun is not None:
@@ -274,8 +275,13 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
                 # Loop on the response surface to create
                 for plot in range(n_plot):
                     plt.clf()
-                    vticks = np.linspace(np.min(data), np.max(data),
-                                         num=ticks_nbr)
+                    if range_cbar is None:
+                        vticks = np.linspace(np.min(data), np.max(data),
+                                             num=ticks_nbr)
+                        range_cbar = [np.min(data), np.max(data)]
+                    else:
+                        vticks = np.linspace(range_cbar[0], range_cbar[1],
+                                             num=ticks_nbr)
 
                     # Create masks to apply on the data and sample points, in order
                     # to keep only the data to be plotted on the x and y axis
@@ -312,7 +318,8 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
                                                          linestyles=('-',), linewidths=(1,))
                     # Generate the response surface
                     plt.tricontourf(xsample_plot, ysample_plot, data_plot,
-                                    vticks, antialiased=True, cmap=cm.viridis)
+                                    vticks, antialiased=True, vmin=range_cbar[0],
+                                    vmax=range_cbar[1], cmap=cm.viridis)
 
                     # If doe option activated, generate the points corresponding to
                     # the doe and display them on the graph.
@@ -322,14 +329,14 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
                         doe = np.asarray(doe)
                         len_sampling = len(doe) - resampling
                         if dim == 4:
-                            msk_doe = [(doe[i, 3] > (min_zz + (movie - 0.5) * zz_step) and
-                                        doe[i, 3] < (min_zz + (movie + 0.5) * zz_step) and
-                                        doe[i, 2] > (min_z + (plot - 0.5) * z_step) and
-                                        doe[i, 2] < (min_z + (plot + 0.5) * z_step))
+                            msk_doe = [((min_zz + (movie - 0.5) * zz_step) < doe[i, 3]
+                                        < (min_zz + (movie + 0.5) * zz_step)) and
+                                       ((min_z + (plot - 0.5) * z_step) < doe[i, 2]
+                                        < (min_z + (plot + 0.5) * z_step))
                                        for i, _ in enumerate(doe)]
                         elif dim == 3:
-                            msk_doe = [(doe[i, 2] > (min_z + (plot - 0.5) * z_step) and
-                                        doe[i, 2] < (min_z + (plot + 0.5) * z_step))
+                            msk_doe = [((min_z + (plot - 0.5) * z_step) < doe[i, 2]
+                                        < (min_z + (plot + 0.5) * z_step))
                                        for i, _ in enumerate(doe)]
                         else:
                             msk_doe = msk_total

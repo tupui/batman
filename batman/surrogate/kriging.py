@@ -32,9 +32,10 @@ import numpy as np
 from scipy.optimize import differential_evolution
 from pathos.multiprocessing import cpu_count
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF
+from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 from ..misc import NestedPool
 from ..functions import multi_eval
+import sklearn.gaussian_process.kernels as kernels
 
 
 class Kriging(object):
@@ -43,7 +44,7 @@ class Kriging(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, sample, data):
+    def __init__(self, sample, data, kernel=None, noise=False):
         r"""Create the predictor.
 
         Uses sample and data to construct a predictor using Gaussian Process.
@@ -54,17 +55,24 @@ class Kriging(object):
         of the `ouput`. A predictor per line of `data` is created. This leads
         to a line of predictors that predicts a new column of `data`.
 
+        If :attr:`noise` is a float, it will be used as :attr:`noise_level` by
+        :class:`sklearn.gaussian_process.kernels.WhiteKernel`. Otherwise, if
+        :attr:`noise` is ``True``, default values are use for the WhiteKernel.
+        If :attr:`noise` is ``False``, no noise is added.
+
         A multiprocessing strategy is used:
 
         1. Create a process per mode, do not create if only one,
         2. Create `n_restart` (3 by default) processes by process.
 
         In the end, there is :math:`N=n_{restart} \times n_{modes})` processes.
-        If there is not enought CPU, :math:`N=\frac{n_{cpu}}{n_restart}`.
+        If there is not enought CPU, :math:`N=\frac{n_{cpu}}{n_{restart}}`.
 
-        :param array_like sample: The sample used to generate the data. (n_samples, n_features)
-        :param array_like data: The observed data. (n_samples, [n_features])
-
+        :param array_like sample: Sample used to generate the data (n_samples, n_features).
+        :param array_like data: Observed data (n_samples, n_features).
+        :param kernel: Kernel from scikit-learn.
+        :type kernel: :class:`sklearn.gaussian_process.kernels.`*.
+        :param float/bool noise: Noise used into kriging.
         """
         try:
             sample[0][0]
@@ -77,12 +85,22 @@ class Kriging(object):
         self.model_len = data.shape[1]
         if self.model_len == 1:
             data = data.ravel()
+        if kernel is not None:
+            self.kernel = kernel
+        else:
+            # Define the model settings
+            l_scale = (1.0,) * sample_len
+            scale_bounds = [(1e-03, 1000.0)] * sample_len
+            self.kernel = 1.0 * RBF(length_scale=l_scale,
+                                    length_scale_bounds=scale_bounds)
 
-        # Define the model settings
-        l_scale = ((1.0),) * sample_len
-        scale_bounds = [(1e-03, 1000.0)] * sample_len
-        self.kernel = 1.0 * RBF(length_scale=l_scale,
-                                length_scale_bounds=scale_bounds)
+        # Add a noise on the kernel using WhiteKernel
+        if noise:
+            if isinstance(noise, bool):
+                noise = WhiteKernel()
+            else:
+                noise = kernels.WhiteKernel(noise_level=noise)
+            self.kernel += noise
 
         self.n_restart = 3
         # Define the CPU multi-threading/processing strategy
@@ -100,7 +118,9 @@ class Kriging(object):
                                           n_restarts_optimizer=0,
                                           optimizer=self._optim_evolution,
                                           normalize_y=True)
-            data = gp.fit(sample, column)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                data = gp.fit(sample, column)
             hyperparameter = np.exp(gp.kernel_.theta)
 
             return data, hyperparameter
@@ -126,11 +146,11 @@ class Kriging(object):
         is done several times using multiprocessing.
         The best results are returned.
 
-        :param callable obj_func: function to optimize
-        :param lst(float) initial_theta: initial guess
-        :param lst(lst(float)) bounds: bounds
-        :return: theta_opt and func_min
-        :rtype: lst(float), float
+        :param callable obj_func: function to optimize.
+        :param lst(float) initial_theta: initial guess.
+        :param lst(lst(float)) bounds: bounds.
+        :return: theta_opt and func_min.
+        :rtype: lst(float), float.
         """
         def func(args):
             """Get the output from sklearn."""
@@ -166,11 +186,9 @@ class Kriging(object):
 
         From a point, make a new prediction.
 
-        :param tuple(float) point: The point to evaluate.
+        :param array_like point: The point to evaluate (n_features,).
         :return: The predictions.
-        :rtype: lst
-        :return: The standard deviations.
-        :rtype: lst
+        :rtype: array_like (n_features,).
         """
         point_array = np.asarray(point).reshape(1, -1)
         prediction = np.empty((self.model_len))

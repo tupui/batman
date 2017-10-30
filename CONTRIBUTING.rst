@@ -72,13 +72,17 @@ passing state. This means that you should be able to checkout from them an use
 BATMAN without any errors.
 
 The library `pytest <https://docs.pytest.org/en/latest/>`_ is used. It is simple and powerfull.
-Checkout their doc and replicate constructs from existing tests. If you are note
+Checkout their doc and replicate constructs from existing tests. If you are not
 already in love with it, you will soon be. All tests can be launched using::
 
-    pytest --cov=batman --cov-report term-missing --basetemp=./TMP_CI .
+    coverage run -m pytest --basetemp=./TMP_CI batman/tests test_cases
 
 This command fires `coverage <http://coverage.readthedocs.io>`_ at the same time.
 The output consists in tests results and coverage report.
+
+.. note:: Tests will be automatically launched when you will push your branch to
+  the server. So you only have to run locally your new tests or the one you
+  think you should.
 
 GIT
 ---
@@ -115,6 +119,9 @@ You can commit any change you feel, start discussions about it, etc.
 4. Finally, follow `these <https://docs.gitlab.com/ee/gitlab-basics/add-merge-request.html>`_
    instructions to create a merge request from your fork. This will send an
    email to the committers.
+
+.. note:: For every commit you push, the linter is launched. After that, if you
+  want to launch all tests, you have to manually run them using the interface button.
 
 Your request will only be considered for integration if in a **finished** state: 
 

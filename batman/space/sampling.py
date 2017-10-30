@@ -25,6 +25,7 @@ and the method.
        [ 6.        ,  4.33333333]])
 
 """
+import logging
 from scipy import stats
 from scipy.stats import randint
 import numpy as np
@@ -34,6 +35,8 @@ import openturns as ot
 class Doe():
 
     """DOE class."""
+
+    logger = logging.getLogger(__name__)
 
     def __init__(self, n_sample, bounds, kind, var=0):
         """Initialize the DOE generation.
@@ -53,8 +56,6 @@ class Doe():
           ['halton', 'sobol', 'faure', 'lhs[c]', 'sobolscramble', 'uniform',
           'discrete'] otherwize can be a list of openturns distributions.
         :param int var: Position of the discrete variable.
-        :return: Sampling
-        :rtype: lst(array)
         """
         self.n_sample = n_sample
         self.bounds = bounds
@@ -91,13 +92,23 @@ class Doe():
                                                              self.n_sample)
         elif isinstance(self.kind, list):
             dists = ','.join(['ot.' + self.kind[i] for i in range(self.dim)])
-            distribution = eval("ot.ComposedDistribution([" + dists + "])")
+            try:
+                distribution = eval('ot.ComposedDistribution([' + dists + '])',
+                                    {'__builtins__': None},
+                                    {'ot': __import__('openturns')})
+            except (TypeError, AttributeError):
+                self.logger.error('OpenTURNS distribution unknown.')
+                raise SystemError
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
                                                              distribution,
                                                              self.n_sample)
 
     def generate(self):
-        """Generate the DOE."""
+        """Generate the DOE.
+
+        :return: Sampling.
+        :rtype: array_like (n_samples, n_features).
+        """
         if self.kind in ['lhs', 'lhsc', 'lhsopt', 'discrete']:
             sample = self.sequence_type.generate()
         elif self.kind == 'sobolscramble':
@@ -144,7 +155,7 @@ class Doe():
     def scrambled_sobol_generate(self):
         """Scrambled Sobol.
 
-        Scramble function as in Owen (1997)
+        Scramble function as in Owen (1997).
         """
         # Generate sobol sequence
         self.sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(self.dim))

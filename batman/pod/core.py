@@ -39,8 +39,8 @@ class Core(object):
         - V: ndarray(nb of snapshots, nb of snapshots),
           after filtering (nb of snapshots, nb of modes).
 
-        :param float tolerance: basis modes filtering criteria
-        :param int dim_max: number of basis modes to keep
+        :param float tolerance: basis modes filtering criteria.
+        :param int dim_max: number of basis modes to keep.
         """
         self.tolerance = tolerance
         self.dim_max = dim_max
@@ -67,7 +67,7 @@ class Core(object):
 
         `S` is not stored as the conjugate but as `S`.
 
-        :param np.array snapshots: Snapshot matrix (nb of data per snapshot,
+        :param array_like snapshots: Snapshot matrix (nb of data per snapshot,
             nb of samples)
         """
         # compute mean snapshot
@@ -85,17 +85,17 @@ class Core(object):
     def filtering(self, U, S, V, tolerance, dim_max):
         """Remove lowest modes in U, S and V.
 
-        :param np.array U: (nb of data, nb of snapshots)
-        :param np.array S: (nb of modes)
-        :param np.array V: (nb of snapshots, nb of snapshots)
-        :param float tolerance: basis modes filtering criteria
-        :param int dim_max: number of basis modes to keep
-        :return: U (nb of data, nb of modes)
-        :rtype: np.array
-        :return: S (nb of modes)
-        :rtype: np.array
-        :return: V (nb of snapshots, nb of modes)
-        :rtype: np.array
+        :param array_like U: (nb of data, nb of snapshots).
+        :param array_like S: (nb of modes).
+        :param array_like V: (nb of snapshots, nb of snapshots).
+        :param float tolerance: basis modes filtering criteria.
+        :param int dim_max: number of basis modes to keep.
+        :return: U (nb of data, nb of modes).
+        :rtype: array_like.
+        :return: S (nb of modes).
+        :rtype: array_like.
+        :return: V (nb of snapshots, nb of modes).
+        :rtype: array_like.
         """
         total_sum = np.sum(S)
         # if total_sum == 0. and S.size == 1:
@@ -125,7 +125,7 @@ class Core(object):
     def update(self, snapshot):
         """Update POD with a new snapshot.
 
-        :param np.array snapshot: a snapshot
+        :param array_like snapshot: a snapshot.
         """
         if self.mean_snapshot is None:
             # start off with a mode that will be thrown away
@@ -206,11 +206,11 @@ class Core(object):
         1. Create a N threads with :math:`N=\frac{n_{cpu}}{n_{restart} \times n_{modes}}`,
         2. If :math:`N > n_{cpu}` restrict the threads to 1.
 
-        :param lst points: Points in the parameter space
-        :return: Q2 error
-        :rtype: float
-        :return: Max MSE point
-        :rtype: lst(float)
+        :param lst points: Points in the parameter space.
+        :return: Q2 error.
+        :rtype: float.
+        :return: Max MSE point.
+        :rtype: array_like (n_features,).
         """
         points_nb = len(points)
         data_len = self.U.shape[0]
@@ -222,9 +222,9 @@ class Core(object):
         def quality(i):
             """Error at a point.
 
-            :param int i: point iterator
-            :return: mean, error
-            :rtype: np.array, float
+            :param int i: point iterator.
+            :return: mean and error.
+            :rtype: array_like.
             """
             # Remove point from matrix
             V_1 = np.delete(self.V, i, 0)

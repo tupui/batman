@@ -23,8 +23,8 @@ import os
 import pickle
 from collections import OrderedDict
 from concurrent import futures
-import openturns as ot
 import numpy as np
+import sklearn.gaussian_process.kernels as kernels
 from .pod import Pod
 from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
 from .surrogate import SurrogateModel
@@ -54,7 +54,7 @@ class Driver(object):
         From settings, init snapshot, space [POD, surrogate].
 
         :param dict settings: settings.
-        :param str script: settings path.
+
         :param str fname: output folder path.
         """
         self.settings = settings
@@ -70,8 +70,12 @@ class Driver(object):
             resamp_size = self.settings['space']['resampling']['resamp_size']
         else:
             resamp_size = 0
+        if 'init_size' in self.settings['space']['sampling']:
+            init_size = self.settings['space']['sampling']['init_size']
+        else:  # when providing DoE as a list
+            init_size = self.settings['space']['sampling']
         self.space = Space(self.settings['space']['corners'],
-                           self.settings['space']['sampling']['init_size'],
+                           init_size,
                            resamp_size,
                            self.settings['snapshot']['io']['parameter_names'])
 
@@ -133,14 +137,42 @@ class Driver(object):
         if 'surrogate' in self.settings:
             if self.settings['surrogate']['method'] == 'pc':
                 dists = self.settings['space']['sampling']['method']
-                dists = [eval("ot." + dist) for dist in dists]
+                try:
+                    dists = [eval('ot.' + dist, {'__builtins__': None},
+                                  {'ot': __import__('openturns')})
+                             for dist in dists]
+                except (TypeError, AttributeError):
+                    self.logger.error('OpenTURNS distribution unknown.')
+                    raise SystemError
+
                 settings_ = {'strategy': self.settings['surrogate']['strategy'],
                              'degree': self.settings['surrogate']['degree'],
                              'distributions': dists,
                              'n_sample': self.settings['space']['sampling']['init_size']}
-                self.surrogate = SurrogateModel('pc',
-                                                self.settings['space']['corners'],
-                                                **settings_)
+            elif self.settings['surrogate']['method'] == 'evofusion':
+                settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
+                             'grand_cost': self.settings['surrogate']['grand_cost']}
+            elif self.settings['surrogate']['method'] == 'kriging':
+                if 'kernel' not in self.settings['surrogate']:
+                    settings_ = {}
+                else:
+                    kernel = self.settings['surrogate']['kernel']
+                    try:
+                        kernel = eval(kernel, {'__builtins__': None},
+                                      kernels.__dict__)
+                    except (TypeError, AttributeError):
+                        self.logger.error('Scikit-Learn kernel unknown.')
+                        raise SystemError
+                    settings_ = {'kernel': kernel}
+                if 'noise' in self.settings['surrogate']:
+                    settings_.update({'noise': self.settings['surrogate']['noise']})
+            else:
+                settings_ = {}
+
+            self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
+                                            self.settings['space']['corners'],
+                                            **settings_)
+            if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
                 sample = self.surrogate.predictor.sample
                 try:
@@ -150,17 +182,6 @@ class Driver(object):
                 finally:
                     if not self.provider.is_file:
                         self.to_compute_points = sample[:len(self.space)]
-            elif self.settings['surrogate']['method'] == 'evofusion':
-                settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
-                             'grand_cost': self.settings['surrogate']['grand_cost']}
-                self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                                self.settings['space']['corners'],
-                                                **settings_)
-            else:
-                settings_ = {}
-                self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                                self.settings['space']['corners'],
-                                                **settings_)
         else:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')
@@ -355,12 +376,13 @@ class Driver(object):
     def prediction(self, points, write=False):
         """Perform a prediction.
 
-        :param :class:`space.point.Point` points: point(s) to predict
-        :param bool write: write a snapshot or not
-        :return: Result
-        :rtype: lst(:class:`tasks.snapshot.Snapshot`) or np.array(n_points, n_features)
-        :return: Standard deviation
-        :rtype: lst(np.array)
+        :param points: point(s) to predict.
+        :type points: :class:`space.point.Point` or array_like (n_samples, n_features).
+        :param bool write: write a snapshot or not.
+        :return: Result.
+        :rtype: lst(:class:`tasks.snapshot.Snapshot`) or array_like (n_samples, n_features).
+        :return: Standard deviation.
+        :rtype: array_like (n_samples, n_features).
         """
         if write:
             output = os.path.join(self.fname, self.fname_tree['predictions'])

@@ -39,7 +39,7 @@ class MascaretApi(object):
         If :attr:`error` is not set null, an error is raised and the programme
         is terminated.
 
-        :param int value: value to assign
+        :param int value: value to assign.
         """
         if value != 0:
             self.logger.error("API error:\n{}".format(self.error_message()))

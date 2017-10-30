@@ -3,6 +3,7 @@ import os
 import pytest
 import numpy as np
 import numpy.testing as npt
+from sklearn.gaussian_process.kernels import Matern
 from batman.surrogate import (PC, Kriging, RBFnet, Evofusion, SurrogateModel)
 from batman.tasks import Snapshot
 from batman.tests.conftest import sklearn_q2
@@ -51,6 +52,9 @@ def test_GP_1d(ishigami_data):
         return evaluation
     q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, wrap_surrogate)
     assert q2 == pytest.approx(1, 0.1)
+
+    surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
+                        kernel=Matern(), noise=0.8)
 
 
 def test_RBFnet_1d(ishigami_data):

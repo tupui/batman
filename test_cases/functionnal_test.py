@@ -220,6 +220,22 @@ def test_only_surrogate(tmp, case='Michalewicz'):
     check_output(tmp)
 
 
+def test_only_surrogate_kernel_noise(tmp, case='Ishigami'):
+    init_case(tmp, case, output=False)
+    sys.argv = ['batman', 'settings.json', '-o', tmp]
+    options = batman.ui.parse_options()
+    settings = batman.misc.import_config(options.settings, schema)
+    settings['space'].pop('resampling')
+    settings.pop('pod')
+    settings.pop('uq')
+    settings['surrogate'].update({
+        'kernel': "ConstantKernel() + "
+                  "Matern(length_scale=1., nu=1.5)",
+        'noise': 0.85})
+    shutil.rmtree(tmp)
+    batman.ui.run(settings, options)
+
+
 def test_uq_no_surrogate(tmp, case='Ishigami'):
     init_case(tmp, case, output=False)
     sys.argv = ['batman', 'settings.json', '-u', '-o', tmp]
@@ -228,6 +244,19 @@ def test_uq_no_surrogate(tmp, case='Ishigami'):
     settings['space'].pop('resampling')
     settings.pop('pod')
     settings.pop('surrogate')
+    shutil.rmtree(tmp)
+    batman.ui.run(settings, options)
+
+
+def test_doe_as_list(tmp, case='Ishigami'):
+    init_case(tmp, case, output=False)
+    sys.argv = ['batman', 'settings.json', '-u', '-o', tmp]
+    options = batman.ui.parse_options()
+    settings = batman.misc.import_config(options.settings, schema)
+    settings['space'].pop('resampling')
+    settings.pop('pod')
+    settings.pop('surrogate')
+    settings['space']['sampling'] = [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]
     shutil.rmtree(tmp)
     batman.ui.run(settings, options)
 

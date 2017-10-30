@@ -47,26 +47,30 @@ class SurrogateModel(object):
     def __init__(self, kind, corners, **kwargs):
         r"""Init Surrogate model.
 
-        :param np.array corners: space corners to normalize.
         :param str kind: name of prediction method, rbf or kriging.
-        :param array_like corners: parameter space corners
-          (2 points extrema, n_features).
-        :param dict pc: configuration of polynomial chaos.
+        :param array_like corners: hypercube ([min, n_features], [max, n_features]).
         :param \**kwargs: See below
 
         :Keyword Arguments: For Polynomial Chaos the following keywords are
           available
 
-            - 'strategy', str. Least square or Quadrature ['LS', 'Quad'].
-            - 'degree', int. Polynomial degree.
-            - 'distributions', lst(:class:`openturns.Distribution`).
+            - **strategy** (str) -- Least square or Quadrature ['LS', 'Quad'].
+            - **degree** (int) -- Polynomial degree.
+            - **distributions** (lst(:class:`openturns.Distribution`)) --
               Distributions of each input parameter.
-            - 'n_sample', int. Number of samples for least square.
+            - **n_sample** (int) -- Number of samples for least square.
+
+          For Kriging the following keywords are available
+
+            - **kernel** (:class:`sklearn.gaussian_process.kernels`.*) --
+              Kernel.
+            - **noise** (float/bool) -- noise level.
         """
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
         self.space = Space(corners)
+        self.data = None
         self.pod = None
         self.update = False  # switch: update model if POD update
         self.dir = {
@@ -79,45 +83,42 @@ class SurrogateModel(object):
         self.settings = kwargs
 
         if self.kind == 'pc':
-            self.predictor = PC(strategy=self.settings['strategy'],
-                                degree=self.settings['degree'],
-                                distributions=self.settings['distributions'],
-                                n_sample=self.settings['n_sample'])
+            self.predictor = PC(**self.settings)
         elif self.kind == 'evofusion':
             self.space.multifidelity = [self.settings['cost_ratio'],
                                         self.settings['grand_cost']]
 
-    def fit(self, points, data, pod=None):
+    def fit(self, sample, data, pod=None):
         """Construct the surrogate.
 
-        :param array_like points: points of the sample (n_samples, n_features).
+        :param array_like sample: sample of the sample (n_samples, n_features).
         :param array_like data: function evaluations (n_samples, n_features).
         :param pod: POD instance.
-        :type pod: :class:`batman.pod.pod.Pod`
+        :type pod: :class:`batman.pod.Pod`.
         """
         self.data = data
-        points = np.array(points)
+        sample = np.array(sample)
         try:
-            points_scaled = self.scaler.transform(points)
+            sample_scaled = self.scaler.transform(sample)
         except ValueError:  # With multifidelity
-            points_scaled = self.scaler.transform(points[:, 1:])
-            points_scaled = np.hstack((points[:, 0].reshape(-1, 1), points_scaled))
+            sample_scaled = self.scaler.transform(sample[:, 1:])
+            sample_scaled = np.hstack((sample[:, 0].reshape(-1, 1), sample_scaled))
 
         # predictor object
         self.logger.info('Creating predictor of kind {}...'.format(self.kind))
         if self.kind == 'rbf':
-            self.predictor = RBFnet(points_scaled, data)
+            self.predictor = RBFnet(sample_scaled, data)
         elif self.kind == 'kriging':
-            self.predictor = Kriging(points_scaled, data)
+            self.predictor = Kriging(sample_scaled, data, **self.settings)
         elif self.kind == 'pc':
-            self.predictor.fit(points, data)
+            self.predictor.fit(sample, data)
         elif self.kind == 'evofusion':
-            self.predictor = Evofusion(points_scaled, data)
+            self.predictor = Evofusion(sample_scaled, data)
 
         self.pod = pod
         self.space.empty()
-        self.space += points
-        self.space.doe_init = len(points)
+        self.space += sample
+        self.space.doe_init = len(sample)
 
         self.logger.info('Predictor created')
         self.update = False
@@ -125,13 +126,14 @@ class SurrogateModel(object):
     def __call__(self, points, path=None):
         """Predict snapshots.
 
-        :param :class:`space.point.Point` points: point(s) to predict
+        :param points: point(s) to predict.
+        :type points: :class:`batman.space.Point` or array_like (n_samples, n_features).
         :param str path: if not set, will return a list of predicted snapshots
-        instances, otherwise write them to disk.
-        :return: Result
-        :rtype: lst(:class:`tasks.snapshot.Snapshot`) or np.array(n_points, n_features)
-        :return: Standard deviation
-        :rtype: lst(np.array)
+          instances, otherwise write them to disk.
+        :return: Result.
+        :rtype: lst(:class:`batman.tasks.Snapshot`) or array_like (n_samples, n_features).
+        :return: Standard deviation.
+        :rtype: array_like (n_samples, n_features).
         """
         if self.update:
             # pod has changed: update predictor
@@ -177,11 +179,11 @@ class SurrogateModel(object):
     def estimate_quality(self, method='LOO'):
         """Estimate quality of the model.
 
-        :param str method: method to compute quality ['LOO', 'ValidationSet']
-        :return: Q2 error
-        :rtype: float
-        :return: Max MSE point
-        :rtype: lst(float)
+        :param str method: method to compute quality ['LOO', 'ValidationSet'].
+        :return: Q2 error.
+        :rtype: float.
+        :return: Max MSE point.
+        :rtype: lst(float).
         """
         if self.pod is not None:
             return self.pod.estimate_quality()
@@ -207,14 +209,14 @@ class SurrogateModel(object):
         train_pred.space.empty()
         sample = np.array(self.space)
 
-        def loo_quality(i):
+        def loo_quality(iteration):
             """Error at a point.
 
-            :param int i: point iterator
-            :return: prediction
-            :rtype: np.array(n_points, n_features)
+            :param int iteration: point iterator.
+            :return: prediction.
+            :rtype: array_like of shape (n_points, n_features).
             """
-            train, test = loo_split[i]
+            train, test = loo_split[iteration]
             train_pred.fit(sample[train], self.data[train])
             pred, _ = train_pred(sample[test])
 
@@ -240,21 +242,21 @@ class SurrogateModel(object):
 
         return q2_loo, point
 
-    def write(self, dir_path):
+    def write(self, fname):
         """Save model, data and space to disk.
 
-        :param str path: path to a directory.
+        :param str fname: path to a directory.
         """
-        path = os.path.join(dir_path, self.dir['surrogate'])
+        path = os.path.join(fname, self.dir['surrogate'])
         with open(path, 'wb') as f:
             pickler = pickle.Pickler(f)
             pickler.dump(self.predictor)
         self.logger.debug('Model wrote to {}'.format(path))
 
-        path = os.path.join(dir_path, self.dir['space'])
+        path = os.path.join(fname, self.dir['space'])
         self.space.write(path)
 
-        path = os.path.join(dir_path, self.dir['data'])
+        path = os.path.join(fname, self.dir['data'])
         with open(path, 'wb') as f:
             pickler = pickle.Pickler(f)
             pickler.dump(self.data)
@@ -262,21 +264,21 @@ class SurrogateModel(object):
 
         self.logger.info('Model, data and space wrote.')
 
-    def read(self, dir_path):
+    def read(self, fname):
         """Load model, data and space from disk.
 
-        :param str path: path to a output/surrogate directory.
+        :param str fname: path to a directory.
         """
-        path = os.path.join(dir_path, self.dir['surrogate'])
+        path = os.path.join(fname, self.dir['surrogate'])
         with open(path, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.predictor = unpickler.load()
         self.logger.debug('Model read from {}'.format(path))
 
-        path = os.path.join(dir_path, self.dir['space'])
+        path = os.path.join(fname, self.dir['space'])
         self.space.read(path)
 
-        path = os.path.join(dir_path, self.dir['data'])
+        path = os.path.join(fname, self.dir['data'])
         with open(path, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.data = unpickler.load()

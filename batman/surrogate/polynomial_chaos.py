@@ -101,8 +101,8 @@ class PC(object):
         The result of the Polynomial Chaos is stored as :attr:`pc_result` and
         the surrogate is stored as :attr:`pc`.
 
-        :param array_like sample: The sample used to generate the data. (n_samples, n_features)
-        :param array_like data: The observed data. (n_samples, [n_features])
+        :param array_like sample: The sample used to generate the data (n_samples, n_features).
+        :param array_like data: The observed data (n_samples, [n_features]).
         """
         sample_ = np.zeros_like(self.sample)
         sample_[:len(sample)] = sample
@@ -127,10 +127,9 @@ class PC(object):
 
         From a point, make a new prediction.
 
-        :param tuple(float) point: The point to evaluate.
+        :param array_like point: The point to evaluate (n_features,).
         :return: The predictions.
-        :rtype: lst
-
+        :rtype: array_like (n_features,).
         """
         point_array = np.asarray(point).reshape(1, -1)
         prediction = np.array(self.pc(point_array))

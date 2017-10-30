@@ -62,14 +62,14 @@ class Space(list):
                  multifidelity=None):
         """Generate a Space.
 
-        :param array_like corners:
-        :param int/array_like sample:
-        :param bool refiner:
+        :param array_like corners: hypercube ([min, n_features], [max, n_features]).
+        :param int/array_like sample: number of sample or list of sample of
+          shape (n_samples, n_features).
         :param int nrefine: number of point to use for refinement.
         :param list(str) p_lst: parameters' names.
         :param list(float) multifidelity: Whether to consider the first
           parameter as the fidelity level. It is a list of ['cost_ratio',
-          'grand_cost']
+          'grand_cost'].
         """
         if isinstance(sample, (int, float)):
             self.doe_init = sample
@@ -133,7 +133,7 @@ class Space(list):
 
         Raise if point already exists or if space is over full.
 
-        :param lst(float) or lst(lst(float)): point(s) to add to space
+        :param array_like: point(s) to add to space (n_samples, n_features).
         """
         # determine if adding one or multiple points
         try:
@@ -176,14 +176,14 @@ class Space(list):
     def sampling(self, n=None, kind='halton'):
         """Create point samples in the parameter space.
 
-        Minimum number of samples for halton and sobol : 4
+        Minimum number of samples for halton and sobol: 4
         For uniform sampling, the number of points is per dimensions.
         The points are registered into the space and replace existing ones.
 
-        :param str kind: method of sampling
-        :param int n: number of samples
-        :return: List of points
-        :rtype: self
+        :param str kind: method of sampling.
+        :param int n: number of samples.
+        :return: List of points.
+        :rtype: self.
         """
         if self.multifidelity and n is None:
             n = self._cheap_doe_from_expensive(self.doe_init)
@@ -216,9 +216,9 @@ class Space(list):
                pdf=None, hybrid=None, discrete=False):
         """Refine the sample, update space points and return the new point(s).
 
-        :param :class:`surrogate.surrogate_model.SurrogateModel` surrogate: surrogate
-        :return: List of points to add
-        :rtype: :class:`space.point.Point` -> lst(tuple(float))
+        :param :class:`batman.surrogate.SurrogateModel` surrogate: surrogate.
+        :return: List of points to add.
+        :rtype: element or list of :class:`batman.space.Point`.
         """
         # Refinement strategy
         if (self.refiner is None) and (method == 'hybrid'):
@@ -270,9 +270,9 @@ class Space(list):
     def _cheap_doe_from_expensive(self, n):
         """Compute the number of points required for the cheap DOE.
 
-        :param int n: size of the expensive design
-        :return: size of the cheap design
-        :rtype: int
+        :param int n: size of the expensive design.
+        :return: size of the cheap design.
+        :rtype: int.
         """
         doe_cheap = (self.multifidelity[1] - n) * self.multifidelity[0]
         doe_cheap = int(doe_cheap)
@@ -301,8 +301,8 @@ class Space(list):
     def discrepancy(self, sample=None):
         """Compute the centered discrepancy.
 
-        :return: Centered discrepancy
-        :rtype: float
+        :return: Centered discrepancy.
+        :rtype: float.
         """
         scaler = preprocessing.MinMaxScaler()
         scaler.fit(self.corners)
@@ -341,7 +341,7 @@ class Space(list):
 
         After writting points, it plots them.
 
-        :param str path: folder to save the points in
+        :param str path: folder to save the points in.
         """
         np.savetxt(path, self)
         resampling = len(self) - self.doe_init
