@@ -48,28 +48,26 @@ function. The default display is the following:
 
 .. image::  fig/response_function.png
 
-If exactly 2 input parameters are involved, it is then possible to generate the
+If exactly 2 input parameters are involved, it is possible to generate the
 response surface, the surface itself being colored by the value of the function.
 The corresponding values of the 2 input parameters are displayed on the x and y
 axis, with the following default display:
 
 .. image:: fig/response_surface.png
 
-Because the response surface is a 2D picture, a set of response surface is generated
+Because the response surface is a 2D picture, a set of response surfaces is generated
 when dealing with 3 input parameters. The value of the 3rd input parameter is fixed
 to a different value on each plot. The obtained set of pictures is concatenated
 to one single movie file in mp4 format:
 
 .. image:: fig/response_surface.gif
 
-Finally, response surfaces are also plotted for 4 input parameters. a set of
+Finally, response surfaces can also be plotted for 4 input parameters. A set of
 several movies is created, the value of the 4th parameter being fixed to a
 different value on each movie.
 
 Several display options can be set by the user to modify the created response
 surface:
-
-.. code-block:: python
 
 * doe: array-like. Default = None.
 
@@ -122,7 +120,14 @@ surface:
   Name of the response surface(s) to be plotted. This name can be followed by an
   integer number when several files are generated.
 
+As an example, the previous response surface for 2 input parameters is now plotted
+with its design of experiment, 4 of the points being indicated as a later resampling
+(4 red triangles amongs the black dots). Additional iso-contours are added to the graph
+and the axis corresponding the each input parameters are interverted. Note also the
+modification in color numbers in the colorbar. Finally, the names of the input parameters
+and of the cost function are also modified for more explicit ones.
 
+.. image:: fig/response_surface_options.png
 
 HDR-Boxplot
 ===========
