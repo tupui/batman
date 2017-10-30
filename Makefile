@@ -1,48 +1,62 @@
-# F2PY parameters
+# Remarks from a computer scientist: 
+# - Never seen such a low quality makefile...
+# - Dependencies are not handled properly.
+#   Rules are written for building objects different from their targets.
+#   It cannot even handle building python wrappers for more than 1 fortran file !
+# - But managing fortran dependencies is a pain in the ass,
+#   and I don't know how f2py works. So I won't bother with it. 
+#
+# Just remove Fortran code from this project !
+
+
+# -----------------------------------------------------------------------------
+# Compiler tools
+
+# Fortran
+FC = gfortran
+FDEBUG = -g -O0
+FFLAGS = $(FDEBUG) -fPIC
+
+# Fortran to Python
 # use "f2py -c --help-fcompiler" to get available parameters
-ifeq ( $(findstring "Python 2.7.9", $(shell python --version 2>&1)), )
-	F2PY   = f2py3 --verbose
-else
-	F2PY   = f2py --verbose
-endif
+F2PY = f2py
 F2PY_DEBUG = --debug --noopt --noarch
-# F2PY_DEBUG += --debug-capi
-FOPT       =
-FFLAGS     = -O0
-FC         = ifort -fPIC -g
-FC         = gfortran -fPIC -g
-#MOD_DIR = -module 
-MOD_DIR = -I
-#MOD_DIR = -J
+F2PY_FLAGS = $(F2PY_DEBUG) --verbose --f90flags="$(FFLAGS)"
 
-###############################################################################
-# process parameters
+# If python 3.X.X use f2py3 instead
+ifeq ( $(findstring "ython 2.", $(shell python --version 2>&1)), )
+	F2PY = f2py3
+endif
 
-# f2py flags
-F2PY_FLAGS = $(F2PY_NUM) $(F2PY_DEBUG) --opt="$(FOPT)" --f90flags="$(FFLAGS)"
-SRC     = batman/input_output/tecplot.f90
-MISC    = batman/input_output/io_tools.f90
-MODULE  = _`basename $(SRC) .f90`
+
+# -----------------------------------------------------------------------------
+# Sources and Directories
+SRC_DIR = batman
+# SRC = $(shell find $(SRC_DIR) -iname "*.f90")
+SRC     = $(SRC_DIR)/input_output/tecplot.f90
+MISC    = $(SRC_DIR)/input_output/io_tools.f90
+MODULE  = _$(shell basename $(SRC) .f90)
 
 OBJ_DIR = obj
-LIB_DIR = lib
-
-# SRC = $(foreach dir,$(SRC_DIR),$(patsubst $(dir)/%.f90,%.f90, $(wildcard $(dir)/*.f90) ))
 OBJ := $(MISC:.f90=.o)
 
+
+# -----------------------------------------------------------------------------
+# Rules
 
 all: directories $(OBJ)
 	$(F2PY) $(F2PY_FLAGS) --build-dir $(OBJ_DIR) -c $(OBJ_DIR)/io_tools.o $(SRC) -m $(MODULE)
 	mv $(MODULE)*.so `dirname $(SRC)`
 
-.PHONY : directories
+%.o : %.f90
+	@echo "Compiling $<"
+	$(FC) $(FFLAGS) -c $< -o $(OBJ_DIR)/$(@F) -I$(OBJ_DIR)
+
+
+.PHONY : directories clean
 directories:
-	@if [ ! -d $(OBJ_DIR) ] ; then mkdir -p $(OBJ_DIR) ; fi;
-	@if [ ! -d $(LIB_DIR) ] ; then mkdir -p $(LIB_DIR) ; fi;
+	@mkdir -p $(OBJ_DIR)
 
 clean:
-	rm -rf $(OBJ_DIR) $(LIB_DIR) *.mod
+	rm -rf $(OBJ_DIR) *.mod
 
-%.o : %.f90
-	@echo "Compiling $<" ; \
-	$(FC) $(FFLAGS) -c $< -o $(OBJ_DIR)/`basename $@` $(MOD_DIR)$(OBJ_DIR)

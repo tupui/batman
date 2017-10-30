@@ -20,6 +20,7 @@ import os
 import sys
 import subprocess
 from setuptools import (setup, find_packages, Command)
+from distutils.version import LooseVersion
 
 cmdclasses = dict()
 
@@ -67,13 +68,14 @@ cmdclasses['build_sphinx'] = BuildSphinx
 cmdclasses['build_fortran'] = CompileSources
 
 # Check some import before starting build process.
+OPENTURNS_MIN_VERSION = LooseVersion('1.8')
 try:
     import openturns
-    if float(openturns.__version__[0:3]) < 1.8:
-        raise ImportError
-except ImportError:
-    print('You need to install OpenTURNS >= 1.8')
-    raise SystemExit
+    if LooseVersion(openturns.__version__) < OPENTURNS_MIN_VERSION:
+        raise ImportError('Found OpenTurns {}'.format(openturns.__version__))
+except ImportError as e:
+    msg = '{}{}You need to install OpenTURNS >= {}'
+    raise ImportError(msg.format(e, os.linesep, OPENTURNS_MIN_VERSION))
 
 setup_requires = ['pytest-runner']
 tests_require = ['pytest', 'mock', 'coverage', 'pylint']
