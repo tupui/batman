@@ -78,13 +78,13 @@ class HdrBoxplot:
         3. Compute mediane curve along with quantiles regions and outlier
            curves.
 
-        :param array_like data: dataset (n_samples, n_features)
-        :param float variance: percentage of total variance to conserve
-        :param array_like alpha: extra quantile values (n_alpha)
-        :param float threshold: threshold for outliers
-        :param str outliers_method: detection method ['kde', 'forest']
-        :param bool optimize: bandwidth global optimization or grid search
-        :param int n_contours: discretization to compute contour
+        :param array_like data: dataset (n_samples, n_features).
+        :param float variance: percentage of total variance to conserve.
+        :param array_like alpha: extra quantile values (n_alpha).
+        :param float threshold: threshold for outliers.
+        :param str outliers_method: detection method ['kde', 'forest'].
+        :param bool optimize: bandwidth global optimization or grid search.
+        :param int n_contours: discretization to compute contour.
         """
         self.data = data
         self.threshold = threshold
@@ -163,9 +163,10 @@ class HdrBoxplot:
         max curves. This is done by comparing the PDF value of a given curve
         with the band PDF.
 
-        :param array_like band: alpha values `[max_alpha, min_alpha]` ex: [0.9, 0.5]
-        :return: `[max_quantile, min_quantile]` (2, n_features)
-        :rtype: list(array_like)
+        :param array_like band: alpha values `[max_alpha, min_alpha]`
+          ex: [0.9, 0.5].
+        :return: `[max_quantile, min_quantile]` (2, n_features).
+        :rtype: list(array_like).
         """
         min_pdf = self.pvalues[self.alpha.index(band[0])]
         try:
@@ -189,11 +190,11 @@ class HdrBoxplot:
         The curve value at :attr:`idx` for a given PDF is only returned if
         within bounds defined by the band. Otherwise, 1E6 is returned.
 
-        :param float x: curve in reduced space
-        :param int idx: index value of the components to compute
-        :param int sign: return positive or negative value
-        :return: Curve value at :attr:`idx`
-        :rtype: float
+        :param float x: curve in reduced space.
+        :param int idx: index value of the components to compute.
+        :param int sign: return positive or negative value.
+        :return: Curve value at :attr:`idx`.
+        :rtype: float.
         """
         x = x.reshape(1, -1)
         pdf = np.exp(self.ks_gaussian.score_samples(x))
@@ -229,12 +230,12 @@ class HdrBoxplot:
         :attr:`self.detector`. Thus calling, several times the method will not
         cause any overhead.
 
-        :param array_like, shape (n_samples, n_features) data: data from which
-          to extract outliers
-        :param array_like, shape (n_samples, n_features/n_components) samples:
-          samples values to examine
-        :param str method: detection method ['kde', 'forest']
-        :param float threshold: detection sensitivity
+        :param array_like data: data from which to extract outliers.
+          (n_samples, n_features)
+        :param array_like samples: samples values to examine
+          (n_samples, n_features/n_components).
+        :param str method: detection method ['kde', 'forest'].
+        :param float threshold: detection sensitivity.
         """
         if method == 'kde':
             outliers = np.where(samples < self.pvalues[self.alpha.index(threshold)])
@@ -266,14 +267,14 @@ class HdrBoxplot:
         If :attr:`samples` is `None`, the dataset is used for all plots ;
         otherwize the given sample is used.
 
-        :param array_like, shape (n_samples, n_features): samples to plot
-        :param str fname: wether to export to filename or display the figures
-        :param array_like, shape (1, n_features) x_common: abscissa
-        :param list(str) labels: labels for each curve
-        :param str xlabel: label for x axis
-        :param str ylabel: label for y axis
-        :returns: figures and all axis
-        :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances
+        :param array_like: samples to plot (n_samples, n_features).
+        :param str fname: wether to export to filename or display the figures.
+        :param array_like x_common: abscissa (1, n_features).
+        :param list(str) labels: labels for each curve.
+        :param str xlabel: label for x axis.
+        :param str ylabel: label for y axis.
+        :returns: figures and all axis.
+        :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
         """
         figures, axs = [], []
 
@@ -375,14 +376,14 @@ class HdrBoxplot:
         it will samples *n* new samples ; and if
         `array_like, shape (n_samples, n_features)` it will use this.
 
-        :param int frame_rate: time between two outcomes (in milliseconds)
-        :param str fname: export movie to filename
-        :param False, int, list samples: Data selector
-        :param array_like x_common: abscissa
-        :param list(str) labels: labels for each curve
-        :param str xlabel: label for x axis
-        :param str ylabel: label for y axis
-        :param float offset: Margin around the extreme values of the plot
+        :param int frame_rate: time between two outcomes (in milliseconds).
+        :param str fname: export movie to filename.
+        :param False, int, list samples: Data selector.
+        :param array_like x_common: abscissa.
+        :param list(str) labels: labels for each curve.
+        :param str xlabel: label for x axis.
+        :param str ylabel: label for y axis.
+        :param float offset: Margin around the extreme values of the plot.
         """
         movie_writer = manimation.writers['ffmpeg']
         metadata = {'title': 'f-HOPs',
@@ -481,8 +482,8 @@ class HdrBoxplot:
             """Generate a sinusoidal note.
 
             :param float freq: frequency to generate the note from.
-            :return: note
-            :rtype: array_like shape (duration * rate,)
+            :return: note.
+            :rtype: array_like shape (duration * rate,).
             """
             data = np.sin(2.0 * np.pi * freq * t) * amp
             return data
@@ -518,9 +519,9 @@ class HdrBoxplot:
         `array_like, shape (n_samples, n_components)` curves are sampled
         from reduce coordinates of the n-variate space.
 
-        :param int, array_like samples: Data selector
-        :return: new curves
-        :rtype: array_like, shape (n_samples, n_features)
+        :param int, array_like samples: Data selector.
+        :return: new curves.
+        :rtype: array_like (n_samples, n_features).
         """
         if isinstance(samples, int):
             data = self.ks_gaussian.sample(n_samples=samples)

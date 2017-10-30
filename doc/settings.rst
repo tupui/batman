@@ -163,16 +163,21 @@ Set up the surrogate model strategy to use. See :ref:`Surrogate <surrogate>`.
     }
 
 + ``method``: method used to generate a snapshot one of *rbf* (Radial Basic Function), *kriging*, *pc* (polynomial chaos expension) or *evofusion* method.
-+ ``predictions``: set of points to predict.
++ [``predictions``]: set of points to predict.
 
-For *pc* the following extra attributes must be set: 
+For *kriging* the following extra attributes **can** be set: 
+
++ [``kernel``]: kernel to use. Ex: ``"ConstantKernel() + Matern(length_scale=1., nu=1.5)"``.
++ [``noise``]: noise level as boolean or as a float.
+
+For *pc* the following extra attributes **must** be set: 
 
 + ``strategy``: either using quadrature or least square one of *Quad* or *LS*.
 + ``degree``: the polynomial degree.
 
 .. note:: When using *pc*, the ``sampling`` must be set to a list of distributions.
 
-For *evofusion* the following extra attributes must be set: 
+For *evofusion* the following extra attributes **must** be set: 
 
 + ``cost_ratio``: cost ratio in terms of function evaluation between high and low fidelity models.
 + ``grand_cost``: total cost of the study in terms of number of function evaluation of the high fidelity model.

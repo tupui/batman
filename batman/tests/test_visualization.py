@@ -319,23 +319,23 @@ def test_response_surface_1D(mock_show, tmp):
 
 @pytest.mark.xfail(raises=ValueError)
 @patch("matplotlib.pyplot.show")
-def test_response_surface_2D_scalar(mock_show, branin_data):
+def test_response_surface_2D_scalar(mock_show, tmp, branin_data):
     space = branin_data.space
     bounds = [[-7, 0], [10, 15]]
-    path = os.path.join('.', 'rs_2D_vector.pdf')
+    path = os.path.join(tmp, 'rs_2D_vector.pdf')
     response_surface(bounds=bounds, sample=space, data=branin_data.target_space)
     response_surface(bounds=bounds, fun=branin_data.func, doe=space, resampling=4,
                      fname=path, feat_order=[2, 1])
 
 
 @patch("matplotlib.pyplot.show")
-def test_response_surface_2D_vector(mock_show, mascaret_data, tmp):
+def test_response_surface_2D_vector(mock_show, tmp, mascaret_data):
     space = mascaret_data.space
     data = mascaret_data.target_space
     xdata = mascaret_data.func.x
     bounds = [[15.0, 2500.0], [60, 6000.0]]
     order = [1, 2]
-    path = os.path.join('.', 'rs_2D_vector.pdf')
+    path = os.path.join(tmp, 'rs_2D_vector.pdf')
     response_surface(bounds=bounds, sample=space, data=data, xdata=xdata, fname=path)
     response_surface(bounds=bounds, fun=mascaret_data.func, xdata=xdata,
                      plabels=['Ks', 'Q'], feat_order=order, flabel='Z')

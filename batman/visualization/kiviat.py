@@ -43,12 +43,12 @@ class Kiviat3D:
         """Prepare params for Kiviat plot.
 
         :param array_like params: sample of parameters of Shape
-          (n_samples, n_params)
-        :param array_like bounds: boundaries to scale the colors.
-           shape ((min, n_features), (max, n_features))
+          (n_samples, n_params).
+        :param array_like bounds: boundaries to scale the colors
+           shape ([min, n_features], [max, n_features]).
         :param array_like feval: sample of realization which corresponds to the
-          sample of parameters :attr:`params`. Shape (n_samples, n_features)
-        :param list(str) param_names: names of each parameters (n_params)
+          sample of parameters :attr:`params` (n_samples, n_features).
+        :param list(str) param_names: names of each parameters (n_params).
         """
         self.params = np.asarray(params)
         self.bounds = bounds
@@ -94,9 +94,9 @@ class Kiviat3D:
         a 2D Kiviat plane is created. Create the mesh in polar coordinates and
         compute corresponding Z.
 
-        :param array_like params: parameters of the plane (n_params)
-        :param feval: function evaluation corresponding to :attr:`params`
-        :param idx: *Z* coordinate of the plane
+        :param array_like params: parameters of the plane (n_params).
+        :param feval: function evaluation corresponding to :attr:`params`.
+        :param idx: *Z* coordinate of the plane.
         """
         params = self.scale.transform(np.asarray(params).reshape(1, -1))[0]
 
@@ -119,7 +119,7 @@ class Kiviat3D:
         Create axis arrows along with annotations with parameters name and
         ticks.
 
-        :param ax: Matplotlib axis instance
+        :param ax: Matplotlib axis instance.
         """
         for i in range(self.n_params):
             # Create axis
@@ -143,9 +143,9 @@ class Kiviat3D:
     def plot(self, fname=None):
         """Plot 3D kiviat.
 
-        :param str fname: wether to export to filename or display the figures
-        :returns: figure
-        :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instances
+        :param str fname: wether to export to filename or display the figures.
+        :returns: figure.
+        :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instances.
         """
         fig = plt.figure()
         ax = fig.add_subplot(111, projection=Axes3D.name)
@@ -170,9 +170,9 @@ class Kiviat3D:
         Each frame consists in a 3D Kiviat with an additional outcome
         highlighted.
 
-        :param int frame_rate: time between two outcomes (in milliseconds)
-        :param str fname: export movie to filename
-        :param list(str) labels: labels for each curve
+        :param int frame_rate: time between two outcomes (in milliseconds).
+        :param str fname: export movie to filename.
+        :param list(str) labels: labels for each curve.
         """
         # Base plot
         self.cmap = cm.get_cmap('gray')

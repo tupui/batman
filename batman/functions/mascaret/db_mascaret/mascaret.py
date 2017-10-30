@@ -85,9 +85,9 @@ class Mascaret(object):
     def __call__(self, x):
         """Call function.
 
-        :param list x: inputs [Ks, Q]
-        :return: f(x)
-        :rtype: np.array 1D (1, 14)
+        :param array_like x: inputs [Ks, Q].
+        :return: f(x).
+        :rtype: array_like 1D (1, 14).
         """
         dists = distance.cdist([x, x], self.data_input, 'seuclidean')
         idx = np.argmin(dists, axis=1)
