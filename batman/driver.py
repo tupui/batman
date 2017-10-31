@@ -46,6 +46,7 @@ class Driver(object):
         'surrogate': 'surrogate',
         'predictions': 'predictions',
         'uq': 'uq',
+        'visualization': 'visualization',
     }
 
     def __init__(self, settings, fname):

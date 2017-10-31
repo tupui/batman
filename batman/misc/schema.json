@@ -161,6 +161,31 @@
                    "enum": ["sobol", "FAST"]}
       },
       "required": ["sample", "pdf", "type", "method"]
+    },
+    "visualization": {
+      "type": "object",
+      "properties": {
+        "doe": {"type": "boolean", "default": true},
+        "resampling": {"type": ["integer", "boolean"],
+                       "default": true},
+        "xdata": {"type": "array", "items": {"type": "number"}},
+        "axis_disc": {"type": "array",
+                      "items": {"type": "integer", "maxItems": 4}},
+        "flabel": {"type": "string"}
+        "plabels": {"type": "array",
+                    "items": {"type": "string", "maxItems": 4}},
+        "feat_order": {"type": "array",
+                       "items": {"type": "integer",
+                                 "maximum": 4, "maxItems": 4}},
+        "ticks_nbr": {"type": "integer",
+                      "minimum": 4, "maximum":256},
+        "range_cbar": {"type": "array",
+                       "itmes": {"type": "array",
+                                 "minItems": 2, "maxItems": 2}},
+        "contours": {"type": "array",
+                     "items": {"type": "array", "maxItems": 10}},
+        "fname": {"type": "string"},
+      },
     }
   },
   "required": ["space", "snapshot"],
