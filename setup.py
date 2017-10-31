@@ -68,7 +68,7 @@ cmdclasses['build_sphinx'] = BuildSphinx
 cmdclasses['build_fortran'] = CompileSources
 
 # Check some import before starting build process.
-OPENTURNS_MIN_VERSION = LooseVersion('1.8')
+OPENTURNS_MIN_VERSION = LooseVersion('1.9')
 try:
     import openturns
     if LooseVersion(openturns.__version__) < OPENTURNS_MIN_VERSION:
@@ -76,6 +76,15 @@ try:
 except ImportError as e:
     msg = '{}{}You need to install OpenTURNS >= {}'
     raise ImportError(msg.format(e, os.linesep, OPENTURNS_MIN_VERSION))
+
+try:
+    import scipy
+except ImportError:
+    import pip
+    try:
+        pip.main(['install', 'scipy'])
+    except OSError:
+        pip.main(['install', 'scipy', '--user'])
 
 setup_requires = ['pytest-runner']
 tests_require = ['pytest', 'mock', 'coverage', 'pylint']

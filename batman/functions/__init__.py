@@ -4,6 +4,7 @@ Functions module
 
 Defines some analytical functions, utilities as well as the Mascaret API.
 """
+from .data import (Data, el_nino)
 from .analytical import (SixHumpCamel, Branin, Michalewicz, Rosenbrock,
                          Rastrigin, Ishigami, G_Function,
                          Forrester, Channel_Flow, Manning, ChemicalSpill)
