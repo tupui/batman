@@ -1,5 +1,5 @@
 import pytest
-from batman.functions import (Data, el_nino, tahiti)
+from batman.functions import (Data, el_nino, tahiti, mascaret)
 import numpy.testing as npt
 import numpy as np
 
@@ -49,3 +49,12 @@ def test_tahiti():
     assert data.shape == ((66,), (66, 12))
     assert data.data[6][4] == 12.3
     assert data.sample[6] == 1957
+
+
+def test_mascaret():
+    data = mascaret()
+    assert len(data) == 100000
+    assert data.shape == ((100000, 2), (100000, 14))
+    assert data.data[6][4] == 23.058688963373736
+    npt.assert_almost_equal(data.sample[6], [55.6690593, 3550.8123906])
+    assert data.flabels['Curvilinear abscissa'][4] == 25775

@@ -89,6 +89,10 @@ class Data(collections.Mapping):
         return msg
 
 
+# Common path
+PATH = os.path.dirname(os.path.realpath(__file__))
+
+
 def el_nino():
     """El Nino dataset."""
     desc = ("Averaged monthly sea surface temperature (SST) in degrees Celcius"
@@ -96,8 +100,7 @@ def el_nino():
             " 1950 and 2007.\nSource: NOAA - ERSSTv5 - Nino 1+2 at"
             " http://www.cpc.ncep.noaa.gov/data/indices/")
 
-    path = os.path.dirname(os.path.realpath(__file__))
-    labels, data = np.loadtxt(os.path.join(path, 'elnino.dat'),
+    labels, data = np.loadtxt(os.path.join(PATH, 'elnino.dat'),
                               skiprows=1, usecols=(0, 2), unpack=True)
     labels = labels.reshape(-1, 12)[:, 0]
     data = data.reshape(-1, 12)
@@ -114,8 +117,7 @@ def tahiti():
     desc = ("Averaged monthly sea level pressure (SLP) in millibars"
             "at Tahiti between 1951 and 2016.\nSource: NOAA - Tahiti SLP at"
             " http://www.cpc.ncep.noaa.gov/data/indices/")
-    path = os.path.dirname(os.path.realpath(__file__))
-    labels, *data = np.loadtxt(os.path.join(path, 'tahiti.dat'),
+    labels, *data = np.loadtxt(os.path.join(PATH, 'tahiti.dat'),
                                skiprows=4, usecols=range(0, 13), unpack=True)
     data = np.array(data).T
 
@@ -124,3 +126,20 @@ def tahiti():
 
     return Data(data=data, desc=desc, sample=labels,
                 plabels='Year', flabels=flabels)
+
+
+def mascaret():
+    """Mascaret dataset."""
+    desc = ("Monte-Carlo sampling simulated using MASCARET flow solver."
+            " The Garonne river was used and the output consists in 14 water"
+            " height observations. Two random variables are used:"
+            " the friction coefficient Ks~U(15, 60) and the mass flow"
+            " rate Q~N(4035, 400).")
+    sample = np.load(os.path.join(PATH, 'input_mascaret.npy'))
+    data = np.load(os.path.join(PATH, 'output_mascaret.npy'))
+    flabels = np.array([13150.0, 19450, 21825, 21925, 25775, 32000,
+                        36131.67, 36240, 36290, 38230.45, 44557.50,
+                        51053.33, 57550, 62175])
+
+    return Data(data=data, desc=desc, sample=sample,
+                plabels=['Ks', 'Q'], flabels={'Curvilinear abscissa': flabels})
