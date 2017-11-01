@@ -1,5 +1,5 @@
 import pytest
-from batman.functions import Data
+from batman.functions import (Data, el_nino, tahiti)
 import numpy.testing as npt
 import numpy as np
 
@@ -33,3 +33,19 @@ def test_data():
     assert dataset[2][0] == 8
     npt.assert_almost_equal(dataset[2][1], [5, 7, 10])
     npt.assert_almost_equal([i[1] for i in dataset], data)
+
+
+def test_el_nino():
+    data = el_nino()
+    assert len(data) == 58
+    assert data.shape == ((58,), (58, 12))
+    assert data.data[6][4] == 23.24
+    assert data.sample[6] == 1956
+
+
+def test_tahiti():
+    data = tahiti()
+    assert len(data) == 66
+    assert data.shape == ((66,), (66, 12))
+    assert data.data[6][4] == 12.3
+    assert data.sample[6] == 1957

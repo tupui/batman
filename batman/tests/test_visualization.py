@@ -9,7 +9,7 @@ from mock import patch
 from batman.visualization import (HdrBoxplot, Kiviat3D, pdf, sobol, reshow,
                                   response_surface, doe, corr_cov)
 from batman.surrogate import SurrogateModel
-from batman.functions import Ishigami, Mascaret, G_Function
+from batman.functions import (Ishigami, Mascaret, el_nino)
 import matplotlib.pyplot as plt
 
 try:
@@ -19,18 +19,11 @@ try:
 except (RuntimeError, KeyError):
     have_ffmpeg = False
 
-# Water surface temperature data from:
-# http://www.cpc.ncep.noaa.gov/data/indices/
-path = os.path.dirname(os.path.realpath(__file__))
-labels, data = np.loadtxt(os.path.join(path, 'functional_dataset/elnino.dat'),
-                          skiprows=1, usecols=(0, 2), unpack=True)
-labels = labels.reshape(-1, 12)[:, 0]
-data = data.reshape(-1, 12)
+dataset = el_nino()
+labels, data = dataset.sample, dataset.data
 
-# labels_tahiti, *data_tahiti = np.loadtxt(os.path.join(path, 'functional_dataset/tahiti.dat'),
-#                                          skiprows=4, usecols=range(0, 13),
-#                                          unpack=True)
-# data_tahiti = np.array(data_tahiti).T
+# dataset_tahiti = tahiti()
+# labels_tahiti, data_tahiti = dataset_tahiti.sample, dataset_tahiti.data
 
 
 @pytest.fixture(scope="session")
