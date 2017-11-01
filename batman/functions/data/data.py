@@ -2,7 +2,8 @@
 Data
 ----
 
-Define function related to datasets.
+Define some datasets as functions. In each case, an instance of :class:`Data`
+is returned to have a consistant representation.
 
 * :class:`Data`,
 * :func:`el_nino`.
@@ -15,7 +16,12 @@ import numpy as np
 
 class Data(collections.Mapping):
 
-    """Wrap datasets into a Mapping container."""
+    """Wrap datasets into a Mapping container.
+
+    Store a dataset allong with some informations about it.
+    :attr:`data` corresponds to model's output and :attr:`sample` to the
+    corresponding inputs.
+    """
 
     logger = logging.getLogger(__name__)
 
@@ -48,17 +54,21 @@ class Data(collections.Mapping):
             (self.sample.shape, self.data.shape)
 
     def __getitem__(self, key):
+        """Return the corresponding data or a tuple of (sample, data)."""
         return self.data[key] if self.sample is None else\
             (self.sample[key], self.data[key])
 
     def __iter__(self):
+        """Iterate over data or a zip of sample and data."""
         return iter(self.data) if self.sample is None else\
-            (iter(self.sample), iter(self.data))
+            iter(zip(self.sample, self.data))
 
     def __len__(self):
+        """Based on the number of sample."""
         return len(self.data)
 
     def __repr__(self):
+        """Summarize the container."""
         input_dim = len(self.sample) if self.sample is not None else '-'
         msg = ("Dataset summary:\n"
                "-> Input dimension: {}\n"
