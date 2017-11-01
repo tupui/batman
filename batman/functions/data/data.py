@@ -8,6 +8,8 @@ is returned to have a consistant representation.
 * :class:`Data`,
 * :func:`el_nino`,
 * :func:`tahiti`,
+* :func:`mascaret`,
+* :func:`marthe`.
 """
 import collections
 import os
@@ -22,6 +24,13 @@ class Data(collections.Mapping):
     Store a dataset allong with some informations about it.
     :attr:`data` corresponds to model's output and :attr:`sample` to the
     corresponding inputs.
+
+    Structured array are created for both :attr:`data` and :attr:`sample`.
+    This allows to access values using either normal indexing or attribute
+    indexing by use of labels' features.
+
+    If required, :meth:`toarray` convert both :attr:`data` and :attr:`sample`
+    into regular arrays.
     """
 
     logger = logging.getLogger(__name__)
@@ -29,32 +38,55 @@ class Data(collections.Mapping):
     def __init__(self, data, desc, sample=None, plabels=None, flabels=None):
         """Dataset container.
 
+        Both :attr:`data` and :attr:`sample` are required to be 2D arrays.
+        Thus with one feature, shape must be (n_samples, 1).
+
         :param array_like data: (n_features, n_samples).
         :param str desc: dataset description.
         :param array_like sample: sampling used to create the data
           (n_features, n_samples).
         :param list(str) plabels: parameters' labels (n_features,).
         :param list(str) flabel: name of the quantities of interest
-          (n_features,). It can also be a dictionary if multiple identification
-          is required. Ex: ``{'Temperature': ['Jan', 'Feb', 'Mar']}``
+          (n_features,).
         """
         self.desc = desc
-        self.data = np.asarray(data)
-        self.sample = np.asarray(sample) if sample is not None else None
+        self.plabels = plabels
+        self.flabels = flabels
+
+        # Dataset conversion to structured arrays
+        if self.plabels is not None:
+            dt_sample = {'names': self.plabels,
+                         'formats': ['f8'] * len(self.plabels)}
+        else:
+            dt_sample = None
+        if self.flabels is not None:
+            dt_data = {'names': self.flabels,
+                       'formats': ['f8'] * len(self.flabels)}
+        else:
+            dt_data = None
+
+        self.shape = data.shape if sample is None else (sample.shape, data.shape)
+        self.in_shape = sample.shape[1] if sample is not None else None
+
+        self.data = np.asarray([tuple(datum) for datum in data], dtype=dt_data)
+        self.sample = np.asarray([tuple(snap) for snap in sample],
+                                 dtype=dt_sample) if sample is not None else None
 
         if (self.sample is not None) and (len(self.sample) != len(self.data)):
             self.logger.error("Sample shape not consistent with data shape: "
                               "{} != {}".format(len(self.sample), len(self.data)))
             raise SystemError
 
-        self.plabels = plabels
-        self.flabels = flabels
+    def toarray(self):
+        """Convert the structured array to regular arrays.
 
-    @property
-    def shape(self):
-        """Numpy like shape."""
-        return self.data.shape if self.sample is None else\
-            (self.sample.shape, self.data.shape)
+        This will prevent the hability to access :attr:`sample` and
+        :attr:`data` using attributes from respective labels.
+        """
+        self.data = self.data.view((self.data.dtype[0],
+                                    len(self.data.dtype.names)))
+        self.sample = self.sample.view((self.sample.dtype[0],
+                                        len(self.sample.dtype.names)))
 
     def __getitem__(self, key):
         """Return the corresponding data or a tuple of (sample, data)."""
@@ -76,14 +108,13 @@ class Data(collections.Mapping):
 
     def __repr__(self):
         """Summarize the container."""
-        input_dim = len(self.sample) if self.sample is not None else None
         msg = ("Dataset summary:\n"
                "-> Input dimension: {}\n"
                "-> Output dimension: {}\n"
                "-> Number of samples: {}\n"
                "-> Input labels:\n{}\n"
                "-> Output labels:\n{}\n"
-               ).format(input_dim, self.shape[1], self.shape[0],
+               ).format(self.in_shape, self.shape[1][1], self.shape[0][0],
                         self.plabels, self.flabels)
 
         return msg
@@ -105,11 +136,11 @@ def el_nino():
     labels = labels.reshape(-1, 12)[:, 0]
     data = data.reshape(-1, 12)
 
-    flabels = {'Temperature': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']}
+    flabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-    return Data(data=data, desc=desc, sample=labels,
-                plabels='Year', flabels=flabels)
+    return Data(data=data, desc=desc, sample=labels.reshape(-1, 1),
+                plabels=['Year'], flabels=flabels)
 
 
 def tahiti():
@@ -121,11 +152,11 @@ def tahiti():
                                skiprows=4, usecols=range(0, 13), unpack=True)
     data = np.array(data).T
 
-    flabels = {'Pressure (-1000 mbar)': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']}
+    flabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-    return Data(data=data, desc=desc, sample=labels,
-                plabels='Year', flabels=flabels)
+    return Data(data=data, desc=desc, sample=labels.reshape(-1, 1),
+                plabels=['Year'], flabels=flabels)
 
 
 def mascaret():
@@ -137,12 +168,12 @@ def mascaret():
             " rate Q~N(4035, 400).")
     sample = np.load(os.path.join(PATH, 'input_mascaret.npy'))
     data = np.load(os.path.join(PATH, 'output_mascaret.npy'))
-    flabels = np.array([13150.0, 19450, 21825, 21925, 25775, 32000,
-                        36131.67, 36240, 36290, 38230.45, 44557.50,
-                        51053.33, 57550, 62175])
+    flabels = ['13150', '19450', '21825', '21925', '25775', '32000',
+               '36131.67', '36240', '36290', '38230.45', '44557.5', '51053.33',
+               '57550', '62175']
 
     return Data(data=data, desc=desc, sample=sample,
-                plabels=['Ks', 'Q'], flabels={'Curvilinear abscissa': flabels})
+                plabels=['Ks', 'Q'], flabels=flabels)
 
 
 def marthe():
@@ -158,17 +189,12 @@ def marthe():
             " (developed by BRGM, France).")
     dataset = np.loadtxt(os.path.join(PATH, 'marthe.dat'), skiprows=1)
 
-    plabels = {'Hydraulic conductivity (layer)': ['per1', 'per2', 'per3'],
-               'Hydraulic conductivity (zone)': ['perz1', 'perz2', 'perz3'],
-               'Longitudinal dispersivity (layer)': ['d1', 'd2', 'd3'],
-               'Transversal dispersivity (layer)': ['dt1', 'dt2', 'dt3'],
-               'Volumetric distribution coefficient': ['kd1', 'kd2', 'kd3'],
-               'Porozity': 'poros',
-               'Infiltration type': ['i1', 'i2', 'i3']}
+    plabels = ['per1', 'per2', 'per3', 'perz1', 'perz2', 'perz3', 'perz4',
+               'd1', 'd2', 'd3', 'dt1', 'dt2', 'dt3', 'kd1', 'kd2', 'kd3',
+               'poros', 'i1', 'i2', 'i3']
 
-    flabels = {'Contaminant concentrations':
-               ['p102K', 'p104', 'p106', 'p2.76', 'p29K',
-                'p31K', 'p35K', 'p37K', 'p38', 'p4b']}
+    flabels = ['p102K', 'p104', 'p106', 'p2.76', 'p29K',
+               'p31K', 'p35K', 'p37K', 'p38', 'p4b']
 
     return Data(data=dataset[:, 20:], desc=desc, sample=dataset[:, :20],
                 plabels=plabels, flabels=flabels)

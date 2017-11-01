@@ -24,7 +24,9 @@ class Mascaret(object):
         """Read the database and define the channel."""
         dataset = mascaret()
         self.data_input, self.data_output = dataset.sample, dataset.data
-        self.x = dataset.flabels['Curvilinear abscissa']
+        self.data_input = np.array(self.data_input.tolist())
+        self.data_output = np.array(self.data_output.tolist())
+        self.x = [float(label) for label in dataset.flabels]
         self.d_out = 14
         self.d_in = 2
 

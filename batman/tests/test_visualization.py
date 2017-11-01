@@ -20,9 +20,11 @@ except (RuntimeError, KeyError):
     have_ffmpeg = False
 
 dataset = el_nino()
+dataset.toarray()
 labels, data = dataset.sample, dataset.data
 
 # dataset_tahiti = tahiti()
+# dataset_tahiti.toarray()
 # labels_tahiti, data_tahiti = dataset_tahiti.sample, dataset_tahiti.data
 
 
