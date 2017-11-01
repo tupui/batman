@@ -249,8 +249,7 @@ class MascaretApi(object):
 
     def __del__(self):
         """Delete a model."""
-        self.logger.debug(
-            'Deleting instance #{}...'.format(self.id_masc.value))
+        self.logger.debug('Deleting instance #{}...'.format(self.id_masc.value))
         self.error = self.libmascaret.C_DELETE_MASCARET(self.id_masc)
         self.logger.debug("Model #{} deleted.".format(self.id_masc.value))
 
@@ -270,16 +269,16 @@ class MascaretApi(object):
                 self.user_settings = json.loads(
                     file, encoding="utf-8", object_pairs_hook=OrderedDict)
         if 'Q_BC' in self.user_settings:
-            print('In user_defined for bc_qt')
+            self.logger.debug('In user_defined for bc_qt')
             self.bc_qt = self.user_settings['Q_BC']
         if 'Ks' in self.user_settings:
-            print('In user_defined for ks')
+            self.logger.debug('In user_defined for ks')
             if self.user_settings['Ks']['zone']:
                 self.zone_friction_minor = self.user_settings['Ks']
             else:
                 self.friction_minor = self.user_settings['Ks']
         if 'bathy' in self.user_settings:
-            print('In user_defined for bathy')
+            self.logger.debug('In user_defined for bathy')
             self.cross_section = self.user_settings['bathy']
 
     def __repr__(self):
@@ -529,9 +528,10 @@ class MascaretApi(object):
 
         self.l_name_all_bc = l_name_all_bc
         self.l_num_all_bc = l_num_all_bc
-        print('In info_all_bc, _allself.l_name_all_bc,self.l_num_all_bc',
-              self.l_name_all_bc, self.l_num_all_bc)
-        self.logger.debug('Info all : BC info get.')
+        self.logger.debug("In info_all_bc: _allself.l_name_all_bc"
+                          "self.l_num_all_bc"
+                          .format(self.l_name_all_bc, self.l_num_all_bc))
+        self.logger.debug('Info all: BC info get.')
 
         return nb_bc, l_name_all_bc, l_num_all_bc
 
@@ -545,7 +545,7 @@ class MascaretApi(object):
         :return: boundary conditions for Qt
         :rtype: list(float)
         """
-        print('In bc_qt Getter')
+        self.logger.debug('In bc_qt Getter')
         var_name = ctypes.c_char_p(b'Model.Graph.Discharge')
         # Nb of BC
         size1 = ctypes.c_int()
@@ -572,14 +572,14 @@ class MascaretApi(object):
 
         self.logger.debug('BC Q(t) get.')
 
-#        print ('self.nb_bc',self.nb_bc)
         if self.user_settings['misc']['info_bc'] is True:
             if self.nb_bc is None:
                 self.info_all_bc()
             for k in range(self.nb_bc):
-                self.logger.info("Info Getter Loi Q: {} {} {}".format(self.l_name_all_bc[k],
-                                                                      self.l_num_all_bc[k],
-                                                                      bc_qt[k, :]))
+                self.logger.info("Info Getter Loi Q: {} {} {}"
+                                 .format(self.l_name_all_bc[k],
+                                         self.l_num_all_bc[k],
+                                         bc_qt[k, :]))
         return bc_qt
 
     @bc_qt.setter
@@ -591,7 +591,7 @@ class MascaretApi(object):
 
         :param dict q_bc: Boundary conditions on Qt ``{'idx','value'}``
         """
-        print('In bc_qt Setter')
+        self.logger.debug('In bc_qt Setter')
         new_tab_q_bc = self.bc_qt
         idx, value = q_bc['idx'], q_bc['value']
         new_tab_q_bc[idx, :] = value
@@ -619,7 +619,7 @@ class MascaretApi(object):
             self.error = self.libmascaret.C_SET_DOUBLE_MASCARET(
                 self.id_masc, var_name, num_bc_c, indextime_bc_c, 0, q_bc_c)
 
-        print('BC Q(t) set', self.bc_qt)
+        self.logger.debug('BC Q(t) set {}'.format(self.bc_qt))
 
     @property
     def ind_zone_frot(self):

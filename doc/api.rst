@@ -103,27 +103,32 @@ specifications may not be enough to give full guidelines on their uses.
 
 .. autosummary::
 
-   functions.SixHumpCamel
-   functions.Branin
-   functions.Michalewicz
-   functions.Ishigami
-   functions.Rastrigin
-   functions.G_Function
-   functions.Forrester
-   functions.Channel_Flow
-   functions.Manning
-   functions.Mascaret
-   functions.MascaretApi
-   functions.ChemicalSpill
-   functions.multi_eval
-   functions.output_to_sequence
+   functions.data
+   functions.analytical.SixHumpCamel
+   functions.analytical.Branin
+   functions.analytical.Michalewicz
+   functions.analytical.Ishigami
+   functions.analytical.Rastrigin
+   functions.analytical.G_Function
+   functions.analytical.Forrester
+   functions.analytical.ChemicalSpill
+   functions.analytical.Channel_Flow
+   functions.analytical.Manning
+   functions.telemac_mascaret.Mascaret
+   functions.telemac_mascaret.MascaretApi
+   functions.utils.multi_eval
+   functions.utils.output_to_sequence
 
 .. py:module:: functions
+.. automodule:: batman.functions.data
+   :members:
+   :undoc-members:
+
 .. automodule:: batman.functions.analytical
    :members:
    :undoc-members:
 
-.. automodule:: batman.functions.mascaret
+.. automodule:: batman.functions.telemac_mascaret
    :members:
    :undoc-members:
 

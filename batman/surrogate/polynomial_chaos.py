@@ -95,6 +95,9 @@ class PC(object):
                     distributions, False))
                 self.sample = transformation(self.sample)
 
+        self.pc = None
+        self.pc_result = None
+
     def fit(self, sample, data):
         """Create the predictor.
 
