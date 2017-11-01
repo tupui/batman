@@ -114,8 +114,8 @@ class Data(collections.Mapping):
                "-> Number of samples: {}\n"
                "-> Input labels:\n{}\n"
                "-> Output labels:\n{}\n"
-               ).format(self.in_shape, self.shape[1][1], self.shape[0][0],
-                        self.plabels, self.flabels)
+              ).format(self.in_shape, self.shape[1][1], self.shape[0][0],
+                       self.plabels, self.flabels)
 
         return msg
 

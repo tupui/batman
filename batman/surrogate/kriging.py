@@ -20,10 +20,8 @@ Interpolation using Gaussian Process method.
 
 Reference
 ---------
-
 F. Pedregosa et al.: Scikit-learn: Machine Learning in Python. Journal of
 Machine Learning Research. 2011. ArXiv ID: 1201.0490
-
 """
 import logging
 import os
@@ -33,9 +31,9 @@ from scipy.optimize import differential_evolution
 from pathos.multiprocessing import cpu_count
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
+import sklearn.gaussian_process.kernels as kernels
 from ..misc import NestedPool
 from ..functions import multi_eval
-import sklearn.gaussian_process.kernels as kernels
 
 
 class Kriging(object):
@@ -68,10 +66,11 @@ class Kriging(object):
         In the end, there is :math:`N=n_{restart} \times n_{modes})` processes.
         If there is not enought CPU, :math:`N=\frac{n_{cpu}}{n_{restart}}`.
 
-        :param array_like sample: Sample used to generate the data (n_samples, n_features).
+        :param array_like sample: Sample used to generate the data
+          (n_samples, n_features).
         :param array_like data: Observed data (n_samples, n_features).
         :param kernel: Kernel from scikit-learn.
-        :type kernel: :class:`sklearn.gaussian_process.kernels.`*.
+        :type kernel: :class:`sklearn.gaussian_process.kernels`.*.
         :param float/bool noise: Noise used into kriging.
         """
         try:
