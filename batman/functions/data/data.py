@@ -143,3 +143,32 @@ def mascaret():
 
     return Data(data=data, desc=desc, sample=sample,
                 plabels=['Ks', 'Q'], flabels={'Curvilinear abscissa': flabels})
+
+
+def marthe():
+    """MARTHE dataset."""
+    desc = ("In 2005, CEA (France) and Kurchatov Institute (Russia) developed"
+            " a model of strontium 90 migration in a porous water-saturated"
+            " medium. The scenario concerned the temporary storage of"
+            " radioactive waste (STDR) in a site close to Moscow. The main"
+            " purpose was to predict the transport of 90Sr between 2002 and"
+            " 2010, in order to determine the aquifer contamination. The"
+            " numerical simulation of the 90Sr transport in the upper aquifer"
+            " of the site was realized via the MARTHE code"
+            " (developed by BRGM, France).")
+    dataset = np.loadtxt(os.path.join(PATH, 'marthe.dat'), skiprows=1)
+
+    plabels = {'Hydraulic conductivity (layer)': ['per1', 'per2', 'per3'],
+               'Hydraulic conductivity (zone)': ['perz1', 'perz2', 'perz3'],
+               'Longitudinal dispersivity (layer)': ['d1', 'd2', 'd3'],
+               'Transversal dispersivity (layer)': ['dt1', 'dt2', 'dt3'],
+               'Volumetric distribution coefficient': ['kd1', 'kd2', 'kd3'],
+               'Porozity': 'poros',
+               'Infiltration type': ['i1', 'i2', 'i3']}
+
+    flabels = {'Contaminant concentrations':
+               ['p102K', 'p104', 'p106', 'p2.76', 'p29K',
+                'p31K', 'p35K', 'p37K', 'p38', 'p4b']}
+
+    return Data(data=dataset[:, 20:], desc=desc, sample=dataset[:, :20],
+                plabels=plabels, flabels=flabels)
