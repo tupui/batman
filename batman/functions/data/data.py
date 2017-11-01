@@ -127,8 +127,8 @@ PATH = os.path.dirname(os.path.realpath(__file__))
 def el_nino():
     """El Nino dataset."""
     desc = ("Averaged monthly sea surface temperature (SST) in degrees Celcius"
-            " of the Pacific Ocean at 0-10°South and 90°West-80°West between"
-            " 1950 and 2007.\nSource: NOAA - ERSSTv5 - Nino 1+2 at"
+            " of the Pacific Ocean at 0-10 deg South and 90-80 deg West"
+            " between 1950 and 2007.\nSource: NOAA - ERSSTv5 - Nino 1+2 at"
             " http://www.cpc.ncep.noaa.gov/data/indices/")
 
     labels, data = np.loadtxt(os.path.join(PATH, 'elnino.dat'),
@@ -148,14 +148,16 @@ def tahiti():
     desc = ("Averaged monthly sea level pressure (SLP) in millibars"
             "at Tahiti between 1951 and 2016.\nSource: NOAA - Tahiti SLP at"
             " http://www.cpc.ncep.noaa.gov/data/indices/")
-    labels, *data = np.loadtxt(os.path.join(PATH, 'tahiti.dat'),
-                               skiprows=4, usecols=range(0, 13), unpack=True)
-    data = np.array(data).T
+    dataset = np.loadtxt(os.path.join(PATH, 'tahiti.dat'),
+                         skiprows=4, usecols=range(0, 13))
+
+    labels = dataset[:, 0].reshape(-1, 1)
+    data = dataset[:, 1:]
 
     flabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-    return Data(data=data, desc=desc, sample=labels.reshape(-1, 1),
+    return Data(data=data, desc=desc, sample=labels,
                 plabels=['Year'], flabels=flabels)
 
 
