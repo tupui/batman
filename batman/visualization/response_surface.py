@@ -189,7 +189,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
         for movie in range(n_movies):
             if dim > 2:
                 writer.setup(fig, movie_name + '_' + str(movie) + '.mp4', 100)
-            
+
             # Loop on the response surface to create
             for plot in range(n_plot):
                 plt.clf()

@@ -430,7 +430,6 @@ class Driver(object):
 
     def visualization(self):
         """Apply visualisation options."""
-        output = os.path.join(self.fname, self.fname_tree['visualization'])
 
         # Response surface
         self.p_len = len(self.settings['space']['corners'][0])
@@ -469,13 +468,12 @@ class Driver(object):
             else:
 
                 if 'surrogate' in self.settings:
-                    space = self.space
                     response_surface(bounds=self.settings['space']['corners'],
                                      fun=self.func,
                                      fname=os.path.join(self.fname, 'Response_Surface'))
                 else:
                     response_surface(bounds=self.settings['space']['corners'],
-                                     data=data, sample=self.space,
+                                     data=self.data, sample=self.space,
                                      fname=os.path.join(self.fname, 'Response_Surface'))
 
         # Else call kiviat -> TO DO
