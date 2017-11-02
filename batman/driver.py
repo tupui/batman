@@ -16,6 +16,7 @@ Defines all methods used to interact with other classes.
     >> driver.prediction(write=True)
     >> driver.write_model()
     >> driver.uq()
+    >> driver.visualization()
 
 """
 import logging
@@ -23,6 +24,7 @@ import os
 import pickle
 from collections import OrderedDict
 from concurrent import futures
+from copy import copy
 import numpy as np
 import sklearn.gaussian_process.kernels as kernels
 from .pod import Pod
@@ -30,6 +32,8 @@ from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
 from .surrogate import SurrogateModel
 from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
+from .visualization import response_surface
+from .functions import multi_eval
 
 
 class Driver(object):
@@ -422,3 +426,71 @@ class Driver(object):
                                 "following results.")
         analyse.sobol()
         analyse.error_propagation()
+
+
+    def visualization(self):
+        """Apply visualisation options."""
+        output = os.path.join(self.fname, self.fname_tree['visualization'])
+
+        # Response surface
+        self.p_len = len(self.settings['space']['corners'][0])
+
+        if self.p_len < 5:
+            self.logger.info('Creating response surface...')
+
+            if 'visualization' in self.settings:
+
+                args = copy(self.settings['visualization'])
+
+                # Name of the response surface
+                if 'fname' in args:
+                    args['fname'] = os.path.join(self.fname, args['fname'])
+                else:
+                    args['fname'] = os.path.join(self.fname, 'Response_Surface')
+
+                # Plot Doe of doe option is true
+                if 'doe' in args and args['doe']:
+                    args['doe'] = self.space
+                else:
+                    args['doe'] = None
+
+                # Data based on surrogate model (function) or not
+                if 'surrogate' in self.settings:
+                    args['fun'] = self.func
+                else:
+                    args['sample'] = self.space
+                    args['data'] = self.data
+
+                # Set boundaries
+                args['bounds'] = self.settings['space']['corners']
+
+                response_surface(**args)
+
+            else:
+
+                if 'surrogate' in self.settings:
+                    space = self.space
+                    response_surface(bounds=self.settings['space']['corners'],
+                                     fun=self.func,
+                                     fname=os.path.join(self.fname, 'Response_Surface'))
+                else:
+                    response_surface(bounds=self.settings['space']['corners'],
+                                     data=data, sample=self.space,
+                                     fname=os.path.join(self.fname, 'Response_Surface'))
+
+        # Else call kiviat -> TO DO
+
+
+    @multi_eval
+    def func(self, coords):
+        """Evaluate the surrogate at a given point.
+
+        This function calls the surrogate to compute a prediction.
+
+        :param lst coords: The parameters set to calculate the solution from.
+        :return: The fonction evaluation.
+        :rtype: float.
+
+        """
+        f_eval, _ = self.surrogate(coords)
+        return f_eval[0]

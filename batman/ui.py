@@ -138,6 +138,8 @@ def run(settings, options):
     if options.uq:
         driver.uq()
 
+    # Always plot response surfaces at the end
+    driver.visualization()
 
 def parse_options():
     """Parse options."""

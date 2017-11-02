@@ -138,8 +138,9 @@ class UQ:
         except (TypeError, AttributeError):
             self.logger.error('OpenTURNS distribution unknown.')
             raise SystemError
-        self.sample = ot.LHSExperiment(self.distribution,
-                                       self.points_sample, True, True).generate()
+        self.experiment = ot.LHSExperiment(self.distribution,
+                                           self.points_sample, True, True)
+        self.sample = self.experiment.generate()
         self.logger.info("Created {} samples with an LHS experiment"
                          .format(self.points_sample))
 
@@ -152,7 +153,8 @@ class UQ:
             except ValueError:
                 self.output_len = 1
 
-            self.output = self.func(self.sample)
+            self.model = self.func
+            self.output = self.model(self.sample)
             self.init_size = self.surrogate.space.doe_init
         except TypeError:
             self.sample = space
@@ -180,6 +182,7 @@ class UQ:
         :param lst coords: The parameters set to calculate the solution from.
         :return: The fonction evaluation.
         :rtype: float.
+
         """
         f_eval, _ = self.surrogate(coords)
         return f_eval[0]
@@ -194,6 +197,7 @@ class UQ:
         :param lst coords: The parameters set to calculate the solution from.
         :return: The integral of the function.
         :rtype: float.
+
         """
         f_eval, _ = self.surrogate(coords)
         f_eval = np.trapz(f_eval[0])
@@ -240,7 +244,7 @@ class UQ:
 
         # Q2 computation
         y_ref = np.array(model_ref(self.sample))
-        y_pred = np.array(self.func(self.sample))
+        y_pred = np.array(self.model(self.sample))
         err_q2 = r2_score(y_ref, y_pred, multioutput='uniform_average')
 
         # MSE computation
@@ -283,8 +287,7 @@ class UQ:
         - `FAST`
 
         .. warning:: The second order indices are only available with the sobol
-          method. Also, when there is no surrogate (ensemble mode), FAST is not
-          available and the DoE must have been generated with `saltelli`.
+          method.
 
         And two types of computation are availlable for the global indices:
 
@@ -301,6 +304,7 @@ class UQ:
 
         :return: Sobol' indices.
         :rtype: array_like.
+
         """
         indices = [[], [], []]
         aggregated = [[], [], []]
@@ -310,34 +314,29 @@ class UQ:
             sobol_model = self.int_func
             sobol_len = 1
         else:
-            sobol_model = self.func
+            sobol_model = self.model
             sobol_len = self.output_len
 
         if self.method_sobol == 'sobol':
             self.logger.info("\n----- Sobol' indices -----")
 
-            if self.surrogate is not None:
-                size = self.points_sample
-                input_design = ot.SobolIndicesAlgorithmImplementation.Generate(
-                    self.distribution, size, True)
-                output_design = sobol_model(input_design)
-                self.logger.info("Created {} samples for Sobol'"
-                                 .format(len(output_design)))
-            else:
-                input_design = self.space
-                output_design = self.output
-                size = self.points_sample // (2 * self.p_len + 2)
+            input_design = ot.SobolIndicesAlgorithmImplementation.Generate(
+                self.distribution, self.points_sample, True)
+            output_design = sobol_model(input_design)
+            self.logger.info("Created {} samples for Sobol"
+                             .format(len(output_design)))
             # Martinez, Saltelli, MauntzKucherenko, Jansen
             ot.ResourceMap.SetAsBool('MartinezSensitivityAlgorithm-UseAsmpytoticInterval', True)
             sobol = ot.SaltelliSensitivityAlgorithm(input_design,
-                                                    output_design, size)
+                                                    output_design,
+                                                    self.points_sample)
 
             for i in range(sobol_len):
                 try:
                     indices[0].append(np.array(sobol.getSecondOrderIndices(i)))
                 except TypeError:
                     indices[0].append(np.zeros((self.p_len, self.p_len)))
-            self.logger.debug("-> Second order:\n{}\n".format(indices[0]))
+            self.logger.debug("Second order: {}".format(indices[0]))
 
         elif self.method_sobol == 'FAST':
             self.logger.info("\n----- FAST indices -----")
@@ -350,7 +349,6 @@ class UQ:
             fast_model = ot.PythonFunction(self.p_len, self.output_len, wrap_fun)
             sobol = ot.FAST(ot.Function(fast_model),
                             self.distribution, self.points_sample)
-            output_design = sobol_model(self.sample)
             self.logger.warning("No Second order indices with FAST")
 
         # try block used to handle boundary conditions with fixed values
@@ -364,8 +362,8 @@ class UQ:
             except TypeError:
                 indices[2].append(np.zeros(self.p_len))
 
-        self.logger.debug("-> First order:\n{}\n"
-                          "-> Total:\n{}\n"
+        self.logger.debug("First order: {}"
+                          "Total: {}"
                           .format(*indices[1:]))
 
         # Write Sobol' indices to file: block or map
@@ -394,7 +392,12 @@ class UQ:
         if self.type_indices == 'aggregated':
             self.logger.info("\n----- Aggregated Sensitivity Indices -----")
 
-            output_var = output_design.var(axis=0)
+            try:
+                output_var = output_design.var(axis=0)
+            except NameError:
+                output_design = sobol_model(self.sample)
+                output_var = output_design.var(axis=0)
+
             sum_var_indices = [np.zeros((self.p_len, self.p_len)),
                                np.zeros((self.p_len)), np.zeros((self.p_len))]
 
@@ -481,8 +484,7 @@ class UQ:
                                 xdata=self.xdata, fname=path)
 
         # Compute error of the POD with a known function
-        if (self.type_indices in ['aggregated', 'block'])\
-                and (self.test is not None) and (self.surrogate is not None):
+        if (self.type_indices in ['aggregated', 'block']) and (self.test is not None):
             self.error_model(aggregated, self.test)
 
         return aggregated
@@ -502,16 +504,6 @@ class UQ:
         * :file:`pdf.pdf`, plot of the PDF (with moments if dim > 1)
         """
         self.logger.info("\n----- Uncertainty Propagation -----")
-
-        # Response surface
-        if self.p_len < 3:
-            self.logger.info('Creating response surface...')
-            visualization.response_surface(bounds=[np.min(self.sample, axis=0),
-                                                   np.max(self.sample, axis=0)],
-                                           fun=self.func,
-                                           doe=self.space, xdata=self.xdata,
-                                           fname=os.path.join(self.fname,
-                                                              'response'))
 
         # Covariance and correlation matrices
         self.logger.info('Creating Covariance/correlation and figures...')
