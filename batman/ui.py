@@ -5,6 +5,7 @@ import logging
 from logging.config import dictConfig
 import argparse
 import os
+import re
 import shutil
 import json
 
@@ -69,17 +70,18 @@ def run(settings, options):
                     logger.warning('No folder snapshots in output folder')
                     raise SystemExit
 
-                def key(arg):
-                    """Get folder number."""
-                    return int(os.path.basename(
-                        os.path.dirname(os.path.normpath(arg))))
-                settings['snapshot']['provider'] = sorted([os.path.join(root, d,
-                                                                        'batman-data')
-                                                           for d in os.listdir(root)],
-                                                          key=key)
+                # get list of directories that follow the specified name pattern
+                pattern = re.compile('^\d+$')
+                folders = sorted(filter(
+                    lambda d: pattern.match(d) is not None,
+                    os.listdir(root)
+                ), key=int)
+                settings['snapshot']['provider'] = [os.path.join(root, d, 'batman-data') 
+                                                    for d in folders]
                 settings['snapshot']['io']['template_directory'] = \
                     os.path.join(root, '0', 'batman-data')
                 settings['snapshot']['io']['shapes'] = None
+
         if delete:
             try:
                 shutil.rmtree(options.output)
