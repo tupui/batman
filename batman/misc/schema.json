@@ -166,7 +166,7 @@
       "type": "object",
       "properties": {
         "doe": {"type": "boolean", "default": true},
-        "resampling": {"type": "integer", "default": 0},
+        "resampling": {"type": "boolean", "default": true},
         "xdata": {"type": "array", "items": {"type": "number"}},
         "axis_disc": {"type": "array",
                       "items": {"type": "integer", "maxItems": 4}},

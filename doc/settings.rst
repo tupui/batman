@@ -250,7 +250,7 @@ Set up for the visualization options. Batman creates a response function (1 inpu
 
      "visualization": {
         "doe": true,
-        "resampling": 4,
+        "resampling": true,
         "axis_disc": [20, 20],
         "flabel": "Cost function",
         "plabels": ["X", "Y"],
@@ -261,7 +261,7 @@ Set up for the visualization options. Batman creates a response function (1 inpu
      }
 
 + ``doe``: Boolean. If *true*, the Design of Experiment is represented on the response surface by black dots. Defaults value is *false*,
-+ ``resampling``: Integer. Number of DOE points to be displayed differently, for example to indicate a later resampling. Such points are represented by red triangles. Only activates if doe is *true*,
++ ``resampling``: Boolean. If *true*, Design of Experiment corresponding to the resampling points are displayed in a different color. Such points are represented by red triangles. Only activates if doe is *true*,
 + ``axis_disc``: Integers. Discretisation of each axis. Indicated value for the x and the y axis modify the surface resolution, while values corresponding the the 3rd and 4th parameters impact the frame number per movie and the movie number,
 + ``flabel``: String. Name of the cost function,
 + ``plabels``: Strings. Name of the input parameters to be plotted on each axis,

@@ -455,11 +455,17 @@ class Driver(object):
                 if 'xdata' not in args and output_len > 1:
                     args['xdata'] = np.linspace(0, 1, output_len)
 
-                # Plot Doe of doe option is true
+                # Plot Doe if doe option is true
                 if 'doe' in args and args['doe']:
                     args['doe'] = self.space
                 else:
                     args['doe'] = None
+
+                # Display resampling if resampling option is true
+                if 'resampling' in args and args['resampling']:
+                    args['resampling'] = self.settings['space']['resampling']['resamp_size']
+                else:
+                    args['resampling'] = None
 
                 # Data based on surrogate model (function) or not
                 if 'surrogate' in self.settings:
