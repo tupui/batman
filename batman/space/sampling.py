@@ -64,7 +64,6 @@ class Doe():
         self.kind = kind
         self.dim = bounds.shape[1]
 
-
         if dists is None:
             distribution = ot.ComposedDistribution(
                 [ot.Uniform(float(self.bounds[0][i]), float(self.bounds[1][i]))
@@ -140,7 +139,7 @@ class Doe():
         a = self.bounds[1] - b
         if self.kind == 'lhsc':
             r = ((np.floor_divide(sample, (1. / self.n_sample)) + 1)
-                    - 0.5) / self.n_sample
+                 - 0.5) / self.n_sample
         else:
             r = a * sample + b
 
