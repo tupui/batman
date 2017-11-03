@@ -431,15 +431,30 @@ class Driver(object):
     def visualization(self):
         """Apply visualisation options."""
 
-        # Response surface
-        self.p_len = len(self.settings['space']['corners'][0])
+        p_len = len(self.settings['space']['corners'][0])
+        data = self.data
 
-        if self.p_len < 5:
+        try:
+            # With surrogate model
+            try:
+                # Functional output
+                f_eval, _ = self.surrogate(self.space[0])
+                output_len = len(f_eval[0])
+            except ValueError:
+                output_len = 1
+        except TypeError:
+            output_len = data.shape[1]
+
+        if p_len < 5:
             self.logger.info('Creating response surface...')
 
             if 'visualization' in self.settings:
 
                 args = copy(self.settings['visualization'])
+
+                # xdata for output with dim > 1
+                if 'xdata' not in args and output_len > 1:
+                    args['xdata'] = np.linspace(0, 1, output_len)
 
                 # Name of the response surface
                 if 'fname' in args:
@@ -458,7 +473,7 @@ class Driver(object):
                     args['fun'] = self.func
                 else:
                     args['sample'] = self.space
-                    args['data'] = self.data
+                    args['data'] = data
 
                 # Set boundaries
                 args['bounds'] = self.settings['space']['corners']
@@ -467,13 +482,21 @@ class Driver(object):
 
             else:
 
+                if output_len > 1:
+                    xdata = np.linspace(0, 1, output_len)
+                else:
+                    xdata = None
+
                 if 'surrogate' in self.settings:
+
                     response_surface(bounds=self.settings['space']['corners'],
-                                     fun=self.func,
+                                     fun=self.func, xdata=xdata,
                                      fname=os.path.join(self.fname, 'Response_Surface'))
                 else:
+
                     response_surface(bounds=self.settings['space']['corners'],
-                                     data=self.data, sample=self.space,
+                                     data=data, sample=self.space,
+                                     xdata=xdata,
                                      fname=os.path.join(self.fname, 'Response_Surface'))
 
         # Else call kiviat -> TO DO
