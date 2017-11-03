@@ -258,7 +258,6 @@ Set up for the visualization options. Batman creates a response function (1 inpu
         "ticks_nbr": 14,
         "range_cbar": [0.0, 2.3],
         "contours": [0.5, 1.0, 1.5],
-        "fname": "Response_Surface"
      }
 
 + ``doe``: Boolean. If *true*, the Design of Experiment is represented on the response surface by black dots. Defaults value is *false*,
@@ -270,7 +269,6 @@ Set up for the visualization options. Batman creates a response function (1 inpu
 + ``ticks_nbr``: Integer. Number of ticks on the colorbar (Display n-1 colors). Default is *10*,
 + ``range_cbar``: Floats. Minimum and maximum values on the colorbar,
 + ``contours``: Floats. Values of the iso-contours to be plotted on the response surface,
-+ ``fname``: String. Name of the output file (pdf or mp4 format).
 
 
 .. py:module:: driver

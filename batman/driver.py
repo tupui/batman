@@ -427,7 +427,6 @@ class Driver(object):
         analyse.sobol()
         analyse.error_propagation()
 
-
     def visualization(self):
         """Apply visualisation options."""
 
@@ -456,12 +455,6 @@ class Driver(object):
                 if 'xdata' not in args and output_len > 1:
                     args['xdata'] = np.linspace(0, 1, output_len)
 
-                # Name of the response surface
-                if 'fname' in args:
-                    args['fname'] = os.path.join(self.fname, args['fname'])
-                else:
-                    args['fname'] = os.path.join(self.fname, 'Response_Surface')
-
                 # Plot Doe of doe option is true
                 if 'doe' in args and args['doe']:
                     args['doe'] = self.space
@@ -481,26 +474,20 @@ class Driver(object):
                 response_surface(**args)
 
             else:
-
                 if output_len > 1:
                     xdata = np.linspace(0, 1, output_len)
                 else:
                     xdata = None
 
                 if 'surrogate' in self.settings:
-
                     response_surface(bounds=self.settings['space']['corners'],
                                      fun=self.func, xdata=xdata,
                                      fname=os.path.join(self.fname, 'Response_Surface'))
                 else:
-
                     response_surface(bounds=self.settings['space']['corners'],
                                      data=data, sample=self.space,
                                      xdata=xdata,
                                      fname=os.path.join(self.fname, 'Response_Surface'))
-
-        # Else call kiviat -> TO DO
-
 
     @multi_eval
     def func(self, coords):
