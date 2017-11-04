@@ -7,7 +7,8 @@ import matplotlib.backends.backend_pdf
 from .kiviat import Kiviat3D
 from .hdr import HdrBoxplot
 from .uncertainty import (kernel_smoothing, pdf, sobol, corr_cov)
-from .doe import (response_surface, doe)
+from .doe import doe
+from .response_surface import response_surface
 
 __all__ = ['Kiviat3D', 'HdrBoxplot', 'kernel_smoothing', 'pdf', 'sobol',
            'corr_cov', 'reshow', 'save_show', 'response_surface', 'doe']

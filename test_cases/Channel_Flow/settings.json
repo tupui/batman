@@ -56,6 +56,12 @@
         "strategy": "Quad",
         "degree": 10
     },
+    "visualization": {
+        "doe": false,
+        "xdata": [1000, 2000, 2500, 3000, 4000],
+        "ticks_nbr": 5,
+        "flabel": "F(Ks, Q)"
+    },
     "uq": {
         "sample": 1000,
         "test": "Channel_Flow",

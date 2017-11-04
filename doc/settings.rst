@@ -241,6 +241,36 @@ POD (or Proper Orthogonal Decomposition) is a approach to help reduce amount of 
 The dynamic POD allows to update the POD once a snapshot is availlable. Hence a POD can be restarted when doing resampling for example.
 
 
+Optionnal Block 6 - Visualization
+---------------------------------
+
+Set up for the visualization options. Batman creates a response function (1 input parameter), response surfaces (2 to 4 input parameters) or a Kiviat graph (more than 4 input parameters). See :ref:`Visualization <visualization>`.
+
+.. code-block:: python
+
+     "visualization": {
+        "doe": true,
+        "resampling": true,
+        "axis_disc": [20, 20],
+        "flabel": "Cost function",
+        "plabels": ["X", "Y"],
+        "feat_order": [1, 2],
+        "ticks_nbr": 14,
+        "range_cbar": [0.0, 2.3],
+        "contours": [0.5, 1.0, 1.5],
+     }
+
++ ``doe``: Boolean. If *true*, the Design of Experiment is represented on the response surface by black dots. Defaults value is *false*,
++ ``resampling``: Boolean. If *true*, Design of Experiment corresponding to the resampling points are displayed in a different color. Such points are represented by red triangles. Only activates if doe is *true*,
++ ``axis_disc``: Integers. Discretisation of each axis. Indicated value for the x and the y axis modify the surface resolution, while values corresponding the the 3rd and 4th parameters impact the frame number per movie and the movie number,
++ ``flabel``: String. Name of the cost function,
++ ``plabels``: Strings. Name of the input parameters to be plotted on each axis,
++ ``feat_order``: Integers. Associate each input parameter to an axis, the first indicated number corresponding to the parameter to be plotted on the x-axis, etc... A size equal to the input parameter number is expected, all integers from 1 to the parameter number should be used. Default is *[1, 2, 3, 4]*,
++ ``ticks_nbr``: Integer. Number of ticks on the colorbar (Display n-1 colors). Default is *10*,
++ ``range_cbar``: Floats. Minimum and maximum values on the colorbar,
++ ``contours``: Floats. Values of the iso-contours to be plotted on the response surface,
+
+
 .. py:module:: driver
 .. py:currentmodule:: driver
 
