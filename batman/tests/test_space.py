@@ -87,6 +87,13 @@ def test_space(settings_ishigami):
     with pytest.raises(FullSpaceError):
         space.sampling(17)
 
+    space.empty()
+    dists = ['Uniform(0., 1.)', 'Uniform(-1., 2.)', 'Uniform(-2., 3.)']
+    space.sampling(5, kind='halton', dists=dists)
+    out = [(0.5, 0.0, -1.0), (0.25, 1.0, 0.0), (0.75, -0.67, 1.0),
+           (0.125, 0.33, 2.0), (0.625, 1.33, -1.8)]
+    npt.assert_almost_equal(space, out, decimal=1)
+
     space = Space(corners, sample=np.array([(1, 2, 3), (1, 1, 3)]))
     assert space.doe_init == 2
     assert space.max_points_nb == 2
@@ -111,30 +118,25 @@ def test_doe():
     discrete_var = 0
     n = 5
 
-    kind = 'uniform'
-    doe = Doe(n, bounds, kind, discrete_var)
+    doe = Doe(n, bounds, 'uniform', var=discrete_var)
     sample = doe.generate()
     out = np.array([[0., 2.], [10., 2.], [0., 5.], [10., 5.]])
     npt.assert_almost_equal(sample, out, decimal=1)
 
-    kind = 'discrete'
-    doe = Doe(n, bounds, kind, discrete_var)
+    doe = Doe(n, bounds, 'discrete', var=discrete_var)
     sample = doe.generate()
     out = np.array([[5., 3.], [2., 4.], [8., 2.3], [1., 3.3], [6., 4.3]])
     npt.assert_almost_equal(sample, out, decimal=1)
 
-    kind = 'halton'
-    doe = Doe(n, bounds, kind)
+    doe = Doe(n, bounds, 'halton')
     sample = doe.generate()
     out = np.array([[5., 3.], [2.5, 4.], [7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
     npt.assert_almost_equal(sample, out, decimal=1)
 
-    kind = 'sobolscramble'
-    doe = Doe(n, bounds, kind, discrete_var)
+    doe = Doe(n, bounds, 'sobolscramble', var=discrete_var)
     sample = doe.generate()
 
-    kind = 'lhsopt'
-    doe = Doe(n, bounds, kind)
+    doe = Doe(n, bounds, 'lhsopt')
     ot.RandomGenerator.SetSeed(123)
     sample = doe.generate()
     out = np.array([[8.097, 3.646], [6.592, 4.806], [0.622, 2.909],
@@ -144,15 +146,24 @@ def test_doe():
     bounds = np.array([[15.0, 2500.0], [60.0, 6000.0]])
 
     with pytest.raises(SystemError):
-        kind = ['Um(15., 60.)', 'Normal(4035., 400.)']
-        doe = Doe(n, bounds, kind)
+        dists = ['Um(15., 60.)', 'Normal(4035., 400.)']
+        doe = Doe(n, bounds, 'halton', dists)
 
-    kind = ['Uniform(15., 60.)', 'Normal(4035., 400.)']
-    doe = Doe(n, bounds, kind)
+    dists = ['Uniform(15., 60.)', 'Normal(4035., 400.)']
+    doe = Doe(n, bounds, 'halton', dists)
     sample = doe.generate()
     out = np.array([[37.5, 3862.709], [26.25, 4207.291], [48.75, 3546.744],
                     [20.625, 3979.116], [43.125, 4340.884]])
     npt.assert_almost_equal(sample, out, decimal=1)
+
+    dists = ['Uniform(15., 60.)', 'Normal(4035., 400.)']
+    doe = Doe(13, bounds, 'saltelli', dists)
+    sample = doe.generate()
+    assert len(sample) == 12
+
+    doe = Doe(10, bounds, 'saltelli', dists)
+    sample = doe.generate()
+    assert len(sample) == 6
 
 
 @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')

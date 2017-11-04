@@ -173,15 +173,16 @@ class Space(list):
                                    .format(point))
         return self
 
-    def sampling(self, n=None, kind='halton'):
+    def sampling(self, n=None, kind='halton', dists=None):
         """Create point samples in the parameter space.
 
         Minimum number of samples for halton and sobol: 4
         For uniform sampling, the number of points is per dimensions.
         The points are registered into the space and replace existing ones.
 
-        :param str kind: method of sampling.
         :param int n: number of samples.
+        :param str kind: method of sampling.
+        :param lst(str) dists: List of valid openturns distributions as string.
         :return: List of points.
         :rtype: self.
         """
@@ -193,7 +194,7 @@ class Space(list):
             n = self.doe_init
 
         bounds = np.array(self.corners)
-        doe = Doe(n, bounds, kind)
+        doe = Doe(n, bounds, kind, dists)
         samples = doe.generate()
 
         # concatenate cheap and expensive space and add identifier 0 or 1

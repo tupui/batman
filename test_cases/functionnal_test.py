@@ -237,10 +237,12 @@ def test_only_surrogate_kernel_noise(tmp, case='Ishigami'):
 
 
 def test_uq_no_surrogate(tmp, case='Ishigami'):
-    init_case(tmp, case, output=False)
+    os.chdir(os.path.join(path, case))
     sys.argv = ['batman', 'settings.json', '-u', '-o', tmp]
     options = batman.ui.parse_options()
     settings = batman.misc.import_config(options.settings, schema)
+    settings['space']['sampling']['method'] = 'saltelli'
+    settings['space']['sampling']['init_size'] = 8
     settings['space'].pop('resampling')
     settings.pop('pod')
     settings.pop('surrogate')
@@ -250,7 +252,7 @@ def test_uq_no_surrogate(tmp, case='Ishigami'):
 
 def test_doe_as_list(tmp, case='Ishigami'):
     init_case(tmp, case, output=False)
-    sys.argv = ['batman', 'settings.json', '-u', '-o', tmp]
+    sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
     settings = batman.misc.import_config(options.settings, schema)
     settings['space'].pop('resampling')

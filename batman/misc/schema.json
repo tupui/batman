@@ -13,15 +13,13 @@
             "type": "object",
             "properties": {
               "method": {
-                "oneOf":[
-                  {
                     "type": "string",
                     "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc",
-                             "lhsopt", "faure", "uniform", "discrete"],
+                             "lhsopt", "faure", "uniform", "discrete", "saltelli"],
                     "default": "halton"
-                  },
-                  {"type": "array", "items": {}}
-                ]
+              },
+              "distributions": {
+                    "type": "array", "items": {}
               },
               "init_size": {"type": "integer", "default": 20, "minimum": 4,
                             "exclusiveMinimum": false}
@@ -172,7 +170,7 @@
       "properties": {"surrogate": {"properties": {"method": {"enum":["pc"]}}},
                      "space": {"properties":
                       {"sampling": {"properties":
-                        {"method": {"type": "array", "items": {}}}},
+                        {"distributions": {"type": "array", "items": {}}}},
                        "resampling": {"properties":
                         {"resamp_size": {"type": "integer", "maximum": 0}}}
                       }
@@ -182,6 +180,10 @@
       "required": ["surrogate"],
       "properties": {"surrogate": {"properties": {"method": {"enum":["evofusion", "kriging", "rbf"]}}}}
     },
-    {"not": {"required": ["surrogate"]}}
+    {"not": {"required": ["surrogate"]}},
+    {
+      "not": {"required": ["surrogate"]},
+      "properties": {"uq": {"properties": {"method": {"enum":["FAST"]}}}}
+    }
   ]
 }

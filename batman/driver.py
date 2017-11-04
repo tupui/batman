@@ -118,8 +118,13 @@ class Driver(object):
                 self.space += space_provider
             elif isinstance(space_provider, dict):
                 # use sampling method
+                if 'distributions' not in space_provider:
+                    distributions = None
+                else:
+                    distributions = space_provider['distributions']
                 self.to_compute_points = self.space.sampling(space_provider['init_size'],
-                                                             space_provider['method'])
+                                                             space_provider['method'],
+                                                             distributions)
             else:
                 self.logger.error('Bad space provider.')
                 raise SystemError
@@ -136,7 +141,7 @@ class Driver(object):
         # Surrogate model
         if 'surrogate' in self.settings:
             if self.settings['surrogate']['method'] == 'pc':
-                dists = self.settings['space']['sampling']['method']
+                dists = self.settings['space']['sampling']['distributions']
                 try:
                     dists = [eval('ot.' + dist, {'__builtins__': None},
                                   {'ot': __import__('openturns')})
@@ -410,6 +415,9 @@ class Driver(object):
                      space=self.space, data=data, fname=output,
                      test=test)
 
-        if self.surrogate is not None:
-            analyse.sobol()
+        if self.surrogate is None:
+            self.logger.warning("No surrogate model, be sure to have a "
+                                "statistically significant sample to trust "
+                                "following results.")
+        analyse.sobol()
         analyse.error_propagation()

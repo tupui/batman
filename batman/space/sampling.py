@@ -38,7 +38,7 @@ class Doe():
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, n_sample, bounds, kind, var=0):
+    def __init__(self, n_sample, bounds, kind, dists=None, var=0):
         """Initialize the DOE generation.
 
         In case of :attr:`kind` is ``uniform``, :attr:`n_sample` is decimated
@@ -48,50 +48,28 @@ class Doe():
         uniform distribution is made with continuous distributions.
 
         Another possibility is to set a list of PDF to sample from. Thus one
-        can do: `kind=['Uniform(15., 60.)', 'Normal(4035., 400.)']`.
+        can do: `dists=['Uniform(15., 60.)', 'Normal(4035., 400.)']`. If not
+        set, uniform distributions are used.
 
         :param int n_sample: number of samples.
         :param array_like bounds: Space's corners [[min, n dim], [max, n dim]]
-        :param str/list kind: Sampling Method if string can be one of
+        :param str kind: Sampling Method if string can be one of
           ['halton', 'sobol', 'faure', 'lhs[c]', 'sobolscramble', 'uniform',
           'discrete'] otherwize can be a list of openturns distributions.
+        :param lst(str) dists: List of valid openturns distributions as string.
         :param int var: Position of the discrete variable.
         """
         self.n_sample = n_sample
-        self.bounds = bounds
+        self.bounds = np.asarray(bounds)
         self.kind = kind
         self.dim = bounds.shape[1]
 
-        if self.kind == 'halton':
-            self.sequence_type = ot.LowDiscrepancySequence(ot.HaltonSequence(self.dim))
-        elif self.kind == 'sobol':
-            self.sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(self.dim))
-        elif self.kind == 'faure':
-            self.sequence_type = ot.LowDiscrepancySequence(ot.FaureSequence(self.dim))
-        elif (self.kind == 'lhs') or (self.kind == 'lhsc'):
-            distribution = ot.ComposedDistribution([ot.Uniform(0, 1)] * self.dim)
-            self.sequence_type = ot.LHSExperiment(distribution, self.n_sample)
-        elif (self.kind == 'lhsopt'):
-            distribution = ot.ComposedDistribution([ot.Uniform(0, 1)] * self.dim)
-            lhs = ot.LHSExperiment(distribution, self.n_sample)
-            self.sequence_type = ot.SimulatedAnnealingLHS(lhs, ot.GeometricProfile(),
-                                                          ot.SpaceFillingPhiP())
-        elif self.kind == 'discrete':
-            rv = randint(bounds[0, var], bounds[1, var] + 1)
-
-            points = ot.Sample(10000, 1)
-            for i in range(10000):
-                points[i] = (rv.rvs(),)
-
-            discrete = ot.UserDefined(points)
-            dists = [discrete]
-            dists.extend([ot.Uniform(0, 1)] * (self.dim - 1))
-            distribution = ot.ComposedDistribution(dists)
-            self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
-                                                             distribution,
-                                                             self.n_sample)
-        elif isinstance(self.kind, list):
-            dists = ','.join(['ot.' + self.kind[i] for i in range(self.dim)])
+        if dists is None:
+            distribution = ot.ComposedDistribution(
+                [ot.Uniform(float(self.bounds[0][i]), float(self.bounds[1][i]))
+                 for i in range(self.dim)])
+        else:
+            dists = ','.join(['ot.' + dist for dist in dists])
             try:
                 distribution = eval('ot.ComposedDistribution([' + dists + '])',
                                     {'__builtins__': None},
@@ -99,6 +77,42 @@ class Doe():
             except (TypeError, AttributeError):
                 self.logger.error('OpenTURNS distribution unknown.')
                 raise SystemError
+
+        if self.kind == 'halton':
+            self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
+                                                             distribution,
+                                                             self.n_sample)
+        elif self.kind == 'sobol':
+            self.sequence_type = ot.LowDiscrepancyExperiment(ot.SobolSequence(),
+                                                             distribution,
+                                                             self.n_sample)
+        elif self.kind == 'faure':
+            self.sequence_type = ot.LowDiscrepancyExperiment(ot.FaureSequence(),
+                                                             distribution,
+                                                             self.n_sample)
+        elif (self.kind == 'lhs') or (self.kind == 'lhsc'):
+            self.sequence_type = ot.LHSExperiment(distribution, self.n_sample)
+        elif self.kind == 'lhsopt':
+            lhs = ot.LHSExperiment(distribution, self.n_sample)
+            self.sequence_type = ot.SimulatedAnnealingLHS(lhs, ot.GeometricProfile(),
+                                                          ot.SpaceFillingPhiP())
+        elif self.kind == 'saltelli':
+            size = self.n_sample // (2 * self.dim + 2)  # N(2*dim + 2)
+            self.sequence_type = ot.SobolIndicesAlgorithmImplementation.Generate(
+                distribution, size, True)
+
+        elif self.kind == 'discrete':
+            rv = randint(self.bounds[0, var], self.bounds[1, var] + 1)
+
+            points = ot.Sample(10000, 1)
+            for i in range(10000):
+                points[i] = (rv.rvs(),)
+
+            dists = [ot.UserDefined(points)]
+            dists.extend([ot.Uniform(float(self.bounds[0][i + 1]),
+                                     float(self.bounds[1][i + 1]))
+                          for i in range(self.dim - 1)])
+            distribution = ot.ComposedDistribution(dists)
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
                                                              distribution,
                                                              self.n_sample)
@@ -109,23 +123,23 @@ class Doe():
         :return: Sampling.
         :rtype: array_like (n_samples, n_features).
         """
-        if self.kind in ['lhs', 'lhsc', 'lhsopt', 'discrete']:
-            sample = self.sequence_type.generate()
-        elif self.kind == 'sobolscramble':
+        if self.kind == 'sobolscramble':
             sample = self.scrambled_sobol_generate()
         elif self.kind == 'uniform':
             sample = self.uniform()
-        elif isinstance(self.kind, list):
-            return np.array(self.sequence_type.generate())
+        elif self.kind == 'lhsc':
+            sample = self.sequence_type.generate()
+        elif self.kind == 'saltelli':
+            return np.array(self.sequence_type)
         else:
-            sample = self.sequence_type.generate(self.n_sample)
+            return np.array(self.sequence_type.generate())
 
         # Scale the DOE from [0, 1] to bounds
         b = self.bounds[0]
         a = self.bounds[1] - b
         if self.kind == 'lhsc':
-            r = a * ((np.floor_divide(sample, (1. / self.n_sample)) + 1)
-                     - 0.5) / self.n_sample + b
+            r = ((np.floor_divide(sample, (1. / self.n_sample)) + 1)
+                 - 0.5) / self.n_sample
         else:
             r = a * sample + b
 

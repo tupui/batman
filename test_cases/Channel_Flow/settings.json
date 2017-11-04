@@ -6,7 +6,8 @@
         ],
         "sampling": {
             "init_size": 12,
-            "method": ["Uniform(15., 60.)", "BetaMuSigma(4035, 400, 2500, 6000).getDistribution()"]
+            "method": "halton",
+            "distributions": ["Uniform(15., 60.)", "BetaMuSigma(4035, 400, 2500, 6000).getDistribution()"]
         },
         "resampling":{
             "delta_space": 0.08,

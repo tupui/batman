@@ -38,7 +38,8 @@ Help of the CLI can be triggered with::
       -u, --uq              Uncertainty Quantification study, [default: False].
       -q, --q2              estimate Q2 and find the point with max MSE, [default:
                             False]    
-    
+
+.. note:: Fields in square brackets are optionnals.
 
 Block 1 - Space of Parameters
 -----------------------------
@@ -76,8 +77,9 @@ First of all, we define the parameter space using an hypercube. Taking the minim
 
     * ``init_size``: define the initial number of snapshots,
     * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*,
-      *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *lhsopt* (optimized LHS).
-      Another possibilitie is to set a list of distributions. Ex for two input variables: ``["Uniform(15., 60.)", "Normal(4035., 400.)"]``
+      *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *lhsopt* (optimized LHS), *saltelli*,
+    * [``distributions``]: A list of distributions. Ex for two input variables:
+      ``["Uniform(15., 60.)", "Normal(4035., 400.)"]``.
 
 + [``resampling``]: to do resampling, fill this dictionary
 
@@ -89,7 +91,15 @@ First of all, we define the parameter space using an hypercube. Taking the minim
       ``[["method", n_snapshot]]``
     * ``q2_criteria``: stopping criterion based on the quality estimation of the model.
 
-The method used to create the DoE is paramount. It ensures that that the physics will be captured correclty all over the domain of interest, see :ref:`Space <space>`. All *faure*, *halton* and *sobol* methods are low discrepancy sequences with good filling properties.
+The method used to create the DoE is paramount. It ensures that that the physics
+will be captured correclty all over the domain of interest, see :ref:`Space <space>`.
+All *faure*, *halton* and *sobol* methods are low discrepancy sequences with
+good filling properties. *saltelli* is particular as it will create a DoE for
+the computation of *Sobol'* indices using *Saltelli*'s formulation.
+
+When *distribution* is set, a join distribution is built an is used to perform
+an inverse transformation (inverse CDF) on the sample. This allows to have a
+low discrepancy sample will still following some distribution.
 
 Regarding the resampling, all methods need a good initial sample. Meanning that the quality is about :math:`Q_2\sim0.5`. ``loo_sigma, loo_sobol`` work better than ``sigma`` in high dimentionnal cases (>2).
 
