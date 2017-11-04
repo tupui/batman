@@ -15,7 +15,7 @@
               "method": {
                     "type": "string",
                     "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc",
-                             "lhsopt", "faure", "uniform", "discrete"],
+                             "lhsopt", "faure", "uniform", "discrete", "saltelli"],
                     "default": "halton"
               },
               "distributions": {
@@ -180,6 +180,10 @@
       "required": ["surrogate"],
       "properties": {"surrogate": {"properties": {"method": {"enum":["evofusion", "kriging", "rbf"]}}}}
     },
-    {"not": {"required": ["surrogate"]}}
+    {"not": {"required": ["surrogate"]}},
+    {
+      "not": {"required": ["surrogate"]},
+      "properties": {"uq": {"properties": {"method": {"enum":["FAST"]}}}}
+    }
   ]
 }

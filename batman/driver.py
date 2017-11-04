@@ -415,6 +415,9 @@ class Driver(object):
                      space=self.space, data=data, fname=output,
                      test=test)
 
-        if self.surrogate is not None:
-            analyse.sobol()
+        if self.surrogate is None:
+            self.logger.warning("No surrogate model, be sure to have a "
+                                "statistically significant sample to trust "
+                                "following results.")
+        analyse.sobol()
         analyse.error_propagation()
