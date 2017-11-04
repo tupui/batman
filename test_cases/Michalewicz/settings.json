@@ -53,6 +53,12 @@
         "predictions": [[2, 2]],
         "method": "kriging"
     },
+    "visualization": {
+        "doe": true,
+        "ticks_nbr": 5,
+        "flabel": "F(x1, x2)",
+        "feat_order": [2, 1]
+    },
     "uq": {
         "sample": 1000,
         "test": "Michalewicz",

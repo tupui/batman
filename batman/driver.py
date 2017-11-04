@@ -412,12 +412,17 @@ class Driver(object):
 
         test = self.settings['uq']['test'] if 'test' in self.settings['uq'] else None
 
+        try:
+            xdata = self.settings['visualization']['xdata']
+        except KeyError:
+            xdata = None
+
         analyse = UQ(self.surrogate, nsample=self.settings['uq']['sample'],
                      pdf=self.settings['uq']['pdf'],
                      p_lst=self.settings['snapshot']['io']['parameter_names'],
                      method=self.settings['uq']['method'],
                      indices=self.settings['uq']['type'],
-                     space=self.space, data=data, fname=output,
+                     space=self.space, data=data, xdata=xdata, fname=output,
                      test=test)
 
         if self.surrogate is None:
@@ -429,9 +434,13 @@ class Driver(object):
 
     def visualization(self):
         """Apply visualisation options."""
-
         p_len = len(self.settings['space']['corners'][0])
-        data = self.data
+
+        # In case of POD, data need to be converted from modes to snapshots.
+        if self.pod is not None:
+            data = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
+        else:
+            data = self.data
 
         try:
             # With surrogate model
@@ -446,54 +455,47 @@ class Driver(object):
 
         if p_len < 5:
             self.logger.info('Creating response surface...')
-
             if 'visualization' in self.settings:
-
                 args = copy(self.settings['visualization'])
 
                 # xdata for output with dim > 1
-                if 'xdata' not in args and output_len > 1:
+                if ('xdata' not in args) and (output_len > 1):
                     args['xdata'] = np.linspace(0, 1, output_len)
 
-                # Plot Doe if doe option is true
-                if 'doe' in args and args['doe']:
-                    args['doe'] = self.space
-                else:
-                    args['doe'] = None
+                # Plot Doe if doe option is True
+                args['doe'] = self.space if ('doe' in args) and args['doe']\
+                    else None
 
                 # Display resampling if resampling option is true
-                if 'resampling' in args and args['resampling']:
-                    args['resampling'] = self.settings['space']['resampling']['resamp_size']
-                else:
-                    args['resampling'] = None
-
-                # Data based on surrogate model (function) or not
-                if 'surrogate' in self.settings:
-                    args['fun'] = self.func
-                else:
-                    args['sample'] = self.space
-                    args['data'] = data
-
-                # Set boundaries
-                args['bounds'] = self.settings['space']['corners']
-
-                response_surface(**args)
-
+                args['resampling'] = self.settings['space']['resampling']['resamp_size']\
+                    if ('resampling' in args) and args['resampling'] else 0
             else:
-                if output_len > 1:
-                    xdata = np.linspace(0, 1, output_len)
-                else:
-                    xdata = None
+                args = {}
+                args['xdata'] = np.linspace(0, 1, output_len)\
+                    if output_len > 1 else None
 
-                if 'surrogate' in self.settings:
-                    response_surface(bounds=self.settings['space']['corners'],
-                                     fun=self.func, xdata=xdata,
-                                     fname=os.path.join(self.fname, 'Response_Surface'))
-                else:
-                    response_surface(bounds=self.settings['space']['corners'],
-                                     data=data, sample=self.space,
-                                     xdata=xdata,
-                                     fname=os.path.join(self.fname, 'Response_Surface'))
+            # Data based on surrogate model (function) or not
+            if 'surrogate' in self.settings:
+                args['fun'] = self.func
+            else:
+                args['sample'] = self.space
+                args['data'] = data
+
+            args['bounds'] = self.settings['space']['corners']
+            args['plabels'] = self.settings['snapshot']['io']['parameter_names']\
+                if 'plabels' not in args else args['plabels']
+            if ('flabel' not in args) and\
+                    (len(self.settings['snapshot']['io']['variables']) < 2):
+                args['flabel'] = self.settings['snapshot']['io']['variables'][0]
+
+            path = os.path.join(self.fname, self.fname_tree['visualization'])
+            try:
+                os.makedirs(path)
+            except OSError:
+                pass
+            args['fname'] = os.path.join(path, 'Response_Surface')
+
+            response_surface(**args)
 
     @multi_eval
     def func(self, coords):
@@ -504,7 +506,6 @@ class Driver(object):
         :param lst coords: The parameters set to calculate the solution from.
         :return: The fonction evaluation.
         :rtype: float.
-
         """
         f_eval, _ = self.surrogate(coords)
         return f_eval[0]
