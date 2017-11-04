@@ -1,18 +1,18 @@
-# coding: utf8
-
-import pytest
-import mock
-import batman.ui
-import batman.misc
+"""Functionnal testing suite."""
 import os
 import shutil
 import sys
 import json
 import re
+import copy
+import pytest
+import mock
+import batman.ui
+import batman.misc
 from batman.tests.conftest import tmp
 
-path = os.path.dirname(os.path.realpath(__file__))
-schema = os.path.join(path, '../batman/misc/schema.json')
+PATH = os.path.dirname(os.path.realpath(__file__))
+SCHEMA = os.path.join(PATH, '../batman/misc/schema.json')
 
 if sys.version_info <= (3, 3):
     user_input = '__builtin__.raw_input'
@@ -32,7 +32,7 @@ def check_output(tmp):
 
 
 def init_case(tmp, case, output=True, force=False):
-    os.chdir(os.path.join(path, case))
+    os.chdir(os.path.join(PATH, case))
     run = True
 
     if force or (os.listdir(tmp) == []):
@@ -132,7 +132,7 @@ def test_restart_pod(tmp, case='Michalewicz'):
     init_case(tmp, case, force=True)
     sys.argv = ['batman', 'settings.json', '-r', '-o', tmp]
     options = batman.ui.parse_options()
-    settings = batman.misc.import_config(options.settings, schema)
+    settings = batman.misc.import_config(options.settings, SCHEMA)
     settings['space']['resampling']['resamp_size'] = 1
     batman.ui.run(settings, options)
     if not os.path.isdir(os.path.join(tmp, 'snapshots/4')):
@@ -160,7 +160,7 @@ def test_resampling(tmp, case='Michalewicz'):
     init_case(tmp, case)
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
-    settings = batman.misc.import_config(options.settings, schema)
+    settings = batman.misc.import_config(options.settings, SCHEMA)
     settings['space']['resampling']['resamp_size'] = 2
 
     for method in ['loo_sigma', 'hybrid']:
@@ -189,11 +189,11 @@ def test_cases(tmp, name):
         test_restart_pod(tmp, case=name)
 
 
-def test_simple_settings(tmp):
-    init_case(tmp, 'Ishigami', output=False)
+def test_simple_settings(tmp, case='Ishigami'):
+    os.chdir(os.path.join(PATH, case))
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
-    settings = batman.misc.import_config(options.settings, schema)
+    settings = batman.misc.import_config(options.settings, SCHEMA)
     settings['space'].pop('resampling')
     settings.pop('pod')
     settings.pop('surrogate')
@@ -203,28 +203,29 @@ def test_simple_settings(tmp):
 
 
 def test_only_surrogate(tmp, case='Michalewicz'):
-    init_case(tmp, case, output=False)
+    os.chdir(os.path.join(PATH, case))
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
-    settings = batman.misc.import_config(options.settings, schema)
+    settings = batman.misc.import_config(options.settings, SCHEMA)
     settings['space'].pop('resampling')
     settings.pop('pod')
     settings.pop('uq')
     shutil.rmtree(tmp)
+    clean_settings = copy.deepcopy(settings)
     batman.ui.run(settings, options)
 
     # Restart from snapshots
     with mock.patch(user_input, side_effect=['', '']):
-        batman.ui.run(settings, options)
+        batman.ui.run(clean_settings, options)
 
     check_output(tmp)
 
 
 def test_only_surrogate_kernel_noise(tmp, case='Ishigami'):
-    init_case(tmp, case, output=False)
+    os.chdir(os.path.join(PATH, case))
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
-    settings = batman.misc.import_config(options.settings, schema)
+    settings = batman.misc.import_config(options.settings, SCHEMA)
     settings['space'].pop('resampling')
     settings.pop('pod')
     settings.pop('uq')
@@ -237,10 +238,10 @@ def test_only_surrogate_kernel_noise(tmp, case='Ishigami'):
 
 
 def test_uq_no_surrogate(tmp, case='Ishigami'):
-    os.chdir(os.path.join(path, case))
+    os.chdir(os.path.join(PATH, case))
     sys.argv = ['batman', 'settings.json', '-u', '-o', tmp]
     options = batman.ui.parse_options()
-    settings = batman.misc.import_config(options.settings, schema)
+    settings = batman.misc.import_config(options.settings, SCHEMA)
     settings['space']['sampling']['method'] = 'saltelli'
     settings['space']['sampling']['init_size'] = 8
     settings['space'].pop('resampling')
@@ -251,10 +252,10 @@ def test_uq_no_surrogate(tmp, case='Ishigami'):
 
 
 def test_doe_as_list(tmp, case='Ishigami'):
-    init_case(tmp, case, output=False)
+    os.chdir(os.path.join(PATH, case))
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
-    settings = batman.misc.import_config(options.settings, schema)
+    settings = batman.misc.import_config(options.settings, SCHEMA)
     settings['space'].pop('resampling')
     settings.pop('pod')
     settings.pop('surrogate')
@@ -264,7 +265,7 @@ def test_doe_as_list(tmp, case='Ishigami'):
 
 
 def test_wrong_settings(tmp, case='Ishigami'):
-    init_case(tmp, case, output=False)
+    os.chdir(os.path.join(PATH, case))
 
     # First check some correct settings
     sys.argv = ['batman', 'settings.json', '-c', '-o', tmp]
@@ -273,7 +274,7 @@ def test_wrong_settings(tmp, case='Ishigami'):
 
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
-    settings = batman.misc.import_config(options.settings, schema)
+    settings = batman.misc.import_config(options.settings, SCHEMA)
 
     # Invalid settings
     settings['space']['sampling'] = {'init_size': 150, 'method': 'wrong'}
@@ -283,7 +284,7 @@ def test_wrong_settings(tmp, case='Ishigami'):
         json.dump(settings, f, indent=4)
 
     with pytest.raises(SystemExit):
-        batman.misc.import_config(wrong_path, schema)
+        batman.misc.import_config(wrong_path, SCHEMA)
 
     # Invalid JSON file
     with open('settings.json', 'rb') as ws:
@@ -295,4 +296,4 @@ def test_wrong_settings(tmp, case='Ishigami'):
         ws.write(file.encode('utf8'))
 
     with pytest.raises(SystemExit):
-        batman.misc.import_config(wrong_path, schema)
+        batman.misc.import_config(wrong_path, SCHEMA)
