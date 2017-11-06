@@ -103,24 +103,31 @@ if sys.version_info <= (3, 3):
 
 def find_version(*file_paths):
     """Find version number, commit and branch."""
-    with open(os.path.join(os.path.dirname(__file__), *file_paths),
-              'r') as f:
+    path = os.path.join(os.path.dirname(__file__), *file_paths)
+    with open(path, 'r') as f:
         version_file = f.read()
-    commit = subprocess.check_output("git describe --always",
-                                     shell=True).rstrip()
-    branch = subprocess.check_output("git describe --all",
-                                     shell=True).rstrip()
-    version_file = re.sub('(__commit__ = )(.*)',
-                          r'\g<1>' + "'" + commit.decode('utf8') + "'",
-                          version_file)
-    version_file = re.sub('(__branch__ = )(.*)',
-                          r'\g<1>' + "'" + branch.decode('utf8') + "'",
-                          version_file)
 
-    with open(os.path.join(os.path.dirname(__file__), *file_paths),
-              'wb') as f:
-        f.write(version_file.encode('utf8'))
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
+    try:
+        # write commit and branch info to batman/__init__.py
+        with open(os.devnull, 'w') as fnull:
+            commit = subprocess.check_output("git describe --always", 
+                                             stderr=fnull, shell=True).rstrip()
+            branch = subprocess.check_output("git describe --all", 
+                                             stderr=fnull, shell=True).rstrip()
+        version_file = re.sub(r'(__commit__\s*=\s*).*',
+                              r'\g<1>' + "'" + commit.decode('utf8') + "'",
+                              version_file)
+        version_file = re.sub(r'(__branch__\s*=\s*).*',
+                              r'\g<1>' + "'" + branch.decode('utf8') + "'",
+                              version_file)
+        with open(path, 'wb') as f:
+            f.write(version_file.encode('utf8'))
+
+    except subprocess.CalledProcessError:
+        # not a git repository: ignore commit and branch info
+        pass
+
+    version_match = re.search(r"^\s*__version__\s*=\s*['\"]([^'\"]+)['\"]",
                               version_file, re.M)
     if version_match:
         return version_match.group(1)
