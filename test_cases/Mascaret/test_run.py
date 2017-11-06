@@ -5,11 +5,12 @@ from batman.functions import MascaretApi
 from batman.functions.mascaret import print_statistics, histogram, plot_opt
 
 # Create an instance of MascaretApi
-study = MascaretApi('config_canal.json','config_canal_user.json')
+#study = MascaretApi('config_canal.json','config_canal_user.json')
 #study = MascaretApi('config_garonne_lnhe.json','config_garonne_lnhe_user.json')
+study = MascaretApi('config_garonne_lnhe_casier.json','config_garonne_lnhe_user_casier.json')
 
 # Print informations concerning this study
-print(study)
+#print(study)
 
 # Run study with Ks and Q specified constant values 
 #res = study(x=[30, 3000])
@@ -21,7 +22,7 @@ print(study)
 # Run study  with the user defined tasks and values 
 res = study()
 print('Water level computed with json user defined values', res)
-print('Water level computed with json user defined values', res[1])
+#print('Water level computed with json user defined values', res[1])
 # Plot the water level along the open-channel at final time
 plot_opt('ResultatsOpthyca.opt')
 

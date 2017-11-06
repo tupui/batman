@@ -1,20 +1,32 @@
 {
     "space": {
         "corners": [
-            [20.0, 1000.0], 
-            [40.0, 3000.0]
+            [15.0, 1000.0],
+            [60.0, 6000.0]
         ],
         "sampling": {
-            "init_size": 100,
-            "method": "halton"
+            "init_size": 121,
+            "method": ["Uniform(15., 60.)", "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()"]
+        },
+        "resampling":{
+            "delta_space": 0.08,
+            "resamp_size": 0,
+            "method": "sigma",
+            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
+            "q2_criteria": 0.9
         }
+    },
+    "pod": {
+        "dim_max": 100,
+        "tolerance": 0.99,
+        "type": "static"
     },
     "snapshot": {
         "max_workers": 5,
         "io": {
             "shapes": {
                 "0": [
-                    [51]
+                    [463]
                 ]
             },
             "format": "fmt_tp_fortran",
@@ -37,10 +49,16 @@
             "restart": "False"
         }
     },
+    "surrogate": {
+        "predictions": [[30, 2000]],
+        "method": "pc",
+        "strategy": "Quad",
+        "degree": 10
+    },
     "uq": {
-        "sample": 1000,
-        "pdf": ["Uniform(20., 40.)", "Uniform(1000., 3000.)"],
+        "sample": 10000,
+        "pdf": ["Uniform(15., 60.)", "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()" ],
         "type": "aggregated",
-        "method": "sobol"
+        "method": "FAST"
     }
 }
