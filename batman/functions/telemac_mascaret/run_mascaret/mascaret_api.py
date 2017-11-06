@@ -17,7 +17,8 @@ import numpy as np
 import batman as bat
 from ...utils import multi_eval
 
-# logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 class MascaretApi(object):
@@ -237,9 +238,11 @@ class MascaretApi(object):
                     file_type.append(key_val[0].encode('utf8'))
 
         # Import a model
+        print (file_type, file_name)
         len_file = len(file_name)
         file_name_c = (ctypes.c_char_p * len_file)(*file_name)
         file_type_c = (ctypes.c_char_p * len_file)(*file_type)
+        print (file_type_c, file_name_c)
         self.logger.debug('Importing a model...')
         self.error = self.libmascaret.C_IMPORT_MODELE_MASCARET(self.id_masc, file_name_c,
                                                                file_type_c, len_file,
@@ -286,8 +289,13 @@ class MascaretApi(object):
         string = ("MODEL FILES:\n"
                   " -- xcas: {}\n"
                   " -- geo: {}\n"
+                  " -- casier: {}\n"
                   " -- res: {}\n"
+                  " -- res_casier: {}\n"
+                  " -- res_liaison: {}\n"
                   " -- listing: {}\n"
+                  " -- listing_casier: {}\n"
+                  " -- listing_liaison: {}\n"
                   " -- damocle: {}\n"
                   " -- lig: {}\n"
                   " -- loi:\n")
@@ -890,7 +898,7 @@ class MascaretApi(object):
         self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name_RelAbs, 0, ctypes.byref(sizeRelAbs1),
             ctypes.byref(sizeRelAbs2), ctypes.byref(sizeRelAbs3))
-        self.logger.debug('In Getter, size Model.CrossSection.X = {} {} {}'
+        self.logger.debug('In Getter, size Model.CrossSection.RelAbs = {} {} {}'
                           .format(sizeRelAbs1.value, sizeRelAbs2.value, sizeRelAbs3.value))
         self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
             self.id_masc, var_name_X, 0, ctypes.byref(sizeX1),
@@ -930,7 +938,7 @@ class MascaretApi(object):
                     'In Getter Cross Section, Z ={}'.format(Z_c.value))
                 res_Z.append(Z_c.value)
                 self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
-                    self.id_masc, var_name_RelAbs, n_sec + 1, n_pts + 1, 0,
+                    self.id_masc, var_name_RelAbs, n_sec +1, 0, 0,
                     ctypes.byref(RelAbs_c))
                 self.logger.debug(
                     'In Getter Cross Section, RelAbs ={}'.format(RelAbs_c.value))

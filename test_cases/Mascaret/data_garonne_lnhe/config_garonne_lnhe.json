@@ -7,7 +7,7 @@
         "damocle": "listing.damoc",
         "lig": "LigneEauInitiale.lig",
         "loi": [
-            "Hydro_Tonneins_1981.loi",
+            "Hydro_Tonneins.loi",
             "CT_LaReole.loi"
         ]
     }

@@ -1,14 +1,10 @@
 #!/bin/tcsh
 rm -rf *.loi *.xcas *.dtd *.geo *.lig dico.txt fort.22 *.damoc
-mv config_garonne_lnhe.json config_garonne_lnhe.json_old
-mv config_garonne_lnhe_user.json config_garonne_lnhe_user.json_old
-mv ResultatsListing.lis ResultatsListing.lis_old
-mv ResultatsOpthyca.opt ResultatsOpthyca.opt_old
 ln -s data_garonne_lnhe/ParametresMascaret.xcas ParametresMascaret.xcas
 ln -s data_garonne_lnhe/mascaret-1.0.dtd mascaret-1.0.dtd
 ln -s data_garonne_lnhe/geometrie.geo geometrie.geo
 ln -s data_garonne_lnhe/LigneEauInitiale.lig LigneEauInitiale.lig
-ln -s data_garonne_lnhe/Hydro_Tonneins_1981.loi Hydro_Tonneins_1981.loi
+ln -s data_garonne_lnhe/Hydro_Tonneins.loi Hydro_Tonneins.loi
 ln -s data_garonne_lnhe/CT_LaReole.loi CT_LaReole.loi
 ln -s data_garonne_lnhe/config_garonne_lnhe.json config_garonne_lnhe.json
 ln -s data_garonne_lnhe/config_garonne_lnhe_user.json config_garonne_lnhe_user.json
