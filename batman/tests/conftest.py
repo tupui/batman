@@ -40,7 +40,7 @@ def settings_ishigami():
         "pod": {"dim_max": 100, "tolerance": 0.99, "server": None, "type": "static"},
         "snapshot": {"max_workers": 10,
                      "io": {"shapes": {"0": [[1]]}, "format": "fmt_tp_fortran",
-                            "variables": ["F"], "point_filename": "header.py",
+                            "variables": ["F"], "point_filename": "point.json",
                             "filenames": {"0": ["function.dat"]},
                             "template_directory": None,
                             "parameter_names": ["x1", "x2", "x3"]},

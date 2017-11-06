@@ -4,6 +4,7 @@ import sys
 import logging
 import shutil
 import re
+import json
 import numpy as np
 from ..input_output import IOFormatSelector, Dataset
 from ..space import Point
@@ -225,29 +226,15 @@ class Snapshot(object):
     def read_point(cls, directory):
         """Read a snapshot point from `directory` and return it."""
         cls._must_be_initialized()
-        names = []
-        coordinates = []
         path = os.path.join(directory, cls.point_filename)
-        with open(path, 'rb') as f:
-            for line in f:
-                line = line.decode('utf8')
-                p = re.findall(r'^\s*(\S+)\s*=\s*(\S+)\s*', line)
-
-                # checks
-                if len(p) != 1:
-                    cls.logger.exception('Parsing problem in {} on the line {}'
-                                         .format(path, line))
-                    raise ValueError
-
-                names += [p[0][0]]
-                coordinates += [p[0][1]]
-
-        if tuple(names) != cls.parameter_names:
-            cls.logger.exception("Bad coordinate names, should be: {}"
-                                 " but got: {}"
-                                 .format(str(cls.parameter_names), str(names)))
+        with open(path, 'r') as fd:
+            params = json.load(fd)
+        try:
+            coordinates = [params[name] for name in cls.parameter_names]
+        except KeyError:
+            cls.logger.exception("Bad coordinate names: should be {}, got {}"
+                                 .format(cls.parameter_names, tuple(sorted(params))))
             raise ValueError
-
         cls.logger.debug('Point read from: {}'.format(path))
         return Point(coordinates)
 
@@ -258,9 +245,9 @@ class Snapshot(object):
         if not os.path.isdir(directory):
             os.makedirs(directory)
         path = os.path.join(directory, cls.point_filename)
-        with open(path, 'wb') as f:
-            for k, v in zip(cls.parameter_names, point):
-                f.write((cls.point_format % (k, repr(v))).encode('utf8'))
+        params = dict(zip(cls.parameter_names, point))
+        with open(path, 'w') as fd:
+            json.dump(params, fd)
         cls.logger.debug('Point wrote to: {}'.format(path))
 
     @classmethod
