@@ -122,11 +122,11 @@ A snapshot defines a simulation.
             },
             "format": "fmt_tp_fortran",
             "variables": ["X", "F"],
-            "point_filename": "header.py",
+            "point_filename": "point.json",
             "filenames": {
                 "0": ["function.dat"]
             },
-            "template_directory": "output/snapshots/0/batman-data/header.py",
+            "template_directory": "output/snapshots/0/batman-data/point.json",
             "parameter_names": ["x1", "x2"]
         },
         "provider": {

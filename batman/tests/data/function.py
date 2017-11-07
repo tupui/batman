@@ -5,7 +5,7 @@ import numpy as np
 from batman.functions import Ishigami
 from batman.input_output import (IOFormatSelector, Dataset)
 
-# Input from header.py
+# Input from point.json
 with open('./batman-data/point.json', 'r') as fd:
     params = json.load(fd)
 

@@ -76,14 +76,14 @@
             # Name of the file that contains the coordinates of a point in the
             # parameter space
             # format: string
-            "point_filename": "header.py",
+            "point_filename": "point.json",
             # Dictionary of list, if several filenames, several independant
             # analysis are done. It contains the output variables of a
             # snapshot to use by BATMAN,
             # format: list of strings
             "filenames": {"0": ["function.dat"]},
             # Used to restart from existing jobs not created with BATMAN
-            "template_directory": "output/snapshots/0/batman-data/header.py",
+            "template_directory": "output/snapshots/0/batman-data/point.json",
         },
         # Snapshot provider
         # can also be a python function by setting a python function path

@@ -31,7 +31,7 @@
             },
             "format": "numpy",
             "variables": ["F"],
-            "point_filename": "header.py",
+            "point_filename": "point.json",
             "filenames": {
                 "0": ["function.npz"]
             },

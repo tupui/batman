@@ -2,6 +2,7 @@
 # coding:utf-8
 
 import re
+import json
 import numpy as np
 import ctypes
 import csv
@@ -11,15 +12,11 @@ from batman.functions import MascaretApi
 study = MascaretApi('config_canal.json','config_canal_user.json')
 print(study)
 
+# Input from point.json
+with open('./batman-data/point.json', 'r') as fd:
+    params = json.load(fd)
 
-# Input from header.py
-with open('./batman-data/header.py', 'r') as a:
-    for line in a.readlines():
-        A = re.match(r'x1 = (.*$)', line, re.M | re.I)
-        if A:
-            x1 = "{:.7}".format(A.group(1))
-
-X1 = float(x1)
+X1 = params['x1']
 
 # Function
 nb_timebc = 10
