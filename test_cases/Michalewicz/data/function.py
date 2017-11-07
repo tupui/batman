@@ -1,1 +1,23 @@
-#!/usr/bin/env python# coding:utf-8import refrom batman.functions import Michalewiczfrom batman.input_output import (IOFormatSelector, Dataset)# Input from header.pywith open('./batman-data/header.py', 'r') as a:    for line in a.readlines():        A = re.match(r'x1 = (.*$)', line, re.M | re.I)        if A:            x1 = "{:.7}".format(A.group(1))        B = re.match(r'x2 = (.*$)', line, re.M | re.I)        if B:            x2 = "{:.7}".format(B.group(1))X1 = float(x1)X2 = float(x2)# Functionf = Michalewicz()data = f([X1, X2])# Outputio = IOFormatSelector('fmt_tp_fortran')dataset = Dataset(names=["F"], shape=[1, 1, 1], data=data)io.write('./cfd-output-data/function.dat', dataset)
+#!/usr/bin/env python
+# coding:utf-8
+
+import re
+import json
+from batman.functions import Michalewicz
+from batman.input_output import (IOFormatSelector, Dataset)
+
+# Input from point.json
+with open('./batman-data/point.json', 'r') as fd:
+    params = json.load(fd)
+
+X1 = params['x1']
+X2 = params['x2']
+
+# Function
+f = Michalewicz()
+data = f([X1, X2])
+
+# Output
+io = IOFormatSelector('fmt_tp_fortran')
+dataset = Dataset(names=["F"], shape=[1, 1, 1], data=data)
+io.write('./cfd-output-data/function.dat', dataset)

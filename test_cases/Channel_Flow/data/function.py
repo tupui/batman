@@ -2,21 +2,16 @@
 # coding:utf-8
 
 import re
+import json
 import numpy as np
 from batman.functions import Channel_Flow
 
-# # Input from header.py
-with open('./batman-data/header.py', 'r') as a:
-    for line in a.readlines():
-        A = re.match(r'x1 = (.*$)', line, re.M | re.I)
-        if A:
-            x1 = "{:.7}".format(A.group(1))
-        B = re.match(r'x2 = (.*$)', line, re.M | re.I)
-        if B:
-            x2 = "{:.7}".format(B.group(1))
+# Input from point.json
+with open('./batman-data/point.json', 'r') as fd:
+    params = json.load(fd)
 
-Ks = float(x1)
-Q = float(x2)
+Ks = params['x1']
+Q = params['x2']
 
 f = Channel_Flow()
 X = f.x

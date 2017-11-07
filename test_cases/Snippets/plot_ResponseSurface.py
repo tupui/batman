@@ -13,6 +13,7 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import re
+import json
 import itertools
 
 print("2D input function post processing")
@@ -51,14 +52,9 @@ def header_reader(p_names, header_file):
     :return: parameters values
     :rtype: lst(floats)
     """
-    with open(header_file, 'r') as header:
-        p = np.zeros((len(p_names)))
-        for line, [i, p_name] in itertools.product(header.readlines(),
-                                                   enumerate(p_names)):
-            regex = re.match(p_name + r' = (.*$)', line, re.M | re.I)
-            if regex:
-                p[i] = float(regex.group(1))
-
+    with open(header_file, 'r') as fd:
+        params = json.load(fd)
+        p = np.array([params.get(n, 0.) for n in p_names])
     return p
 
 
@@ -124,7 +120,7 @@ for i in range(nb_samples):
             index = str(i)
 
         file = pred_path + index + '/function.dat'
-        header_file = pred_path + index + '/header.py'
+        header_file = pred_path + index + '/param.json'
         x['data'], z['data'], int_f = integral_processing(file,
                                                                   header_file,
                                                                   output_shape)
@@ -132,7 +128,7 @@ for i in range(nb_samples):
 
     else:
         file = snap_path + str(i) + '/batman-data/function.dat'
-        header_file = snap_path + str(i) + '/batman-data/header.py'
+        header_file = snap_path + str(i) + '/batman-data/param.json'
         x['data'], z['data'], int_f = integral_processing(file,
                                                                   header_file,
                                                                   output_shape)
@@ -168,9 +164,9 @@ for i in range(nb_samples):
     print("With Header -> {}: {}, {}: {}\n".format(p1['name'], a,
                                                    p2['name'], b))
 
-# Get DOE from header.py
+# Get DOE from param.json
 for i in range(len_doe):
-    header_file = snap_path + str(i) + '/batman-data/header.py'
+    header_file = snap_path + str(i) + '/batman-data/param.json'
 
     a, b = header_reader([p1['name'], p2['name']], header_file)
 

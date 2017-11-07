@@ -78,7 +78,7 @@
             },
             "format": {"type": "string", "default": "fmt_tp_fortran"},
             "variables": {"type": "array", "items": {}},
-            "point_filename": {"type": "string", "default": "header.py"},
+            "point_filename": {"type": "string", "default": "point.json"},
             "filenames": {
               "type": "object",
               "properties": {"0": {"type": "array", "items": {}}},

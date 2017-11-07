@@ -67,7 +67,7 @@ To summarize, we have the Michalewicz 2*D* function as follows:
 Create the case for BATMAN
 """"""""""""""""""""""""""
 
-For each snapshot, BATMAN will copy the content of ``data`` and add a new folder ``batman-data`` which contains a single file ``header.py``. The content of this file is updated per snapshot and it only contains the input parameters to change for the current simulation. Hence, to use Michalewicz's function with BATMAN, we need to have this file read to gather input parameters.
+For each snapshot, BATMAN will copy the content of ``data`` and add a new folder ``batman-data`` which contains a single file ``point.json``. The content of this file is updated per snapshot and it only contains the input parameters to change for the current simulation. Hence, to use Michalewicz's function with BATMAN, we need to have this file read to gather input parameters.
 
 Aside from the simulation code and this headers, there is a ``data/script.sh``. It is this script that is launched by BATMAN. Once it is completed, the computation is considered as finished. Thus, this script manages an AVBP launch, calls a python script, etc.
 
@@ -117,7 +117,7 @@ Then, we configure the snapshot itself. We define the name of the header and out
             },
             "format": "fmt_tp",
             "variables": ["F"],
-            "point_filename": "header.py",
+            "point_filename": "point.json",
             "filenames": {
                 "0": ["function.dat"]
             },
