@@ -166,7 +166,6 @@ def test_doe():
     assert len(sample) == 6
 
 
-@pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
 def test_resampling(tmp, branin_data, settings_ishigami):
     f_2d = branin_data.func
     space = branin_data.space
@@ -200,21 +199,30 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     refiner = Refiner(surrogate, space.corners, delta_space=0.1)
 
     sigma = refiner.sigma()
+    npt.assert_almost_equal(sigma, [8.47,  13.65], decimal=1)
+
     optim_EI = refiner.optimization(method='EI')
+    npt.assert_almost_equal(optim_EI, [-1.387, 8.586], decimal=1)
+
     optim_PI = refiner.optimization(method='PI')
+    npt.assert_almost_equal(optim_PI, [-1.985, 8.87], decimal=1)
+
     disc = refiner.discrepancy()
+    npt.assert_almost_equal(disc, [8.47, 12.415], decimal=1)
+
     extrema = np.array(refiner.extrema([])[0])
+    npt.assert_almost_equal(extrema, [[-2.694, 2.331], [2.219, 1.979]], decimal=1)
 
     base_sigma_disc = refiner.sigma_discrepancy()
     npt.assert_almost_equal(base_sigma_disc,
-                            refiner.sigma_discrepancy([0.5, 0.5]), decimal=2)
+                            refiner.sigma_discrepancy([0.5, 0.5]), decimal=1)
     assert (base_sigma_disc != refiner.sigma_discrepancy([-0.1, 1.])).any()
 
     # Refiner without surrogate
     refiner = Refiner(surrogate, space.corners, delta_space=0.1)
     disc2 = refiner.discrepancy()
+    npt.assert_almost_equal(disc2, [8.47, 12.416], decimal=1)
 
-    print(sigma, optim_EI, optim_PI, disc, extrema, disc2)
     # # Plotting
     # import os
     # import itertools

@@ -221,6 +221,7 @@ def test_only_surrogate(tmp, case='Michalewicz'):
     check_output(tmp)
 
 
+@pytest.mark.xfail(raises=ValueError, reason='Flat response, no contour possible')
 def test_only_surrogate_kernel_noise(tmp, case='Ishigami'):
     os.chdir(os.path.join(PATH, case))
     sys.argv = ['batman', 'settings.json', '-o', tmp]

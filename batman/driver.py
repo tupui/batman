@@ -442,16 +442,7 @@ class Driver(object):
         else:
             data = self.data
 
-        try:
-            # With surrogate model
-            try:
-                # Functional output
-                f_eval, _ = self.surrogate(self.space[0])
-                output_len = len(f_eval[0])
-            except ValueError:
-                output_len = 1
-        except TypeError:
-            output_len = data.shape[1]
+        output_len = np.asarray(data).shape[1]
 
         if p_len < 5:
             self.logger.info('Creating response surface...')

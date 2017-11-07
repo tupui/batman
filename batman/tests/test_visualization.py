@@ -33,7 +33,6 @@ def hdr():
     return HdrBoxplot(data)
 
 
-@pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
 def test_hdr_basic(hdr, tmp):
     print('Data shape: ', data.shape)
 
@@ -94,7 +93,6 @@ def test_hdr_alpha(mock_show):
     hdr.plot(samples=10)
 
 
-@pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
 @patch("matplotlib.pyplot.show")
 def test_hdr_multiple_alpha(mock_show):
     hdr = HdrBoxplot(data, alpha=[0.4, 0.92])
@@ -114,7 +112,6 @@ def test_hdr_multiple_alpha(mock_show):
     hdr.plot()
 
 
-@pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
 def test_hdr_threshold():
     hdr = HdrBoxplot(data, alpha=[0.8], threshold=0.93)
     labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)

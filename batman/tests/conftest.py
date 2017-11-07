@@ -2,13 +2,16 @@
 
 import pytest
 import numpy as np
-import copy
 from sklearn.metrics import r2_score
 import openturns as ot
 from batman.functions import (Ishigami, Branin, G_Function,
                               Mascaret, Forrester)
 from batman.space import (Space, Point)
 from batman.driver import Driver
+
+
+# Global optimization
+np.random.seed(123456)
 
 
 class Datatest(object):
