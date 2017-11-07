@@ -160,21 +160,21 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
 
     else:
         # Create the response surfaces and movies in 2D, 3D and 4D.
-        # Animation options
-        FFMpegWriter = manimation.writers['ffmpeg']
-        metadata = dict(title='Response Surface', artist='Batman',
-                        comment=("In 2D, show the response surface. "
-                                 "In 3D, display the 3rd variable as a function of time. "
-                                 "In 4D, generate a movie for each 4th variable "
-                                 "discretisation."))
-        writer = FFMpegWriter(fps=5, metadata=metadata)
-        if fname is not None:
-            movie_name = fname
-        else:
-            movie_name = 'Response_Surface'
-
-        # Define discretisation parameters for 3rd and 4th dimensions
         if dim > 2:
+            # Animation options
+            FFMpegWriter = manimation.writers['ffmpeg']
+            metadata = dict(title='Response Surface', artist='Batman',
+                            comment=("In 2D, show the response surface. "
+                                     "In 3D, display the 3rd variable as a function of time. "
+                                     "In 4D, generate a movie for each 4th variable "
+                                     "discretisation."))
+            writer = FFMpegWriter(fps=5, metadata=metadata)
+            if fname is not None:
+                movie_name = fname
+            else:
+                movie_name = 'Response_Surface'
+
+            # Define discretisation parameters for 3rd and 4th dimensions
             min_z = np.min(zsample)
             max_z = np.max(zsample)
             z_step = (max_z - min_z) / (axis_disc[2] - 1)
