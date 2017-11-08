@@ -215,10 +215,15 @@ class Space(list):
         return self
 
     def refine(self, surrogate, method, point_loo=None, delta_space=0.08,
-               pdf=None, hybrid=None, discrete=None):
+               dists=None, hybrid=None, discrete=None):
         """Refine the sample, update space points and return the new point(s).
 
-        :param :class:`batman.surrogate.SurrogateModel` surrogate: surrogate.
+        :param surrogate: Surrogate.
+        :type surrogate: :class:`batman.surrogate.SurrogateModel`.
+        :param str method: Refinement method.
+        :param array_like point_loo: Leave-one-out worst point (n_features,).
+        :param float delta_space: Shrinking factor for the parameter space.
+        :param int discrete: index of the discrete variable
         :return: List of points to add.
         :rtype: element or list of :class:`batman.space.Point`.
         """
@@ -236,14 +241,14 @@ class Space(list):
         elif method == 'loo_sigma':
             new_point = self.refiner.leave_one_out_sigma(point_loo)
         elif method == 'loo_sobol':
-            new_point = self.refiner.leave_one_out_sobol(point_loo, pdf)
+            new_point = self.refiner.leave_one_out_sobol(point_loo, dists)
         elif method == 'extrema':
             new_point, self.refined_pod_points = self.refiner.extrema(self.refined_pod_points)
         elif method == 'hybrid':
             new_point, self.refined_pod_points = self.refiner.hybrid(self.refined_pod_points,
                                                                      point_loo,
                                                                      next(self.hybrid),
-                                                                     pdf)
+                                                                     dists)
         elif method == 'optimization':
             new_point = self.refiner.optimization()
         elif method == 'sigma_discrepancy':

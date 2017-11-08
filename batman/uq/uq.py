@@ -77,7 +77,7 @@ class UQ:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, surrogate, pdf=None, nsample=5000, p_lst=None,
+    def __init__(self, surrogate, dists=None, nsample=5000, p_lst=None,
                  method='sobol', indices='aggregated', space=None, data=None,
                  xdata=None, fname=None, test=None):
         """Init the UQ class.
@@ -119,7 +119,7 @@ class UQ:
 
         self.surrogate = surrogate
 
-        self.p_len = len(pdf)
+        self.p_len = len(dists)
         if p_lst is None:
             self.p_lst = ["x" + str(i) for i in range(self.p_len)]
         else:
@@ -130,7 +130,7 @@ class UQ:
 
         # Generate samples
         self.points_sample = nsample
-        dists = ','.join(['ot.' + pdf[i] for i in range(self.p_len)])
+        dists = ','.join(['ot.' + dists[i] for i in range(self.p_len)])
         try:
             self.distribution = eval('ot.ComposedDistribution([' + dists + '])',
                                      {'__builtins__': None},

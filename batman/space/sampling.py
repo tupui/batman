@@ -27,7 +27,6 @@ and the method.
 """
 import logging
 from scipy import stats
-from scipy.stats import randint
 from sklearn import preprocessing
 import numpy as np
 import openturns as ot
@@ -63,15 +62,15 @@ class Doe():
         self.n_sample = n_sample
         self.bounds = np.asarray(bounds)
         self.kind = kind
-        self.dim = bounds.shape[1]
+        self.dim = self.bounds.shape[1]
 
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(self.bounds)
 
         if dists is None:
-            distribution = ot.ComposedDistribution(
-                [ot.Uniform(float(self.bounds[0][i]), float(self.bounds[1][i]))
-                 for i in range(self.dim)])
+            dists = [ot.Uniform(float(self.bounds[0][i]),
+                                float(self.bounds[1][i]))
+                     for i in range(self.dim)]
         else:
             try:
                 dists = [eval('ot.' + dist, {'__builtins__': None},
@@ -83,12 +82,9 @@ class Doe():
 
         if discrete is not None:
             # Creating uniform discrete distribution for OT
-            rv = randint(self.bounds[0, discrete], self.bounds[1, discrete] + 1)
-            points = ot.Sample(10000, 1)
-            for i in range(10000):
-                points[i] = (rv.rvs(),)
-
-            disc_dist = ot.UserDefined(points)
+            disc_list = [[i] for i in range(int(self.bounds[0, discrete]),
+                                            int(self.bounds[1, discrete] + 1))]
+            disc_dist = ot.UserDefined(disc_list)
 
             dists.pop(discrete)
             dists.insert(discrete, disc_dist)
@@ -142,7 +138,7 @@ class Doe():
             sample = ((np.floor_divide(sample, (1. / self.n_sample)) + 1)
                  - 0.5) / self.n_sample
         else:
-            sample = self.scaler.transform(sample)
+            sample = self.scaler.inverse_transform(sample)
 
         return sample
 

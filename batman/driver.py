@@ -313,7 +313,7 @@ class Driver(object):
                                               method,
                                               point_loo=point_loo,
                                               delta_space=delta_space,
-                                              pdf=pdf, hybrid=hybrid,
+                                              dists=pdf, hybrid=hybrid,
                                               discrete=discrete)
             except FullSpaceError:
                 break
@@ -422,7 +422,7 @@ class Driver(object):
             xdata = None
 
         analyse = UQ(self.surrogate, nsample=self.settings['uq']['sample'],
-                     pdf=self.settings['uq']['pdf'],
+                     dists=self.settings['uq']['pdf'],
                      p_lst=self.settings['snapshot']['io']['parameter_names'],
                      method=self.settings['uq']['method'],
                      indices=self.settings['uq']['type'],

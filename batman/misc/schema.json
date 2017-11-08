@@ -15,7 +15,7 @@
               "method": {
                     "type": "string",
                     "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc",
-                             "lhsopt", "faure", "uniform", "discrete", "saltelli"],
+                             "lhsopt", "faure", "uniform", "saltelli"],
                     "default": "halton"
               },
               "distributions": {

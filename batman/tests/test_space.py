@@ -115,35 +115,45 @@ def test_space_evaluation(settings_ishigami):
 
 def test_doe():
     bounds = np.array([[0, 2], [10, 5]])
-    discrete_var = 0
     n = 5
 
-    doe = Doe(n, bounds, 'uniform', var=discrete_var)
+    doe = Doe(n, bounds, 'uniform', discrete=0)
     sample = doe.generate()
-    out = np.array([[0., 2.], [10., 2.], [0., 5.], [10., 5.]])
+    out = [[0., 2.], [10., 2.], [0., 5.], [10., 5.]]
     npt.assert_almost_equal(sample, out, decimal=1)
 
-    doe = Doe(n, bounds, 'discrete', var=discrete_var)
+    doe = Doe(n, bounds, 'halton', discrete=0)
     sample = doe.generate()
-    out = np.array([[5., 3.], [2., 4.], [8., 2.3], [1., 3.3], [6., 4.3]])
+    out = [[5., 3.], [2., 4.], [8., 2.3], [1., 3.3], [6., 4.3]]
+    npt.assert_almost_equal(sample, out, decimal=1)
+
+    doe = Doe(n, bounds, 'halton', discrete=1)
+    sample = doe.generate()
+    out = [[5, 3], [2.5 , 4], [7.5 , 2], [1.25, 3], [6.25, 5]]
+    npt.assert_almost_equal(sample, out, decimal=1)
+
+    doe = Doe(n, np.array([[0, 2, -2], [10, 5, -1]]), 'halton', discrete=1)
+    sample = doe.generate()
+    out = [[5, 3, -1.8 ], [2.5, 4, -1.6 ], [7.5, 2, -1.4 ],
+           [1.25, 3, -1.2 ], [6.25, 5, -1.96]]
     npt.assert_almost_equal(sample, out, decimal=1)
 
     doe = Doe(n, bounds, 'halton')
     sample = doe.generate()
-    out = np.array([[5., 3.], [2.5, 4.], [7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
+    out = [[5., 3.], [2.5, 4.], [7.5, 2.3], [1.25, 3.3], [6.25, 4.3]]
     npt.assert_almost_equal(sample, out, decimal=1)
 
-    doe = Doe(n, bounds, 'sobolscramble', var=discrete_var)
+    doe = Doe(n, bounds, 'sobolscramble', discrete=0)
     sample = doe.generate()
 
     doe = Doe(n, bounds, 'lhsopt')
     ot.RandomGenerator.SetSeed(123)
     sample = doe.generate()
-    out = np.array([[8.097, 3.646], [6.592, 4.806], [0.622, 2.909],
-                    [5.361, 2.162], [2.921, 4.041]])
+    out = [[8.097, 3.646], [6.592, 4.806], [0.622, 2.909],
+           [5.361, 2.162], [2.921, 4.041]]
     npt.assert_almost_equal(sample, out, decimal=1)
 
-    bounds = np.array([[15.0, 2500.0], [60.0, 6000.0]])
+    bounds = [[15.0, 2500.0], [60.0, 6000.0]]
 
     with pytest.raises(SystemError):
         dists = ['Um(15., 60.)', 'Normal(4035., 400.)']
