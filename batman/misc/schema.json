@@ -169,7 +169,9 @@
         "resampling": {"type": "boolean", "default": true},
         "xdata": {"type": "array", "items": {"type": "number"}},
         "axis_disc": {"type": "array",
-                      "items": {"type": "integer", "maxItems": 4}},
+                      "items": {"type": "integer", "maxItems": 4
+                                "exclusiveMinimum": false,
+                                "minimum": 2}},
         "flabel": {"type": "string"},
         "plabels": {"type": "array",
                     "items": {"type": "string", "maxItems": 4}},
