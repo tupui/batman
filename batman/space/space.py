@@ -173,28 +173,29 @@ class Space(list):
                                    .format(point))
         return self
 
-    def sampling(self, n=None, kind='halton', dists=None):
+    def sampling(self, n_sample=None, kind='halton', dists=None, discrete=None):
         """Create point samples in the parameter space.
 
         Minimum number of samples for halton and sobol: 4
         For uniform sampling, the number of points is per dimensions.
         The points are registered into the space and replace existing ones.
 
-        :param int n: number of samples.
+        :param int n_sample: number of samples.
         :param str kind: method of sampling.
         :param lst(str) dists: List of valid openturns distributions as string.
+        :param int discrete: index of the discrete variable
         :return: List of points.
         :rtype: self.
         """
-        if self.multifidelity and n is None:
-            n = self._cheap_doe_from_expensive(self.doe_init)
-        elif self.multifidelity and n is not None:
-            n = self._cheap_doe_from_expensive(n)
-        elif not self.multifidelity and n is None:
-            n = self.doe_init
+        if self.multifidelity and n_sample is None:
+            n_sample = self._cheap_doe_from_expensive(self.doe_init)
+        elif self.multifidelity and n_sample is not None:
+            n_sample = self._cheap_doe_from_expensive(n_sample)
+        elif not self.multifidelity and n_sample is None:
+            n_sample = self.doe_init
 
         bounds = np.array(self.corners)
-        doe = Doe(n, bounds, kind, dists)
+        doe = Doe(n_sample, bounds, kind, dists, discrete)
         samples = doe.generate()
 
         # concatenate cheap and expensive space and add identifier 0 or 1
@@ -214,7 +215,7 @@ class Space(list):
         return self
 
     def refine(self, surrogate, method, point_loo=None, delta_space=0.08,
-               pdf=None, hybrid=None, discrete=False):
+               pdf=None, hybrid=None, discrete=None):
         """Refine the sample, update space points and return the new point(s).
 
         :param :class:`batman.surrogate.SurrogateModel` surrogate: surrogate.

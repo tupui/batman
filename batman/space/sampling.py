@@ -28,6 +28,7 @@ and the method.
 import logging
 from scipy import stats
 from scipy.stats import randint
+from sklearn import preprocessing
 import numpy as np
 import openturns as ot
 
@@ -38,7 +39,7 @@ class Doe():
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, n_sample, bounds, kind, dists=None, var=0):
+    def __init__(self, n_sample, bounds, kind, dists=None, discrete=None):
         """Initialize the DOE generation.
 
         In case of :attr:`kind` is ``uniform``, :attr:`n_sample` is decimated
@@ -57,26 +58,43 @@ class Doe():
           ['halton', 'sobol', 'faure', 'lhs[c]', 'sobolscramble', 'uniform',
           'discrete'] otherwize can be a list of openturns distributions.
         :param lst(str) dists: List of valid openturns distributions as string.
-        :param int var: Position of the discrete variable.
+        :param int discrete: Position of the discrete variable.
         """
         self.n_sample = n_sample
         self.bounds = np.asarray(bounds)
         self.kind = kind
         self.dim = bounds.shape[1]
 
+        self.scaler = preprocessing.MinMaxScaler()
+        self.scaler.fit(self.bounds)
+
         if dists is None:
             distribution = ot.ComposedDistribution(
                 [ot.Uniform(float(self.bounds[0][i]), float(self.bounds[1][i]))
                  for i in range(self.dim)])
         else:
-            dists = ','.join(['ot.' + dist for dist in dists])
             try:
-                distribution = eval('ot.ComposedDistribution([' + dists + '])',
-                                    {'__builtins__': None},
-                                    {'ot': __import__('openturns')})
+                dists = [eval('ot.' + dist, {'__builtins__': None},
+                              {'ot': __import__('openturns')})
+                         for dist in dists]
             except (TypeError, AttributeError):
                 self.logger.error('OpenTURNS distribution unknown.')
                 raise SystemError
+
+        if discrete is not None:
+            # Creating uniform discrete distribution for OT
+            rv = randint(self.bounds[0, discrete], self.bounds[1, discrete] + 1)
+            points = ot.Sample(10000, 1)
+            for i in range(10000):
+                points[i] = (rv.rvs(),)
+
+            disc_dist = ot.UserDefined(points)
+
+            dists.pop(discrete)
+            dists.insert(discrete, disc_dist)
+
+        # Join distribution
+        distribution = ot.ComposedDistribution(dists)
 
         if self.kind == 'halton':
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
@@ -97,25 +115,10 @@ class Doe():
             self.sequence_type = ot.SimulatedAnnealingLHS(lhs, ot.GeometricProfile(),
                                                           ot.SpaceFillingPhiP())
         elif self.kind == 'saltelli':
+            # Only relevant for computation of Sobol' indices
             size = self.n_sample // (2 * self.dim + 2)  # N(2*dim + 2)
             self.sequence_type = ot.SobolIndicesAlgorithmImplementation.Generate(
                 distribution, size, True)
-
-        elif self.kind == 'discrete':
-            rv = randint(self.bounds[0, var], self.bounds[1, var] + 1)
-
-            points = ot.Sample(10000, 1)
-            for i in range(10000):
-                points[i] = (rv.rvs(),)
-
-            dists = [ot.UserDefined(points)]
-            dists.extend([ot.Uniform(float(self.bounds[0][i + 1]),
-                                     float(self.bounds[1][i + 1]))
-                          for i in range(self.dim - 1)])
-            distribution = ot.ComposedDistribution(dists)
-            self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
-                                                             distribution,
-                                                             self.n_sample)
 
     def generate(self):
         """Generate the DOE.
@@ -135,18 +138,13 @@ class Doe():
             return np.array(self.sequence_type.generate())
 
         # Scale the DOE from [0, 1] to bounds
-        b = self.bounds[0]
-        a = self.bounds[1] - b
         if self.kind == 'lhsc':
-            r = ((np.floor_divide(sample, (1. / self.n_sample)) + 1)
+            sample = ((np.floor_divide(sample, (1. / self.n_sample)) + 1)
                  - 0.5) / self.n_sample
         else:
-            r = a * sample + b
+            sample = self.scaler.transform(sample)
 
-        if self.kind == 'discrete':
-            r[:, 0] = np.array(sample[:, 0]).flatten()
-
-        return r
+        return sample
 
     def uniform(self):
         """Uniform sampling."""
