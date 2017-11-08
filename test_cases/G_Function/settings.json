@@ -48,6 +48,9 @@
         "predictions": [[0.5, 0.5, 0.5, 0.5]],
         "method": "rbf"
     },
+    "visualization": {
+        "axis_disc": [15, 15, 4, 2]
+    },
     "uq": {
         "sample": 1000,
         "test": "G_Function",
