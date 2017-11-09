@@ -6,7 +6,7 @@
         ],
         "sampling": {
             "init_size": 10,
-            "method": "halton"
+            "method": "halton",
             "discrete": 2
         },
         "resampling":{
