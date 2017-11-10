@@ -15,14 +15,14 @@
               "method": {
                     "type": "string",
                     "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc",
-                             "lhsopt", "faure", "uniform", "discrete", "saltelli"],
+                             "lhsopt", "faure", "uniform", "saltelli"],
                     "default": "halton"
               },
               "distributions": {
                     "type": "array", "items": {}
               },
-              "init_size": {"type": "integer", "default": 20, "minimum": 4,
-                            "exclusiveMinimum": false}
+              "init_size": {"type": "integer", "default": 20, "minimum": 4},
+              "discrete": {"type": "integer", "minimum": 0}
             },
             "required": ["method", "init_size"]
           },
@@ -122,12 +122,10 @@
                    "enum": ["rbf", "kriging", "pc", "evofusion"]},
         "cost_ratio": {"type": "number", "default": 2.0, "minimum": 1,
                        "exclusiveMinimum": true},
-        "grand_cost": {"type": "integer", "default": 30, "minimum": 4,
-                       "exclusiveMinimum": false},
+        "grand_cost": {"type": "integer", "default": 30, "minimum": 4},
         "strategy": {"type": "string", "default": "Quad",
                    "enum": ["Quad", "LS"]},
-        "degree": {"type": "integer", "default": 10, "minimum": 1,
-                   "exclusiveMinimum": false},
+        "degree": {"type": "integer", "default": 10, "minimum": 1},
         "kernel": {"type": "string"},
         "noise": {"type": ["number", "boolean"], "default": false}
       },

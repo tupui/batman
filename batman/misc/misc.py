@@ -229,40 +229,39 @@ class ProgressBar(object):
         sys.stdout.flush()
 
 
-def optimization(bounds, discrete=False):
+def optimization(bounds, discrete=None):
     """Perform a discret or a continuous/discrete optimization.
 
     If a variable is discrete, the decorator allows to find the optimum by
     doing an optimization per discrete value and then returns the optimum.
 
-    :param array_like bounds: bounds for optimization ([min, n_features], [max, n_features])
-    :param bool discrete: whether to perform a discrete optimization
+    :param array_like bounds: bounds for optimization ([min, max], n_features).
+    :param int discrete: index of the discrete variable.
     """
     def optimize(fun):
         """Compute several optimizations."""
-        def combinatory_optimization(i, bounds=bounds):
+        def combinatory_optimization(i, bounds=bounds, discrete=discrete):
             """One optimization.
 
-            Use a fixed discrete value for the first parameter.
-
-            :param int i: discrete value
-            :param bounds: bounds
-            :returns: min_x, min_fun
-            :rtype: floats
+            :param int i: index of the optimization plan.
+            :param array_like bounds: bounds for optimization ([min, max], n_features).
+            :param int discrete: index of the discrete variable.
+            :returns: min_x, min_fun.
+            :rtype: floats.
             """
-            bounds = np.vstack([[i, i], bounds[1:]])
-            results = differential_evolution(fun, bounds)
+            bounds[discrete] = [i, i]
+            with np.errstate(divide='ignore', invalid='ignore'):
+                results = differential_evolution(fun, bounds)
             min_x = results.x
             min_fun = results.fun
             return min_x, min_fun
 
         def wrapper_fun_obj():
             """Two behaviour depending on discrete."""
-            if discrete:
-                start = int(np.ceil(bounds[0, 0]))
-                end = int(np.ceil(bounds[0, 1]))
-                n_results = end - start
-                discrete_range = range(start, end)
+            if discrete is not None:
+                start = int(np.ceil(bounds[discrete, 0]))
+                end = int(np.ceil(bounds[discrete, 1]))
+                discrete_range = range(start, end) if end > start else [start]
 
                 pool = NestedPool(cpu_count())
                 results = pool.imap(combinatory_optimization, discrete_range)
@@ -271,11 +270,7 @@ def optimization(bounds, discrete=False):
                 results = list(results)
                 pool.terminate()
 
-                min_x = [None] * n_results
-                min_fun = [None] * n_results
-
-                for i in range(n_results):
-                    min_x[i], min_fun[i] = results[i]
+                min_x, min_fun = zip(*results)
 
                 # Find best results
                 min_idx = np.argmin(min_fun)

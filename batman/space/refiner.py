@@ -45,7 +45,7 @@ class Refiner(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, data, corners, delta_space=0.08, discrete=False):
+    def __init__(self, data, corners, delta_space=0.08, discrete=None):
         """Initialize the refiner with the Surrogate and space corners.
 
         Points data are scaled between ``[0, 1]`` based on the size of the
@@ -260,12 +260,10 @@ class Refiner(object):
         :return: The coordinate of the point to add.
         :rtype: lst(float).
         """
-        hypercube = self.corners
         self.logger.debug("Discrepancy strategy")
-
         init_discrepancy = self.surrogate.space.discrepancy()
 
-        @optimization(hypercube, self.discrete)
+        @optimization(self.corners, self.discrete)
         def func_discrepancy(coords):
             sample = np.vstack([self.surrogate.space[:], coords])
             return self.surrogate.space.discrepancy(sample)
@@ -345,7 +343,7 @@ class Refiner(object):
 
         return point
 
-    def leave_one_out_sobol(self, point_loo, pdf):
+    def leave_one_out_sobol(self, point_loo, dists):
         """Mixture of Leave-one-out and Sobol' indices.
 
         Same as function :func:`leave_one_out_sigma` but change the shape
@@ -361,7 +359,7 @@ class Refiner(object):
         point = np.array(point_loo)
 
         # Get Sobol' indices
-        analyse = UQ(self.surrogate, pdf=pdf)
+        analyse = UQ(self.surrogate, dists=dists)
         indices = analyse.sobol()[2]
         indices = indices * (indices > 0)
         indices = preprocessing.normalize(indices.reshape(1, -1), norm='max')
@@ -477,7 +475,7 @@ class Refiner(object):
 
         return new_points, refined_pod_points
 
-    def hybrid(self, refined_pod_points, point_loo, method, pdf):
+    def hybrid(self, refined_pod_points, point_loo, method, dists):
         """Composite resampling strategy.
 
         Uses all methods one after another to add new points.
@@ -499,7 +497,7 @@ class Refiner(object):
         elif method == 'loo_sigma':
             new_point = self.leave_one_out_sigma(point_loo)
         elif method == 'loo_sobol':
-            new_point = self.leave_one_out_sobol(point_loo, pdf)
+            new_point = self.leave_one_out_sobol(point_loo, dists)
         elif method == 'extrema':
             new_point, refined_pod_points = self.extrema(refined_pod_points)
         elif method == 'discrepancy':
@@ -526,17 +524,18 @@ class Refiner(object):
         self.logger.info('Current minimal value is: f(x)={} for x={}'
                          .format(min_value, min_x))
 
-        if self.discrete:
-            discrete = 1
+        if self.discrete is not None:
+            discrete = [[i for i in range(self.points.shape[1])]]
+            discrete[0].pop(self.discrete)
         else:
-            discrete = 0
+            discrete = None
 
         @optimization(self.corners, self.discrete)
         def probability_improvement(x):
             """Do probability of improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
             too_close = np.array([True if np.linalg.norm(
-                x_scaled[0][discrete:] - p[discrete:], -1) < 0.02
+                x_scaled[0][discrete] - p[discrete], -1) < 0.02
                                   else False for p in self.points]).any()
             if too_close:
                 return np.inf
@@ -552,7 +551,7 @@ class Refiner(object):
             """Do expected improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
             too_close = np.array([True if np.linalg.norm(
-                x_scaled[0][discrete:] - p[discrete:], -1) < 0.02
+                x_scaled[0][discrete] - p[discrete], -1) < 0.02
                                   else False for p in self.points]).any()
             if too_close:
                 return np.inf

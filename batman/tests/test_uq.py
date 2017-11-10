@@ -12,7 +12,7 @@ def test_indices(tmp, ishigami_data, settings_ishigami):
     surrogate.fit(ishigami_data.space, ishigami_data.target_space)
 
     analyse = UQ(surrogate, nsample=settings_ishigami['uq']['sample'],
-                 pdf=settings_ishigami['uq']['pdf'],
+                 dists=settings_ishigami['uq']['pdf'],
                  p_lst=settings_ishigami['snapshot']['io']['parameter_names'],
                  method=settings_ishigami['uq']['method'],
                  indices=settings_ishigami['uq']['type'],
@@ -41,7 +41,7 @@ def test_block(mascaret_data, settings_ishigami):
     surrogate.fit(mascaret_data.space, mascaret_data.target_space)
 
     analyse = UQ(surrogate, nsample=test_settings['uq']['sample'],
-                 pdf=['Uniform(15., 60.)', 'Normal(4035., 400.)'],
+                 dists=['Uniform(15., 60.)', 'Normal(4035., 400.)'],
                  p_lst=test_settings['snapshot']['io']['parameter_names'],
                  method=test_settings['uq']['method'],
                  indices=test_settings['uq']['type'])

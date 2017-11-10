@@ -123,13 +123,16 @@ class Driver(object):
                 self.space += space_provider
             elif isinstance(space_provider, dict):
                 # use sampling method
-                if 'distributions' not in space_provider:
-                    distributions = None
-                else:
-                    distributions = space_provider['distributions']
+                distributions = space_provider['distributions']\
+                    if 'distributions' in space_provider else None
+
+                discrete = self.settings['space']['sampling']['discrete']\
+                    if 'discrete' in self.settings['space']['sampling'] else None
+
                 self.to_compute_points = self.space.sampling(space_provider['init_size'],
                                                              space_provider['method'],
-                                                             distributions)
+                                                             distributions,
+                                                             discrete)
             else:
                 self.logger.error('Bad space provider.')
                 raise SystemError
@@ -299,8 +302,9 @@ class Driver(object):
             pdf = self.settings['uq']['pdf'] if 'uq' in self.settings else None
             hybrid = self.settings['space']['resampling']['hybrid']\
                 if 'hybrid' in self.settings['space']['resampling'] else None
-            discrete = True if self.settings['space']['sampling']['method']\
-                == 'discrete' else False
+
+            discrete = self.settings['space']['sampling']['discrete']\
+                if 'discrete' in self.settings['space']['sampling'] else None
             delta_space = self.settings['space']['resampling']['delta_space']
             method = self.settings['space']['resampling']['method']
 
@@ -309,7 +313,7 @@ class Driver(object):
                                               method,
                                               point_loo=point_loo,
                                               delta_space=delta_space,
-                                              pdf=pdf, hybrid=hybrid,
+                                              dists=pdf, hybrid=hybrid,
                                               discrete=discrete)
             except FullSpaceError:
                 break
@@ -418,7 +422,7 @@ class Driver(object):
             xdata = None
 
         analyse = UQ(self.surrogate, nsample=self.settings['uq']['sample'],
-                     pdf=self.settings['uq']['pdf'],
+                     dists=self.settings['uq']['pdf'],
                      p_lst=self.settings['snapshot']['io']['parameter_names'],
                      method=self.settings['uq']['method'],
                      indices=self.settings['uq']['type'],

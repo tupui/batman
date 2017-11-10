@@ -6,7 +6,8 @@
         ],
         "sampling": {
             "init_size": 10,
-            "method": "halton"
+            "method": "halton",
+            "discrete": 2
         },
         "resampling":{
             "delta_space": 0.08,

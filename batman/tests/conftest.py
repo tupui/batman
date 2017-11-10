@@ -90,7 +90,7 @@ def branin_data(settings_ishigami):
                           settings_ishigami['space']['sampling']['init_size'],
                           settings_ishigami['space']['resampling']['resamp_size'],
                           ['x1', 'x2'])
-    data['space'].sampling(10, 'discrete')
+    data['space'].sampling(10, kind='halton', discrete=0)
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)
 
@@ -106,7 +106,7 @@ def g_function_data(settings_ishigami):
                           settings_ishigami['space']['sampling']['init_size'],
                           settings_ishigami['space']['resampling']['resamp_size'],
                           ['x1', 'x2', 'x3', 'x4'])
-    data['space'].sampling(10, 'discrete')
+    data['space'].sampling(10, kind='halton', discrete=2)
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)
 
