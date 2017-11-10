@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
-from batman.pod import Core
+from batman.pod import Pod
 
 
 @pytest.fixture(scope="session")
@@ -9,8 +9,8 @@ def pod(tolerance=1, dim_max=3):
     snapshots = np.array([[37., 40., 41., 49., 42., 46., 45., 48.],
                           [40., 43., 47., 46., 41., 46., 45., 48.],
                           [40., 41., 42., 45., 44., 46., 45., 47.]])
-    pod = Core(tolerance, dim_max)
-    pod.decompose(snapshots)
+    pod = Pod([[30, 30, 30], [40, 40, 40]], 8, tolerance, dim_max)
+    pod._decompose(snapshots)
 
     return pod
 
@@ -52,8 +52,8 @@ def test_update(pod):
                           [40., 43., 47., 46., 41., 46., 45., 48.],
                           [40., 41., 42., 45., 44., 46., 45., 47.]])
 
-    pod_empty = Core(1, 3)
-    [pod_empty.update(snapshots[:, i]) for i in range(8)]
+    pod_empty = Pod([[30, 30, 30], [40, 40, 40]], 8, 1, 3)
+    [pod_empty._update(snapshots[:, i]) for i in range(8)]
 
     npt.assert_almost_equal(abs(pod.U), abs(pod_empty.U), decimal=3)
     npt.assert_almost_equal(pod.S, pod_empty.S, decimal=3)
@@ -66,8 +66,8 @@ def test_downsample(pod):
                           [40., 43., 47., 46., 41., 46., 45.],
                           [40., 41., 42., 45., 44., 46., 45.]])
 
-    pod_downsampled = Core(1, 3)
-    pod_downsampled.decompose(snapshots)
+    pod_downsampled = Pod([[30, 30, 30], [40, 40, 40]], 8, 1, 3)
+    pod_downsampled._decompose(snapshots)
 
     V_1 = np.delete(pod.V, 7, 0)
     U, S, V = pod.downgrade(pod.S, V_1)

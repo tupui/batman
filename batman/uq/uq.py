@@ -56,7 +56,6 @@ Journal de la Société Française de Statistique. 2010
 M. Baudin, A. Dutfoy, B. Iooss, A. Popelin: OpenTURNS: An industrial software
 for uncertainty quantification in simulation. 2015. ArXiv ID: 1501.05242
 
-
 """
 import logging
 import os
