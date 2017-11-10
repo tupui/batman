@@ -139,7 +139,12 @@ class Driver(object):
 
         # Pod
         if 'pod' in self.settings:
-            self.pod = Pod(self.settings)
+            settings_ = {'tolerance': self.settings['pod']['tolerance'],
+                         'dim_max': self.settings['pod']['dim_max'],
+                         'corners': self.settings['space']['corners'],
+                         'nsample': self.space.doe_init,
+                         'nrefine': resamp_size}
+            self.pod = Pod(**settings_)
         else:
             self.pod = None
             self.logger.info('No POD is computed.')

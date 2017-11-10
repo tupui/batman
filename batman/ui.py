@@ -76,7 +76,7 @@ def run(settings, options):
                     lambda d: pattern.match(d) is not None,
                     os.listdir(root)
                 ), key=int)
-                settings['snapshot']['provider'] = [os.path.join(root, d, 'batman-data') 
+                settings['snapshot']['provider'] = [os.path.join(root, d, 'batman-data')
                                                     for d in folders]
                 settings['snapshot']['io']['template_directory'] = \
                     os.path.join(root, '0', 'batman-data')
@@ -140,6 +140,7 @@ def run(settings, options):
 
     # Always plot response surfaces at the end
     driver.visualization()
+
 
 def parse_options():
     """Parse options."""
