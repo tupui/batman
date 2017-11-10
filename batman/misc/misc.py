@@ -250,7 +250,8 @@ def optimization(bounds, discrete=None):
             :rtype: floats.
             """
             bounds[discrete] = [i, i]
-            results = differential_evolution(fun, bounds)
+            with np.errstate(divide='ignore', invalid='ignore'):
+                results = differential_evolution(fun, bounds)
             min_x = results.x
             min_fun = results.fun
             return min_x, min_fun
@@ -260,8 +261,7 @@ def optimization(bounds, discrete=None):
             if discrete is not None:
                 start = int(np.ceil(bounds[discrete, 0]))
                 end = int(np.ceil(bounds[discrete, 1]))
-                n_results = end - start
-                discrete_range = range(start, end)
+                discrete_range = range(start, end) if end > start else [start]
 
                 pool = NestedPool(cpu_count())
                 results = pool.imap(combinatory_optimization, discrete_range)

@@ -260,12 +260,10 @@ class Refiner(object):
         :return: The coordinate of the point to add.
         :rtype: lst(float).
         """
-        hypercube = self.corners
         self.logger.debug("Discrepancy strategy")
-
         init_discrepancy = self.surrogate.space.discrepancy()
 
-        @optimization(hypercube, self.discrete)
+        @optimization(self.corners, self.discrete)
         def func_discrepancy(coords):
             sample = np.vstack([self.surrogate.space[:], coords])
             return self.surrogate.space.discrepancy(sample)
