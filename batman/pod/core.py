@@ -19,25 +19,22 @@ from ..misc import ProgressBar, NestedPool
 
 class Core(object):
 
-    """A class for doing pod with raw arrays.
+    """Class for doing Proper Orthogonal Decomposition with raw arrays."""
 
-    It works with in-memory numpy arrays and deals with math only.
-    """
-
+    # Predictor kind for the leave one out method
     leave_one_out_predictor = 'kriging'
-    '''Predictor kind for the leave one out method.'''
 
     def __init__(self, tolerance, dim_max):
         """Initialize POD components.
 
-        The decomposition of the snapshot matrix is stored as attributes
+        The decomposition of the snapshot matrix is stored as attributes.
 
-        - U: Singular vectors matrix, ndarray(nb of data, nb of snapshots),
-          after filtering ndarray(nb of data, nb of modes),
-        - S: Singular values matrix, ndarray(nb of modes, nb of snapshots),
-          only the diagonal is stored, of length (nb of modes),
-        - V: ndarray(nb of snapshots, nb of snapshots),
-          after filtering (nb of snapshots, nb of modes).
+        - U: Singular vectors matrix, array_like (n_features, n_snapshots),
+          after filtering array_like(n_features, n_modes),
+        - S: Singular values matrix, array_like (n_modes, n_snapshots),
+          only the diagonal is stored, of length (n_modes),
+        - V: array_like(n_snapshots, n_snapshots),
+          after filtering (n_snapshots, n_modes).
 
         :param float tolerance: basis modes filtering criteria.
         :param int dim_max: number of basis modes to keep.
@@ -98,17 +95,13 @@ class Core(object):
         :rtype: array_like.
         """
         total_sum = np.sum(S)
-        # if total_sum == 0. and S.size == 1:
-        #     total_sum = 1.
 
         for i in range(S.shape[0]):
             dim = i+1
 
-            if total_sum == 0.:
-                total_sum = 0.0001
-
-            if np.sum(S[:i+1]) / total_sum > tolerance:
-                break
+            with np.errstate(divide='ignore', invalid='ignore'):
+                if np.sum(S[:i + 1]) / total_sum > tolerance:
+                    break
 
         dim = min(dim, dim_max)
 
@@ -120,12 +113,12 @@ class Core(object):
         if V.shape[1] != dim:
             V = V[:, :dim].copy()
 
-        return (U, S, V)
+        return U, S, V
 
     def update(self, snapshot):
         """Update POD with a new snapshot.
 
-        :param array_like snapshot: a snapshot.
+        :param array_like snapshot: a snapshot, (n_features,).
         """
         if self.mean_snapshot is None:
             # start off with a mode that will be thrown away
@@ -174,7 +167,7 @@ class Core(object):
             self.V = np.column_stack([self.V, np.zeros_like(self.V[:, 0])])
             self.V[-1, -1] = 1.
 
-            (Ud, self.S, Vd_T) = np.linalg.svd(self.S)
+            Ud, self.S, Vd_T = np.linalg.svd(self.S)
             self.V = np.dot(self.V, Vd_T.T)
             Un, self.S, self.V = self.downgrade(self.S, self.V)
             self.U = np.dot(self.U, np.dot(Ud, Un))
@@ -182,16 +175,26 @@ class Core(object):
         self.U, self.S, self.V = self.filtering(self.U, self.S, self.V,
                                                 self.tolerance, self.dim_max)
 
-    def downgrade(self, S0, Vt):
-        """Downgrade."""
+    def downgrade(self, S, Vt):
+        r"""Downgrade by removing the kth row of V.
+
+        .. math:: S^{-k} &= U\Sigma R^T Q^T\\
+            S^{-k} &= UU'\Sigma'V'^TQ^T \\
+            S^{-k} &= U^{-k}\Sigma'V^{(-k)^T}
+
+        :param S: Singular vector, array_like (n_modes,).
+        :param Vt: V.T without one row, array_like (n_snapshots - 1, n_modes).
+        :return: U', S', V(-k).T
+        :rtype: array_like.
+        """
         v = np.average(Vt, 0)
         for row in Vt:
             row -= v
-        (Q, R) = np.linalg.qr(Vt)
-        R = (S0*R).T  # R = S0[:,np.newaxis] * R.T
-        (Urot, S, V) = np.linalg.svd(R)
+        Q, R = np.linalg.qr(Vt)
+        R = (S * R).T
+        Urot, S, V = np.linalg.svd(R, full_matrices=False)
         V = np.dot(Q, V.T)
-        return (Urot, S, V)
+        return Urot, S, V
 
     def estimate_quality(self, points):
         r"""Quality estimation of the model.
