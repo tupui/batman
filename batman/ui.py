@@ -24,7 +24,7 @@ banner = r"""
 | $$  \ $$| $$  | $$   | $$   | $$\  $ | $$| $$  | $$| $$\  $$$
 | $$$$$$$/| $$  | $$   | $$   | $$ \/  | $$| $$  | $$| $$ \  $$
 |_______/ |__/  |__/   |__/   |__/     |__/|__/  |__/|__/  \__/
-Bayesian Analysis Tool for Modelling And uNcertainty quantification
+Bayesian Analysis Tool for Modelling and uncertAinty quaNtification
 """
 
 path = os.path.dirname(os.path.realpath(__file__))
