@@ -176,6 +176,7 @@ def test_doe():
     assert len(sample) == 6
 
 
+@pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
 def test_resampling(tmp, branin_data, settings_ishigami):
     f_2d = branin_data.func
     space = branin_data.space
