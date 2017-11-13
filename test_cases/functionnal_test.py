@@ -198,8 +198,12 @@ def test_simple_settings(tmp, case='Ishigami'):
     settings.pop('pod')
     settings.pop('surrogate')
     settings.pop('uq')
+    tmp_settings_path = os.path.join(tmp, 'simple_settings.json')
+    with open(tmp_settings_path, 'w') as f:
+        json.dump(settings, f, indent=4)
+    simple_settings = batman.misc.import_config(tmp_settings_path, SCHEMA)
     shutil.rmtree(tmp)
-    batman.ui.run(settings, options)
+    batman.ui.run(simple_settings, options)
 
 
 def test_only_surrogate(tmp, case='Michalewicz'):
@@ -210,9 +214,13 @@ def test_only_surrogate(tmp, case='Michalewicz'):
     settings['space'].pop('resampling')
     settings.pop('pod')
     settings.pop('uq')
+    tmp_settings_path = os.path.join(tmp, 'only_surrogate_settings.json')
+    with open(tmp_settings_path, 'w') as f:
+        json.dump(settings, f, indent=4)
+    only_surrogate_settings = batman.misc.import_config(tmp_settings_path, SCHEMA)
     shutil.rmtree(tmp)
-    clean_settings = copy.deepcopy(settings)
-    batman.ui.run(settings, options)
+    clean_settings = copy.deepcopy(only_surrogate_settings)
+    batman.ui.run(only_surrogate_settings, options)
 
     # Restart from snapshots
     with mock.patch(user_input, side_effect=['', '']):
@@ -248,8 +256,12 @@ def test_uq_no_surrogate(tmp, case='Ishigami'):
     settings['space'].pop('resampling')
     settings.pop('pod')
     settings.pop('surrogate')
+    tmp_settings_path = os.path.join(tmp, 'uq_no_surrogate_settings.json')
+    with open(tmp_settings_path, 'w') as f:
+        json.dump(settings, f, indent=4)
+    uq_no_surrogate_settings = batman.misc.import_config(tmp_settings_path, SCHEMA)
     shutil.rmtree(tmp)
-    batman.ui.run(settings, options)
+    batman.ui.run(uq_no_surrogate_settings, options)
 
 
 def test_doe_as_list(tmp, case='Ishigami'):
@@ -261,8 +273,12 @@ def test_doe_as_list(tmp, case='Ishigami'):
     settings.pop('pod')
     settings.pop('surrogate')
     settings['space']['sampling'] = [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]
+    tmp_settings_path = os.path.join(tmp, 'doe_as_list_settings.json')
+    with open(tmp_settings_path, 'w') as f:
+        json.dump(settings, f, indent=4)
+    doe_as_list_settings = batman.misc.import_config(tmp_settings_path, SCHEMA)
     shutil.rmtree(tmp)
-    batman.ui.run(settings, options)
+    batman.ui.run(doe_as_list_settings, options)
 
 
 def test_wrong_settings(tmp, case='Ishigami'):

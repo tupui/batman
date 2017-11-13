@@ -213,7 +213,7 @@ Uncertainty Quantification (UQ), see :ref:`UQ <uq>`.
 
 + ``test``: use a test method for indices comparison and quality calculation. Use one of: *Rosenbrock*, *Michalewicz*, *Ishigami*, *G_Function*, *Channel_Flow*,
 + ``sample``: number of points per sample to use for SA,
-+ ``method``: type of Sobol analysis: *sobol*, *FAST* (Fourier Amplitude Sensitivity Testing) (if FAST, no second-order indices).
++ ``method``: type of Sobol analysis: *sobol*, *FAST* (Fourier Amplitude Sensitivity Testing). If FAST, no second-order indices are computed and defining a surrogate model is mandatory.
 + ``type``: type of indices: *aggregated* or *block*.
 
 + ``pdf`` *Probability density function* for uncertainty propagation. Enter the PDF of the inputs,

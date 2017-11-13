@@ -200,10 +200,9 @@
       "required": ["surrogate"],
       "properties": {"surrogate": {"properties": {"method": {"enum":["evofusion", "kriging", "rbf"]}}}}
     },
-    {"not": {"required": ["surrogate"]}},
     {
       "not": {"required": ["surrogate"]},
-      "properties": {"uq": {"properties": {"method": {"enum":["FAST"]}}}}
+      "properties": {"uq": {"properties": {"method": {"not" : {"enum":["FAST"]}}}}}
     }
   ]
 }
