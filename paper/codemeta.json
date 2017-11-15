@@ -1,0 +1,58 @@
+{
+  "@context": "https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld",
+  "@type": "Code",
+  "author": [
+    {
+      "@id": "0000-0001-9816-1416",
+      "@type": "Person",
+      "email": "roy.pamphile@gmail.com",
+      "name": "Pamphile Roy",
+      "affiliation": "CERFACS"
+    },
+    {
+      "@id": "",
+      "@type": "Person",
+      "email": "ricci@cerfacs.fr",
+      "name": "Sophie Ricci",
+      "affiliation": "CERFACS"
+    },
+    {
+      "@id": "",
+      "@type": "Person",
+      "email": "dupuis@cerfacs.fr",
+      "name": "Romain Dupuis",
+      "affiliation": "IRT/CERFACS"
+    },
+    {
+      "@id": "",
+      "@type": "Person",
+      "email": "campet@cerfacs.fr",
+      "name": "Robin Campet",
+      "affiliation": "CERFACS"
+    },
+    {
+      "@id": "",
+      "@type": "Person",
+      "email": "jjouhaud@cerfacs.fr",
+      "name": "Jean-Christophe Jouhaud",
+      "affiliation": "CERFACS"
+    },
+    {
+      "@id": "",
+      "@type": "Person",
+      "email": "fournier@cerfacs.fr",
+      "name": "Cyril Fournier",
+      "affiliation": "CERFACS"
+    }
+  ],
+  "identifier": "",
+  "codeRepository": "https://gitlab.com/cerfacs/batman",
+  "datePublished": "2017-11-12",
+  "dateModified": "2017-11-12",
+  "dateCreated": "2017-11-12",
+  "description": "Bayesian Analysis Tool for Modelling and uncertAinty quaNtification",
+  "keywords": "python, uncertainty quantification, statistical analysis, surrogate model, Computational Fluid Dynamics",
+  "license": "CECILL-B",
+  "title": "batman",
+  "version": "v1.7.0"
+}
