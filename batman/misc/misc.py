@@ -16,12 +16,12 @@ import sys
 import logging
 import re
 import json
+import time
 import jsonschema
 import numpy as np
-import time
-from scipy.optimize import (differential_evolution, basinhopping)
-from .nested_pool import NestedPool
 from pathos.multiprocessing import cpu_count
+from scipy.optimize import differential_evolution
+from .nested_pool import NestedPool
 
 
 def clean_path(path):
@@ -41,7 +41,7 @@ def check_yes_no(prompt, default):
     while True:
         try:
             try:
-                value = raw_input(prompt)
+                value = raw_input(prompt)  # safe python 2
             except NameError:
                 value = input(prompt)
         except ValueError:
@@ -52,13 +52,13 @@ def check_yes_no(prompt, default):
         if not all(x in 'yesno ' for x in value.lower()):
             logger.error('Sorry, your response must be yes, or no.')
             continue
-        elif value is '':
+        elif value == '':
             value = default
             break
         else:
             break
 
-    answer = True if value.strip()[0] is 'y' else False
+    answer = True if value.strip()[0] == 'y' else False
 
     return answer
 
@@ -66,11 +66,11 @@ def check_yes_no(prompt, default):
 def ask_path(prompt, default, root):
     """Ask user for a folder path.
 
-    :param str prompt: Ask
-    :param str default: default value
-    :param str root: root path
-    :returns: path if folder exists
-    :rtype: str
+    :param str prompt: Ask.
+    :param str default: default value.
+    :param str root: root path.
+    :returns: path if folder exists.
+    :rtype: str.
     """
     logger = logging.getLogger('User checking')
     while True:
@@ -83,7 +83,7 @@ def ask_path(prompt, default, root):
             logger.error("Sorry, I didn't understand that.")
             continue
 
-        if path is '':
+        if path == '':
             path = default
 
         if not os.path.isdir(os.path.join(root, path)):
@@ -107,7 +107,8 @@ def import_config(path_config, path_schema):
     def minify_comments(file, **kwargs):
         """Minify comments in JSON file.
 
-        Deserialize `file` to a Python object using `commentjson <https://pypi.python.org/pypi/commentjson>`_ package.
+        Deserialize `file` to a Python object using
+        `commentjson <https://pypi.python.org/pypi/commentjson>`_ package.
 
         :param file: serialized JSON string with or without comments.
         :param kwargs: all the arguments that `json.loads <http://docs.python.org/
@@ -128,7 +129,8 @@ def import_config(path_config, path_schema):
                     lines[index] = re.sub(regex_inline, r'\1', line)
 
         try:
-            return json.loads('\n'.join(lines), encoding="utf-8", **kwargs)
+            return json.loads('\n'.join(lines),
+                              encoding="utf-8", **kwargs)
         except Exception as tb:
             logger.exception("JSON error, cannot load configuration file: {}"
                              .format(tb))
@@ -138,14 +140,15 @@ def import_config(path_config, path_schema):
         settings = minify_comments(file)
 
     with open(path_schema, 'rb') as file:
-        schema = minify_comments(file)
+        schema = json.loads(file.read(), encoding="utf-8")
 
     error = False
     try:
         validator = jsonschema.Draft4Validator(schema)
         for error in sorted(validator.iter_errors(settings), key=str):
-            logger.error("Error: {}\n\tOrigin: {}"
-                         .format(error.message, error.path))
+            logger.error("Error: {}\n-> Origin: {}\n-> Schema: {}"
+                         .format(error.message, error.path,
+                                 json.dumps(error.schema, indent=1)))
             error = True
     except jsonschema.ValidationError as e:
         logger.exception(e.message)
@@ -211,10 +214,10 @@ class ProgressBar(object):
         :param str eta: ETA in H:M:S
         :param str vel: iteration/second
         """
-        bar = int(np.floor(self.progress / 2))
+        p_bar = int(np.floor(self.progress / 2))
         sys.stdout.write("\rProgress | " +
-                         "-" * (bar - 1) + "~" +
-                         " " * (50 - bar - 1) +
+                         "-" * (p_bar - 1) + "~" +
+                         " " * (50 - p_bar - 1) +
                          " |" + str(self.progress) + "% ")
 
         if self.progress == 100:
@@ -226,51 +229,57 @@ class ProgressBar(object):
         sys.stdout.flush()
 
 
-def optimization(method, bounds):
+def cpu_system():
+    """Number of CPU of system."""
+    try:
+        n_cpu_system = cpu_count()
+    except NotImplementedError:
+        n_cpu_system = os.sysconf('SC_NPROCESSORS_ONLN')
+    return 1 if n_cpu_system == 0 or n_cpu_system is None else n_cpu_system
+
+
+def optimization(bounds, discrete=None):
     """Perform a discret or a continuous/discrete optimization.
 
     If a variable is discrete, the decorator allows to find the optimum by
     doing an optimization per discrete value and then returns the optimum.
 
-    :param str method: if 'discrete' perform a discrete optimization
-    :param ndarray bounds: bounds for optimization (nb param, (min, max))
+    :param array_like bounds: bounds for optimization ([min, max], n_features).
+    :param int discrete: index of the discrete variable.
     """
     def optimize(fun):
         """Compute several optimizations."""
-        def combinatory_optimization(i, bounds=bounds):
+        def combinatory_optimization(i, bounds=bounds, discrete=discrete):
             """One optimization.
 
-            Use a fixed discrete value for the first parameter.
-
-            :param int i: discrete value
-            :param bounds: bounds
-            :returns: min_x, min_fun
-            :rtype: floats
+            :param int i: index of the optimization plan.
+            :param array_like bounds: bounds for optimization ([min, max], n_features).
+            :param int discrete: index of the discrete variable.
+            :returns: min_x, min_fun.
+            :rtype: floats.
             """
-            bounds = np.vstack([[i, i], bounds[1:]])
-            results = differential_evolution(fun, bounds)
+            bounds[discrete] = [i, i]
+            with np.errstate(divide='ignore', invalid='ignore'):
+                results = differential_evolution(fun, bounds)
             min_x = results.x
             min_fun = results.fun
             return min_x, min_fun
-        def wrapper_fun_obj():
-            if method == 'discrete':
-                start = int(np.ceil(bounds[0, 0]))
-                end = int(np.ceil(bounds[0, 1]))
-                n_results = end - start
-                discrete_range = range(start, end)
 
-                pool = NestedPool(cpu_count())
+        def wrapper_fun_obj():
+            """Two behaviour depending on discrete."""
+            if discrete is not None:
+                start = int(np.ceil(bounds[discrete, 0]))
+                end = int(np.ceil(bounds[discrete, 1]))
+                discrete_range = range(start, end) if end > start else [start]
+
+                pool = NestedPool(cpu_system())
                 results = pool.imap(combinatory_optimization, discrete_range)
 
                 # Gather results
                 results = list(results)
                 pool.terminate()
 
-                min_x = [None] * n_results
-                min_fun = [None] * n_results
-
-                for i in range(n_results):
-                    min_x[i], min_fun[i] = results[i]
+                min_x, min_fun = zip(*results)
 
                 # Find best results
                 min_idx = np.argmin(min_fun)

@@ -5,12 +5,14 @@ IO module
 Input output management entry point.
 An input-output (io) is used to deal with the permanent storage of a dataset.
 """
-
+import logging
+import os
 from .base import FormatError
 from .dataset import Dataset
 from .tecplot import TecplotAscii
 from .npz import Npz
-import logging
+
+__all__ = ['Dataset', 'IOFormatSelector']
 
 
 class IOFormatSelector(object):
@@ -20,11 +22,9 @@ class IOFormatSelector(object):
     logger = logging.getLogger(__name__)
 
     # list of all supported io classes
-    io_types = [
-            TecplotAscii,
-            Npz
-            ]
+    io_types = [TecplotAscii, Npz]
     try:
+        os.environ["ANTARES_VERBOSE"] = "0"
         from .antares_wrapper import AntaresWrapper
         io_types.append(AntaresWrapper)
         check_antares = True
@@ -32,9 +32,9 @@ class IOFormatSelector(object):
         check_antares = False
         logger.debug("Antares not installed")
 
-    def __init__(self, format):
+    def __init__(self, io_format):
         """Select the io class to use."""
-        self.format = format
+        self.format = io_format
 
         if self.check_antares is True:
             self.io_types[-1].format = self.format
@@ -53,7 +53,6 @@ class IOFormatSelector(object):
                     return
                 except KeyError as bt:
                     self.logger.error("Not available in Antares: {}".format(bt))
-                    pass
 
         if check_format_init is False:
             raise FormatError("File format {} doesn't exist"

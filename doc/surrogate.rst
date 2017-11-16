@@ -1,5 +1,5 @@
 .. _surrogate:
-.. py:module:: surrogate
+.. currentmodule:: batman.surrogate
 
 Surrogate model
 ===============
@@ -7,8 +7,13 @@ Surrogate model
 Generalities
 ------------
 
-A common class is used to manage surrogate models. Hence, several kind of surrogate
-can be used. 
+A common class is used to manage surrogate models. Hence, several kind of surrogate model strategies can be used::
+
+    predictor = batman.surrogate.SurrogateModel('kriging', corners)
+    predictor.fit(space, target_space)
+    predictor.save('.')
+    points = [(12.5, 56.8), (2.2, 5.3)]
+    predictions = predictor(points)
 
 From *Kriging* to *Gaussian Process*
 ------------------------------------
@@ -111,17 +116,22 @@ As stated by Rasmussen et al. in [Rasmussen2006]_, a process is a generalization
 
 Starting from a prior distribution of functions, it represents the belief we have on the problem. Without any assumption, the mean would be null. If we are now given a dataset :math:`D = \{(x_1, y_1), (x_2, y_2)\}`, we only consider the function that actually pass through or close to these points, as in the previous figure. This is the learning phase. The more points are added, the more the model will fit the function. Indeed, as we add observations, the error is reduced at these points.
 
-The nature of the covariance matrix is of great importance as it fixes the properties of the functions to consider for inference. This matrix is also called *kernel*. Many covariance functions exist and they can be combined to fit specific needs. The Gaussian hypothesis formulation is equivalent to the Kriging. A common choice is the squared exponential covariance kernel:
+The nature of the covariance matrix is of great importance as it fixes the properties of the functions to consider for inference. This matrix is also called *kernel*. Many covariance functions exist and they can be combined to fit specific needs. A common choice is the squared exponential covariance kernel:
 
 .. math:: k(x, x') = \sqrt{\pi}l \sigma_p^2 \exp{- \frac{(x - x')^2}{2(\sqrt{2}l)^2}},
 
 with :math:`l` the length scale, an hyperparameter, which depends on the magnitudes of the parameters. When dealing with a multidimensional case and non-homogeneous parameters, it is of prime importance to adimentionize everything as one input could bias the optimization of the hyperparameters. 
 
-Then the Gaussian process regression is written as a linear regression:
+Then the Gaussian process regression is written as a linear regression
 
 .. math::
     \hat{f}(x_*)&= \sum_{i = 1}^{n}\alpha_i k (x_i, x_*),\\
     \alpha &= (K + \sigma_n^2 I)^{-1}y.
+
+One of the main benefit of this method, is that it provides an information about the variance
+
+.. math::
+    \mathbb{V}[f(\mathbf{x}_*)] = k(\mathbf{x}_*, \mathbf{x}_*)-\mathbf{k}(\mathbf{x}_*)^T(K + \sigma_n^2 I)^{-1}\mathbf{k}(\mathbf{x}_*).
 
 The Kriging method is one of the most employed as of today. We can even enhance the result of the regression if we have access to the derivative (or even the hessian) of the function [Forrester2009]_. This could be even more challenging if we don't have an adjoint solver to compute it. Another method is to use a multi-fidelity metamodel in order to obtain an even better solution. This can be performed if we have two codes that compute the same thing or if we have two grids to run from.
 
@@ -154,36 +164,9 @@ As the design being nested, the number of cheap experiments must be strictly sup
 References
 ----------
 
-.. [Krige1989] D.G. Krige, et al. “Early South African geostatistical techniques in today’s perspective”. Geostatistics 1. 1989. :download:`pdf <ref/Krige1989.pdf>`
-.. [Matheron1963] G. Matheron. “Principles of Geostatistics”. Economic Geology 58. 1963. :download:`pdf <ref/Matheron1963.pdf>`
-.. [Robinson1991] G.K.Robinson.“That BLUP is a good thing: the estimation of random effects”. Statistical Science 6.1. 1991. DOI: 10.1214/ss/1177011926. :download:`pdf <ref/Robinson1991.pdf>`
-.. [Bohling2005] G. Bohling. "Kriging". Tech.rep. 2005. :download:`pdf <ref/Bohling2005.pdf>`
-.. [Forrester2006] Forrester, Alexander I.J, et al. "Optimization using surrogate models and partially converged computational fluid dynamics simulations". Proceedings of the Royal Society A: Mathematical, Physical and Engineering Science. 2006. DOI: 10.1098/rspa.2006.1679 :download:`pdf <ref/Forrester2006.pdf>`
-.. [Forrester2009] Forrester and A.J. Keane.“Recent advances in surrogate-based optimization”. Progress in Aerospace Sciences 2009. DOI: 10.1016/j.paerosci.2008.11.001 :download:`pdf <ref/Forrester2009.pdf>`
-
-Sources
--------
-
-.. automodule:: batman.surrogate.surrogate_model
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.surrogate.kriging
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.surrogate.polynomial_chaos
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.surrogate.RBFnet
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.surrogate.TreeCut
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.surrogate.multifidelity
-   :members:
-   :undoc-members:
+.. [Krige1989] D.G. Krige, et al. “Early South African geostatistical techniques in today’s perspective”. Geostatistics 1. 1989. 
+.. [Matheron1963] G. Matheron. “Principles of Geostatistics”. Economic Geology 58. 1963. 
+.. [Robinson1991] G.K.Robinson.“That BLUP is a good thing: the estimation of random effects”. Statistical Science 6.1. 1991. DOI: 10.1214/ss/1177011926. 
+.. [Bohling2005] G. Bohling. "Kriging". Tech.rep. 2005. 
+.. [Forrester2006] Forrester, Alexander I.J, et al. "Optimization using surrogate models and partially converged computational fluid dynamics simulations". Proceedings of the Royal Society A: Mathematical, Physical and Engineering Science. 2006. DOI: 10.1098/rspa.2006.1679 
+.. [Forrester2009] Forrester and A.J. Keane.“Recent advances in surrogate-based optimization”. Progress in Aerospace Sciences 2009. DOI: 10.1016/j.paerosci.2008.11.001 

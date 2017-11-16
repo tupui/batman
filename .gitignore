@@ -9,7 +9,7 @@ test_cases/*/output/*
 doc/_build/*
 build/
 dist/
-*eggs*
+*egg*
 .idea
 batman/__init__.py
 .cache

@@ -2,14 +2,24 @@
 
 import pytest
 import numpy as np
-import copy
 from sklearn.metrics import r2_score
 import openturns as ot
-from batman.functions import (Ishigami, Michalewicz, Branin,
+from batman.functions import (Ishigami, Branin, G_Function,
                               Mascaret, Forrester)
-from batman.functions import output_to_sequence
 from batman.space import (Space, Point)
-from batman import Driver
+from batman.driver import Driver
+
+
+# Global optimization
+np.random.seed(123456)
+
+
+class Datatest(object):
+
+    """Wrap results."""
+
+    def __init__(self, kwds):
+        self.__dict__.update(kwds)
 
 
 @pytest.fixture(scope="session")
@@ -18,120 +28,134 @@ def tmp(tmpdir_factory):
     return str(tmpdir_factory.mktemp('tmp_test'))
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def settings_ishigami():
     f_ishigami = Ishigami()
     settings = {
         "space": {
-            "corners": [[-np.pi, -np.pi, -np.pi],[np.pi, np.pi, np.pi]],
-            "sampling": {"init_size": 150,"method": "halton"},
+            "corners": [[-np.pi, -np.pi, -np.pi], [np.pi, np.pi, np.pi]],
+            "sampling": {"init_size": 150, "method": "halton"},
             "resampling": {"delta_space": 0.08, "resamp_size": 1,
-                "method": "sigma", "q2_criteria": 0.9}},
-        "pod": { "dim_max": 100, "tolerance": 0.99, "server": None, "type": "static"},
+                           "method": "sigma", "q2_criteria": 0.9}},
+        "pod": {"dim_max": 100, "tolerance": 0.99, "server": None, "type": "static"},
         "snapshot": {"max_workers": 10,
-            "io": {"shapes": {"0": [[1]]}, "format": "fmt_tp_fortran",
-                "variables": ["F"], "point_filename": "header.py",
-                "filenames": {"0": ["function.dat"]}, "template_directory": None,
-                "parameter_names": ["x1", "x2", "x3"]},
-            "provider": f_ishigami},
+                     "io": {"shapes": {"0": [[1]]}, "format": "fmt_tp_fortran",
+                            "variables": ["F"], "point_filename": "point.json",
+                            "filenames": {"0": ["function.dat"]},
+                            "template_directory": None,
+                            "parameter_names": ["x1", "x2", "x3"]},
+                     "provider": f_ishigami},
         "surrogate": {"predictions": [[0, 2, 1]], "method": "kriging"},
         "uq": {
             "sample": 2000, "test": "Ishigami",
-            "pdf": ["Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)"],
-        "type": "aggregated","method": "sobol"}}
+            "pdf": ["Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)",
+                    "Uniform(-3.1415, 3.1415)"],
+            "type": "aggregated", "method": "sobol"}}
     return settings
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def driver_init(tmp, settings_ishigami):
-    """Initialize driver with settings from Ishigami"""
+    """Initialize driver with settings from Ishigami."""
     driver = Driver(settings_ishigami, tmp)
     driver.sampling()
     return driver
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def ishigami_data(settings_ishigami):
-    f_3d = Ishigami()
+    data = {}
+    data['func'] = Ishigami()
     x1 = ot.Uniform(-3.1415, 3.1415)
-    dists = [x1] * 3
-    model = ot.PythonFunction(3, 1, output_to_sequence(f_3d))
-    point = Point([2.20, 1.57, 3])
-    target_point = f_3d(point)
-    space = Space(settings_ishigami)
-    space.sampling(150)
-    target_space = f_3d(space)
-    return (f_3d, dists, model, point, target_point, space, target_space)
+    data['dists'] = [x1] * 3
+    data['point'] = Point([2.20, 1.57, 3])
+    data['target_point'] = data['func'](data['point'])
+    data['space'] = Space(settings_ishigami['space']['corners'],
+                          settings_ishigami['space']['sampling']['init_size'],
+                          settings_ishigami['space']['resampling']['resamp_size'],
+                          settings_ishigami['snapshot']['io']['parameter_names'])
+    data['space'].sampling(150, settings_ishigami['space']['sampling']['method'])
+    data['target_space'] = data['func'](data['space'])
+    return Datatest(data)
 
 
 @pytest.fixture(scope="session")
 def branin_data(settings_ishigami):
-    f_2d = Branin()
-    dists = [ot.Uniform(-5, 10), ot.Uniform(0, 15)]
-    model = ot.PythonFunction(2, 1, output_to_sequence(f_2d))
-    point = Point([2., 2.])
-    target_point = f_2d(point)
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings["space"]["corners"] = [[-7, 0], [10, 15]]
-    test_settings["space"]["sampling"]["method"] = 'discrete'
-    test_settings["snapshot"]["io"]["parameter_names"] = ["x1", "x2"]
-    space = Space(test_settings)
-    space.sampling(10)
-    target_space = f_2d(space)
-    return (f_2d, dists, model, point, target_point, space, target_space)
+    data = {}
+    data['func'] = Branin()
+    data['dists'] = [ot.Uniform(-5, 10), ot.Uniform(0, 15)]
+    data['point'] = Point([2., 2.])
+    data['target_point'] = data['func'](data['point'])
+    data['space'] = Space([[-7, 0], [10, 15]],
+                          settings_ishigami['space']['sampling']['init_size'],
+                          settings_ishigami['space']['resampling']['resamp_size'],
+                          ['x1', 'x2'])
+    data['space'].sampling(10, kind='halton', discrete=0)
+    data['target_space'] = data['func'](data['space'])
+    return Datatest(data)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
+def g_function_data(settings_ishigami):
+    data = {}
+    data['func'] = G_Function()
+    data['dists'] = [ot.Uniform(0, 1)] * 4
+    data['point'] = Point([0.5, 0.2, 0.7, 0.1])
+    data['target_point'] = data['func'](data['point'])
+    data['space'] = Space([[0, 0, 0, 0], [1, 1, 1, 1]],
+                          settings_ishigami['space']['sampling']['init_size'],
+                          settings_ishigami['space']['resampling']['resamp_size'],
+                          ['x1', 'x2', 'x3', 'x4'])
+    data['space'].sampling(10, kind='halton', discrete=2)
+    data['target_space'] = data['func'](data['space'])
+    return Datatest(data)
+
+
+@pytest.fixture(scope='session')
 def mascaret_data(settings_ishigami):
-    f = Mascaret()
+    data = {}
+    data['func'] = Mascaret()
     x1 = ot.Uniform(15., 60.)
     x2 = ot.Normal(4035., 400.)
-    dists = [x1, x2]
-    model = ot.PythonFunction(2, 14, f)
-    point = [31.54, 4237.025]
-    target_point = f(point)
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings["space"]["corners"] = [[15.0, 2500.0], [60, 6000.0]]
-    test_settings["snapshot"]["io"]["parameter_names"] = ["Ks", "Q"]
-    space = Space(test_settings)
-    space.sampling(50)
-    target_space = f(space)
-    return (f, dists, model, point, target_point, space, target_space)
+    data['dists'] = [x1, x2]
+    data['point'] = [31.54, 4237.025]
+    data['target_point'] = data['func'](data['point'])
+    data['space'] = Space([[15.0, 2500.0], [60, 6000.0]],
+                          settings_ishigami['space']['sampling']['init_size'],
+                          settings_ishigami['space']['resampling']['resamp_size'],
+                          ['Ks', 'Q'])
+    data['space'].sampling(50, settings_ishigami['space']['sampling']['method'])
+    data['target_space'] = data['func'](data['space'])
+    return Datatest(data)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def mufi_data(settings_ishigami):
+    data = {}
     f_e = Forrester('e')
     f_c = Forrester('c')
-    dist = [ot.Uniform(0.0, 1.0)]
-    model = ot.PythonFunction(1, 1, output_to_sequence(f_e))
-    point = [0.65]
-    target_point = f_e(point)
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings["space"]["corners"] = [[0.0], [1.0]]
-    test_settings["space"]["sampling"]["init_size"] = 10
-    test_settings["snapshot"]["io"]["parameter_names"] = ["fidelity", "x"]
-    test_settings["surrogate"]["method"] = 'evofusion'
-    test_settings["surrogate"]["cost_ratio"] = 5.1
-    test_settings["surrogate"]["grand_cost"] = 13.0
+    data['dists'] = [ot.Uniform(0.0, 1.0)]
+    data['point'] = [0.65]
+    data['target_point'] = f_e(data['point'])
+    data['space'] = Space([[0.0], [1.0]],
+                          10,
+                          settings_ishigami['space']['resampling']['resamp_size'],
+                          ['fidelity', 'x'], multifidelity=[5.1, 13.0])
+    data['space'].sampling(10, 'halton')
 
-    space = Space(test_settings)
-    space.sampling()
+    working_space = np.array(data['space'])
 
-    working_space = np.array(space)
+    data['target_space'] = np.vstack([f_e(working_space[working_space[:, 0] == 0][:, 1:]),
+                                      f_c(working_space[working_space[:, 0] == 1][:, 1:])])
+    data['func'] = [f_e, f_c]
 
-    target_space = np.vstack([f_e(working_space[working_space[:, 0] == 0][:, 1:]),
-                              f_c(working_space[working_space[:, 0] == 1][:, 1:])])
-
-    return (f_e, f_c, dist, model, point, target_point, space, target_space)
+    return Datatest(data)
 
 
 def sklearn_q2(dists, model, surrogate):
-    dim = len(dists)
-    dists = ot.ComposedDistribution(dists, ot.IndependentCopula(dim))
+    dists = ot.ComposedDistribution(dists)
     experiment = ot.LHSExperiment(dists, 1000)
-    sample = experiment.generate()
+    sample = np.array(experiment.generate())
     ref = model(sample)
     pred = surrogate(sample)
 

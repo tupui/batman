@@ -5,11 +5,12 @@ import logging
 from logging.config import dictConfig
 import argparse
 import os
+import re
 import shutil
 import json
 
 from batman import __version__, __branch__, __commit__
-from batman import Driver
+from batman.driver import Driver
 from batman import misc
 
 description_message = 'BATMAN creates a surrogate model and perform UQ.'
@@ -23,7 +24,7 @@ banner = r"""
 | $$  \ $$| $$  | $$   | $$   | $$\  $ | $$| $$  | $$| $$\  $$$
 | $$$$$$$/| $$  | $$   | $$   | $$ \/  | $$| $$  | $$| $$ \  $$
 |_______/ |__/  |__/   |__/   |__/     |__/|__/  |__/|__/  \__/
-Baysian Analysis Tool for Modelling And uNcertainty quantification
+Bayesian Analysis Tool for Modelling and uncertAinty quaNtification
 """
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -40,6 +41,8 @@ def run(settings, options):
         console.setLevel(logging.DEBUG)
         logging.getLogger().removeHandler('console')
         logging.getLogger().addHandler(console)
+        logging.getLogger().handlers[0].formatter = \
+            logging.getLogger().handlers[1].formatter
 
     logger = logging.getLogger('BATMAN main')
 
@@ -58,25 +61,27 @@ def run(settings, options):
                 use_output = misc.check_yes_no(prompt, default='yes')
                 root = os.path.join(options.output, 'snapshots')
 
-                if not os.path.isdir(root):
-                    logger.warning('No folder snapshots in output folder')
-                    raise SystemExit
-
-                def key(arg):
-                    return int(os.path.basename(
-                        os.path.dirname(os.path.normpath(arg))))
-                settings['snapshot']['provider'] = sorted([os.path.join(
-                    root, d, 'batman-data')
-                    for d in os.listdir(root)],
-                    key=key)
-                settings['snapshot']['io']['template_directory'] = \
-                    os.path.join(root, '0', 'batman-data')
-                settings['snapshot']['io']['shapes'] = None
-
                 if not use_output:
                     logger.warning(
                         'Stopped to prevent deletion. Change options')
                     raise SystemExit
+
+                if not os.path.isdir(root):
+                    logger.warning('No folder snapshots in output folder')
+                    raise SystemExit
+
+                # get list of directories that follow the specified name pattern
+                pattern = re.compile(r'^\d+$')
+                folders = sorted(filter(
+                    lambda d: pattern.match(d) is not None,
+                    os.listdir(root)
+                ), key=int)
+                settings['snapshot']['provider'] = [os.path.join(root, d, 'batman-data')
+                                                    for d in folders]
+                settings['snapshot']['io']['template_directory'] = \
+                    os.path.join(root, '0', 'batman-data')
+                settings['snapshot']['io']['shapes'] = None
+
         if delete:
             try:
                 shutil.rmtree(options.output)
@@ -87,8 +92,10 @@ def run(settings, options):
 
     driver = Driver(settings, options.output)
 
-    if 'pod' in settings:
+    try:
         update = True if settings['pod']['type'] != 'static' else False
+    except KeyError:
+        update = None
 
     if not options.no_surrogate:
         # the surrogate [and POD] will be computed
@@ -104,7 +111,7 @@ def run(settings, options):
                 driver.resampling()
                 driver.write()
         except KeyError:
-            pass
+            logger.debug('No resampling.')
 
     else:
         # just read the existing surrogate [and POD]
@@ -116,17 +123,23 @@ def run(settings, options):
                 check output folder or re-try without -n')
             raise SystemExit
 
-    if 'predictions' in settings['surrogate']:
-        driver.prediction(write=options.save_snapshots)
+    try:
+        driver.prediction(points=settings['surrogate']['predictions'],
+                          write=options.save_snapshots)
+    except KeyError:
+        logger.debug('No prediction.')
 
     if 'pod' in settings:
         logger.info(driver.pod)
 
     if options.q2:
-        driver.pod.estimate_quality()
+        driver.surrogate.estimate_quality()
 
     if options.uq:
         driver.uq()
+
+    # Always plot response surfaces at the end
+    driver.visualization()
 
 
 def parse_options():

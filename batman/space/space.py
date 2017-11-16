@@ -4,8 +4,9 @@ Space class
 ===========
 
 Derives from :py:class:`list` and constitutes a groupment for points.
-The space can be filled using low discrepancy sequences from :class:`openturns.LowDiscrepancySequence`,
-it can be resampled or points can be added manually.
+The space can be filled using low discrepancy sequences from
+:class:`openturns.LowDiscrepancySequence`, it can be resampled or points can be
+added manually.
 
 :Example:
 
@@ -20,14 +21,14 @@ it can be resampled or points can be added manually.
 """
 import logging
 import os
+import itertools
 import numpy as np
 from scipy.optimize import differential_evolution
-import itertools
-import matplotlib.pyplot as plt
+from sklearn import preprocessing
 from .sampling import Doe
 from .point import Point
 from .refiner import Refiner
-plt.switch_backend('Agg')
+from .. import visualization
 
 
 class UnicityError(Exception):
@@ -57,49 +58,51 @@ class Space(list):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, settings):
+    def __init__(self, corners, sample=np.inf, nrefine=0, p_lst=None,
+                 multifidelity=None):
         """Generate a Space.
 
-        :param dict settings: space settings
+        :param array_like corners: hypercube ([min, n_features], [max, n_features]).
+        :param int/array_like sample: number of sample or list of sample of
+          shape (n_samples, n_features).
+        :param int nrefine: number of point to use for refinement.
+        :param list(str) p_lst: parameters' names.
+        :param list(float) multifidelity: Whether to consider the first
+          parameter as the fidelity level. It is a list of ['cost_ratio',
+          'grand_cost'].
         """
-        self.settings = settings
-        self.doe_init = settings['space']['sampling']['init_size']
-        self.doe_method = settings['space']['sampling']['method']
-        if 'resampling' in settings['space']:
+        if isinstance(sample, (int, float)):
+            self.doe_init = sample
+        else:
+            self.doe_init = len(sample)
+
+        if nrefine > 0:
             self.refiner = None
-            self.max_points_nb = settings['space']['resampling']['resamp_size'] + self.doe_init
+            self.max_points_nb = nrefine + self.doe_init
         else:
             self.max_points_nb = self.doe_init
-        corners = settings['space']['corners']
+
         self.dim = len(corners[0])
-        self.multifidelity = False
+        self.multifidelity = multifidelity
 
         # Multifidelity configuration
-        try:
-            if settings['surrogate']['method'] == 'evofusion':
-                self.multifidelity = True
-                self.doe_cheap = self.cheap_doe_from_expensive(self.doe_init)
-                self.logger.info('Multifidelity with Ne: {} and Nc: {}'
-                                 .format(self.doe_init, self.doe_cheap))
-        except KeyError:
-            pass
+        if multifidelity is not None:
+            self.doe_cheap = self._cheap_doe_from_expensive(self.doe_init)
+            self.logger.info('Multifidelity with Ne: {} and Nc: {}'
+                             .format(self.doe_init, self.doe_cheap))
 
         # create parameter list and omit fidelity if relevent
-        try:
-            self.p_lst = settings['snapshot']['io']['parameter_names']
+        if p_lst is not None:
+            self.p_lst = p_lst
             try:
                 self.p_lst.remove('fidelity')
             except ValueError:
                 pass
-        except KeyError:
+        else:
             self.p_lst = ["x" + str(i) for i in range(self.dim)]
 
         # corner points
-        try:
-            self.corners = [Point(p) for p in corners]
-        except Exception as e:
-            e.args = ('bad corner points: ' + e.args[0],)
-            raise
+        self.corners = [Point(p) for p in corners]
 
         # Point of the sample resampled around
         self.refined_pod_points = []
@@ -107,10 +110,12 @@ class Space(list):
         # corner points validation
         for i in range(self.dim):
             if corners[0][i] == corners[1][i]:
-                raise ValueError('%dth corners coordinate are equal' % (i + 1))
+                raise ValueError('{}th corners coordinate are equal'
+                                 .format(i + 1))
 
     def __str__(self):
-        s = ("Hypercube points: {}\n"
+        s = ("Space summary:\n"
+             "Hypercube points: {}\n"
              "Number of points: {}\n"
              "Max number of points: {}").format([c for c in self.corners],
                                                 len(self),
@@ -123,95 +128,12 @@ class Space(list):
              "{}").format(str(self), super(Space, self).__repr__())
         return s
 
-    def cheap_doe_from_expensive(self, n):
-        """Compute the number of points required for the cheap DOE.
-
-        :param int n: size of the expensive design
-        :return: size of the cheap design
-        :rtype: int
-        """
-        doe_cheap = (self.settings['surrogate']['grand_cost'] - n)\
-            * self.settings['surrogate']['cost_ratio']
-        doe_cheap = int(doe_cheap)
-        if doe_cheap / n <= 1:
-            self.logger.error('Nc/Ne must be positive')
-            raise SystemExit
-        self.max_points_nb = n + doe_cheap
-        return doe_cheap
-
-    def is_full(self):
-        """Return whether the maximum number of points is reached."""
-        return len(self) >= self.max_points_nb
-
-    def write(self, path):
-        """Write space in file.
-
-        After writting points, it plots them with :func:`Space.plot_space`
-
-        :param str path: folder to save the points in
-        """
-        np.savetxt(path, self)
-        self.plot_space(path)
-
-    def plot_space(self, path):
-        """Plot the space of parameters 2d-by-2d.
-
-        :param str path: folder to save the fig in
-        """
-        sample = np.array(self)
-        if self.multifidelity:
-            sample = sample[:, 1:]
-        fig = plt.figure('Design of Experiment')
-
-        if self.dim < 2:
-            plt.scatter(sample[0:self.doe_init],
-                        [0] * self.doe_init, c='k', marker='o')
-            plt.scatter(sample[self.doe_init:],
-                        [0] * (len(self) - self.doe_init), c='r', marker='^')
-            plt.xlabel(self.p_lst[0])
-            plt.tick_params(axis='y', which='both',
-                            labelleft='off', left='off')
-
-        else:
-            # num figs = ((n-1)**2+(n-1))/2
-            fig = plt.figure('Design of Experiment')
-            plt.tick_params(axis='both', labelsize=8)
-
-            for i in range(0, self.dim - 1):
-                for j in range(i + 1, self.dim):
-                    ax = plt.subplot2grid((self.dim, self.dim), (j, i))
-                    ax.scatter(sample[0:self.doe_init, i], sample[
-                        0:self.doe_init, j], s=5, c='k', marker='o')
-                    ax.scatter(sample[self.doe_init:, i], sample[
-                        self.doe_init:, j], s=5, c='r', marker='^')
-                    ax.tick_params(axis='both', labelsize=(10 - self.dim))
-                    if i == 0:
-                        ax.set_ylabel(self.p_lst[j])
-                    if j == (self.dim - 1):
-                        ax.set_xlabel(self.p_lst[i])
-
-        fig.tight_layout()
-        path = os.path.join(os.path.dirname(os.path.abspath(path)), 'DOE.pdf')
-        fig.savefig(path, transparent=True, bbox_inches='tight')
-        plt.close('all')
-
-    def read(self, path):
-        """Read space from the file `path`."""
-        self.empty()
-        space = np.loadtxt(path)
-        for p in space:
-            self += p.flatten().tolist()
-
-    def empty(self):
-        """Remove all points."""
-        del self[:]
-
     def __iadd__(self, points):
         """Add `points` to the space.
 
         Raise if point already exists or if space is over full.
 
-        :param lst(float) or lst(lst(float)): point(s) to add to space
+        :param array_like: point(s) to add to space (n_samples, n_features).
         """
         # determine if adding one or multiple points
         try:
@@ -219,6 +141,7 @@ class Space(list):
         except (TypeError, IndexError):
             points = [points]
 
+        points_set = set(self)
         for point in points:
             # check point dimension is correct
             if (len(point) - 1 if self.multifidelity else len(point)) != self.dim:
@@ -242,36 +165,37 @@ class Space(list):
                                       .format(point))
 
             # verify point is not already in space
-            if point not in self:
+            if point not in points_set:
                 self.append(point)
+                points_set.add(point)
             else:
                 raise UnicityError("Point {} already exists in the space"
                                    .format(point))
         return self
 
-    def sampling(self, n=None, kind=None):
+    def sampling(self, n_sample=None, kind='halton', dists=None, discrete=None):
         """Create point samples in the parameter space.
 
-        Minimum number of samples for halton and sobol : 4
+        Minimum number of samples for halton and sobol: 4
         For uniform sampling, the number of points is per dimensions.
         The points are registered into the space and replace existing ones.
 
-        :param str kind: method of sampling
-        :param int n: number of samples
-        :return: List of points
-        :rtype: self
+        :param int n_sample: number of samples.
+        :param str kind: method of sampling.
+        :param lst(str) dists: List of valid openturns distributions as string.
+        :param int discrete: index of the discrete variable
+        :return: List of points.
+        :rtype: self.
         """
-        if kind is None:
-            kind = self.doe_method
-        if self.multifidelity and n is None:
-            n = self.cheap_doe_from_expensive(self.doe_init)
-        elif self.multifidelity and n is not None:
-            n = self.cheap_doe_from_expensive(n)
-        elif not self.multifidelity and n is None:
-            n = self.doe_init
+        if self.multifidelity and n_sample is None:
+            n_sample = self._cheap_doe_from_expensive(self.doe_init)
+        elif self.multifidelity and n_sample is not None:
+            n_sample = self._cheap_doe_from_expensive(n_sample)
+        elif not self.multifidelity and n_sample is None:
+            n_sample = self.doe_init
 
         bounds = np.array(self.corners)
-        doe = Doe(n, bounds, kind)
+        doe = Doe(n_sample, bounds, kind, dists, discrete)
         samples = doe.generate()
 
         # concatenate cheap and expensive space and add identifier 0 or 1
@@ -287,37 +211,48 @@ class Space(list):
         self.logger.info("Created {} samples with the {} method"
                          .format(len(self), kind))
         self.logger.debug("Points are:\n{}".format(samples))
+        self.logger.info("Discrepancy is {}".format(self.discrepancy()))
         return self
 
-    def refine(self, surrogate, point_loo=None):
+    def refine(self, surrogate, method, point_loo=None, delta_space=0.08,
+               dists=None, hybrid=None, discrete=None):
         """Refine the sample, update space points and return the new point(s).
 
-        :param :class:`surrogate.surrogate_model.SurrogateModel` surrogate: surrogate
-        :return: List of points to add
-        :rtype: :class:`space.point.Point` -> lst(tuple(float))
+        :param surrogate: Surrogate.
+        :type surrogate: :class:`batman.surrogate.SurrogateModel`.
+        :param str method: Refinement method.
+        :param array_like point_loo: Leave-one-out worst point (n_features,).
+        :param float delta_space: Shrinking factor for the parameter space.
+        :param int discrete: index of the discrete variable
+        :return: List of points to add.
+        :rtype: element or list of :class:`batman.space.Point`.
         """
         # Refinement strategy
-        if (self.refiner is None) and (self.settings['space']['resampling']['method'] == 'hybrid'):
-            strategy = [[m[0]] * m[1] for m in self.settings['space']['resampling']['hybrid']]
+        if (self.refiner is None) and (method == 'hybrid'):
+            strategy = [[m[0]] * m[1] for m in hybrid]
             self.hybrid = itertools.cycle(itertools.chain.from_iterable(strategy))
 
-        self.refiner = Refiner(surrogate, self.settings)
+        self.refiner = Refiner(surrogate, self.corners, delta_space, discrete)
 
-        method = self.settings['space']['resampling']['method']
         if method == 'sigma':
             new_point = self.refiner.sigma()
+        elif method == 'discrepancy':
+            new_point = self.refiner.discrepancy()
         elif method == 'loo_sigma':
             new_point = self.refiner.leave_one_out_sigma(point_loo)
         elif method == 'loo_sobol':
-            new_point = self.refiner.leave_one_out_sobol(point_loo)
+            new_point = self.refiner.leave_one_out_sobol(point_loo, dists)
         elif method == 'extrema':
             new_point, self.refined_pod_points = self.refiner.extrema(self.refined_pod_points)
         elif method == 'hybrid':
             new_point, self.refined_pod_points = self.refiner.hybrid(self.refined_pod_points,
                                                                      point_loo,
-                                                                     next(self.hybrid))
+                                                                     next(self.hybrid),
+                                                                     dists)
         elif method == 'optimization':
             new_point = self.refiner.optimization()
+        elif method == 'sigma_discrepancy':
+            new_point = self.refiner.sigma_discrepancy()
 
         try:
             point = [Point(point) for point in [new_point]]
@@ -327,8 +262,32 @@ class Space(list):
         self += point
 
         self.logger.info('Refined sampling with new point: {}'.format(point))
+        self.logger.info("New discrepancy is {}".format(self.discrepancy()))
 
         return point
+
+    def empty(self):
+        """Remove all points."""
+        del self[:]
+
+    def is_full(self):
+        """Return whether the maximum number of points is reached."""
+        return len(self) >= self.max_points_nb
+
+    def _cheap_doe_from_expensive(self, n):
+        """Compute the number of points required for the cheap DOE.
+
+        :param int n: size of the expensive design.
+        :return: size of the cheap design.
+        :rtype: int.
+        """
+        doe_cheap = (self.multifidelity[1] - n) * self.multifidelity[0]
+        doe_cheap = int(doe_cheap)
+        if doe_cheap / float(n) <= 1:
+            self.logger.error('Nc/Ne must be positive')
+            raise SystemExit
+        self.max_points_nb = n + doe_cheap
+        return doe_cheap
 
     def optimization_results(self):
         """Compute the optimal value."""
@@ -345,3 +304,55 @@ class Space(list):
         min_x = results.x
         self.logger.info('Optimization with surrogate: f(x)={} for x={}'
                          .format(min_value, min_x))
+
+    def discrepancy(self, sample=None):
+        """Compute the centered discrepancy.
+
+        :return: Centered discrepancy.
+        :rtype: float.
+        """
+        scaler = preprocessing.MinMaxScaler()
+        scaler.fit(self.corners)
+        if sample is None:
+            sample = scaler.transform(self)
+        else:
+            sample = scaler.transform(sample)
+
+        n_s = len(sample)
+
+        abs_ = abs(sample - 0.5)
+        disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
+
+        prod_arr = 1
+        for i in range(self.dim):
+            s0 = sample[:, i]
+            prod_arr *= (1 +
+                         0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5) -
+                         0.5 * abs(s0[:, None] - s0))
+        disc2 = prod_arr.sum()
+
+        c2 = (13.0 / 12.0) ** self.dim - 2.0 / n_s * disc1 + 1.0 / (n_s ** 2) * disc2
+
+        return c2
+
+    def read(self, path):
+        """Read space from the file `path`."""
+        self.empty()
+        space = np.loadtxt(path)
+        for p in space:
+            self += p.flatten().tolist()
+        self.logger.debug('Space read from {}'.format(path))
+
+    def write(self, path):
+        """Write space in file.
+
+        After writting points, it plots them.
+
+        :param str path: folder to save the points in.
+        """
+        np.savetxt(path, self)
+        resampling = len(self) - self.doe_init
+        path = os.path.join(os.path.dirname(os.path.abspath(path)), 'DOE.pdf')
+        visualization.doe(self, p_lst=self.p_lst, resampling=resampling,
+                          multifidelity=self.multifidelity, fname=path)
+        self.logger.debug('Space wrote to {}'.format(path))

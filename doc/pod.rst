@@ -1,5 +1,5 @@
 .. _pod:
-.. py:module:: pod
+.. currentmodule:: batman.pod
 
 POD for *Proper Orthogonal Decomposition*
 =========================================
@@ -37,16 +37,5 @@ with :math:`V` diagonalizes :math:`A^TA`, :math:`U` diagonalizes :math:`AA^T` an
 References
 ..........
 
-.. [AnindyaChatterjee2000] Anindya Chatterjee. “An introduction to the proper orthogonal decomposition”. Current Science 78.7. 2000. :download:`pdf <ref/AnindyaChatterjee2000.pdf>`
-.. [Cordier2006] L. Cordierand M. Bergmann. “Réduction de dynamique par décomposition orthogonale aux valeurs propres (POD)”. Ecole de printemps OCET. 2006. :download:`pdf <ref/Cordier2006.pdf>`
-
-Sources
--------
-
-.. automodule:: batman.pod.core
-   :members:
-   :undoc-members:
-
-.. automodule:: batman.pod.pod
-   :members:
-   :undoc-members:
+.. [AnindyaChatterjee2000] Anindya Chatterjee. “An introduction to the proper orthogonal decomposition”. Current Science 78.7. 2000. 
+.. [Cordier2006] L. Cordierand M. Bergmann. “Réduction de dynamique par décomposition orthogonale aux valeurs propres (POD)”. Ecole de printemps OCET. 2006. 

@@ -4,7 +4,7 @@ Welcome to BATMAN's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    readme_link
    changes_link
@@ -13,13 +13,11 @@ Contents:
    settings
    tutorial
    space
-   tasks
    surrogate
-   pod
    uq
-   misc
-   io
-   functions
+   visualization
+   pod
+   api
 
 Indices and tables
 ==================
@@ -28,3 +26,7 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+About
+=====
+
+See :ref:`about`.

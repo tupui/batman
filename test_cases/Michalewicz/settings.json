@@ -31,7 +31,7 @@
             },
             "format": "fmt_tp_fortran",
             "variables": ["F"],
-            "point_filename": "header.py",
+            "point_filename": "point.json",
             "filenames": {
                 "0": ["function.dat"]
             },
@@ -40,7 +40,7 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 20,
+            "timeout": 10,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
@@ -52,6 +52,12 @@
     "surrogate": {
         "predictions": [[2, 2]],
         "method": "kriging"
+    },
+    "visualization": {
+        "doe": true,
+        "ticks_nbr": 5,
+        "flabel": "F(x1, x2)",
+        "feat_order": [2, 1]
     },
     "uq": {
         "sample": 1000,

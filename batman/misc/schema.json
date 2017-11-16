@@ -5,30 +5,29 @@
     "space": {
       "type": "object",
       "properties": {
-        "corners": {
-          "type": "array",
-          "items": {}
-        },
+        "corners": {"type": "array", "items": {}},
 
         "sampling": {
-          "type": "object",
-          "properties": {
-            "method": {
-              "type": "string",
-              "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc", "faure", "uniform", "discrete"],
-              "default": "halton"
+          "oneOf":[
+          {
+            "type": "object",
+            "properties": {
+              "method": {
+                    "type": "string",
+                    "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc",
+                             "lhsopt", "faure", "uniform", "saltelli"],
+                    "default": "halton"
+              },
+              "distributions": {
+                    "type": "array", "items": {}
+              },
+              "init_size": {"type": "integer", "default": 20, "minimum": 4},
+              "discrete": {"type": "integer", "minimum": 0}
             },
-            "init_size": {
-              "type": "integer",
-              "default": 20,
-              "minimum": 4,
-              "exclusiveMinimum": false
-            },
-            "required": [
-              "method",
-              "init_size"
-            ]
-          }
+            "required": ["method", "init_size"]
+          },
+          {"type": "array", "items": {}}
+          ]
         },
 
         "resampling": {
@@ -36,136 +35,60 @@
           "properties": {
             "method": {
               "type": "string",
-              "enum": ["None", "sigma", "loo_sigma", "loo_sobol", "extrema", "hybrid", "optimization"],
+              "enum": ["None", "discrepancy", "ego_discrepancy",
+                       "sigma_discrepancy", "sigma", "loo_sigma", "loo_sobol",
+                       "extrema", "hybrid", "optimization"],
               "default": "sigma"
             },
-            "resamp_size": {
-              "type": "integer",
-              "default": 2,
-              "minimum": 0
-            },
-            "delta_space": {
-              "type": "number",
-              "default": 0.08,
-              "minimum": 0
-            },
-            "q2_criteria": {
-              "type": "number",
-              "default": 0.9,
-              "minimum": 0,
-              "exclusiveMinimum": true,
-              "maximum": 1,
-              "exclusiveMaximum": true
-            },
-            "hybrid": {
-              "type": "array",
-              "items": {}
-            },
-            "required": [
-              "method",
-              "resamp_size",
-              "q2_criteria",
-              "delta_space"
-            ]
-          }
+            "resamp_size": {"type": "integer", "default": 2, "minimum": 0},
+            "delta_space": {"type": "number", "default": 0.08, "minimum": 0},
+            "q2_criteria": {"type": "number", "default": 0.9, "minimum": 0,
+                            "exclusiveMinimum": true, "maximum": 1,
+                            "exclusiveMaximum": true},
+            "hybrid": {"type": "array", "items": {}}
+          },
+          "required": ["method", "resamp_size", "q2_criteria", "delta_space"]
         }
       },
-      "required": [
-        "corners",
-        "sampling"
-      ]
+      "required": ["corners", "sampling"]
     },
     "pod": {
       "type": "object",
       "properties": {
-        "dim_max": {
-          "type": "integer",
-          "default": 100,
-          "minimum": 1
-        },
-        "tolerance": {
-          "type": "number",
-          "default": 0.99,
-          "minimum": 0,
-          "exclusiveMinimum": true,
-          "maximum": 1,
-          "exclusiveMaximum": true
-        },
-        "type": {
-          "type": "string",
-          "default": "static",
-          "enum": ["static", "dynamic"]
-        }
+        "dim_max": {"type": "integer", "default": 100, "minimum": 1},
+        "tolerance": {"type": "number", "default": 0.99, "minimum": 0,
+                      "exclusiveMinimum": true, "maximum": 1,
+                      "exclusiveMaximum": true},
+        "type": {"type": "string", "default": "static",
+                 "enum": ["static", "dynamic"]}
       },
-      "required": [
-        "dim_max",
-        "tolerance",
-        "type"
-      ]
+      "required": ["dim_max", "tolerance", "type"]
     },
     "snapshot": {
       "type": "object",
       "properties": {
-        "max_workers": {
-          "type": "integer",
-          "default": 2,
-          "minimum": 1
-        },
+        "max_workers": {"type": "integer", "default": 2, "minimum": 1},
         "io": {
           "type": "object",
           "properties": {
             "shapes": {
               "type": "object",
-              "properties": {
-                "0": {
-                  "type": "array",
-                  "items": {}
-                }
-              },
-              "required": [
-                "0"
-              ]
+              "properties": {"0": {"type": "array", "items": {}}},
+              "required": ["0"]
             },
-            "format": {
-              "type": "string",
-              "default": "fmt_tp_fortran"
-            },
-            "variables": {
-              "type": "array",
-              "items": {}
-            },
-            "point_filename": {
-              "type": "string",
-              "default": "header.py"
-            },
+            "format": {"type": "string", "default": "fmt_tp_fortran"},
+            "variables": {"type": "array", "items": {}},
+            "point_filename": {"type": "string", "default": "point.json"},
             "filenames": {
               "type": "object",
-              "properties": {
-                "0": {
-                  "type": "array",
-                  "items": {}
-                }
-              },
-              "required": [
-                "0"
-              ]
+              "properties": {"0": {"type": "array", "items": {}}},
+              "required": ["0"]
             },
-            "template_directory": {
-              "default": null
-            },
-            "parameter_names": {
-              "type": "array",
-              "items": {}
-            }
+            "template_directory": {"default": null},
+            "parameter_names": {"type": "array", "items": {}}
           },
-          "required": [
-            "shapes",
-            "format",
-            "variables",
-            "point_filename",
-            "filenames",
-            "template_directory",
-            "parameter_names"
+          "required": ["shapes", "format", "variables", "point_filename",
+                       "filenames", "template_directory", "parameter_names"
           ]
         },
         "provider": {
@@ -173,130 +96,113 @@
           {
             "type": "object",
             "properties": {
-            "command": {
-              "type": "string",
-              "default": "bash"
+            "command": {"type": "string", "default": "bash"},
+            "timeout": {"type": "integer", "default": 3600, "minimum": 0},
+            "context": {"type": "string", "default": "data"},
+            "script": {"type": "string", "default": "data/script.sh"},
+            "clean": {"type": "boolean", "default": false},
+            "private-directory": {"type": "string", "default": "batman-data"},
+            "data-directory": {"type": "string", "default": "cfd-output-data"},
+            "restart": {"type": "string", "default": "False"}
             },
-            "timeout": {
-              "type": "integer",
-              "default": 3600,
-              "minimum": 0
-            },
-            "context": {
-              "type": "string",
-              "default": "data"
-            },
-            "script": {
-              "type": "string",
-              "default": "data/script.sh"
-            },
-            "clean": {
-              "type": "boolean",
-              "default": false
-            },
-            "private-directory": {
-              "type": "string",
-              "default": "batman-data"
-            },
-            "data-directory": {
-              "type": "string",
-              "default": "cfd-output-data"
-            },
-            "restart": {
-              "type": "string",
-              "default": "False"
-            }
-            },
-            "required": [
-            "command",
-            "timeout",
-            "context",
-            "script",
-            "clean",
-            "private-directory",
-            "data-directory",
-            "restart"
-            ]
+            "required": ["command", "timeout", "context", "script", "clean",
+                         "private-directory", "data-directory", "restart"]
           },
-          {
-            "type": "string"
-          }
+          {"type": "string"}
           ]
         }
       },
-      "required": [
-        "max_workers",
-        "io",
-        "provider"
-      ]
+      "required": ["max_workers", "io", "provider"]
     },
     "surrogate": {
       "type": "object",
       "properties": {
-        "predictions": {
-          "type": "array",
-          "items": {}
-        },
-        "method": {
-          "type": "string",
-          "default": "kriging",
-          "enum": ["rbf", "kriging", "pc", "evofusion"]
-        },
-        "cost_ratio": {
-          "type": "number",
-          "default": 2.0,
-          "minimum": 1,
-          "exclusiveMinimum": true
-        },
-        "grand_cost": {
-          "type": "integer",
-          "default": 30,
-          "minimum": 4,
-          "exclusiveMinimum": false
-        }
+        "predictions": {"type": "array", "items": {}},
+        "method": {"type": "string", "default": "kriging",
+                   "enum": ["rbf", "kriging", "pc", "evofusion"]},
+        "cost_ratio": {"type": "number", "default": 2.0, "minimum": 1,
+                       "exclusiveMinimum": true},
+        "grand_cost": {"type": "integer", "default": 30, "minimum": 4},
+        "strategy": {"type": "string", "default": "Quad",
+                   "enum": ["Quad", "LS"]},
+        "degree": {"type": "integer", "default": 10, "minimum": 1},
+        "kernel": {"type": "string"},
+        "noise": {"type": ["number", "boolean"], "default": false}
       },
-      "required": [
-        "method"
+      "required": ["method"],
+      "oneOf": [
+        {
+          "properties": {"method": {"enum":["pc"]}},
+          "required": ["strategy", "degree"]
+        },
+        {
+          "properties": {"method": {"enum":["evofusion"]}},
+          "required": ["cost_ratio", "grand_cost"]
+        },
+        {
+          "properties": {"method": {"enum":["kriging"]}}
+        },
+        {
+          "properties": {"method": {"enum":["rbf"]}}
+        }
       ]
     },
     "uq": {
       "type": "object",
       "properties": {
-        "sample": {
-          "type": "integer",
-          "default": 50000,
-          "minimum": 1000
-        },
-        "test": {
-          "type": "string"
-        },
-        "pdf": {
-          "type": "array",
-          "items": {}
-        },
-        "type": {
-          "type": "string",
-          "default": "aggregated",
-          "enum": ["aggregated", "block"]
-        },
-        "method": {
-          "type": "string",
-          "default": "sobol",
-          "enum": ["sobol", "FAST"]
-        }
+        "sample": {"type": "integer", "default": 5000, "minimum": 1000},
+        "test": {"type": "string"},
+        "pdf": {"type": "array", "items": {}},
+        "type": {"type": "string", "default": "aggregated",
+                 "enum": ["aggregated", "block"]},
+        "method": {"type": "string", "default": "sobol",
+                   "enum": ["sobol", "FAST"]}
       },
-      "required": [
-        "sample",
-        "pdf",
-        "type",
-        "method"
-      ]
+      "required": ["sample", "pdf", "type", "method"]
+    },
+    "visualization": {
+      "type": "object",
+      "properties": {
+        "doe": {"type": "boolean", "default": true},
+        "resampling": {"type": "boolean", "default": true},
+        "xdata": {"type": "array", "items": {"type": "number"}},
+        "axis_disc": {"type": "array",
+                      "items": {"type": "integer", "maxItems": 4, "minimum": 2}},
+        "flabel": {"type": "string"},
+        "plabels": {"type": "array",
+                    "items": {"type": "string", "maxItems": 4}},
+        "feat_order": {"type": "array",
+                       "items": {"type": "integer",
+                                 "maximum": 4, "maxItems": 4}},
+        "ticks_nbr": {"type": "integer", "minimum": 4, "maximum":256},
+        "range_cbar": {"type": "array",
+                       "items": {"type": "number",
+                                 "minItems": 2, "maxItems": 2}},
+        "contours": {"type": "array",
+                     "items": {"type": "number", "maxItems": 10}}
+      }
     }
   },
-  "required": [
-    "space",
-    "pod",
-    "snapshot",
-    "surrogate"
+  "required": ["space", "snapshot"],
+  "oneOf": [
+    {
+      "required": ["surrogate"],
+      "properties": {"surrogate": {"properties": {"method": {"enum":["pc"]}}},
+                     "space": {"properties":
+                      {"sampling": {"properties":
+                        {"distributions": {"type": "array", "items": {}}}},
+                       "resampling": {"properties":
+                        {"resamp_size": {"type": "integer", "maximum": 0}}}
+                      }
+                    }}
+    },
+    {
+      "required": ["surrogate"],
+      "properties": {"surrogate": {"properties": {"method": {"enum":["evofusion", "kriging", "rbf"]}}}}
+    },
+    {
+      "not": {"required": ["surrogate"]},
+      "properties": {"uq": {"properties": {"method": {"not" : {"enum":["FAST"]}}}}}
+    }
   ]
 }

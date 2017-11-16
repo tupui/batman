@@ -5,8 +5,9 @@
             [60.0, 6000.0]
         ],
         "sampling": {
-            "init_size": 4,
-            "method": "halton"
+            "init_size": 12,
+            "method": "halton",
+            "distributions": ["Uniform(15., 60.)", "BetaMuSigma(4035, 400, 2500, 6000).getDistribution()"]
         },
         "resampling":{
             "delta_space": 0.08,
@@ -26,12 +27,12 @@
         "io": {
             "shapes": {
                 "0": [
-                    [400]
+                    [5]
                 ]
             },
             "format": "fmt_tp_fortran",
-            "variables": ["X", "F"],
-            "point_filename": "header.py",
+            "variables": ["F"],
+            "point_filename": "point.json",
             "filenames": {
                 "0": ["function.dat"]
             },
@@ -40,7 +41,7 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 20,
+            "timeout": 10,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
@@ -51,7 +52,15 @@
     },
     "surrogate": {
         "predictions": [[30, 4000]],
-        "method": "kriging"
+        "method": "pc",
+        "strategy": "Quad",
+        "degree": 10
+    },
+    "visualization": {
+        "doe": false,
+        "xdata": [1000, 2000, 2500, 3000, 4000],
+        "ticks_nbr": 5,
+        "flabel": "F(Ks, Q)"
     },
     "uq": {
         "sample": 1000,

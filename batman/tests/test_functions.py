@@ -2,14 +2,10 @@
 import pytest
 from batman.functions import (SixHumpCamel, Branin, Michalewicz, Rosenbrock,
                               Rastrigin, Ishigami, G_Function,
-                              Forrester,  Manning, Mascaret)
+                              Forrester, Manning, Mascaret, ChemicalSpill)
 from scipy.optimize import differential_evolution
 import numpy as np
 import numpy.testing as npt
-import itertools
-import matplotlib.pyplot as plt
-from matplotlib import cm
-plt.switch_backend('Agg')
 
 
 def test_SixHumpCamel():
@@ -34,6 +30,7 @@ def test_Branin():
     npt.assert_almost_equal(results.x, x_target, decimal=2)
 
 
+@pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
 def test_Michalewicz():
     f_2d = Michalewicz()
     assert f_2d([2.20, 1.57]) == pytest.approx(-1.8013, 0.01)
@@ -42,7 +39,7 @@ def test_Michalewicz():
     bounds = [[0., np.pi]] * 5
     results = differential_evolution(f_5d, bounds, tol=0.001, popsize=20)
     f_obj_5d = results.fun
-    assert f_obj_5d == pytest.approx(-4.687, 0.05)
+    assert f_obj_5d == pytest.approx(-4.687, 0.1)
 
 
 def test_Rosenbrock():
@@ -84,6 +81,13 @@ def test_Forrester():
     assert f_c([0.6]) == pytest.approx(-4.0747189, 0.0001)
 
 
+def test_Manning():
+    f = Manning()
+    assert f(25) == pytest.approx(5.64345405, 0.0001)
+    f_2d = Manning(d=2)
+    assert f_2d([25, 1200]) == pytest.approx(6.29584085, 0.0001)
+
+
 def test_Mascaret():
     f = Mascaret()
     f_out = f([31.54645246710516560, 4237.025232805773157])
@@ -93,33 +97,7 @@ def test_Mascaret():
     npt.assert_almost_equal(f_out, f_data_base, decimal=2)
 
 
-def test_Plot():
-    f = Branin()
-
-    num = 25
-    x = np.linspace(-5, 10, num=num)
-    y = np.linspace(0, 15, num=num)
-    points = []
-    for i, j in itertools.product(x, y):
-        points += [(float(i), float(j))]
-    pred = f(points)
-    points = np.array(points)
-    x = points[:, 0].flatten()
-    y = points[:, 1].flatten()
-    pred = np.array(pred).flatten()
-
-    # Plotting
-    color = True
-    c_map = cm.viridis if color else cm.gray
-    plt.figure("Expected Improvement")
-    bounds = np.linspace(-17, 300., 30, endpoint=True)
-    plt.tricontourf(x, y, pred, bounds,
-                    antialiased=True, cmap=c_map)
-    cbar = plt.colorbar()
-    cbar.set_label('f', fontsize=28)
-    plt.xlabel(r'$x_1$', fontsize=28)
-    plt.ylabel(r'$x_2$', fontsize=28)
-    plt.tick_params(axis='x', labelsize=26)
-    plt.tick_params(axis='y', labelsize=26)
-    plt.legend(fontsize=26, loc='upper left')
-    # plt.show()
+def test_ChemicalSpill():
+    f = ChemicalSpill()
+    y = f([10, 0.07, 1.505, 30.1525])
+    assert y.shape == (1000,)

@@ -3,12 +3,10 @@
 AntaresWrapper class
 ====================
 
-Manages IO with :module:`Antares`.
+Manages IO with *Antares*.
 
 See `Antares <http://www.cerfacs.fr/antares>`_ documentation for details.
 """
-import os
-os.environ["ANTARES_VERBOSE"] = "0"
 import antares
 from .base import IOBase
 
@@ -17,7 +15,7 @@ class AntaresWrapper(IOBase):
 
     """AntaresWrapper class.
 
-    Inherit from :clase:`IOBase`
+    Inherit from :class:`IOBase`
     """
 
     format = []
@@ -40,6 +38,7 @@ class AntaresWrapper(IOBase):
         base = self.reader.read()
 
         def iteritems(base):
+            """Iterate over a base."""
             for zone in base:
                 for instant in base[zone]:
                     for i in base[zone][instant]:

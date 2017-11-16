@@ -7,7 +7,7 @@ Command Line Interface
 Introduction
 ------------
 
-The file ``settings.py`` contains the configuration of BATMAN. It can be devided into 3 mandatory blocks and 2 optionnal block. Fields in brackets are optionnal and there is no specific order to respect.
+The file ``settings.py`` contains the configuration of BATMAN. It can be devided into 2 mandatory blocks and 3 optionnal block. Fields in brackets are optionnal and there is no specific order to respect.
 
 .. note:: A prefilled example is shown in ``settings.json`` located in ``test_cases/Snippets``.
 
@@ -38,7 +38,8 @@ Help of the CLI can be triggered with::
       -u, --uq              Uncertainty Quantification study, [default: False].
       -q, --q2              estimate Q2 and find the point with max MSE, [default:
                             False]    
-    
+
+.. note:: Fields in square brackets are optionnals.
 
 Block 1 - Space of Parameters
 -----------------------------
@@ -70,23 +71,39 @@ First of all, we define the parameter space using an hypercube. Taking the minim
     }
 
 + ``corners``: define the space using the two corners of the hypercube ``[[min], [max]]``,
-+ ``sampling``: define the configuration of the sample,
++ ``sampling``: define the configuration of the sample. This can either be; a list of sample
+  as an array_like of shape (n_samples, n_features); or a dictionary with
+  the following:
 
     * ``init_size``: define the initial number of snapshots,
-    * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*, *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling) or *lhsc* (Latin Hypercube  Sampling Centered),
+    * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*,
+      *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *lhsopt* (optimized LHS), *saltelli*,
+    * [``distributions``]: A list of distributions. Ex for two input variables:
+      ``["Uniform(15., 60.)", "Normal(4035., 400.)"]``.
 
 + [``resampling``]: to do resampling, fill this dictionary
 
-    * ``delta_space``
-    * ``resamp_size``
-    * ``method``: to be choosen from ``sigma``, ``loo_sigma``, ``loo_sobol``, ``hybrid``,
+    * ``delta_space``: the percentage of space to shrink to not resample close to boundaries. For ``0.08``,
+      the available space for resampling will be shrinked by 8%.
+    * ``resamp_size``: number of point to add in the parameter space.
+    * ``method``: to be choosen from ``sigma``, ``loo_sigma``, ``loo_sobol``, ``hybrid``, ``discrepancy``, ``optimization``, ``extrema``.
     * [``hybrid``]: if method is ``hybrid``. You have to define a generator which is a list
       ``[["method", n_snapshot]]``
     * ``q2_criteria``: stopping criterion based on the quality estimation of the model.
 
-The method used to create the DoE is paramount. It ensures that that the physics will be captured correclty all over the domain of interest, see :ref:`Space <space>`. All *faure*, *halton* and *sobol* methods are low discrepancy sequences with good filling properties.
+The method used to create the DoE is paramount. It ensures that that the physics
+will be captured correclty all over the domain of interest, see :ref:`Space <space>`.
+All *faure*, *halton* and *sobol* methods are low discrepancy sequences with
+good filling properties. *saltelli* is particular as it will create a DoE for
+the computation of *Sobol'* indices using *Saltelli*'s formulation.
+
+When *distribution* is set, a join distribution is built an is used to perform
+an inverse transformation (inverse CDF) on the sample. This allows to have a
+low discrepancy sample will still following some distribution.
 
 Regarding the resampling, all methods need a good initial sample. Meanning that the quality is about :math:`Q_2\sim0.5`. ``loo_sigma, loo_sobol`` work better than ``sigma`` in high dimentionnal cases (>2).
+
+.. warning:: If using a PC surrogate model, the only possibilities are ``discrepancy`` and ``extrema``. Furthermore, sampling ``method`` must be set as a list of distributions.
 
 Block 2 - Snapshot provider
 ---------------------------
@@ -105,11 +122,11 @@ A snapshot defines a simulation.
             },
             "format": "fmt_tp_fortran",
             "variables": ["X", "F"],
-            "point_filename": "header.py",
+            "point_filename": "point.json",
             "filenames": {
                 "0": ["function.dat"]
             },
-            "template_directory": "output/snapshots/0/batman-data/header.py",
+            "template_directory": "output/snapshots/0/batman-data/point.json",
             "parameter_names": ["x1", "x2"]
         },
         "provider": {
@@ -143,8 +160,8 @@ The ``provider`` defines what is a simulation. If we simply want to evaluate a p
 + ``data-directory``: output folder to store the ``filenames``,
 + ``restart``: restart the computation if the job has failed.
 
-Block 3 - Surrogate
--------------------
+Optionnal Block 3 - Surrogate
+-----------------------------
 
 Set up the surrogate model strategy to use. See :ref:`Surrogate <surrogate>`.
 
@@ -155,8 +172,25 @@ Set up the surrogate model strategy to use. See :ref:`Surrogate <surrogate>`.
         "predictions": [[30, 4000], [35, 3550]]
     }
 
-+ ``method``: method used to generate a snapshot one of *rbf* (Radial Basic Function), *kriging* or *pc* (polynomial chaos expension) method.
-+ ``predictions``: set of points to predict.
++ ``method``: method used to generate a snapshot one of *rbf* (Radial Basic Function), *kriging*, *pc* (polynomial chaos expension) or *evofusion* method.
++ [``predictions``]: set of points to predict.
+
+For *kriging* the following extra attributes **can** be set: 
+
++ [``kernel``]: kernel to use. Ex: ``"ConstantKernel() + Matern(length_scale=1., nu=1.5)"``.
++ [``noise``]: noise level as boolean or as a float.
+
+For *pc* the following extra attributes **must** be set: 
+
++ ``strategy``: either using quadrature or least square one of *Quad* or *LS*.
++ ``degree``: the polynomial degree.
+
+.. note:: When using *pc*, the ``sampling`` must be set to a list of distributions.
+
+For *evofusion* the following extra attributes **must** be set: 
+
++ ``cost_ratio``: cost ratio in terms of function evaluation between high and low fidelity models.
++ ``grand_cost``: total cost of the study in terms of number of function evaluation of the high fidelity model.
 
 .. note:: We can fill *directly* the number of points into the brackets or *indirectly* using the script ``prediction.py`` located in ``test_cases/Snippets``.
 
@@ -179,10 +213,12 @@ Uncertainty Quantification (UQ), see :ref:`UQ <uq>`.
 
 + ``test``: use a test method for indices comparison and quality calculation. Use one of: *Rosenbrock*, *Michalewicz*, *Ishigami*, *G_Function*, *Channel_Flow*,
 + ``sample``: number of points per sample to use for SA,
-+ ``method``: type of Sobol analysis: *sobol*, *FAST* (Fourier Amplitude Sensitivity Testing) (if FAST, no second-order indices).
++ ``method``: type of Sobol analysis: *sobol*, *FAST* (Fourier Amplitude Sensitivity Testing). If FAST, no second-order indices are computed and defining a surrogate model is mandatory.
 + ``type``: type of indices: *aggregated* or *block*.
 
-+ ``pdf`` *Probability density function* for uncertainty propagation. Enter the PDF of the inputs, ex: x1-Normal(mu, sigma), x2-Uniform(inf, sup).
++ ``pdf`` *Probability density function* for uncertainty propagation. Enter the PDF of the inputs,
+  as list of openturns distributions. Ex: x1-Normal(mu, sigma), x2-Uniform(inf, sup)
+  => ``["Uniform(15., 60.)", "Normal(4035., 400.)"]``
 
 
 Optionnal Block 5 - POD
@@ -203,6 +239,36 @@ POD (or Proper Orthogonal Decomposition) is a approach to help reduce amount of 
 + ``type``: type of POD to perform: *static* or *dynamic*.
 
 The dynamic POD allows to update the POD once a snapshot is availlable. Hence a POD can be restarted when doing resampling for example.
+
+
+Optionnal Block 6 - Visualization
+---------------------------------
+
+Set up for the visualization options. Batman creates a response function (1 input parameter), response surfaces (2 to 4 input parameters) or a Kiviat graph (more than 4 input parameters). See :ref:`Visualization <visualization>`.
+
+.. code-block:: python
+
+     "visualization": {
+        "doe": true,
+        "resampling": true,
+        "axis_disc": [20, 20],
+        "flabel": "Cost function",
+        "plabels": ["X", "Y"],
+        "feat_order": [1, 2],
+        "ticks_nbr": 14,
+        "range_cbar": [0.0, 2.3],
+        "contours": [0.5, 1.0, 1.5],
+     }
+
++ ``doe``: Boolean. If *true*, the Design of Experiment is represented on the response surface by black dots. Defaults value is *false*,
++ ``resampling``: Boolean. If *true*, Design of Experiment corresponding to the resampling points are displayed in a different color. Such points are represented by red triangles. Only activates if doe is *true*,
++ ``axis_disc``: Integers. Discretisation of each axis. Indicated value for the x and the y axis modify the surface resolution, while values corresponding the the 3rd and 4th parameters impact the frame number per movie and the movie number,
++ ``flabel``: String. Name of the cost function,
++ ``plabels``: Strings. Name of the input parameters to be plotted on each axis,
++ ``feat_order``: Integers. Associate each input parameter to an axis, the first indicated number corresponding to the parameter to be plotted on the x-axis, etc... A size equal to the input parameter number is expected, all integers from 1 to the parameter number should be used. Default is *[1, 2, 3, 4]*,
++ ``ticks_nbr``: Integer. Number of ticks on the colorbar (Display n-1 colors). Default is *10*,
++ ``range_cbar``: Floats. Minimum and maximum values on the colorbar,
++ ``contours``: Floats. Values of the iso-contours to be plotted on the response surface,
 
 
 .. py:module:: driver

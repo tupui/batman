@@ -25,8 +25,9 @@ and the method.
        [ 6.        ,  4.33333333]])
 
 """
+import logging
 from scipy import stats
-from scipy.stats import randint
+from sklearn import preprocessing
 import numpy as np
 import openturns as ot
 
@@ -35,7 +36,9 @@ class Doe():
 
     """DOE class."""
 
-    def __init__(self, n_sample, bounds, kind, var=0):
+    logger = logging.getLogger(__name__)
+
+    def __init__(self, n_sample, bounds, kind, dists=None, discrete=None):
         """Initialize the DOE generation.
 
         In case of :attr:`kind` is ``uniform``, :attr:`n_sample` is decimated
@@ -44,77 +47,104 @@ class Doe():
         If :attr:`kind` is ``discrete``, a join distribution between a discrete
         uniform distribution is made with continuous distributions.
 
-        :param int n_sample: number of samples
-        :param np.array bounds: Space's corners [[min, n dim], [max, n dim]]
-        :param str kind: Sampling Method ['halton', 'sobol', 'faure', 'lhs[c]',
-                                          'sobolscramble', 'uniform', discrete]
-        :param int var: Position of the discrete variable
-        :return: Sampling
-        :rtype: lst(array)
+        Another possibility is to set a list of PDF to sample from. Thus one
+        can do: `dists=['Uniform(15., 60.)', 'Normal(4035., 400.)']`. If not
+        set, uniform distributions are used.
+
+        :param int n_sample: number of samples.
+        :param array_like bounds: Space's corners [[min, n dim], [max, n dim]]
+        :param str kind: Sampling Method if string can be one of
+          ['halton', 'sobol', 'faure', 'lhs[c]', 'sobolscramble', 'uniform',
+          'discrete'] otherwize can be a list of openturns distributions.
+        :param lst(str) dists: List of valid openturns distributions as string.
+        :param int discrete: Position of the discrete variable.
         """
         self.n_sample = n_sample
-        self.bounds = bounds
+        self.bounds = np.asarray(bounds)
         self.kind = kind
-        self.dim = bounds.shape[1]
+        self.dim = self.bounds.shape[1]
+
+        self.scaler = preprocessing.MinMaxScaler()
+        self.scaler.fit(self.bounds)
+
+        if dists is None:
+            dists = [ot.Uniform(float(self.bounds[0][i]),
+                                float(self.bounds[1][i]))
+                     for i in range(self.dim)]
+        else:
+            try:
+                dists = [eval('ot.' + dist, {'__builtins__': None},
+                              {'ot': __import__('openturns')})
+                         for dist in dists]
+            except (TypeError, AttributeError):
+                self.logger.error('OpenTURNS distribution unknown.')
+                raise SystemError
+
+        if discrete is not None:
+            # Creating uniform discrete distribution for OT
+            disc_list = [[i] for i in range(int(self.bounds[0, discrete]),
+                                            int(self.bounds[1, discrete] + 1))]
+            disc_dist = ot.UserDefined(disc_list)
+
+            dists.pop(discrete)
+            dists.insert(discrete, disc_dist)
+
+        # Join distribution
+        distribution = ot.ComposedDistribution(dists)
 
         if self.kind == 'halton':
-            self.sequence_type = ot.LowDiscrepancySequence(ot.HaltonSequence(self.dim))
-        elif self.kind == 'sobol':
-            self.sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(self.dim))
-        elif self.kind == 'faure':
-            self.sequence_type = ot.LowDiscrepancySequence(ot.FaureSequence(self.dim))
-        elif (self.kind == 'lhs') or (self.kind == 'lhsc'):
-            distribution = ot.ComposedDistribution([ot.Uniform(0, 1)] * self.dim)
-            self.sequence_type = ot.LHSExperiment(distribution, self.n_sample)
-        elif self.kind == 'discrete':
-            rv = randint(bounds[0, var], bounds[1, var] + 1)
-
-            points = ot.Sample(10000, 1)
-            for i in range(10000):
-                points[i] = (rv.rvs(),)
-
-            discrete = ot.UserDefined(points)
-            dists = [discrete]
-            dists.extend([ot.Uniform(0, 1)] * (self.dim - 1))
-            distribution = ot.ComposedDistribution(dists)
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
                                                              distribution,
                                                              self.n_sample)
+        elif self.kind == 'sobol':
+            self.sequence_type = ot.LowDiscrepancyExperiment(ot.SobolSequence(),
+                                                             distribution,
+                                                             self.n_sample)
+        elif self.kind == 'faure':
+            self.sequence_type = ot.LowDiscrepancyExperiment(ot.FaureSequence(),
+                                                             distribution,
+                                                             self.n_sample)
+        elif (self.kind == 'lhs') or (self.kind == 'lhsc'):
+            self.sequence_type = ot.LHSExperiment(distribution, self.n_sample)
+        elif self.kind == 'lhsopt':
+            lhs = ot.LHSExperiment(distribution, self.n_sample)
+            self.sequence_type = ot.SimulatedAnnealingLHS(lhs, ot.GeometricProfile(),
+                                                          ot.SpaceFillingC2())
+        elif self.kind == 'saltelli':
+            # Only relevant for computation of Sobol' indices
+            size = self.n_sample // (2 * self.dim + 2)  # N(2*dim + 2)
+            self.sequence_type = ot.SobolIndicesAlgorithmImplementation.Generate(
+                distribution, size, True)
 
     def generate(self):
-        """Generate the DOE."""
-        if self.kind in ['lhs', 'lhsc', 'discrete']:
-            sample = self.sequence_type.generate()
-        elif self.kind == 'sobolscramble':
+        """Generate the DOE.
+
+        :return: Sampling.
+        :rtype: array_like (n_samples, n_features).
+        """
+        if self.kind == 'sobolscramble':
             sample = self.scrambled_sobol_generate()
         elif self.kind == 'uniform':
             sample = self.uniform()
+        elif self.kind == 'lhsc':
+            sample = self.sequence_type.generate()
+        elif self.kind == 'saltelli':
+            return np.array(self.sequence_type)
         else:
-            sample = self.sequence_type.generate(self.n_sample)
+            return np.array(self.sequence_type.generate())
 
         # Scale the DOE from [0, 1] to bounds
-        r = np.empty_like(sample)
         if self.kind == 'lhsc':
-            for j in range(self.dim):
-                b = self.bounds[0, j]
-                a = self.bounds[1, j] - b
-                for i, p in enumerate(sample):
-                    r[i, j] = a * ((p[j] // (1. / self.n_sample) + 1) - 0.5) / self.n_sample + b
+            sample = ((np.floor_divide(sample, (1. / self.n_sample)) + 1)
+                      - 0.5) / self.n_sample
         else:
-            for j in range(self.dim):
-                b = self.bounds[0, j]
-                a = self.bounds[1, j] - b
-                for i, p in enumerate(sample):
-                    r[i, j] = a * p[j] + b
+            sample = self.scaler.inverse_transform(sample)
 
-        if self.kind == 'discrete':
-            r[:, 0] = np.array(sample[:, 0]).flatten()
-
-        return r
+        return sample
 
     def uniform(self):
         """Uniform sampling."""
-        n_sample = int(np.floor(np.power(self.n_sample, 1 / len(self.bounds[1]))))
+        n_sample = int(np.floor(np.power(self.n_sample, 1.0 / len(self.bounds[1]))))
         n_sample = [n_sample] * len(self.bounds[1])
         n = np.product(n_sample)
         h = [1. / float(n_sample[i] - 1) for i in range(self.dim)]
@@ -133,11 +163,7 @@ class Doe():
     def scrambled_sobol_generate(self):
         """Scrambled Sobol.
 
-        Scramble function as in Owen (1997)
-
-        Reference:
-
-        .. [1] Saltelli, A., Chan, K., Scott, E.M., "Sensitivity Analysis"
+        Scramble function as in Owen (1997).
         """
         # Generate sobol sequence
         self.sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(self.dim))
@@ -149,7 +175,7 @@ class Doe():
                 r[i, j] = p[j]
 
         # Scramble the sequence
-        for col in range(0, self.dim):
+        for col in range(self.dim):
             r[:, col] = self.scramble(r[:, col])
 
         return r

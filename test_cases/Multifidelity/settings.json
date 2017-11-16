@@ -31,7 +31,7 @@
             },
             "format": "numpy",
             "variables": ["F"],
-            "point_filename": "header.py",
+            "point_filename": "point.json",
             "filenames": {
                 "0": ["function.npz"]
             },
@@ -47,7 +47,7 @@
         "grand_cost": 13
     },
     "uq": {
-        "sample": 2000,
+        "sample": 1000,
         "test": "Forrester",
         "pdf": ["Uniform(0.0, 1.0)"],
         "type": "aggregated",

@@ -1,7 +1,7 @@
 .. _introduction:
 
-BATMAN introduction
-===================
+Introduction
+============
 
 A surrogate tool
 ----------------
@@ -51,11 +51,12 @@ The package is composed of several python modules which are self contained withi
 Following is a quick reference:
 
 * :py:mod:`ui`: command line interface,
-* :py:mod:`driver`: contains the main functions,
-* :py:mod:`uq`: uncertainty quantification,
+* :mod:`space`: defines the (re)sampling space,
 * :py:mod:`surrogate`: constructs the surrogate model,
-* :py:mod:`space`: defines the (re)sampling space,
+* :py:mod:`uq`: uncertainty quantification,
+* :mod:`visualization`: uncertainty visualization,
 * :py:mod:`pod`: constructs the POD,
+* :py:mod:`driver`: contains the main functions,
 * :py:mod:`tasks`: defines the context to compute each snapshot from,
 * :py:mod:`functions`: defines usefull test functions,
 * :py:mod:`misc`: defines the logging configuration and the settings schema.
@@ -87,16 +88,14 @@ This folder contains ready to launch examples:
 * ``Michalewicz`` is a *2-input_parameters* non-linear function,
 * ``Ishigami`` is a *3-input_parameters*,
 * ``G_Function`` is a *4-input_parameters*,
-* ``Channel_Flow`` is a *2-input_parameters* with a functionnal output,
-* ``RAE2822`` is a *2-input_parameters* that launches an *elsA* case,
-* ``Flamme_1D`` is a *2-input_parameters* that launches an *AVBP* case.
+* ``Channel_Flow`` is a *2-input_parameters* with a functionnal output.
 
 In every case folder, there is ``README.rst`` file that summarizes and explains it.
 
 References
 ----------
 
-.. [Rasmussen2006] CE. Rasmussen and C. Williams: Gaussian processes for machine learning. MIT Press. 2006. ISBN: 026218253X :download:`pdf <ref/Rasmussen2006.pdf>`
-.. [Najm2009] H. N. Najm, Uncertainty Quantification and Polynomial Chaos Techniques in Computational Fluid Dynamics, Annual Review of Fluid Mechanics 41 (1) (2009) 35–52. DOI:10.1146/annurev.fluid.010908.165248. :download:`pdf <ref/Najm2009.pdf>`
-.. [Gunes2006] H. Gunes, S. Sirisup and GE. Karniadakis: “Gappydata:ToKrigornottoKrig?”. Journal of Com putational Physics. 2006. DOI:10.1016/j.jcp.2005.06.023 :download:`pdf <ref/Gunes2006.pdf>`
-.. [Draper1995] D. Draper: “Assessmentand Propagation ofModelUncertainty”. Journal of the Royal Statistical Society. 1995. :download:`pdf <ref/Draper1995.pdf>`
+.. [Rasmussen2006] CE. Rasmussen and C. Williams: Gaussian processes for machine learning. MIT Press. 2006. ISBN: 026218253X 
+.. [Najm2009] H. N. Najm, Uncertainty Quantification and Polynomial Chaos Techniques in Computational Fluid Dynamics, Annual Review of Fluid Mechanics 41 (1) (2009) 35–52. DOI:10.1146/annurev.fluid.010908.165248. 
+.. [Gunes2006] H. Gunes, S. Sirisup and GE. Karniadakis: “Gappydata:ToKrigornottoKrig?”. Journal of Com putational Physics. 2006. DOI:10.1016/j.jcp.2005.06.023 
+.. [Draper1995] D. Draper: “Assessmentand Propagation ofModelUncertainty”. Journal of the Royal Statistical Society. 1995. 

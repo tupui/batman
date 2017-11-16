@@ -11,15 +11,10 @@
         "resampling":{
             "delta_space": 0.08,
             "resamp_size": 0,
-            "method": "sigma",
+            "method": "discrepancy",
             "hybrid": [["sigma", 4], ["loo_sobol", 2]],
             "q2_criteria": 0.9
         }
-    },
-    "pod": {
-        "dim_max": 100,
-        "tolerance": 0.99,
-        "type": "static"
     },
     "snapshot": {
         "max_workers": 5,
@@ -29,18 +24,18 @@
                     [1]
                 ]
             },
-            "format": "fmt_tp_fortran",
+            "format": "numpy",
             "variables": ["F"],
-            "point_filename": "header.py",
+            "point_filename": "point.json",
             "filenames": {
-                "0": ["function.dat"]
+                "0": ["function.npz"]
             },
             "template_directory": null,
             "parameter_names": ["x1"]
         },
         "provider": {
             "command": "bash",
-            "timeout": 20,
+            "timeout": 10,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
@@ -51,7 +46,7 @@
     },
     "surrogate": {
         "predictions": [2.2],
-        "method": "kriging"
+        "method": "rbf"
     },
     "uq": {
         "sample": 1000,

@@ -1,8 +1,70 @@
 .. _changes:
 
+.. currentmodule:: batman
+
 ===============
 Release history
 ===============
+
+Version 1.7 - Lucius
+====================
+
+New features
+------------
+
+    - Add :func:`space.Space.discrepancy` function in ``Space``,
+    - Refactor :class:`space.Space`, :class:`uq.UQ`,
+      :class:`space.Refiner` initiate without dictionnary,
+    - Refactor :class:`surrogate.PC` and add options in
+      settings: ``degree``, ``strategy`` (*Quad* or *LS*),
+    - Add :func:`space.Refiner.discrepancy`, and
+      :func:`space.Refiner.sigma_discrepancy`
+    - Add quality for every surrogate model,
+    - Be able to bypass POD and surrogate in settings,
+    - Surrogate facultative for UQ,
+    - Add :mod:`visualization` with: Kiviat, DoE, HDR
+    - and response_surface with block ``visualization`` in settings, *by Robin Campet*,
+    - Add ``distributions`` in settings to set a distribution per parameter,
+    - Add ``discrete`` in settings to tell the indice of the discrete paramter,
+    - Add :class:`functions.Data` for datasets with some new ones,
+    - Add optimized LHS, *by Vincent Baudoui*,
+    - Add noise and kernel for Kriging in settings, *by Andrea Trucchia*,
+    - Header is now a JSON file, *by Cyril Fournier*,
+    - Concurrent CI, *by Cyril Fournier*,
+    - pylint/pycodestyle for CI and Python2 on develop and master branches,
+    - Add *about* section in doc.
+
+Enhancements
+------------
+
+    - Remove loops in predictors, ``zip``,
+    - Backend overwright for matplotlib removed,
+    - Remove ``otwrapy``,
+    - JSON schema constrained for surrogate and sampling,
+    - Refactor :class:`pod.Pod`,
+    - Sobol' indices with ensemble,
+    - Remove support for OpenTURNS < 1.8,
+    - Add some options for :class:`functions.MascaretApi`,
+    - Coverage and tests raised to 90%.
+
+Bug fixes
+---------
+
+    - Quality with multimodes with POD,
+    - List in sampling settings,
+    - Restart and restart from files,
+    - Other file read with restart, *by Cyril Fournier*,
+    - Variance and FAST,
+    - Double prompt in python 2.7, *by Vincent Baudoui*,
+    - DoE as list, *by Vincent Baudoui*,
+    - Inputs mocking in tests,
+    - DoE diagonal scaling,
+    - :class:`functions.MascaretApi` ``multi_eval``,
+    - Block indices,
+    - Installation without folder being a git repository, *by Cyril Fournier*,
+    - Fortran compilation, *by Cyril Fournier*,
+    - Normalize output in :class:`surrogate.Kriging`.
+
 
 Version 1.6 - Selina
 ====================
@@ -10,9 +72,9 @@ Version 1.6 - Selina
 New features
 ------------
 
-    - Add :class:`batman.functions.run_mascaret`,
-    - Add *Evofusion* with :class:`batman.surrogate.multifidelity`,
-    - Add *Expected Improvement* with :func:`batman.space.refiner.optimization`,
+    - Add :class:`functions.MascaretApi`,
+    - Add *Evofusion* with :class:`surrogate.Evofusion`,
+    - Add *Expected Improvement* with :func:`space.Refiner.optimization`,
     - Be able to have a discrete parameter.
 
 Enhancements
@@ -45,10 +107,10 @@ New features
 ------------
 
     - Python3 support,
-    - Add :class:`batman.surrogate.surrogate_model`,
+    - Add :class:`surrogate.surrogate_model.SurrogateModel`,
     - Add progress bar during quality computation,
     - Use pathos for multiprocessing during LOO and Kriging.
-      New :class:`batman.misc.nested_popl` allow nested pool.
+      New :class:`misc.nested_pool` allow nested pool.
     - Unittests and functionnal tests using Pytest,
     - Antares wrapper used for IO,
     - OT1.8 support and use of new SA classes,
@@ -57,18 +119,18 @@ New features
     - Add correlation and covariance matrices,
     - Add DoE visualization in *n-dimension*,
     - Hypercube for refinement created using discrete and global optimization,
-    - Merge some ``PyUQ`` functions and add :class:`batman.surrogate.polynomial_chaos`.
+    - Merge some ``PyUQ`` functions and add :class:`surrogate.PC`.
     
 Enhancements
 ------------
 
-    - Refactor :mod:`batman.space`, :mod:`batman.predictor`, :mod:`batman.snapshots`, :mod:`batman.pod`,
+    - Refactor :mod:`space`, :mod:`surrogate`, :mod:`snapshots`, :mod:`pod`,
     - Rewrite ``settings.json``,
     - POD is now optional,
     - Use a wrapper for OT evaluations with ``otwrapy``,
     - Comment capability to ``settings.json``,
     - Doc cleanning,
-    - Use :mod:`batman.functions` to test model error,
+    - Use :mod:`functions` to test model error,
     - Remove some MPI functions,
     - Simplify hybrid navigator using generator.
 
@@ -93,7 +155,7 @@ Version 1.4
 New features
 ------------
 
-    - Enhance :class:`batman.surrogate.kriging`: adimentionize input parameters,
+    - Enhance :class:`surrogate.kriging`: adimentionize input parameters,
       use anisotropic kernel and use genetic algorithm for parameters optimization
     - Settings are now written in JSON and checked using a schema
     - Ask for confirmation of output if exists: if no, ask for restarting from files
@@ -125,7 +187,7 @@ Version 1.3
 New features
 ------------
 
-    - Add resampling strategies with :class:`batman.space.refiner`. Possibilities are:
+    - Add resampling strategies with :class:`space.refiner`. Possibilities are:
       ``None, MSE, loo_mse, loo_sobol, hybrid``
     - Computation of the error of the pod *Q2* with option ``-q2``. Uses *Kriging*
     - Aggregated and block *Sobol'* indices are computed using a set of keywords:
@@ -141,7 +203,7 @@ Enhancements
       Also  remove ``--plot`` option and add output default repository
     - Installation is more Pythonic has it uses now a ``setup.py`` script
     - The project can be imported: ``import jpod``
-    - Settings are defined ones as an attribute of :class:`batman.driver`
+    - Settings are defined ones as an attribute of :class:`driver`
     - Logger is now simpler and configuration can be changed prior installation in: ``/misc/logging.json``
     - When defining a sample size for *UQ*, the value is used for indices and propagation
     - The keyword ``pod['quality']`` correspond now to the targeted *Q2*

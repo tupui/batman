@@ -5,22 +5,17 @@
             [1.0, 1.0, 1.0, 1.0]
         ],
         "sampling": {
-            "init_size": 4,
-            "method": "halton"
+            "init_size": 10,
+            "method": "halton",
+            "discrete": 2
         },
         "resampling":{
             "delta_space": 0.08,
             "resamp_size": 0,
-            "method": "sigma",
+            "method": "discrepancy",
             "hybrid": [["sigma", 4], ["loo_sobol", 2]],
             "q2_criteria": 0.9
         }
-    },
-    "pod": {
-        "dim_max": 100,
-        "tolerance": 0.99,
-        "server": null,
-        "type": "static"
     },
     "snapshot": {
         "max_workers": 10,
@@ -32,7 +27,7 @@
             },
             "format": "fmt_tp_fortran",
             "variables": ["F"],
-            "point_filename": "header.py",
+            "point_filename": "point.json",
             "filenames": {
                 "0": ["function.dat"]
             },
@@ -41,7 +36,7 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 20,
+            "timeout": 10,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
@@ -52,10 +47,13 @@
     },
     "surrogate": {
         "predictions": [[0.5, 0.5, 0.5, 0.5]],
-        "method": "kriging"
+        "method": "rbf"
+    },
+    "visualization": {
+        "axis_disc": [15, 15, 4, 2]
     },
     "uq": {
-        "sample": 15000,
+        "sample": 1000,
         "test": "G_Function",
         "pdf": ["Uniform(0.0, 1.0)", "Uniform(0.0, 1.0)", "Uniform(0.0, 1.0)", "Uniform(0.0, 1.0)"],
         "type": "aggregated",

@@ -2,7 +2,7 @@
 """NestedPool class.
 
 This class is used when nested process pool are needed.
-It modify the ``daemon` attribute to allow this subprocessing.
+It modify the ``daemon`` attribute to allow this subprocessing.
 
 """
 import pathos
@@ -14,8 +14,7 @@ class NoDaemonProcess(multiprocess.Process):
     """NoDaemonProcess class.
 
     Inherit from :class:`multiprocessing.Process`.
-    ``daemon`` attribute always returns False.
-
+    The ``daemon`` attribute always returns False.
     """
 
     def _get_daemon(self):
@@ -33,7 +32,6 @@ class NestedPool(pathos.multiprocessing.Pool):
 
     Inherit from :class:`pathos.multiprocessing.Pool`.
     Enable nested process pool.
-
     """
 
     Process = NoDaemonProcess
