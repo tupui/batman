@@ -88,7 +88,6 @@ specifications may not be enough to give full guidelines on their uses.
 
 .. autosummary::
 
-   pod.Core
    pod.Pod
 
 .. py:module:: pod

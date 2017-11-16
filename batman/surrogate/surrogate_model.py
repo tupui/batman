@@ -28,14 +28,13 @@ import numpy as np
 from sklearn import preprocessing
 from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import r2_score
-from pathos.multiprocessing import cpu_count
 from .kriging import Kriging
 from .polynomial_chaos import PC
 from .RBFnet import RBFnet
 from .multifidelity import Evofusion
 from ..tasks import Snapshot
 from ..space import Space
-from ..misc import ProgressBar, NestedPool
+from ..misc import ProgressBar, NestedPool, cpu_system
 
 
 class SurrogateModel(object):
@@ -198,7 +197,7 @@ class SurrogateModel(object):
         points_nb = len(self.space)
 
         # Multi-threading strategy
-        n_cpu_system = cpu_count()
+        n_cpu_system = cpu_system()
         n_cpu = n_cpu_system // 3
         if n_cpu < 1:
             n_cpu = 1

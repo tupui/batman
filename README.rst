@@ -1,61 +1,70 @@
-.. image:: https://nitrox.cerfacs.fr/open-source/batman/badges/develop/build.svg
-   :target: https://nitrox.cerfacs.fr/open-source/batman/pipelines
-   :alt: build status
+|CI|_ |Codecov|_ |Python|_ |License|_ |Zulip|_
 
-.. image:: https://nitrox.cerfacs.fr/open-source/batman/badges/develop/coverage.svg
-   :target: https://nitrox.cerfacs.fr/open-source/batman/pipelines
-   :alt: coverage status
+.. |CI| image:: https://gitlab.com/cerfacs/batman/badges/develop/pipeline.svg
+.. _CI: https://gitlab.com/cerfacs/batman/pipelines
 
-.. image:: https://img.shields.io/badge/python-2.7,_3.6-blue.svg
+.. |Codecov| image:: https://gitlab.com/cerfacs/batman/badges/develop/coverage.svg
+.. _Codecov: https://gitlab.com/cerfacs/batman/pipelines
 
-.. image:: https://img.shields.io/badge/release-v1.6_Selina-blue.svg
+.. |Python| image:: https://img.shields.io/badge/python-2.7,_3.6-blue.svg
 
+.. |License| image:: https://img.shields.io/badge/license-CECILL--B_License-blue.svg
+.. _License: http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+
+.. |Zulip| image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
+.. _Zulip: https://batman-cerfacs.zulipchat.com
 
 BATMAN
 ======
 
-**BATMAN** stands for Bayesian Analysis Tool for Modelling and uncertAinty quaNtification.
-It aims at:
+**BATMAN** stands for Bayesian Analysis Tool for Modelling and uncertAinty
+quaNtification. It is a Python module distributed under the open-source
+CECILL-B license (MIT/BSD compatible).
 
-- Build a metamodel for design, optimization and database exchange (loads, MDO, identification),
-- Can use a *POD* for database optimization or data reduction,
-- Construct model for the full field (conservative variables, local quantities…),
-- Optimize the number of CFD computations,
-- Automatically manage (parallel) the CFD computations,
-- Have the optimal representation of the problem for a minimal cost in term of CFD evaluations.
+batman seamlessly allows to do statistical analysis (sensitivity analysis,
+Uncertainty Quantification, moments) using any computer solver.
 
-Aside from that, an uncertainty quantification (UQ) module allows to make
-sensitivity analysis (SA) and uncertainty propagation.
+Main features are: 
+
+- Design of Experiment (LHS, low discrepancy sequences, MC),
+- Resample the parameter space based on the physic and the sample,
+- Metamodel (Gaussian process, Polynomial Chaos, RBF),
+- Optimization (Expected Improvement),
+- Visualize both sample and CFD computations in *n*-dimensions (HDR, Kiviat),
+- *POD* for database optimization or data reduction,
+- Automatically manage (parallel) the numerical computations.
 
 Getting started
 ---------------
 
-All changes can be found in :ref:`changes`. The main folder contains three
-subfolders: ``doc`` ``batman`` and ``test_cases``. The latter contains examples
-that you can adapt to you needs. You can find more information about the cases
-within the respectives ``README.rst`` file. A detailled example can be found in
-:ref:`tutorial`.
+A detailled example can be found in 
+`tutorial <https://cerfacs.gitlab.io/batman/tutorial.html>`_ and the
+full documentation is available at: 
 
-Aside from the documentation folder, the HTML documentation is available
-`here <http://open-source.pg.cerfacs.fr/batman/>`_.
+    https://cerfacs.gitlab.io/batman
+
+The main folder contains three subfolders: ``doc`` ``batman`` and ``test_cases``.
+The latter contains examples that you can adapt to you needs. You can find more
+information about the cases within the respectives ``README.rst`` file. 
 
 Shoud you be interested by batman's implementation, consider
-reading :ref:`introduction`.
+reading `introduction <https://cerfacs.gitlab.io/batman/introduction.html>`_.
 
 If you encounter a bug (or have a feature request), please report it via
-`GitLab <https://nitrox.cerfacs.fr/open-source/batman>`_. Or it might be you
+`GitLab <https://gitlab.com/cerfacs/batman/issues>`_. Or it might be you
 falling but "Why do we fall sir? So we can learn to pick ourselves up".
 
-Last but not least, if you consider contributing check-out :ref:`contributing`.
+Last but not least, if you consider contributing check-out
+`contributing <https://cerfacs.gitlab.io/batman/contributing.html>`_.
 
 Happy batman.
 
 How to get it?
 --------------
 
-The sources are located on the *GitLab* server: 
+The sources are located on *GitLab*: 
 
-    https://nitrox.cerfacs.fr/open-source/batman
+    https://gitlab.com/cerfacs/batman
 
 How to Install?
 ---------------
@@ -88,7 +97,7 @@ Testing dependencies are:
 
 Extra testing flavours: 
 
-- `pytest-cov <https://github.com/pytest-dev/pytest-cov>`_ >= 2.5.1
+- `coverage <http://coverage.readthedocs.io>`_ >= 4.4
 - `pylint <https://www.pylint.org>`_ >= 1.6.0
 
 .. note:: OpenTURNS and ffmpeg are available on *conda* through
@@ -99,7 +108,7 @@ User installation
 
 Using the latest python version is prefered! Then to install::
 
-    git clone git@nitrox.cerfacs.fr:open-source/batman.git 
+    git clone git@gitlab.com:cerfacs/batman.git
     cd batman
     python setup.py build_fortran
     python setup.py install
@@ -107,12 +116,12 @@ Using the latest python version is prefered! Then to install::
     python setup.py build_sphinx
 
 The latter is optionnal as it build the documentation. The testing part is also
-optionnal but is recommanded. (<30mins).
+optionnal but is recommanded. (<30mins depending on your configuration).
 
 .. note:: If you don't have install priviledge, add ``--user`` option after install.
     But the simplest way might be to use a conda environment.
 
-Finally, if you want to install the optionnal package ``Antares``::
+Finally, if you want to install the optionnal package ``Antares`` (not provided)::
 
     pip install --editable .[antares] --process-dependency-links
 
@@ -125,7 +134,7 @@ If batman has been correctly installed, you should be able to call it simply::
     and ``PYTHONPATH`` environment variables. Make sure you do not call different
     installation folders. It is recommanded that you leave your ``PYTHONPATH`` empty.
 
-Otherwize (if you want Python 3 for instance) you can create your ``conda`` environment::
+Otherwize you can create your ``conda`` environment::
 
     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
     bash Miniconda3-latest-Linux-x86_64.sh
@@ -140,14 +149,15 @@ Help and Support
 About us
 ........
 
-See authors and project history at: :ref:`about`.
+See authors and project history at: `about us <https://cerfacs.gitlab.io/batman/about.html>`_.
 
-Communication
-.............
+Community
+.........
 
-- IRC channel: ``#batman`` at ``cerfacs.slack.com``
+If you use batman, come and say hi at https://batman-cerfacs.zulipchat.com.
+Or send us an email. We would really appreciate that as we keep record of the users!
 
 Citation
 ........
 
-If you use batman in a scientific publication, we would appreciate :ref:`citations <citing-batman>`.
+If you use batman in a scientific publication, we would appreciate `citations <https://cerfacs.gitlab.io/batman/about.html#citing-batman>`_.

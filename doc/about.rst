@@ -21,7 +21,7 @@ citations to one of the following paper:
 
   `Comparison of Polynomial Chaos and Gaussian Process surrogates for
   uncertainty quantification and correlation estimation of spatially
-  distributed open-channel steady flows <http:// .html>`_, Roy, P.T.
+  distributed open-channel steady flows <https://link.springer.com/epdf/10.1007/s00477-017-1470-4?author_access_token=XBNaFnnCWhRl5oX5e9CLgPe4RwlQNchNByi7wbcMAY7coqT3Mk_h1e4GygimcLwigpeWIwUsV7du_nq1vrCwHQP6_L5S-8PfGv8UX8Dr8y4_L8vinGM-_hEjOOMxosx5i0Sk1xY3WyNEa071PwZ7rQ%3D%3D>`_, Roy, P.T.
   *et al.*, SERRA, 2017.
 
   Bibtex entry::
@@ -33,5 +33,6 @@ citations to one of the following paper:
      author={Roy, P.T. and El Moçaïd, N. and Ricci, S. and Jouhaud, J.-C. and
      Goutal, N. and De Lozzo, M. and Rochoux M.C.},
      journal={Stochastic Environmental Research and Risk Assessment},
+     doi={10.1007/s00477-017-1470-4},
      year={2017}
     }

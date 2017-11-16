@@ -24,7 +24,7 @@ banner = r"""
 | $$  \ $$| $$  | $$   | $$   | $$\  $ | $$| $$  | $$| $$\  $$$
 | $$$$$$$/| $$  | $$   | $$   | $$ \/  | $$| $$  | $$| $$ \  $$
 |_______/ |__/  |__/   |__/   |__/     |__/|__/  |__/|__/  \__/
-Bayesian Analysis Tool for Modelling And uNcertainty quantification
+Bayesian Analysis Tool for Modelling and uncertAinty quaNtification
 """
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -71,7 +71,7 @@ def run(settings, options):
                     raise SystemExit
 
                 # get list of directories that follow the specified name pattern
-                pattern = re.compile('^\d+$')
+                pattern = re.compile(r'^\d+$')
                 folders = sorted(filter(
                     lambda d: pattern.match(d) is not None,
                     os.listdir(root)

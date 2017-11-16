@@ -42,8 +42,6 @@ class BuildSphinx(Command):
         import sphinx
         sphinx.build_main(
             ['setup.py', '-b', 'html', './doc', './doc/_build/html'])
-        # sphinx.build_main(
-        #     ['setup.py', '-b', 'man', './doc', './doc/_build/man'])
 
 
 class CompileSources(Command):
@@ -110,9 +108,9 @@ def find_version(*file_paths):
     try:
         # write commit and branch info to batman/__init__.py
         with open(os.devnull, 'w') as fnull:
-            commit = subprocess.check_output("git describe --always", 
+            commit = subprocess.check_output("git describe --always",
                                              stderr=fnull, shell=True).rstrip()
-            branch = subprocess.check_output("git describe --all", 
+            branch = subprocess.check_output("git describe --all",
                                              stderr=fnull, shell=True).rstrip()
         version_file = re.sub(r'(__commit__\s*=\s*).*',
                               r'\g<1>' + "'" + commit.decode('utf8') + "'",
@@ -136,6 +134,7 @@ def find_version(*file_paths):
 
 setup(
     name='batman',
+    keywords='surrogate model, uncertainty quantification, statistical analysis',
     version=find_version("batman", "__init__.py"),
     packages=find_packages(exclude=['test_cases', 'doc']),
     entry_points={'console_scripts': ['batman=batman.ui:main']},
@@ -167,7 +166,7 @@ setup(
                  ],
     include_package_data=True,
     zip_safe=False,
-    license="CERFACS",
-    url=["https://nitrox.cerfacs.fr/open-source/batman",
-         "http://open-source.pg.cerfacs.fr/batman"],
+    license="CECILL-B",
+    url=["https://gitlab.com/cerfacs/batman",
+         "https://cerfacs.gitlab.io/batman"],
 )

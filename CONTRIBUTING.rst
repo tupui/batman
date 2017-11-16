@@ -98,7 +98,7 @@ You can commit any change you feel, start discussions about it, etc.
 
 1. Clone this copy to your local disk::
 
-        $ git clone git@nitrox.cerfacs.fr:open-source/batman.git
+        $ git clone git@gitlab.com:cerfacs/batman.git
 
 2. Create a branch to hold your changes::
 

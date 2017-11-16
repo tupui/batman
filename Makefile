@@ -1,13 +1,3 @@
-# Remarks from a computer scientist: 
-# - Never seen such a low quality makefile...
-# - Dependencies are not handled properly.
-#   Rules are written for building objects different from their targets.
-#   It cannot even handle building python wrappers for more than 1 fortran file !
-# - But managing fortran dependencies is a pain in the ass,
-#   and I don't know how f2py works. So I won't bother with it. 
-#
-# Just remove Fortran code from this project !
-
 
 # -----------------------------------------------------------------------------
 # Compiler tools

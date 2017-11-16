@@ -88,9 +88,7 @@ This folder contains ready to launch examples:
 * ``Michalewicz`` is a *2-input_parameters* non-linear function,
 * ``Ishigami`` is a *3-input_parameters*,
 * ``G_Function`` is a *4-input_parameters*,
-* ``Channel_Flow`` is a *2-input_parameters* with a functionnal output,
-* ``RAE2822`` is a *2-input_parameters* that launches an *elsA* case,
-* ``Flamme_1D`` is a *2-input_parameters* that launches an *AVBP* case.
+* ``Channel_Flow`` is a *2-input_parameters* with a functionnal output.
 
 In every case folder, there is ``README.rst`` file that summarizes and explains it.
 

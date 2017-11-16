@@ -129,13 +129,13 @@ def test_doe():
 
     doe = Doe(n, bounds, 'halton', discrete=1)
     sample = doe.generate()
-    out = [[5, 3], [2.5 , 4], [7.5 , 2], [1.25, 3], [6.25, 5]]
+    out = [[5, 3], [2.5, 4], [7.5, 2], [1.25, 3], [6.25, 5]]
     npt.assert_almost_equal(sample, out, decimal=1)
 
     doe = Doe(n, np.array([[0, 2, -2], [10, 5, -1]]), 'halton', discrete=1)
     sample = doe.generate()
-    out = [[5, 3, -1.8 ], [2.5, 4, -1.6 ], [7.5, 2, -1.4 ],
-           [1.25, 3, -1.2 ], [6.25, 5, -1.96]]
+    out = [[5, 3, -1.8], [2.5, 4, -1.6], [7.5, 2, -1.4],
+           [1.25, 3, -1.2], [6.25, 5, -1.96]]
     npt.assert_almost_equal(sample, out, decimal=1)
 
     doe = Doe(n, bounds, 'halton')
@@ -147,10 +147,10 @@ def test_doe():
     sample = doe.generate()
 
     doe = Doe(n, bounds, 'lhsopt')
-    ot.RandomGenerator.SetSeed(123)
+    ot.RandomGenerator.SetSeed(123456)
     sample = doe.generate()
-    out = [[8.097, 3.646], [6.592, 4.806], [0.622, 2.909],
-           [5.361, 2.162], [2.921, 4.041]]
+    out = [[6.149, 2.343], [9.519, 3.497], [1.991, 4.058],
+           [5.865, 4.995], [2.551, 2.737]]
     npt.assert_almost_equal(sample, out, decimal=1)
 
     bounds = [[15.0, 2500.0], [60.0, 6000.0]]

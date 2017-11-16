@@ -109,7 +109,7 @@ class Doe():
         elif self.kind == 'lhsopt':
             lhs = ot.LHSExperiment(distribution, self.n_sample)
             self.sequence_type = ot.SimulatedAnnealingLHS(lhs, ot.GeometricProfile(),
-                                                          ot.SpaceFillingPhiP())
+                                                          ot.SpaceFillingC2())
         elif self.kind == 'saltelli':
             # Only relevant for computation of Sobol' indices
             size = self.n_sample // (2 * self.dim + 2)  # N(2*dim + 2)
@@ -136,7 +136,7 @@ class Doe():
         # Scale the DOE from [0, 1] to bounds
         if self.kind == 'lhsc':
             sample = ((np.floor_divide(sample, (1. / self.n_sample)) + 1)
-                 - 0.5) / self.n_sample
+                      - 0.5) / self.n_sample
         else:
             sample = self.scaler.inverse_transform(sample)
 
