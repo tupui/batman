@@ -229,6 +229,15 @@ class ProgressBar(object):
         sys.stdout.flush()
 
 
+def cpu_system():
+    """Number of CPU of system."""
+    try:
+        n_cpu_system = cpu_count()
+    except NotImplementedError:
+        n_cpu_system = os.sysconf('SC_NPROCESSORS_ONLN')
+    return 1 if n_cpu_system == 0 or n_cpu_system is None else n_cpu_system
+
+
 def optimization(bounds, discrete=None):
     """Perform a discret or a continuous/discrete optimization.
 
@@ -263,7 +272,7 @@ def optimization(bounds, discrete=None):
                 end = int(np.ceil(bounds[discrete, 1]))
                 discrete_range = range(start, end) if end > start else [start]
 
-                pool = NestedPool(cpu_count())
+                pool = NestedPool(cpu_system())
                 results = pool.imap(combinatory_optimization, discrete_range)
 
                 # Gather results

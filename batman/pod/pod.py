@@ -28,9 +28,8 @@ import logging
 import os
 import copy
 import numpy as np
-from pathos.multiprocessing import cpu_count
 from ..surrogate import SurrogateModel
-from ..misc import ProgressBar, NestedPool
+from ..misc import ProgressBar, NestedPool, cpu_system
 from ..tasks import Snapshot
 from ..space import Space
 
@@ -428,7 +427,7 @@ class Pod(object):
             return mean, error
 
         # Multi-threading strategy
-        n_cpu_system = cpu_count()
+        n_cpu_system = cpu_system()
         n_cpu = n_cpu_system // (len(self.S) * 3)
         if n_cpu < 1:
             n_cpu = 1

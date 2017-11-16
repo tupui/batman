@@ -24,15 +24,13 @@ F. Pedregosa et al.: Scikit-learn: Machine Learning in Python. Journal of
 Machine Learning Research. 2011. ArXiv ID: 1201.0490
 """
 import logging
-import os
 import warnings
 import numpy as np
 from scipy.optimize import differential_evolution
-from pathos.multiprocessing import cpu_count
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 import sklearn.gaussian_process.kernels as kernels
-from ..misc import NestedPool
+from ..misc import NestedPool, cpu_system
 from ..functions import multi_eval
 
 
@@ -103,13 +101,12 @@ class Kriging(object):
 
         self.n_restart = 3
         # Define the CPU multi-threading/processing strategy
-        try:
-            n_cpu_system = cpu_count()
-        except NotImplementedError:
-            n_cpu_system = os.sysconf('SC_NPROCESSORS_ONLN')
+        n_cpu_system = cpu_system()
         self.n_cpu = self.model_len
         if n_cpu_system // (self.n_restart * self.model_len) < 1:
             self.n_cpu = n_cpu_system // self.n_restart
+
+        self.n_cpu = 1 if self.n_cpu == 0 else self.n_cpu
 
         def model_fitting(column):
             """Fit an instance of :class:`sklearn.GaussianProcessRegressor`."""
