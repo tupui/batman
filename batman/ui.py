@@ -71,7 +71,7 @@ def run(settings, options):
                     raise SystemExit
 
                 # get list of directories that follow the specified name pattern
-                pattern = re.compile('^\d+$')
+                pattern = re.compile(r'^\d+$')
                 folders = sorted(filter(
                     lambda d: pattern.match(d) is not None,
                     os.listdir(root)

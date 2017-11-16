@@ -1,10 +1,10 @@
 |CI|_ |Codecov|_ |Python|_ |License|_ |Zulip|_
 
-.. |CI| image:: https://nitrox.cerfacs.fr/open-source/batman/badges/develop/build.svg
-.. _CI: https://nitrox.cerfacs.fr/open-source/batman/pipelines
+.. |CI| image:: https://gitlab.com/cerfacs/batman/badges/develop/pipeline.svg
+.. _CI: https://gitlab.com/cerfacs/batman/pipelines
 
-.. |Codecov| image:: https://nitrox.cerfacs.fr/open-source/batman/badges/develop/coverage.svg
-.. _Codecov: https://nitrox.cerfacs.fr/open-source/batman/pipelines
+.. |Codecov| image:: https://gitlab.com/cerfacs/batman/badges/develop/coverage.svg
+.. _Codecov: https://gitlab.com/cerfacs/batman/pipelines
 
 .. |Python| image:: https://img.shields.io/badge/python-2.7,_3.6-blue.svg
 
@@ -38,24 +38,24 @@ Getting started
 ---------------
 
 A detailled example can be found in 
-`tutorial <http://open-source.pg.cerfacs.fr/batman/tutorial.html>`_ and the
+`tutorial <https://cerfacs.gitlab.io/batman/tutorial.html>`_ and the
 full documentation is available at: 
 
-    http://open-source.pg.cerfacs.fr/batman
+    https://cerfacs.gitlab.io/batman
 
 The main folder contains three subfolders: ``doc`` ``batman`` and ``test_cases``.
 The latter contains examples that you can adapt to you needs. You can find more
 information about the cases within the respectives ``README.rst`` file. 
 
 Shoud you be interested by batman's implementation, consider
-reading `introduction <http://open-source.pg.cerfacs.fr/batman/introduction.html>`_.
+reading `introduction <https://cerfacs.gitlab.io/batman/introduction.html>`_.
 
 If you encounter a bug (or have a feature request), please report it via
-`GitLab <https://gitlab.com/cerfacs/batman>`_. Or it might be you
+`GitLab <https://gitlab.com/cerfacs/batman/issues>`_. Or it might be you
 falling but "Why do we fall sir? So we can learn to pick ourselves up".
 
 Last but not least, if you consider contributing check-out
-`contributing <http://open-source.pg.cerfacs.fr/batman/contributing.html>`_.
+`contributing <https://cerfacs.gitlab.io/batman/contributing.html>`_.
 
 Happy batman.
 
@@ -97,7 +97,7 @@ Testing dependencies are:
 
 Extra testing flavours: 
 
-- `pytest-cov <https://github.com/pytest-dev/pytest-cov>`_ >= 2.5.1
+- `coverage <http://coverage.readthedocs.io>`_ >= 4.4
 - `pylint <https://www.pylint.org>`_ >= 1.6.0
 
 .. note:: OpenTURNS and ffmpeg are available on *conda* through
@@ -108,7 +108,7 @@ User installation
 
 Using the latest python version is prefered! Then to install::
 
-    git clone git@nitrox.cerfacs.fr:open-source/batman.git 
+    git clone git@gitlab.com:cerfacs/batman.git
     cd batman
     python setup.py build_fortran
     python setup.py install
@@ -149,7 +149,7 @@ Help and Support
 About us
 ........
 
-See authors and project history at: `about us <http://open-source.pg.cerfacs.fr/batman/about.html>`_.
+See authors and project history at: `about us <https://cerfacs.gitlab.io/batman/about.html>`_.
 
 Community
 .........
@@ -160,4 +160,4 @@ Or send us an email. We would really appreciate that as we keep record of the us
 Citation
 ........
 
-If you use batman in a scientific publication, we would appreciate `citations <http://open-source.pg.cerfacs.fr/batman/about.html#citing-batman>`_.
+If you use batman in a scientific publication, we would appreciate `citations <https://cerfacs.gitlab.io/batman/about.html#citing-batman>`_.

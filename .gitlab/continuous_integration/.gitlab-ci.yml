@@ -48,10 +48,11 @@ python_2:
     - scriptdir=.gitlab/continuous_integration
     - bash $scriptdir/CI.sh
 
-pages:
+.template_doc: &template_doc
   stage: doc
   image: "tupui/bat_ci_3"
   script:
+    - export MPLBACKEND="Agg"
     - python setup.py build_fortran
     - python setup.py install
     - cd doc
@@ -61,6 +62,16 @@ pages:
   artifacts:
     paths:
       - public
+
+pages_feature_branch:
+  <<: *template_doc
+  when: manual
+  except:
+    - master
+    - develop
+
+pages:
+  <<: *template_doc
   only:
     - master
     - develop
