@@ -32,7 +32,7 @@ from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
 from .surrogate import SurrogateModel
 from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
-from .visualization import response_surface
+from .visualization import response_surface, Kiviat3D
 from .functions import multi_eval
 
 
@@ -139,12 +139,7 @@ class Driver(object):
 
         # Pod
         if 'pod' in self.settings:
-            settings_ = {'tolerance': self.settings['pod']['tolerance'],
-                         'dim_max': self.settings['pod']['dim_max'],
-                         'corners': self.settings['space']['corners'],
-                         'nsample': self.space.doe_init,
-                         'nrefine': resamp_size}
-            self.pod = Pod(**settings_)
+            self.pod = Pod(self.settings)
         else:
             self.pod = None
             self.logger.info('No POD is computed.')
@@ -452,50 +447,72 @@ class Driver(object):
             data = self.data
 
         output_len = np.asarray(data).shape[1]
+    
+        self.logger.info('Creating response surface...')
+        if 'visualization' in self.settings:
+            args = copy(self.settings['visualization'])
+
+            # xdata for output with dim > 1
+            if ('xdata' not in args) and (output_len > 1):
+                args['xdata'] = np.linspace(0, 1, output_len)
+
+            # Plot Doe if doe option is True
+            args['doe'] = self.space if ('doe' in args) and args['doe']\
+                else None
+
+            # Display resampling if resampling option is true
+            args['resampling'] = self.settings['space']['resampling']['resamp_size']\
+                if ('resampling' in args) and args['resampling'] else 0
+        else:
+            args = {}
+            args['xdata'] = np.linspace(0, 1, output_len)\
+                if output_len > 1 else None
+
+        # Data based on surrogate model (function) or not
+        if 'surrogate' in self.settings:
+            args['fun'] = self.func
+        else:
+            args['sample'] = self.space
+            args['data'] = data
+
+        args['bounds'] = self.settings['space']['corners']
+        args['plabels'] = self.settings['snapshot']['io']['parameter_names']\
+            if 'plabels' not in args else args['plabels']
+        if ('flabel' not in args) and\
+                (len(self.settings['snapshot']['io']['variables']) < 2):
+            args['flabel'] = self.settings['snapshot']['io']['variables'][0]
+
+        path = os.path.join(self.fname, self.fname_tree['visualization'])
+        try:
+            os.makedirs(path)
+        except OSError:
+            pass
 
         if p_len < 5:
-            self.logger.info('Creating response surface...')
-            if 'visualization' in self.settings:
-                args = copy(self.settings['visualization'])
-
-                # xdata for output with dim > 1
-                if ('xdata' not in args) and (output_len > 1):
-                    args['xdata'] = np.linspace(0, 1, output_len)
-
-                # Plot Doe if doe option is True
-                args['doe'] = self.space if ('doe' in args) and args['doe']\
-                    else None
-
-                # Display resampling if resampling option is true
-                args['resampling'] = self.settings['space']['resampling']['resamp_size']\
-                    if ('resampling' in args) and args['resampling'] else 0
-            else:
-                args = {}
-                args['xdata'] = np.linspace(0, 1, output_len)\
-                    if output_len > 1 else None
-
-            # Data based on surrogate model (function) or not
-            if 'surrogate' in self.settings:
-                args['fun'] = self.func
-            else:
-                args['sample'] = self.space
-                args['data'] = data
-
-            args['bounds'] = self.settings['space']['corners']
-            args['plabels'] = self.settings['snapshot']['io']['parameter_names']\
-                if 'plabels' not in args else args['plabels']
-            if ('flabel' not in args) and\
-                    (len(self.settings['snapshot']['io']['variables']) < 2):
-                args['flabel'] = self.settings['snapshot']['io']['variables'][0]
-
-            path = os.path.join(self.fname, self.fname_tree['visualization'])
-            try:
-                os.makedirs(path)
-            except OSError:
-                pass
+            # Creation of the response surface(s)
             args['fname'] = os.path.join(path, 'Response_Surface')
-
             response_surface(**args)
+
+        else:
+            # Creation of the Kiviat image
+            args['fname'] = os.path.join(path, 'Kiviat.pdf')
+            args['sample'] = self.space
+            args['data'] = data
+            if 'range_cbar' not in args:
+                args['range_cbar'] = None
+            if 'ticks_nbr' not in args:
+                args['ticks_nbr'] = 10
+            kiviat = Kiviat3D(args['sample'], args['bounds'], args['data'],
+                              param_names=args['plabels'], range_cbar=args['range_cbar'])
+            kiviat.plot(fname=args['fname'], flabel=args['flabel'],
+                        range_cbar=args['range_cbar'], ticks_nbr=args['ticks_nbr'])
+
+            # Creation of the Kiviat movie:
+            args['fname'] = os.path.join(path, 'Kiviat.mp4')
+            rate = 400
+            kiviat.f_hops(frame_rate=rate, fname=args['fname'], flabel=args['flabel'],
+                          range_cbar=args['range_cbar'], ticks_nbr=args['ticks_nbr'])
+
 
     @multi_eval
     def func(self, coords):

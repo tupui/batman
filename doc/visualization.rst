@@ -19,7 +19,7 @@ there are several options implemented in the package.
 +----------------------------------+-----------+----------------+---------------------------------------+
 | :class:`hdr.HdrBoxplot`          | vector    | vector         | Median realization with PCA           |
 +----------------------------------+-----------+----------------+---------------------------------------+
-| :class:`kiviat.Kiviat3D`         | >3 scalar | scalar, vector | 3D version of the radar/spider plot   |
+| :class:`kiviat.Kiviat3D`         | >5 scalar | scalar, vector | 3D version of the radar/spider plot   |
 +----------------------------------+-----------+----------------+---------------------------------------+
 | :func:`uncertainty.pdf`          |           | scalar, vector | Output PDF                            |
 +----------------------------------+-----------+----------------+---------------------------------------+
@@ -242,6 +242,15 @@ used [Hackstadt1994]_. Thus, each sample corresponds to a 2D Kiviat plot::
     kiviat.plot()
 
 .. image::  fig/kiviat_3D.pdf
+
+Note that only the DOE points are plotted in the Kiviat plot in order to
+limit the number of surfaces to visualize. Surrogate model is thus never used
+to predict the value of the function.
+
+Several visualization options used for the response surfaces generation can
+be used to create the Kiviat plot. Options working with Kiviat plot are
+*flabel*, *plabels*, *ticks_nbr* and *range_cbar*. All other options are not
+read and does not impact the output graph.
 
 When dealing with functional output, the color of the surface does not gives
 all the information on a sample as it can only display a single information:
