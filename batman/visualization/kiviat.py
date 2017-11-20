@@ -55,6 +55,7 @@ class Kiviat3D:
         """
         self.params = np.asarray(params)
         self.bounds = bounds
+
         if self.params.shape[1] < 3:
             self.params = np.hstack((params, np.ones((self.params.shape[0], 1))))
             self.bounds[0].extend([0])
