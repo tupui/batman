@@ -113,7 +113,7 @@ class Kiviat3D:
         Z = [idx] * (self.n_params + 1)  # +1 to close the geometry
 
         # Random numbers to prevent null surfaces area
-        for i in range(len(X)):
+        for i, _ in enumerate(X):
             if X[i] == 0.0:
                 X[i] = np.random.rand(1) * 0.001
             if Y[i] == 0.0:
@@ -162,7 +162,6 @@ class Kiviat3D:
         :param str flabel: name of the output function to be plotted next to
           the colorbar.
         :param int ticks_nbr: number of ticks in the colorbar.
-
         :returns: figure.
         :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instances.
         """
@@ -244,8 +243,7 @@ class Kiviat3D:
                 self.plane(point, f_eval[0], i, ax)
                 # Rotate the view
                 ax.view_init(elev=-20 + elev_step * i, azim=i * azim_step)
-                label = 'Parameter: ' + str(point)
-                label2 = 'Value: ' + str(f_eval[0])
-                plt.legend([label, label2], loc=2)
+                label = ['Parameter: ' + str(point), 'Value: ' + str(f_eval[0])]
+                plt.legend(label, loc=2)
 
                 writer.grab_frame()
