@@ -55,7 +55,7 @@ If you encounter a bug (or have a feature request), please report it via
 falling but "Why do we fall sir? So we can learn to pick ourselves up".
 
 Last but not least, if you consider contributing check-out
-`contributing <https://cerfacs.gitlab.io/batman/contributing.html>`_.
+`contributing <https://cerfacs.gitlab.io/batman/contributing_link.html>`_.
 
 Happy batman.
 

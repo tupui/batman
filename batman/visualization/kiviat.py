@@ -39,7 +39,8 @@ class Kiviat3D:
     parameters used to perform the realization.
     """
 
-    def __init__(self, params, bounds, feval, param_names=None):
+    def __init__(self, params, bounds, feval, param_names=None,
+                 range_cbar=None):
         """Prepare params for Kiviat plot.
 
         :param array_like params: sample of parameters of Shape
@@ -49,6 +50,8 @@ class Kiviat3D:
         :param array_like feval: sample of realization which corresponds to the
           sample of parameters :attr:`params` (n_samples, n_features).
         :param list(str) param_names: names of each parameters (n_params).
+        :param array_like range_cbar: minimum and maximum values for output
+          function (2 values).
         """
         self.params = np.asarray(params)
         self.bounds = bounds
@@ -71,8 +74,13 @@ class Kiviat3D:
         self.ticks = [0.2, 0.5, 0.8]
         scaler = MinMaxScaler()
         self.scale = scaler.fit(self.bounds)
-        self.scale_f = Normalize(vmin=np.percentile(self.feval, 3),
-                                 vmax=np.percentile(self.feval, 97), clip=True)
+        if range_cbar is None:
+            self.scale_f = Normalize(vmin=np.percentile(self.feval, 3),
+                                     vmax=np.percentile(self.feval, 97), clip=True)
+        else:
+            self.scale_f = Normalize(vmin=range_cbar[0],
+                                     vmax=range_cbar[1], clip=True)
+
 
         self.n_params = self.params.shape[1]
         alpha = 2 * np.pi / self.n_params
@@ -103,6 +111,13 @@ class Kiviat3D:
         X = params * np.cos(self.alphas)
         Y = params * np.sin(self.alphas)
         Z = [idx] * (self.n_params + 1)  # +1 to close the geometry
+
+        # Random numbers to prevent null surfaces area
+        for i, _ in enumerate(X):
+            if X[i] == 0.0:
+                X[i] = np.random.rand(1) * 0.001
+            if Y[i] == 0.0:
+                Y[i] = np.random.rand(1) * 0.001
 
         # Add first point to close the geometry
         X = np.concatenate((X, [X[0]]))
@@ -140,10 +155,13 @@ class Kiviat3D:
                 ax.text(x, y, self.z_offset * 1.5, self.ticks_values[i][j],
                         fontsize=8, ha='right', va='center', color='k')
 
-    def plot(self, fname=None):
+    def plot(self, fname=None, flabel='F', range_cbar=None, ticks_nbr=10):
         """Plot 3D kiviat.
 
         :param str fname: wether to export to filename or display the figures.
+        :param str flabel: name of the output function to be plotted next to
+          the colorbar.
+        :param int ticks_nbr: number of ticks in the colorbar.
         :returns: figure.
         :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instances.
         """
@@ -152,8 +170,13 @@ class Kiviat3D:
         ax.set_axis_off()
         m = cm.ScalarMappable(cmap=self.cmap, norm=self.scale_f)
         m.set_array(self.feval)
-        cbar = plt.colorbar(m, shrink=0.5, extend='both')
-        cbar.set_label('F')
+        if range_cbar is not None:
+            vticks = np.linspace(range_cbar[0], range_cbar[1],
+                                 num=ticks_nbr)
+            cbar = plt.colorbar(m, shrink=0.5, extend='both', ticks=vticks)
+        else:
+            cbar = plt.colorbar(m, shrink=0.5, extend='both')
+        cbar.set_label(flabel)
 
         for i, (point, f_eval) in enumerate(zip(self.params, self.feval)):
             self.plane(point, f_eval[0], i, ax)
@@ -164,7 +187,8 @@ class Kiviat3D:
 
         return fig, ax
 
-    def f_hops(self, frame_rate=400, fname='kiviat-HOPs.mp4', labels=None):
+    def f_hops(self, frame_rate=400, fname='kiviat-HOPs.mp4', flabel='F',
+               range_cbar=None, ticks_nbr=10):
         """Plot HOPs 3D kiviat.
 
         Each frame consists in a 3D Kiviat with an additional outcome
@@ -172,7 +196,11 @@ class Kiviat3D:
 
         :param int frame_rate: time between two outcomes (in milliseconds).
         :param str fname: export movie to filename.
-        :param list(str) labels: labels for each curve.
+        :param str flabel: name of the output function to be plotted next to
+          the colorbar.
+        :param array_like range_cbar: minimum and maximum values in the
+          colorbar (2 values).
+        :param int ticks_nbr: number of ticks in the colorbar.
         """
         # Base plot
         self.cmap = cm.get_cmap('gray')
@@ -189,8 +217,13 @@ class Kiviat3D:
         self.cmap = cm.get_cmap('viridis')
         m = cm.ScalarMappable(cmap=self.cmap, norm=self.scale_f)
         m.set_array(self.feval)
-        cbar = plt.colorbar(m, shrink=0.5, extend='both')
-        cbar.set_label('F')
+        if range_cbar is None:
+            cbar = plt.colorbar(m, shrink=0.5, extend='both')
+        else:
+            vticks = np.linspace(range_cbar[0], range_cbar[1],
+                                 num=ticks_nbr)
+            cbar = plt.colorbar(m, shrink=0.5, extend='both', ticks=vticks)
+        cbar.set_label(flabel)
 
         movie_writer = manimation.writers['ffmpeg']
         metadata = {'title': 'kiviat-HOPs',
@@ -210,8 +243,7 @@ class Kiviat3D:
                 self.plane(point, f_eval[0], i, ax)
                 # Rotate the view
                 ax.view_init(elev=-20 + elev_step * i, azim=i * azim_step)
-                label = 'HOP: ' + str(labels[i]) \
-                    if labels is not None else 'HOP'
-                plt.legend([label], loc='best')
+                label = ['Parameter: ' + str(point), 'Value: ' + str(f_eval[0])]
+                plt.legend(label, loc=2)
 
                 writer.grab_frame()
