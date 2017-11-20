@@ -502,16 +502,6 @@ class UQ:
         """
         self.logger.info("\n----- Uncertainty Propagation -----")
 
-        # Response surface
-        if self.p_len < 3:
-            self.logger.info('Creating response surface...')
-            visualization.response_surface(bounds=[np.min(self.sample, axis=0),
-                                                   np.max(self.sample, axis=0)],
-                                           fun=self.func,
-                                           doe=self.space, xdata=self.xdata,
-                                           fname=os.path.join(self.fname,
-                                                              'response'))
-
         # Covariance and correlation matrices
         self.logger.info('Creating Covariance/correlation and figures...')
         if (self.output_len > 1) and (self.type_indices != 'block'):
