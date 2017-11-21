@@ -228,16 +228,16 @@ def kiviat_data():
 @pytest.mark.skipif(not have_ffmpeg, reason='ffmpeg not available')
 def test_kiviat_fhops(kiviat_data, tmp):
     kiviat, labels = kiviat_data
-    kiviat.f_hops(frame_rate=400,
-                  fname=os.path.join(tmp, 'kiviat.mp4'))
-    kiviat.f_hops(fname=os.path.join(tmp, 'kiviat.mp4'))
+    kiviat.f_hops(frame_rate=40, ticks_nbr=30,
+                  fname=os.path.join(tmp, 'kiviat_fill.mp4'))
+    kiviat.f_hops(fname=os.path.join(tmp, 'kiviat.mp4'), fill=False)
 
 
 @patch("matplotlib.pyplot.show")
 def test_kiviat_plot(mock_show, kiviat_data, tmp):
     kiviat, labels = kiviat_data
     kiviat.plot(fname=os.path.join(tmp, 'kiviat.pdf'))
-    kiviat.plot()
+    kiviat.plot(fill=False, ticks_nbr=12)
 
 
 def test_pdf_1D(tmp):

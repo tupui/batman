@@ -9,8 +9,10 @@ from matplotlib import cm
 import matplotlib.animation as manimation
 from matplotlib.colors import Normalize
 from matplotlib.patches import FancyArrowPatch
+from matplotlib.lines import Line2D
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import batman as bat
 
 
@@ -74,13 +76,14 @@ class Kiviat3D:
         self.ticks = [0.2, 0.5, 0.8]
         scaler = MinMaxScaler()
         self.scale = scaler.fit(self.bounds)
-        if range_cbar is None:
+        self.range_cbar = range_cbar
+
+        if self.range_cbar is None:
             self.scale_f = Normalize(vmin=np.percentile(self.feval, 3),
                                      vmax=np.percentile(self.feval, 97), clip=True)
         else:
-            self.scale_f = Normalize(vmin=range_cbar[0],
-                                     vmax=range_cbar[1], clip=True)
-
+            self.scale_f = Normalize(vmin=self.range_cbar[0],
+                                     vmax=self.range_cbar[1], clip=True)
 
         self.n_params = self.params.shape[1]
         alpha = 2 * np.pi / self.n_params
@@ -89,13 +92,13 @@ class Kiviat3D:
             self.param_names = ['x' + str(i) for i in range(self.n_params)]
         else:
             self.param_names = param_names
-        self.z_offset = - 10
+        self.z_offset = - 1
         self.ticks = np.tile(self.ticks, self.n_params).reshape(-1, len(self.ticks)).T
         self.ticks_values = self.scale.inverse_transform(self.ticks).T
         self.x_ticks = np.cos(self.alphas)
         self.y_ticks = np.sin(self.alphas)
 
-    def plane(self, params, feval, idx, ax):
+    def plane(self, params, feval, idx, ax, fill=True):
         """Create a Kiviat in 2D.
 
         From a set of parameters and the corresponding function evaluation,
@@ -105,6 +108,8 @@ class Kiviat3D:
         :param array_like params: parameters of the plane (n_params).
         :param feval: function evaluation corresponding to :attr:`params`.
         :param idx: *Z* coordinate of the plane.
+        :param ax: Matplotlib AxesSubplot instances.
+        :param bool fill: Whether to fill the surface.
         """
         params = self.scale.transform(np.asarray(params).reshape(1, -1))[0]
 
@@ -125,8 +130,14 @@ class Kiviat3D:
 
         # Plot the surface
         color = self.cmap(self.scale_f(feval))
-        ax.plot_trisurf(X, Y, Z, alpha=0.1, antialiased=True, color=color)
-        ax.plot(X, Y, Z, alpha=0.5, lw=3, c=color)
+        if fill:
+            polygon = Poly3DCollection([np.stack([X, Y, Z], axis=1)],
+                                       alpha=0.1)
+            polygon.set_color(color)
+            polygon.set_edgecolor(color)
+            ax.add_collection3d(polygon)
+        else:
+            ax.plot(X, Y, Z, alpha=0.5, lw=3, c=color)
 
     def _axis(self, ax):
         """n-dimentions axis definition.
@@ -134,7 +145,7 @@ class Kiviat3D:
         Create axis arrows along with annotations with parameters name and
         ticks.
 
-        :param ax: Matplotlib axis instance.
+        :param ax: Matplotlib AxesSubplot instances.
         """
         for i in range(self.n_params):
             # Create axis
@@ -152,43 +163,44 @@ class Kiviat3D:
                 x = tick * self.x_ticks[i]
                 y = tick * self.y_ticks[i]
                 ax.scatter(x, y, self.z_offset, c='k', marker='|')
-                ax.text(x, y, self.z_offset * 1.5, self.ticks_values[i][j],
+                ax.text(x, y, self.z_offset, self.ticks_values[i][j],
                         fontsize=8, ha='right', va='center', color='k')
 
-    def plot(self, fname=None, flabel='F', range_cbar=None, ticks_nbr=10):
+    def plot(self, fname=None, flabel='F', ticks_nbr=10, fill=True):
         """Plot 3D kiviat.
 
         :param str fname: wether to export to filename or display the figures.
         :param str flabel: name of the output function to be plotted next to
           the colorbar.
         :param int ticks_nbr: number of ticks in the colorbar.
+        :param bool fill: Whether to fill the surface.
         :returns: figure.
         :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instances.
         """
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection=Axes3D.name)
+        ax = ax = Axes3D(fig)
         ax.set_axis_off()
+
         m = cm.ScalarMappable(cmap=self.cmap, norm=self.scale_f)
         m.set_array(self.feval)
-        if range_cbar is not None:
-            vticks = np.linspace(range_cbar[0], range_cbar[1],
-                                 num=ticks_nbr)
-            cbar = plt.colorbar(m, shrink=0.5, extend='both', ticks=vticks)
-        else:
-            cbar = plt.colorbar(m, shrink=0.5, extend='both')
+        vticks = np.linspace(self.range_cbar[0], self.range_cbar[1], num=ticks_nbr)\
+            if self.range_cbar is not None else None
+        cbar = plt.colorbar(m, shrink=0.5, extend='both', ticks=vticks)
         cbar.set_label(flabel)
 
         for i, (point, f_eval) in enumerate(zip(self.params, self.feval)):
-            self.plane(point, f_eval[0], i, ax)
+            self.plane(point, f_eval[0], i, ax, fill)
 
         self._axis(ax)
+
+        ax.set_zlim(self.z_offset, len(self.feval))
 
         bat.visualization.save_show(fname, [fig])
 
         return fig, ax
 
     def f_hops(self, frame_rate=400, fname='kiviat-HOPs.mp4', flabel='F',
-               range_cbar=None, ticks_nbr=10):
+               ticks_nbr=10, fill=True):
         """Plot HOPs 3D kiviat.
 
         Each frame consists in a 3D Kiviat with an additional outcome
@@ -198,31 +210,29 @@ class Kiviat3D:
         :param str fname: export movie to filename.
         :param str flabel: name of the output function to be plotted next to
           the colorbar.
-        :param array_like range_cbar: minimum and maximum values in the
-          colorbar (2 values).
+        :param bool fill: Whether to fill the surface.
         :param int ticks_nbr: number of ticks in the colorbar.
         """
         # Base plot
         self.cmap = cm.get_cmap('gray')
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection=Axes3D.name)
+        ax = ax = Axes3D(fig)
         ax.set_axis_off()
 
         for i, (point, f_eval) in enumerate(zip(self.params, self.feval)):
-            self.plane(point, f_eval[0], i, ax)
+            self.plane(point, f_eval[0], i, ax, fill)
 
         self._axis(ax)
+
+        ax.set_zlim(self.z_offset, len(self.feval))
 
         # Movie part
         self.cmap = cm.get_cmap('viridis')
         m = cm.ScalarMappable(cmap=self.cmap, norm=self.scale_f)
         m.set_array(self.feval)
-        if range_cbar is None:
-            cbar = plt.colorbar(m, shrink=0.5, extend='both')
-        else:
-            vticks = np.linspace(range_cbar[0], range_cbar[1],
-                                 num=ticks_nbr)
-            cbar = plt.colorbar(m, shrink=0.5, extend='both', ticks=vticks)
+        vticks = np.linspace(self.range_cbar[0], self.range_cbar[1], num=ticks_nbr)\
+            if self.range_cbar is not None else None
+        cbar = plt.colorbar(m, shrink=0.5, extend='both', ticks=vticks)
         cbar.set_label(flabel)
 
         movie_writer = manimation.writers['ffmpeg']
@@ -240,10 +250,13 @@ class Kiviat3D:
 
         with writer.saving(fig, fname, dpi=500):
             for i, (point, f_eval) in enumerate(zip(self.params, self.feval)):
-                self.plane(point, f_eval[0], i, ax)
+                self.plane(point, f_eval[0], i, ax, fill)
                 # Rotate the view
                 ax.view_init(elev=-20 + elev_step * i, azim=i * azim_step)
-                label = ['Parameter: ' + str(point), 'Value: ' + str(f_eval[0])]
-                plt.legend(label, loc=2)
+
+                label = "Parameters: {}\nValue: {}".format(point[:-1], f_eval[0])
+                scatter_proxy = Line2D([0], [0], linestyle="none")
+                ax.legend([scatter_proxy], [label], markerscale=0,
+                          loc='upper left', handlelength=0, handletextpad=0)
 
                 writer.grab_frame()
