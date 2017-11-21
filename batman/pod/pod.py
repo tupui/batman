@@ -421,7 +421,7 @@ class Pod(object):
             
             # MSE on the missing point
             error_no_mod = np.dot(Urot, prediction[0]) - float(points_nb) /\
-                float(points_nb - 1) * self.V[point_index] * self.S
+                float(points_nb - 1) * self.V[i] * self.S
             error_vector_ = np.dot(self.U, error_no_mod)
             error_l_two_ = np.sqrt(np.sum(error_no_mod ** 2))
 
@@ -453,6 +453,8 @@ class Pod(object):
             var_matrix[i] = (mean - np.dot(self.U, self.V[i] * self.S)) ** 2
         
         # Compute Q2
+        # Use a part of the code of the r2_score function
+        # From scikit-learn library
         numerator = (error_matrix ** 2).sum(axis=0, dtype=np.float64)
         denominator = np.sum(var_matrix, axis=0, dtype=np.float64)
         
