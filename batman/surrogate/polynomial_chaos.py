@@ -27,7 +27,7 @@ Interpolation using Polynomial Chaos method.
 import logging
 import openturns as ot
 import numpy as np
-from ..functions import multi_eval
+from ..functions.utils import multi_eval
 
 ot.ResourceMap.SetAsUnsignedInteger("DesignProxy-DefaultCacheSize", 0)
 

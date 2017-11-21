@@ -33,7 +33,7 @@ from .surrogate import SurrogateModel
 from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
 from .visualization import response_surface
-from .functions import multi_eval
+from .functions.utils import multi_eval
 
 
 class Driver(object):

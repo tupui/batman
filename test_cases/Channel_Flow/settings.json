@@ -50,12 +50,6 @@
             "restart": "False"
         }
     },
-    "surrogate": {
-        "predictions": [[30, 4000]],
-        "method": "pc",
-        "strategy": "Quad",
-        "degree": 10
-    },
     "visualization": {
         "doe": false,
         "xdata": [1000, 2000, 2500, 3000, 4000],
@@ -67,6 +61,6 @@
         "test": "Channel_Flow",
         "pdf": ["Uniform(15., 60.)", "Normal(4035., 400.)"],
         "type": "aggregated",
-        "method": "FAST"
+        "method": "sobol"
     }
 }

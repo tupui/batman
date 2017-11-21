@@ -1,21 +1,17 @@
 {
-    "init_cst": {
-        "Q_cst": 0.0,
-        "Z_cst": 10.0
-    },
     "Q_BC": {
         "idx": 0,
         "value": 2345.0
     },
     "Ks": {
         "zone": true,
-        "idx": 25,
-        "value": 25.0,
-        "ind_zone": 0
+        "idx": 220,
+        "value": 32.0,
+        "ind_zone": 2 
     },
     "misc": {
         "info_bc": true,
         "all_outstate": true,
-        "index_outstate": 25
+        "index_outstate": 220
     }
 }

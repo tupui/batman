@@ -1,0 +1,12 @@
+#!/bin/tcsh
+rm -rf *.loi *.xcas *.dtd *.geo *.lig dico.txt fort.22 *.damoc
+ln -s data_garonne_lnhe_casier/ParametresMascaret.xcas ParametresMascaret.xcas
+ln -s data_garonne_lnhe_casier/mascaret-1.0.dtd mascaret-1.0.dtd
+ln -s data_garonne_lnhe_casier/GeometrieCasiers.casier GeometrieCasiers.casier
+ln -s data_garonne_lnhe_casier/geometrie.geo geometrie.geo
+ln -s data_garonne_lnhe_casier/LigneEauInitiale.lig LigneEauInitiale.lig
+ln -s data_garonne_lnhe_casier/Hydro_Tonneins.loi Hydro_Tonneins.loi
+ln -s data_garonne_lnhe_casier/CT_LaReole.loi CT_LaReole.loi
+ln -s data_garonne_lnhe_casier/config_garonne_lnhe_casier.json config_garonne_lnhe_casier.json
+ln -s data_garonne_lnhe_casier/config_garonne_lnhe_user_casier.json config_garonne_lnhe_user_casier.json
+

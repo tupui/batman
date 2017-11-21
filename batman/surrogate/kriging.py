@@ -31,7 +31,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 import sklearn.gaussian_process.kernels as kernels
 from ..misc import NestedPool, cpu_system
-from ..functions import multi_eval
+from ..functions.utils import multi_eval
 
 
 class Kriging(object):

@@ -64,7 +64,7 @@ import numpy as np
 import openturns as ot
 from openturns.viewer import View
 from sklearn.metrics import (r2_score, mean_squared_error)
-from ..functions import multi_eval
+from ..functions.utils import multi_eval
 from ..input_output import (IOFormatSelector, Dataset)
 from .. import functions as func_ref
 from .. import visualization
@@ -501,16 +501,6 @@ class UQ:
         * :file:`pdf.pdf`, plot of the PDF (with moments if dim > 1)
         """
         self.logger.info("\n----- Uncertainty Propagation -----")
-
-        # Response surface
-        if self.p_len < 3:
-            self.logger.info('Creating response surface...')
-            visualization.response_surface(bounds=[np.min(self.sample, axis=0),
-                                                   np.max(self.sample, axis=0)],
-                                           fun=self.func,
-                                           doe=self.space, xdata=self.xdata,
-                                           fname=os.path.join(self.fname,
-                                                              'response'))
 
         # Covariance and correlation matrices
         self.logger.info('Creating Covariance/correlation and figures...')
