@@ -14,7 +14,7 @@ study = MascaretApi('config_canal.json','config_canal_user.json')
 #study = MascaretApi('config_garonne_lnhe_casier.json','config_garonne_lnhe_user_casier.json')
 
 # Print informations concerning this study
-#print(study)
+print(study)
 
 # Run study with Ks and Q specified constant values 
 #res = study(x=[30, 3000])

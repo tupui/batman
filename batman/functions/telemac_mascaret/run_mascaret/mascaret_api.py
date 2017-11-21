@@ -284,17 +284,21 @@ class MascaretApi(object):
         """Class informations based on settings."""
         string = ("MODEL FILES:\n"
                   " -- xcas: {}\n"
-                  " -- geo: {}\n"
-                  " -- casier: {}\n"
-                  " -- res: {}\n"
-                  " -- res_casier: {}\n"
-                  " -- res_liaison: {}\n"
-                  " -- listing: {}\n"
-                  " -- listing_casier: {}\n"
-                  " -- listing_liaison: {}\n"
-                  " -- damocle: {}\n"
-                  " -- lig: {}\n"
-                  " -- loi:\n")
+                  " -- geo: {}\n")
+        if 'casier' in self.settings['files']:
+            string += (" -- casier: {}\n")
+        string += (" -- res: {}\n")
+        if 'casier' in self.settings['files']:
+            string += (" -- res_casier: {}\n"
+                       " -- res_liaison: {}\n")
+        string += (" -- listing: {}\n")
+        if 'casier' in self.settings['files']:
+            string += (" -- listing_casier: {}\n"
+                       " -- listing_liaison: {}\n")
+        if 'casier' in self.settings['files']:
+            string += (" -- damocle: {}\n")
+        string += (" -- lig: {}\n"
+                   " -- loi:\n")
         for file1 in self.settings['files']['loi']:
             string += '         {}\n'
         string += '\nUSER SETTINGS:\n'
@@ -342,6 +346,7 @@ class MascaretApi(object):
                     src_.append(w)
             else:
                 src_.append(v)
+        print(string) 
         return string.format(*src_)
 
     def run_mascaret(self, x=None, Qtime=None, flag=None, saveall=False):
