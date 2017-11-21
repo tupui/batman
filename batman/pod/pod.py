@@ -383,8 +383,10 @@ class Pod(object):
         """
         points_nb = len(points)
         data_len = self.U.shape[0]
-        error = np.empty(points_nb)
-        mean = np.empty((points_nb, data_len))
+        error_l_two = np.empty(points_nb)
+        snapshot_value = np.empty((points_nb, data_len))
+        error_matrix = np.empty((points_nb, data_len))
+        var_matrix = np.empty((points_nb, data_len))
         surrogate = SurrogateModel(self.leave_one_out_predictor,
                                    self.corners)
 
@@ -410,21 +412,23 @@ class Pod(object):
             new_pod.points = points_1
             new_pod.V = V_1
             new_pod.S = S_1
+            new_points_nb = len(new_pod.points)
 
             # New prediction with points_nb - 1
             surrogate.fit(new_pod.points, new_pod.V * new_pod.S)
 
             prediction, _ = surrogate(points[i])
-
+            
             # MSE on the missing point
-            error = np.sum((np.dot(Urot, prediction[0]) - float(points_nb)
-                            / float(points_nb - 1) * self.V[i] * self.S)
-                           ** 2)
+            error_no_mod = np.dot(Urot, prediction[0]) - float(points_nb) /\
+                float(points_nb - 1) * self.V[point_index] * self.S
+            error_vector_ = np.dot(self.U, error_no_mod)
+            error_l_two_ = np.sqrt(np.sum(error_no_mod ** 2))
 
             # Because V = V.T -> V[i] is a column so V[i]S = SV.T
-            mean = np.dot(self.U, self.V[i] * self.S)
+            snapshot_value_ = np.dot(self.U, self.V[i] * self.S)
 
-            return mean, error
+            return snapshot_value_, error_l_two_, error_vector_
 
         # Multi-threading strategy
         n_cpu_system = cpu_system()
@@ -439,20 +443,32 @@ class Pod(object):
         results = pool.imap(quality, range(points_nb))
 
         for i in range(points_nb):
-            mean[i], error[i] = results.next()
+            snapshot_value[i], error_l_two[i], error_matrix[i] = results.next()
             progress()
 
         pool.terminate()
 
-        mean = np.sum(mean)
-        mean = mean / points_nb
-        var = 0.
+        mean = np.mean(snapshot_value, axis=0)
         for i in range(points_nb):
-            var += np.sum((mean - np.dot(self.U, self.V[i] * self.S)) ** 2)
-
+            var_matrix[i] = (mean - np.dot(self.U, self.V[i] * self.S)) ** 2
+        
         # Compute Q2
-        err_q2 = 1 - np.sum(error) / var
+        numerator = (error_matrix ** 2).sum(axis=0, dtype=np.float64)
+        denominator = np.sum(var_matrix, axis=0, dtype=np.float64)
+        
+        nonzero_denominator = denominator != 0
+        nonzero_numerator = numerator != 0
+        valid_score = nonzero_denominator & nonzero_numerator
+        output_scores = np.ones([data_len])
 
-        index = error.argmax()
+        output_scores[valid_score] = 1 - (numerator[valid_score] /
+                                      denominator[valid_score])
+        # arbitrary set to zero to avoid -inf scores, having a constant
+        # y_true is not interesting for scoring a regression anyway
+        output_scores[nonzero_numerator & ~nonzero_denominator] = 0.
+
+        q2 = output_scores
+        index = error_l_two.argmax()
+        err_q2 = np.mean(q2)
 
         return err_q2, points[index]
