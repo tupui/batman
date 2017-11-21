@@ -228,7 +228,7 @@ def kiviat_data():
 @pytest.mark.skipif(not have_ffmpeg, reason='ffmpeg not available')
 def test_kiviat_fhops(kiviat_data, tmp):
     kiviat, labels = kiviat_data
-    kiviat.f_hops(frame_rate=400, labels=labels,
+    kiviat.f_hops(frame_rate=400,
                   fname=os.path.join(tmp, 'kiviat.mp4'))
     kiviat.f_hops(fname=os.path.join(tmp, 'kiviat.mp4'))
 
