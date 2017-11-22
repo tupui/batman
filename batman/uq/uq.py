@@ -64,7 +64,7 @@ import numpy as np
 import openturns as ot
 from openturns.viewer import View
 from sklearn.metrics import (r2_score, mean_squared_error)
-from ..functions import multi_eval
+from ..functions.utils import multi_eval
 from ..input_output import (IOFormatSelector, Dataset)
 from .. import functions as func_ref
 from .. import visualization

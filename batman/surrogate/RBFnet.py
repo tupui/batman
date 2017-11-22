@@ -6,7 +6,7 @@ www.anc.ed.ac.uk/~mjo/papers/intro.ps
 """
 import numpy as np
 from .TreeCut import Tree
-from ..functions import multi_eval
+from ..functions.utils import multi_eval
 
 
 class RBFnet(object):

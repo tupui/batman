@@ -14,11 +14,7 @@ from collections import OrderedDict
 import ctypes
 import itertools
 import numpy as np
-import batman as bat
-from ...utils import multi_eval
-
-#logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(level=logging.INFO)
+import batman.space.gp_1d_sampler as gp_1d_sampler
 
 
 class MascaretApi(object):
@@ -123,7 +119,7 @@ class MascaretApi(object):
         nb_nodes = ctypes.c_int()
         il_temp1 = ctypes.c_int()
         il_temp2 = ctypes.c_int()
-        self.logger.error("Getting size var in model  #{}..."
+        self.logger.debug("Getting size var in model  #{}..."
                           .format(self.id_masc.value))
         self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(self.id_masc,
                                                                 var_name, 0,
@@ -288,17 +284,21 @@ class MascaretApi(object):
         """Class informations based on settings."""
         string = ("MODEL FILES:\n"
                   " -- xcas: {}\n"
-                  " -- geo: {}\n"
-                  " -- casier: {}\n"
-                  " -- res: {}\n"
-                  " -- res_casier: {}\n"
-                  " -- res_liaison: {}\n"
-                  " -- listing: {}\n"
-                  " -- listing_casier: {}\n"
-                  " -- listing_liaison: {}\n"
-                  " -- damocle: {}\n"
-                  " -- lig: {}\n"
-                  " -- loi:\n")
+                  " -- geo: {}\n")
+        if 'casier' in self.settings['files']:
+            string += (" -- casier: {}\n")
+        string += (" -- res: {}\n")
+        if 'casier' in self.settings['files']:
+            string += (" -- res_casier: {}\n"
+                       " -- res_liaison: {}\n")
+        string += (" -- listing: {}\n")
+        if 'casier' in self.settings['files']:
+            string += (" -- listing_casier: {}\n"
+                       " -- listing_liaison: {}\n")
+        if 'casier' in self.settings['files']:
+            string += (" -- damocle: {}\n")
+        string += (" -- lig: {}\n"
+                   " -- loi:\n")
         for file1 in self.settings['files']['loi']:
             string += '         {}\n'
         string += '\nUSER SETTINGS:\n'
@@ -346,9 +346,9 @@ class MascaretApi(object):
                     src_.append(w)
             else:
                 src_.append(v)
+        print(string) 
         return string.format(*src_)
 
-    @multi_eval
     def run_mascaret(self, x=None, Qtime=None, flag=None, saveall=False):
         """Run Mascaret simulation.
 
@@ -484,10 +484,7 @@ class MascaretApi(object):
             self.logger.info('Performing a single MASCARET simulation...')
             h = self.run_mascaret(x, Qtime=Qtime, saveall=saveall)
 
-        if self.user_settings['misc']['all_outstate'] is True:
-            self.results = np.split(h, 2)
-        else:
-            self.results = h
+        self.results = h
 
         return self.results
 
@@ -987,15 +984,11 @@ class MascaretApi(object):
                           .format(sizeZ1.value, sizeZ2.value, sizeZ3.value))
 
         if 'Lp' in self.user_settings['bathy']:
-            # sampler = bat.space.Gp1dSampler(t_ini=self.cross_section[0][0],
-            #                                 t_end=self.cross_section[0][-1],
-            #                                 Nt=sizeZ1.value, sigma=bathy['dz'],
-            #                                 theta=bathy['Lp'])
-            sampler = bat.space.Gp1dSampler(t_ini=self.cross_section[0][0],
-                                            t_end=self.cross_section[0][-1],
-                                            Nt=sizeZ1.value, sigma=bathy['dz'],
-                                            theta=bathy['Lp'],
-                                            x=[[self.cross_section[0][0]],
+            sampler = gp_1d_sampler.Gp1dSampler(t_ini=self.cross_section[0][0],
+                                  t_end=self.cross_section[0][-1],
+                                  Nt=sizeZ1.value, sigma=bathy['dz'],
+                                  theta=bathy['Lp'],
+                                  x=[[self.cross_section[0][0]],
                                                [self.cross_section[0][-1]]])
             shift_dz = sampler.sample()['Values'][0]
         else:
