@@ -34,7 +34,6 @@ from scipy.stats import norm
 import numpy as np
 from sklearn import preprocessing
 import batman as bat
-from ..uq import UQ
 from .sampling import Doe
 from ..misc import optimization
 
@@ -359,7 +358,7 @@ class Refiner(object):
         point = np.array(point_loo)
 
         # Get Sobol' indices
-        analyse = UQ(self.surrogate, dists=dists)
+        analyse = bat.uq.UQ(self.surrogate, dists=dists)
         indices = analyse.sobol()[2]
         indices = indices * (indices > 0)
         indices = preprocessing.normalize(indices.reshape(1, -1), norm='max')
