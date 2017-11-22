@@ -179,7 +179,8 @@
                        "items": {"type": "number",
                                  "minItems": 2, "maxItems": 2}},
         "contours": {"type": "array",
-                     "items": {"type": "number", "maxItems": 10}}
+                     "items": {"type": "number", "maxItems": 10}},
+        "kiviat_fill": {"type": "boolean", "default": true}
       }
     }
   },
