@@ -21,6 +21,7 @@ python_linter:
 .template_python_3: &template_python_3
   stage: test
   image: "tupui/bat_ci_3"
+  allow_failure: false
   script:
     - scriptdir=.gitlab/continuous_integration
     - bash $scriptdir/CI.sh

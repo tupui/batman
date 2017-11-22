@@ -1,6 +1,6 @@
 # coding: utf8
 from mock import patch
-from batman.space import Gp1dSampler
+from batman.space.gp_1d_sampler import Gp1dSampler
 import numpy as np
 import numpy.testing as npt
 import openturns as ot
