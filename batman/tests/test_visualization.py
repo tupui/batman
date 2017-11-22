@@ -208,36 +208,40 @@ def test_hdr_sample(hdr):
 #     hdr.sound(fname=os.path.join(tmp, 'song-fHOPs.wav'))
 
 
+@patch("matplotlib.pyplot.show")
 @pytest.fixture(scope="session")
-def kiviat_data():
-    space = [[30, 4000], [15, 5000]]
-    feval = [[12], [15]]
+def kiviat_data(mock_show):
+    sample = [[30, 4000], [15, 5000]]
+    data = [[12], [15]]
     param_names = ['Ks', 'Q', '-']
+    bounds = [[15.0, 2500.0], [60.0, 6000.0]]
+    kiviat = Kiviat3D(sample, data, bounds, param_names=param_names)
+    kiviat.plot()
 
-    corners = [[15.0, 2500.0], [60.0, 6000.0]]
-    kiviat = Kiviat3D(space, corners, feval)
+    return kiviat
 
-    corners = [[15.0, 2500.0], [60.0, 6000.0]]
-    kiviat = Kiviat3D(space, corners, feval, param_names=param_names)
 
-    labels = ["Ks={}, Q={}".format(ks, q) for (ks, q) in space]
+@patch("matplotlib.pyplot.show")
+def test_kiviat_plot(mock_show, tmp):
+    sample = [[30, 4000], [15, 5000]]
+    data = [[12], [15]]
+    functional_data = [[12, 300], [15, 347]]
 
-    return kiviat, labels
+    kiviat = Kiviat3D([[30], [15]], data)
+    kiviat.plot()
+
+    kiviat = Kiviat3D(sample, data)
+    kiviat.plot(fill=False, ticks_nbr=12)
+
+    kiviat = Kiviat3D(sample, functional_data)
+    kiviat.plot(fname=os.path.join(tmp, 'kiviat.pdf'))
 
 
 @pytest.mark.skipif(not have_ffmpeg, reason='ffmpeg not available')
 def test_kiviat_fhops(kiviat_data, tmp):
-    kiviat, labels = kiviat_data
-    kiviat.f_hops(frame_rate=40, ticks_nbr=30,
-                  fname=os.path.join(tmp, 'kiviat_fill.mp4'))
-    kiviat.f_hops(fname=os.path.join(tmp, 'kiviat.mp4'), fill=False)
-
-
-@patch("matplotlib.pyplot.show")
-def test_kiviat_plot(mock_show, kiviat_data, tmp):
-    kiviat, labels = kiviat_data
-    kiviat.plot(fname=os.path.join(tmp, 'kiviat.pdf'))
-    kiviat.plot(fill=False, ticks_nbr=12)
+    kiviat_data.f_hops(frame_rate=40, ticks_nbr=30,
+                       fname=os.path.join(tmp, 'kiviat_fill.mp4'))
+    kiviat_data.f_hops(fname=os.path.join(tmp, 'kiviat.mp4'), fill=False)
 
 
 def test_pdf_1D(tmp):

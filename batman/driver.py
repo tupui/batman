@@ -507,17 +507,19 @@ class Driver(object):
                 args['range_cbar'] = None
             if 'ticks_nbr' not in args:
                 args['ticks_nbr'] = 10
+            if 'kiviat_fill' not in args:
+                args['kiviat_fill'] = True
             kiviat = Kiviat3D(args['sample'], args['bounds'], args['data'],
                               param_names=args['plabels'], range_cbar=args['range_cbar'])
             kiviat.plot(fname=args['fname'], flabel=args['flabel'],
-                        range_cbar=args['range_cbar'], ticks_nbr=args['ticks_nbr'])
+                        ticks_nbr=args['ticks_nbr'], fill=args['kiviat_fill'])
 
             # Creation of the Kiviat movie:
             args['fname'] = os.path.join(path, 'Kiviat.mp4')
             rate = 400
-            kiviat.f_hops(frame_rate=rate, fname=args['fname'], flabel=args['flabel'],
-                          range_cbar=args['range_cbar'], ticks_nbr=args['ticks_nbr'])
-
+            kiviat.f_hops(frame_rate=rate, fname=args['fname'],
+                          flabel=args['flabel'], fill=args['kiviat_fill'],
+                          ticks_nbr=args['ticks_nbr'])
 
     @multi_eval
     def func(self, coords):
