@@ -68,51 +68,47 @@
       "type": "object",
       "properties": {
         "max_workers": {"type": "integer", "default": 2, "minimum": 1},
+        "parameters": {"type": "array", "items": {"type": "string"}},
+        "variables": {"type": "array", "items": {"type": "string"}},
+        "provider": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {"type": "string", "enum": ["plugin"]},
+                "module": {"type": "string"},
+                "function": {"type": "string"}
+              },
+              "required": ["type", "name"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {"type": "string", "enum": ["file"]},
+                "discover_from": {"type": "string"},
+                "context_directory": {"type": "string", "default": "data"},
+                "coupling_directory": {"type": "string", "default": "batman-coupling"},
+                "command": {"type": "string", "default": "bash script.sh"},
+                "timeout": {"type": "integer", "default": 3600, "minimum": 0},
+                "clean": {"type": "boolean", "default": false},
+                "restart": {"type": "string", "default": "false"}
+              },
+              "required": ["type", "context_directory", "coupling_directory", 
+                           "command", "timeout", "clean", "restart"]
+            }
+          ]
+        },
         "io": {
           "type": "object",
           "properties": {
-            "shapes": {
-              "type": "object",
-              "properties": {"0": {"type": "array", "items": {}}},
-              "required": ["0"]
-            },
-            "format": {"type": "string", "default": "fmt_tp_fortran"},
-            "variables": {"type": "array", "items": {}},
             "point_filename": {"type": "string", "default": "point.json"},
-            "filenames": {
-              "type": "object",
-              "properties": {"0": {"type": "array", "items": {}}},
-              "required": ["0"]
-            },
-            "template_directory": {"default": null},
-            "parameter_names": {"type": "array", "items": {}}
+            "data_filename": {"type": "string", "default": "point.dat"},
+            "data_format": {"type": "string", "default": "fmt_tp_fortran"}
           },
-          "required": ["shapes", "format", "variables", "point_filename",
-                       "filenames", "template_directory", "parameter_names"
-          ]
-        },
-        "provider": {
-          "anyOf":[
-          {
-            "type": "object",
-            "properties": {
-            "command": {"type": "string", "default": "bash"},
-            "timeout": {"type": "integer", "default": 3600, "minimum": 0},
-            "context": {"type": "string", "default": "data"},
-            "script": {"type": "string", "default": "data/script.sh"},
-            "clean": {"type": "boolean", "default": false},
-            "private-directory": {"type": "string", "default": "batman-data"},
-            "data-directory": {"type": "string", "default": "cfd-output-data"},
-            "restart": {"type": "string", "default": "False"}
-            },
-            "required": ["command", "timeout", "context", "script", "clean",
-                         "private-directory", "data-directory", "restart"]
-          },
-          {"type": "string"}
-          ]
+          "required": ["point_filename", "data_filename", "data_format"]
         }
       },
-      "required": ["max_workers", "io", "provider"]
+      "required": ["parameters", "variables", "max_workers", "provider"]
     },
     "surrogate": {
       "type": "object",

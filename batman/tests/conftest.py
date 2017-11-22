@@ -30,28 +30,58 @@ def tmp(tmpdir_factory):
 
 @pytest.fixture(scope='session')
 def settings_ishigami():
-    f_ishigami = Ishigami()
-    settings = {
+    return {
         "space": {
-            "corners": [[-np.pi, -np.pi, -np.pi], [np.pi, np.pi, np.pi]],
-            "sampling": {"init_size": 150, "method": "halton"},
-            "resampling": {"delta_space": 0.08, "resamp_size": 1,
-                           "method": "sigma", "q2_criteria": 0.9}},
-        "pod": {"dim_max": 100, "tolerance": 0.99, "server": None, "type": "static"},
-        "snapshot": {"max_workers": 10,
-                     "io": {"shapes": {"0": [[1]]}, "format": "fmt_tp_fortran",
-                            "variables": ["F"], "point_filename": "point.json",
-                            "filenames": {"0": ["function.dat"]},
-                            "template_directory": None,
-                            "parameter_names": ["x1", "x2", "x3"]},
-                     "provider": f_ishigami},
-        "surrogate": {"predictions": [[0, 2, 1]], "method": "kriging"},
+            "corners": [
+                [-np.pi, -np.pi, -np.pi],
+                [np.pi, np.pi, np.pi]
+            ],
+            "sampling": {
+                "init_size": 150,
+                "method": "halton"
+            },
+            "resampling": {
+                "delta_space": 0.08,
+                "resamp_size": 1,
+                "method": "sigma",
+                "q2_criteria": 0.9
+            }
+        },
+        "pod": {
+            "dim_max": 100,
+            "tolerance": 0.99,
+            "server": None,
+            "type": "static"
+        },
+        "snapshot": {
+            "max_workers": 10,
+            "parameters": ["x1", "x2", "x3"],
+            "variables": ["F"],
+            "provider": {
+                "type": "plugin",
+                "module": "batman.tests.plugins",
+                "function": "f_ishigami"
+            },
+            "io": {
+                "point_filename": "point.json",
+                "data_filename": "point.dat",
+                "data_format": "fmt_tp_fortran",
+            }
+        },
+        "surrogate": {
+            "predictions": [[0, 2, 1]],
+            "method": "kriging"
+        },
         "uq": {
-            "sample": 2000, "test": "Ishigami",
-            "pdf": ["Uniform(-3.1415, 3.1415)", "Uniform(-3.1415, 3.1415)",
+            "sample": 2000,
+            "test": "Ishigami",
+            "pdf": ["Uniform(-3.1415, 3.1415)",
+                    "Uniform(-3.1415, 3.1415)",
                     "Uniform(-3.1415, 3.1415)"],
-            "type": "aggregated", "method": "sobol"}}
-    return settings
+            "type": "aggregated",
+            "method": "sobol"
+        }
+    }
 
 
 @pytest.fixture(scope='session')
@@ -73,7 +103,7 @@ def ishigami_data(settings_ishigami):
     data['space'] = Space(settings_ishigami['space']['corners'],
                           settings_ishigami['space']['sampling']['init_size'],
                           settings_ishigami['space']['resampling']['resamp_size'],
-                          settings_ishigami['snapshot']['io']['parameter_names'])
+                          settings_ishigami['snapshot']['parameters'])
     data['space'].sampling(150, settings_ishigami['space']['sampling']['method'])
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)

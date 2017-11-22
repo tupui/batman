@@ -1,9 +1,4 @@
-"""
-Tasks module
-************
-"""
+from .snapshot_manager import SnapshotManager
 
-from .snapshot_task import SnapshotTask
-from .snapshot import (SnapshotProvider, Snapshot)
+__all__ = ['SnapshotManager']
 
-__all__ = ['SnapshotTask', 'SnapshotProvider', 'Snapshot']

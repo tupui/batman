@@ -47,9 +47,14 @@ def test_provider_dict(tmp, settings_ishigami):
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings['space']['sampling']['init_size'] = 4
     test_settings['snapshot']['provider'] = {
-        "command": "bash", "timeout": 30, "context": "data",
-        "script": "data/script.sh", "clean": False, "private-directory": "batman-data",
-        "data-directory": "cfd-output-data", "restart": "False"}
+        "type": "file",
+        "command": "bashi script.sh", 
+        "context_directory": "data",
+        "coupling_directory": "batman-coupling",
+        "timeout": 30,
+        "clean": False,
+        "restart": "False"
+    }
     driver = Driver(test_settings, tmp)
     driver.sampling()
     driver.write()

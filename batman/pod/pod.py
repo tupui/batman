@@ -30,7 +30,6 @@ import copy
 import numpy as np
 from ..surrogate import SurrogateModel
 from ..misc import ProgressBar, NestedPool, cpu_system
-from ..tasks import Snapshot
 from ..space import Space
 
 
@@ -43,7 +42,7 @@ class Pod(object):
     directories = {
         'mean_snapshot': 'Mean',
         'modes': 'Mod_%04d',
-        'snapshot': 'Newsnap%04d',
+#        'snapshot': 'Newsnap%04d',
     }
 
     # File name for storing the MPI independent POD data
@@ -52,7 +51,7 @@ class Pod(object):
     # File name for storing the points
     points_file_name = 'points.dat'
 
-    def __init__(self, corners, nsample, tolerance, dim_max, nrefine=0):
+    def __init__(self, corners, nsample, tolerance, dim_max, snapshot_io, nrefine=0):
         """Initialize POD components.
 
         The decomposition of the snapshot matrix is stored as attributes:
@@ -71,6 +70,7 @@ class Pod(object):
         :param float tolerance: basis modes filtering criteria.
         :param int dim_max: number of basis modes to keep.
         """
+        self.snapshot_io = snapshot_io
         self.quality = None
         self.predictor = None
         self.leave_one_out_predictor = 'kriging'
@@ -107,8 +107,6 @@ class Pod(object):
 
         :param lst(array) snapshots: snapshots matrix.
         """
-        snapshots = [Snapshot.convert(s) for s in snapshots]
-
         self.logger.info('Decomposing POD basis...')
 
         matrix = np.column_stack(tuple([s.data for s in snapshots]))
@@ -125,7 +123,6 @@ class Pod(object):
         :param snapshot: new snapshot to update the POD with.
         """
         self.logger.info('Updating POD basis...')
-        snapshot = Snapshot.convert(snapshot)
         self._update(snapshot.data)
         self.space += snapshot.point
         self.logger.info('Updated POD basis with snapshot at point {}'
@@ -169,13 +166,13 @@ class Pod(object):
         self.space.write(os.path.join(path, self.points_file_name))
 
         # mean snapshot
-        p = os.path.join(path, self.directories['mean_snapshot'])
-        Snapshot.write_data(self.mean_snapshot, p)
+        path_snapshot = os.path.join(path, self.directories['mean_snapshot'])
+        self.snapshot_io.write_data(path_snapshot, self.mean_snapshot.data)
 
         # basis
         path_pattern = os.path.join(path, self.directories['modes'])
         for i, u in enumerate(self.U.T):
-            Snapshot.write_data(u, path_pattern % i)
+            self.snapshot_io.write_data(path_pattern % i, u)
 
         points = np.vstack(tuple(self.space))
         np.savez(os.path.join(path, self.pod_file_name),
@@ -194,8 +191,8 @@ class Pod(object):
         self.space.read(os.path.join(path, self.points_file_name))
 
         # mean snapshot
-        p = os.path.join(path, self.directories['mean_snapshot'])
-        self.mean_snapshot = Snapshot.read_data(p)
+        path_snapshot = os.path.join(path, self.directories['mean_snapshot'])
+        self.mean_snapshot = self.snapshot_io.read_data(path_snapshot)
 
         lazy_data = np.load(os.path.join(path, self.pod_file_name))
         self.S = lazy_data['values']
@@ -207,7 +204,7 @@ class Pod(object):
 
         path_pattern = os.path.join(path, self.directories['modes'])
         for i in range(size):
-            self.U[:, i] = Snapshot.read_data(path_pattern % i)
+            self.U[:, i] = self.snapshot_io.read_data(path_pattern % i)
 
         self.logger.info('Read POD from %s', path)
 
