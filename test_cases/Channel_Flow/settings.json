@@ -57,6 +57,10 @@
         "degree": 10
     },
     "visualization": {
+        "bounds": [
+            [30.0, 3000.0],
+            [55.0, 5500.0]
+        ],
         "doe": false,
         "xdata": [1000, 2000, 2500, 3000, 4000],
         "ticks_nbr": 5,
