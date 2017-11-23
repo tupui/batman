@@ -1,41 +1,18 @@
 .. _contributing:
 
-Contributing
-============
+Developer Guide
+===============
 
-If you are reading this, first of all, thank you and welcome to this community.
-For everyone to have fun, every good python projects requires some guidelines
-to be observed.
+Introduction
+------------
 
-Every code seek to be performant, usable, stable and maintainable.
-This can only be acheave through high test coverage, good documentation and
-coding consistency. Isn't it frustrating when you cannot understand some code
-just because there is no documentation nor any test to assess that the function
-is working nor any comments in the code itself? How are you supposed to code in
-these conditions?
+First of all, if you are reading this, thank you and welcome to this community. For the efficiency and the serenity of all users, every good python projects requires some guidelines to be observed. Every code seeks to be competitive, usable, stable and maintainable. This can only be achieve through a high test coverage, a good documentation and coding consistency. So, if you wish to contribute, you must comply to the following rules for your pull request to be considered.
 
-If you wish to contribute, you **must** comply to the following rules for your
-pull request to be considered.
 
-Install
--------
+Respect Python features
+-----------------------
 
-The procedure is similar to the end-user one but if you plan to modify the
-sources, you need to install it with::
-
-    python setup.py develop
-
-This will create a simlink to your python install folder. Thus you won't have
-to re-install the package after you modified it.
-
-Make sure you have installed the testing dependencies as detailed in the
-``README``.
-
-Python
-------
-
-This is a python project, not some C or Fortran code. You have to adapt your
-thinking to the python style. Otherwise, this can lead to performance issues.
+As this is a python project, you have to adapt your thinking to the python style. Otherwise, this can lead to performance issues.
 For example, an ``if`` is expensive, you would be better off using a ``try except``
 construction. *It is better to ask forgiveness than permission*. Also, when
 performing computations, care to be taken with ``for`` loops. If you can, use
@@ -51,8 +28,8 @@ As a quick reference:
 And for a more Pythonic code: `PEP 20 <https://www.python.org/dev/peps/pep-0020/>`_
 Last but not least, avoid common pitfalls: `Anti-patterns <http://docs.quantifiedcode.com/python-code-patterns/>`_
 
-Linter
-------
+Spot basic errors
+-----------------
 
 Appart from normal unit and integration tests, you can perform a static
 analysis of the code using `pylint <https://www.pylint.org>`_::
@@ -61,8 +38,8 @@ analysis of the code using `pylint <https://www.pylint.org>`_::
 
 This allows to spot naming errors for example as well as style errors.
 
-Testing
--------
+Running developments on existing test-cases 
+-------------------------------------------
 
 Testing your code is paramount. Without continuous integration, you **cannot**
 guaranty the quality of the code. Some minor modification on a module can have
@@ -84,11 +61,9 @@ The output consists in tests results and coverage report.
   the server. So you only have to run locally your new tests or the one you
   think you should.
 
-GIT
----
+Working under GIT
+-----------------
 
-You can find the development model at http://nvie.com/posts/a-successful-git-branching-model/
-Please **read** this page and **stick** to it.
 The ``master`` and ``develop`` branches are protected and dedicated to the manager only.
 Release and hotfix branches are mandatory.
 
@@ -98,7 +73,7 @@ You can commit any change you feel, start discussions about it, etc.
 
 1. Clone this copy to your local disk::
 
-        $ git clone git@gitlab.com:cerfacs/batman.git
+        $ git clone git@nitrox.cerfacs.fr:open-source/batman.git
 
 2. Create a branch to hold your changes::
 
@@ -131,3 +106,11 @@ Your request will only be considered for integration if in a **finished** state:
 3. Have tests regarding the changes,
 4. Maintain test coverage,
 5. Have the respective documentation.
+
+.. note:: You can find the development model at http://nvie.com/posts/a-successful-git-branching-model/
+
+Submit your developments
+------------------------
+
+`contributing <https://cerfacs.gitlab.io/batman/contributing_link.html>`_
+

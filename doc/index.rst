@@ -6,18 +6,14 @@ Contents:
 .. toctree::
    :maxdepth: 1
 
-   readme_link
-   changes_link
+   authors_link
+   readme_link     
+   user 
    contributing_link
-   introduction
-   settings
    tutorial
-   space
-   surrogate
-   uq
-   visualization
-   pod
-   api
+   changes_link
+   references
+   acknowledgements
 
 Indices and tables
 ==================
@@ -26,7 +22,3 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-About
-=====
-
-See :ref:`about`.

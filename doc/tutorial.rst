@@ -27,22 +27,17 @@ The working directory consists in two parts:
 
 + ``settings.json``: contains the case setup.
 
-.. seealso:: Find more details on every keywords in :ref:`CLI <cli>` section.
-
 Finally, the folder ``Post-treatment`` contains example scripts that perform some post treatment.
 
 .. note:: The following section is a step-by-step tutorial that can be applied to any case.
 
 
-BATMAN step-by-step
--------------------
+Michalewicz Function
+-------------------- 
 
 
 Step 1: Simulation directory
 ............................
-
-Michalewicz function
-""""""""""""""""""""
 
 For this tutorial, the `Michalewicz function <http://www.sfu.ca/~ssurjano/michal.html>`_ was choosen. It is a multimodal *d*-dimensional function which has :math:`d!` local minima - for this *test-case*: 
 
@@ -64,8 +59,7 @@ To summarize, we have the Michalewicz 2*D* function as follows:
 
 .. seealso:: For other *optimization functions*, read more at `this website <http://www.sfu.ca/~ssurjano/optimization.html>`_.
 
-Create the case for BATMAN
-""""""""""""""""""""""""""
+* Create the case for BATMAN
 
 For each snapshot, BATMAN will copy the content of ``data`` and add a new folder ``batman-data`` which contains a single file ``point.json``. The content of this file is updated per snapshot and it only contains the input parameters to change for the current simulation. Hence, to use Michalewicz's function with BATMAN, we need to have this file read to gather input parameters.
 
@@ -82,8 +76,7 @@ Step 2: Setting up the case
 
 BATMAN's settings are managed via a python file located in ``scripts``. An example template can be found within all examples directory. This file consists in five blocks with different functions:
 
-Block 1 - Space of Parameters
-"""""""""""""""""""""""""""""
+* Block 1 - Space of Parameters
 
 The space of parameters is created using the two extrem points of the domain here we have :math:`x_1, x_2 \in [1, \pi]^2`. Also we want to make 50 snapshots using a halton sequence.
 
@@ -100,8 +93,7 @@ The space of parameters is created using the two extrem points of the domain her
         },
     }
 
-Block 2 - Snapshot provider
-"""""""""""""""""""""""""""
+* Block 2 - Snapshot provider
 
 Then, we configure the snapshot itself. We define the name of the header and output file as well as the dimension of the output. Here BATMAN will look at the variable ``F``, which is a scalar value, within the file ``function.dat``.
 
@@ -143,8 +135,7 @@ Then, we configure the snapshot itself. We define the name of the header and out
 
     with ``function`` the name of the file containing the function. For an example, see ``test_cases/Ishigami``.
 
-Block 3 - POD
-"""""""""""""
+* Block 3 - POD
 
 In this example, a POD is not necessary as it will result in only one mode. However, its use is presented. We can control the quality of the POD, chose a re-sampling strategy, etc.
 
@@ -157,8 +148,7 @@ In this example, a POD is not necessary as it will result in only one mode. Howe
         "type": "static"
     }
 
-Block 4 - Surrogate
-"""""""""""""""""""
+* Block 4 - Surrogate
 
 A model is build on the snapshot matrix to approximate a new snapshot. The Kriging method is selected. To construct a response surface, we need to make predictions.
 
@@ -171,8 +161,7 @@ A model is build on the snapshot matrix to approximate a new snapshot. The Krigi
 To fill in easily ``predictions``, use the script ``prediction.py``.
 
 
-Block 5 - UQ
-""""""""""""
+ Block 5 - UQ
 
 Once the model has been created, it can be used to perform a statistical analysis. Here, Sobol' indices are computed using Sobol's method using 50000 samples. 
 
