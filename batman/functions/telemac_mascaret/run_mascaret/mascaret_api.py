@@ -234,11 +234,9 @@ class MascaretApi(object):
                     file_type.append(key_val[0].encode('utf8'))
 
         # Import a model
-        print (file_type, file_name)
         len_file = len(file_name)
         file_name_c = (ctypes.c_char_p * len_file)(*file_name)
         file_type_c = (ctypes.c_char_p * len_file)(*file_type)
-        print (file_type_c, file_name_c)
         self.logger.debug('Importing a model...')
         self.error = self.libmascaret.C_IMPORT_MODELE_MASCARET(self.id_masc, file_name_c,
                                                                file_type_c, len_file,
@@ -346,7 +344,6 @@ class MascaretApi(object):
                     src_.append(w)
             else:
                 src_.append(v)
-        print(string) 
         return string.format(*src_)
 
     def run_mascaret(self, x=None, Qtime=None, flag=None, saveall=False):
@@ -985,11 +982,11 @@ class MascaretApi(object):
 
         if 'Lp' in self.user_settings['bathy']:
             sampler = gp_1d_sampler.Gp1dSampler(t_ini=self.cross_section[0][0],
-                                  t_end=self.cross_section[0][-1],
-                                  Nt=sizeZ1.value, sigma=bathy['dz'],
-                                  theta=bathy['Lp'],
-                                  x=[[self.cross_section[0][0]],
-                                               [self.cross_section[0][-1]]])
+                                                t_end=self.cross_section[0][-1],
+                                                Nt=sizeZ1.value, sigma=bathy['dz'],
+                                                theta=bathy['Lp'],
+                                                x=[[self.cross_section[0][0]],
+                                                   [self.cross_section[0][-1]]])
             shift_dz = sampler.sample()['Values'][0]
         else:
             shift_dz = np.zeros(sizeZ1.value, float) + bathy['dz']

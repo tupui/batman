@@ -412,13 +412,11 @@ class Pod(object):
             new_pod.points = points_1
             new_pod.V = V_1
             new_pod.S = S_1
-            new_points_nb = len(new_pod.points)
 
             # New prediction with points_nb - 1
             surrogate.fit(new_pod.points, new_pod.V * new_pod.S)
-
             prediction, _ = surrogate(points[i])
-            
+
             # MSE on the missing point
             error_no_mod = np.dot(Urot, prediction[0]) - float(points_nb) /\
                 float(points_nb - 1) * self.V[i] * self.S
@@ -451,20 +449,20 @@ class Pod(object):
         mean = np.mean(snapshot_value, axis=0)
         for i in range(points_nb):
             var_matrix[i] = (mean - np.dot(self.U, self.V[i] * self.S)) ** 2
-        
+
         # Compute Q2
         # Use a part of the code of the r2_score function
         # From scikit-learn library
         numerator = (error_matrix ** 2).sum(axis=0, dtype=np.float64)
         denominator = np.sum(var_matrix, axis=0, dtype=np.float64)
-        
+
         nonzero_denominator = denominator != 0
         nonzero_numerator = numerator != 0
         valid_score = nonzero_denominator & nonzero_numerator
         output_scores = np.ones([data_len])
 
         output_scores[valid_score] = 1 - (numerator[valid_score] /
-                                      denominator[valid_score])
+                                          denominator[valid_score])
         # arbitrary set to zero to avoid -inf scores, having a constant
         # y_true is not interesting for scoring a regression anyway
         output_scores[nonzero_numerator & ~nonzero_denominator] = 0.

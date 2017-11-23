@@ -73,7 +73,7 @@ class Kiviat3D:
         # Sample scaling and take into account n_features < 3
         left_for_triangle = 3 - self.sample.shape[1]
         if left_for_triangle > 0:
-            self.sample = np.hstack((sample, np.ones((self.sample.shape[0],
+            self.sample = np.hstack((self.sample, np.ones((self.sample.shape[0],
                                                       left_for_triangle))))
             if bounds is not None:
                 bounds[0].extend([0] * left_for_triangle)
@@ -141,7 +141,7 @@ class Kiviat3D:
         color = self.cmap(self.scale_f(feval))
         if fill:
             polygon = Poly3DCollection([np.stack([X, Y, Z], axis=1)],
-                                       alpha=0.1)
+                                       alpha=0.3)
             polygon.set_color(color)
             polygon.set_edgecolor(color)
             ax.add_collection3d(polygon)

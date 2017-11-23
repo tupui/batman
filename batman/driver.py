@@ -452,7 +452,7 @@ class Driver(object):
             data = self.data
 
         output_len = np.asarray(data).shape[1]
-    
+
         self.logger.info('Creating response surface...')
         if 'visualization' in self.settings:
             args = copy(self.settings['visualization'])
