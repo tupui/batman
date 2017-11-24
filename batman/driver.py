@@ -480,7 +480,16 @@ class Driver(object):
             args['sample'] = self.space
             args['data'] = data
 
-        args['bounds'] = self.settings['space']['corners']
+        if 'bounds' not in args:
+            args['bounds'] = self.settings['space']['corners']
+        else:
+            for i, _ in enumerate(args['bounds'][0]):
+                if args['bounds'][0][i] < self.settings['space']['corners'][0][i]\
+                    or args['bounds'][1][i] > self.settings['space']['corners'][1][i]:
+                    args['bounds'] = self.settings['space']['corners']
+                    self.logger.warning("Specified bounds for visualisation are "
+                                        "wider than space corners. Default value used.")
+
         args['plabels'] = self.settings['snapshot']['io']['parameter_names']\
             if 'plabels' not in args else args['plabels']
         if ('flabel' not in args) and\

@@ -163,6 +163,8 @@
     "visualization": {
       "type": "object",
       "properties": {
+        "bounds": {"type": "array", "maxItems": 2, "minItems": 2,
+                   "items": {"type": "array", "items":{"type": "number"}}},
         "doe": {"type": "boolean", "default": true},
         "resampling": {"type": "boolean", "default": true},
         "xdata": {"type": "array", "items": {"type": "number"}},
