@@ -1,22 +1,23 @@
 ---
-title: 'BATMAN: Bayesian Analysis Tool for Modelling and uncertAinty
-quaNtification'
+title: 'BATMAN: Statistical analysis for expensive computer codes made easy'
 tags:
   - Python
   - Uncertainty Quantification
-  - Statistical analysis
+  - Statistical Analysis
   - Surrogate Model
   - Design of Experiments
-  - Computational Fluid Dynamics
+  - Uncertainty Visualization
 authors:
  - name: Pamphile T. Roy
    orcid: 0000-0001-9816-1416
    affiliation: 1
  - name: Sophie Ricci
+   orcid: 0000-0002-4232-5626
    affiliation: 1
  - name: Romain Dupuis
    affiliation: 2
- - name: Robain Campet
+ - name: Robin Campet
+   orcid: 0000-0002-4434-0854
    affiliation: 1
  - name: Jean-Christophe Jouhaud
    affiliation: 1
@@ -25,7 +26,7 @@ authors:
 affiliations:
  - name: CERFACS, Toulouse, France
    index: 1
- - name: IRT/CERFACS, Toulouse, France
+ - name: IRT Saint Exupéry/CERFACS, Toulouse, France
    index: 2
 date: 12 November 2017
 bibliography: paper.bib
@@ -33,10 +34,18 @@ bibliography: paper.bib
 
 # Summary
 
-Numerical codes have reached a sufficient maturity to represent physical phenomena, and complex simulations on high-resolution grid is becoming possible with continuous developments in numerical methods and in High Performance Computing (HPC). Still, deterministic simulations only provide limited knowledge on a system as uncertainties in the numerical model and its inputs translate into uncertainties in the outputs.
+Bayesian Analysis Tool for Modelling and uncertAinty
+quaNtification (batman) is an open source Python package dedicated to statistical analysis based on non-intrusive ensemble experiment.
 
-Batman is a python module that allows to seamlessly perform statistical analysis using any experiment. From a simple setting file, it handles all necessary steps automatically. Another possibility is to access batman API to independently use all functionalities. Last but not least, batman can make use of existing results from both in vivo and in silico experimentations.
+Numerical software has reached a sufficient maturity to represent physical phenomena. High fidelity simulation is possible with continuous advances in numerical methods and in High Performance Computing (HPC). Still, deterministic simulations only provide limited knowledge on a system as uncertainties in the numerical model and its inputs translate into uncertainties in the outputs. Ensemble-based methods are used to construct a numerical or experimental dataset from which statistics are inferred.
 
-Along with state-of-the-art algorithms for creating design of experiments (DoE), constructing a surrogate model (SM) and performing uncertainty quantification (UQ), it implements new methods for resampling the parameter space and new data visualization methods to assess uncertainties [@roy2017a]. Batman has been successfully used to treat complex Computational Fluid Dynamics applications [@roy2017a, @roy2017b, @roy2017c].
+*batman* library provides a convenient, modular and efficient framework for design of experiments, surrogate model and uncertainty quantification. *batman* relies on open source python packages dedicated to statistics (*openTURNS* and *scikit-learn* [@openturns, @scikit-learn]). It also implements advanced methods for resampling, robust optimization and uncertainty visualization [@roy2017a].
+
+*batman* handles the workflow for statistical analysis. It makes the most of HPC resources by managing asynchronous parallel tasks. The internal parallelism of each task does not conflict with *batman*'s parallel environment.
+
+*batman* analysis is launched from a *command line interface* and a setting file. *batman* functionalities can also be accessed through an API. *batman* has been successfully used for geosciences and turbomachinery Computational Fluid Dynamics applications [@roy2017a, @roy2017b, @roy2017c].
+
+*batman* is CECILL-B licensed; it is actively developed and maintained by researchers at CERFACS.
 
 # References
+

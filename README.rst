@@ -7,6 +7,7 @@
 .. _Codecov: https://gitlab.com/cerfacs/batman/pipelines
 
 .. |Python| image:: https://img.shields.io/badge/python-2.7,_3.6-blue.svg
+.. _Python: https://python.org
 
 .. |License| image:: https://img.shields.io/badge/license-CECILL--B_License-blue.svg
 .. _License: http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
@@ -16,9 +17,6 @@
 
 BATMAN
 ======
-
-Introduction
-------------
 
 **BATMAN** stands for Bayesian Analysis Tool for Modelling and uncertAinty
 quaNtification. It is a Python module distributed under the open-source
@@ -42,8 +40,10 @@ Full documentation is available at:
 
     https://cerfacs.gitlab.io/batman
 
+.. inclusion-marker-do-not-remove
+
 Getting started
----------------
+===============
 
 A detailled example can be found in 
 `tutorial <https://cerfacs.gitlab.io/batman/tutorial.html>`_. The folder ``test_cases``

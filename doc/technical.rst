@@ -74,6 +74,8 @@ Thus BATMAN is launched using::
 
     batman settings.json
 
+.. seealso:: The definition of the case is to be filled in ``settings.json``. Refer to :ref:`CLI <cli>`.
+
 An ``output`` directory is created and it contains the results of the computation splited across the following folders: 
 
 * ``snapshots``,
