@@ -350,11 +350,11 @@ class MascaretApi(object):
         """Run Mascaret simulation.
 
         Use Mascaret Api :meth:`C_CALCUL_MASCARET`.
-        If :arg:`x` if not None, ``Ks`` and ``Q`` are modified before running.
-        When :attr:`flag` is None, both parameters are modified. Thus :arg:`x`
+        If :attr:`x` if not None, ``Ks`` and ``Q`` are modified before running.
+        When :attr:`flag` is None, both parameters are modified. Thus :attr:`x`
         needs to be set accordingly. If the flag is set to ``Ks``, then only
         this parameter is considered.
-        If :arg:`y` if not None, the BC are provided in .csv
+        If :attr:`y` if not None, the BC are provided in .csv
         :param list x: inputs [Ks, Q]
         :param str flag: None, 'Ks' or 'Q'
         :param bool saveall: Change the default name of the Results file

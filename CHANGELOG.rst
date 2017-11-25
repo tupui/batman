@@ -1,11 +1,13 @@
 .. _changes:
 
+.. currentmodule:: batman
+
 ===============
-Release History
+Release history
 ===============
 
-Version 1.7 - Lucius (under development)
-========================================
+Version 1.7 - Lucius
+====================
 
 New features
 ------------
@@ -20,9 +22,14 @@ New features
     - Add quality for every surrogate model,
     - Be able to bypass POD and surrogate in settings,
     - Surrogate facultative for UQ,
-    - Add :mod:`visualization` with: Kiviat, DoE, HDR and response_surface,
-      response_surface *by Robin Campet*,
+    - Add :mod:`visualization` with: Kiviat, DoE, HDR
+    - and response_surface with block ``visualization`` in settings, *by Robin Campet*,
+    - Add ``distributions`` in settings to set a distribution per parameter,
+    - Add ``discrete`` in settings to tell the indice of the discrete paramter,
+    - Add :class:`functions.Data` for datasets with some new ones,
     - Add optimized LHS, *by Vincent Baudoui*,
+    - Add noise and kernel for Kriging in settings, *by Andrea Trucchia*,
+    - Header is now a JSON file, *by Cyril Fournier*,
     - Concurrent CI, *by Cyril Fournier*,
     - pylint/pycodestyle for CI and Python2 on develop and master branches,
     - Add *about* section in doc.
@@ -34,6 +41,8 @@ Enhancements
     - Backend overwright for matplotlib removed,
     - Remove ``otwrapy``,
     - JSON schema constrained for surrogate and sampling,
+    - Refactor :class:`pod.Pod`,
+    - Sobol' indices with ensemble,
     - Remove support for OpenTURNS < 1.8,
     - Add some options for :class:`functions.MascaretApi`,
     - Coverage and tests raised to 90%.
@@ -44,12 +53,16 @@ Bug fixes
     - Quality with multimodes with POD,
     - List in sampling settings,
     - Restart and restart from files,
+    - Other file read with restart, *by Cyril Fournier*,
     - Variance and FAST,
     - Double prompt in python 2.7, *by Vincent Baudoui*,
+    - DoE as list, *by Vincent Baudoui*,
     - Inputs mocking in tests,
     - DoE diagonal scaling,
     - :class:`functions.MascaretApi` ``multi_eval``,
     - Block indices,
+    - Installation without folder being a git repository, *by Cyril Fournier*,
+    - Fortran compilation, *by Cyril Fournier*,
     - Normalize output in :class:`surrogate.Kriging`.
 
 

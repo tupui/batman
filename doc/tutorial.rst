@@ -23,11 +23,9 @@ Examples can be found in BATMAN's installer subrepository ``test-cases``. To cre
 
 The working directory consists in two parts: 
 
-+ ``data``: contains all the simulation files necessary to perform a new simulation. It can be a simple python script to a complex *AVBP* case. The content of this directory will be copied for each snapshot. In all cases, ``script.sh`` launches the simulation.
++ ``data``: contains all the simulation files necessary to perform a new simulation. It can be a simple python script to a complex code. The content of this directory will be copied for each snapshot. In all cases, ``script.sh`` launches the simulation.
 
 + ``settings.json``: contains the case setup.
-
-Finally, the folder ``Post-treatment`` contains example scripts that perform some post treatment.
 
 .. note:: The following section is a step-by-step tutorial that can be applied to any case.
 
@@ -63,7 +61,7 @@ To summarize, we have the Michalewicz 2*D* function as follows:
 
 For each snapshot, BATMAN will copy the content of ``data`` and add a new folder ``batman-data`` which contains a single file ``point.json``. The content of this file is updated per snapshot and it only contains the input parameters to change for the current simulation. Hence, to use Michalewicz's function with BATMAN, we need to have this file read to gather input parameters.
 
-Aside from the simulation code and this headers, there is a ``data/script.sh``. It is this script that is launched by BATMAN. Once it is completed, the computation is considered as finished. Thus, this script manages an AVBP launch, calls a python script, etc.
+Aside from the simulation code and this headers, there is a ``data/script.sh``. It is this script that is launched by BATMAN. Once it is completed, the computation is considered as finished. Thus, this script manages a solver launch, calls a python script, etc.
 
 In the end, the quantity of interest has to be written in tecplot format within the repository ``cfd-output-data``.
 

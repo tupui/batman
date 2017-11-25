@@ -1,22 +1,21 @@
 |CI|_ |Codecov|_ |Python|_ |License|_ |Zulip|_
 
 .. |CI| image:: https://gitlab.com/cerfacs/batman/badges/develop/pipeline.svg
-   .. _CI: https://gitlab.com/cerfacs/batman/pipelines
+.. _CI: https://gitlab.com/cerfacs/batman/pipelines
 
 .. |Codecov| image:: https://gitlab.com/cerfacs/batman/badges/develop/coverage.svg
-   .. _Codecov: https://gitlab.com/cerfacs/batman/pipelines
+.. _Codecov: https://gitlab.com/cerfacs/batman/pipelines
 
 .. |Python| image:: https://img.shields.io/badge/python-2.7,_3.6-blue.svg
 
 .. |License| image:: https://img.shields.io/badge/license-CECILL--B_License-blue.svg
-   .. _License: http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+.. _License: http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
 
 .. |Zulip| image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
-   .. _Zulip: https://batman-cerfacs.zulipchat.com
+.. _Zulip: https://batman-cerfacs.zulipchat.com
 
-===========
-Quick Start
-===========
+BATMAN
+======
 
 Introduction
 ------------
@@ -25,31 +24,55 @@ Introduction
 quaNtification. It is a Python module distributed under the open-source
 CECILL-B license (MIT/BSD compatible).
 
-BATMAN stands for Bayesian Analysis Tool for Modelling and uncertAinty quaNtification. It aims at:
+batman seamlessly allows to do statistical analysis (sensitivity analysis,
+Uncertainty Quantification, moments) using any computer solver.
 
-- Building Surrogate Models (Gaussian process, Polynomial Chaos, RBF),
+Main features are: 
+
+- Design of Experiment (LHS, low discrepancy sequences, MC),
+- Resample the parameter space based on the physic and the sample,
+- Surrogate Models (Gaussian process, Polynomial Chaos, RBF),
 - Optimization (Expected Improvement),
-- Reucting the data with the help of POD (Proper Orthogonal Decomposition),
-- Optimizing the number of huge computations by using advanced Design of Experiment techniques,
-- Automatically managing code computations in parallel,
 - Realizing Sensitivity Analysises (SA) and Uncertainty Quantifications (UQ),
-- Visualization in high dimensions (HDR, Kiviat).
+- Visualization in *n*-dimensions (HDR, Kiviat),
+- *POD* for database optimization or data reduction,
+- Automatically managing code computations in parallel.
 
-A full documentation is available at: https://cerfacs.gitlab.io/batman
+Full documentation is available at: 
 
-How to get BATMAN?
-------------------
+    https://cerfacs.gitlab.io/batman
 
-The sources are located on the *GitLab* server: 
+Getting started
+---------------
 
-https://gitlab.com/cerfacs/batman
+A detailled example can be found in 
+`tutorial <https://cerfacs.gitlab.io/batman/tutorial.html>`_. The folder ``test_cases``
+contains examples that you can adapt to you needs. You can find more information
+about the cases within the respectives ``README.rst`` file. 
 
+Shoud you be interested by batman's implementation, consider
+reading `introduction <https://cerfacs.gitlab.io/batman/introduction.html>`_.
+
+If you encounter a bug (or have a feature request), please report it via
+`GitLab <https://gitlab.com/cerfacs/batman/issues>`_. Or it might be you
+falling but "Why do we fall sir? So we can learn to pick ourselves up".
+
+Last but not least, if you consider contributing check-out
+`contributing <https://cerfacs.gitlab.io/batman/contributing_link.html>`_.
+
+Happy batman.
 
 How to install BATMAN?
 ----------------------
 
+The sources are located on *GitLab*: 
+
+    https://gitlab.com/cerfacs/batman
+
 Dependencies
 ............
+
+The required dependencies are: 
 
 - `Python <https://python.org>`_ >= 2.7 or >= 3.3
 - `scikit-learn <http://scikit-learn.org>`_ >= 0.18
@@ -74,18 +97,18 @@ Testing dependencies are:
 
 Extra testing flavours: 
 
-- `pytest-cov <https://github.com/pytest-dev/pytest-cov>`_ >= 2.5.1
+- `coverage <http://coverage.readthedocs.io>`_ >= 4.4
 - `pylint <https://www.pylint.org>`_ >= 1.6.0
 
 .. note:: OpenTURNS and ffmpeg are available on *conda* through
     the *conda-forge* channel.
 
-User Installation
+User installation
 .................
 
 Using the latest python version is prefered! Then to install::
 
-    git clone git@nitrox.cerfacs.fr:open-source/batman.git 
+    git clone git@gitlab.com:cerfacs/batman.git
     cd batman
     python setup.py build_fortran
     python setup.py install
@@ -93,12 +116,12 @@ Using the latest python version is prefered! Then to install::
     python setup.py build_sphinx
 
 The latter is optionnal as it build the documentation. The testing part is also
-optionnal but is recommanded. (<30mins).
+optionnal but is recommanded. (<30mins depending on your configuration).
 
 .. note:: If you don't have install priviledge, add ``--user`` option after install.
     But the simplest way might be to use a conda environment.
 
-Finally, if you want to install the optionnal package ``Antares``::
+Finally, if you want to install the optionnal package ``Antares`` (not provided)::
 
     pip install --editable .[antares] --process-dependency-links
 
@@ -111,7 +134,7 @@ If batman has been correctly installed, you should be able to call it simply::
     and ``PYTHONPATH`` environment variables. Make sure you do not call different
     installation folders. It is recommanded that you leave your ``PYTHONPATH`` empty.
 
-Otherwize (if you want Python 3 for instance) you can create your ``conda`` environment::
+Otherwize you can create your ``conda`` environment::
 
     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
     bash Miniconda3-latest-Linux-x86_64.sh
@@ -120,23 +143,21 @@ Otherwize (if you want Python 3 for instance) you can create your ``conda`` envi
 Then you can install all packages without ``root`` access. You can access
 the newly created environment with ``source activate bat_env``.
 
-.. note:: All changes can be found in :ref:`changes`. The main folder contains three
- subfolders: ``doc`` ``batman`` and ``test_cases``. The latter contains examples that you can adapt to you needs. You can find more information about the cases within the respectives ``README.rst`` file. A detailled example can be found in :ref:`tutorial`.
-
 Help and Support
 ----------------
 
-If you encounter a bug (or have a feature request), please report it via
-`GitLab <https://gitlab.com/cerfacs/batman/issues>`_
+About us
+........
 
-A HTML documentation is available https://cerfacs.gitlab.io/batman                       
+See authors and project history at: `about us <https://cerfacs.gitlab.io/batman/about.html>`_.
 
-Communication
--------------
+Community
+.........
 
-- IRC channel: ``#batman`` at ``cerfacs.slack.com``
+If you use batman, come and say hi at https://batman-cerfacs.zulipchat.com.
+Or send us an email. We would really appreciate that as we keep record of the users!
 
 Citation
---------
+........
 
-If you use batman in a scientific publication, we would appreciate :ref:`citations <citing-batman>`.
+If you use batman in a scientific publication, we would appreciate `citations <https://cerfacs.gitlab.io/batman/about.html#citing-batman>`_.
