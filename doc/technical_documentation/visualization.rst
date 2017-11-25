@@ -80,6 +80,13 @@ surface. All the available options are listed in the following table:
 | Option      || Dimensionality   || Default          ||              Description               |
 + name        +                   +                   +                                         +
 +=============+===================+===================+=========================================+
+| bounds      || Array-like.      || None             || Specify new bounds for the response    |
+|             |                   |                   || surface. Space corners are used if no- |
+|             |                   |                   || thing is specified. Values should have |
+|             |                   |                   || the same dimension as space corners and|
+|             |                   |                   || the new domain should be included      |
+|             |                   |                   || inside the space corners.              |
++-------------+-------------------+-------------------+-----------------------------------------+
 | doe         || Array-like.      || None             || Display the Design of Experiment on    |
 |             |                   |                   || graph, represented by black dots.      |
 +-------------+-------------------+-------------------+-----------------------------------------+

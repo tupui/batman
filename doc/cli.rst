@@ -249,6 +249,10 @@ Set up for the visualization options. Batman creates a response function (1 inpu
 .. code-block:: python
 
      "visualization": {
+        "bounds": [
+            [15.0, 2500.0],
+            [60.0, 6000.0]
+        ],
         "doe": true,
         "resampling": true,
         "axis_disc": [20, 20],
@@ -261,7 +265,8 @@ Set up for the visualization options. Batman creates a response function (1 inpu
         "kiviat_fill": true
      }
 
-+ ``doe``: Boolean. If *true*, the Design of Experiment is represented on the response surface by black dots. Defaults value is *false*,
++ ``bounds``: Floats. Response surface boundaries. Those boundaries should be included inside the space corners defined in the Space of Parameters block. Default values are the space corners,
++ ``doe``: Boolean. If *true*, the Design of Experiment is represented on the response surface by black dots. Default value is *false*,
 + ``resampling``: Boolean. If *true*, Design of Experiment corresponding to the resampling points are displayed in a different color. Such points are represented by red triangles. Only activates if doe is *true*,
 + ``axis_disc``: Integers. Discretisation of each axis. Indicated value for the x and the y axis modify the surface resolution, while values corresponding the the 3rd and 4th parameters impact the frame number per movie and the movie number,
 + ``flabel``: String. Name of the cost function,
