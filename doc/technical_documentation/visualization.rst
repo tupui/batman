@@ -49,21 +49,21 @@ section).
 If only 1 input parameter is involved, the response surface reduces to a response
 function. The default display is the following:
 
-.. image::  fig/response_function.png
+.. image::  ../fig/response_function.png
 
 If exactly 2 input parameters are involved, it is possible to generate the
 response surface, the surface itself being colored by the value of the function.
 The corresponding values of the 2 input parameters are displayed on the x and y
 axis, with the following default display:
 
-.. image:: fig/response_surface.png
+.. image:: ../fig/response_surface.png
 
 Because the response surface is a 2D picture, a set of response surfaces is generated
 when dealing with 3 input parameters. The value of the 3rd input parameter is fixed
 to a different value on each plot. The obtained set of pictures is concatenated
 to one single movie file in mp4 format:
 
-.. image:: fig/response_surface.gif
+.. image:: ../fig/response_surface.gif
 
 Finally, response surfaces can also be plotted for 4 input parameters. A set of
 several movies is created, the value of the 4th parameter being fixed to a
@@ -144,7 +144,7 @@ minimal and maximal values in the colorbar and the increased color number. Final
 names of the input parameters and of the cost function are also modified for more explicit
 ones.
 
-.. image:: fig/response_surface_options.png
+.. image:: ../fig/response_surface_options.png
 
 HDR-Boxplot
 ===========
@@ -172,7 +172,7 @@ This module allows you to do exactly this:
 
 The output is the following figure: 
 
-.. image::  fig/hdr-boxplot.png
+.. image::  ../fig/hdr-boxplot.png
 
 How does it work?
 -----------------
@@ -185,7 +185,7 @@ representation into a scalar representation of the matrix. In other words, you
 can visualize each curve from its components. With 2 components, this is called
 a bivariate plot:
 
-.. image::  fig/bivariate_pca_scatter.png
+.. image::  ../fig/bivariate_pca_scatter.png
 
 This visualization exhibit a cluster of points. It indicate that a lot of
 curve lead to common components. The center of the cluster is the mediane curve.
@@ -196,7 +196,7 @@ Using a kernel smoothing technique (see :ref:`PDF <PDF>`), the probability densi
 the multivariate space can be recover. From this PDF, it is possible to compute
 the density probability linked to the cluster and plot its contours.
 
-.. image::  fig/bivariate_pca.png
+.. image::  ../fig/bivariate_pca.png
 
 Finally, using these contours, the different quantiles are extracted allong with
 the mediane curve and the outliers.
@@ -214,7 +214,7 @@ patterns. This animated representation helps such analysis::
 
     hdr.f_hops()
 
-.. image::  fig/f-HOPs.gif
+.. image::  ../fig/f-HOPs.gif
 
 Another possibility is to visualize the outcomes with sounds. Each curve is
 mapped to a series of tones to create a song. Combined to the previous *f-HOPs*
@@ -240,7 +240,7 @@ be used for this purpose. A single realisation can be seen as a 2D kiviat plot
 which different axes each represent a given parameter. The surface itself being
 colored by the value of the function.
 
-.. image::  fig/kiviat_2D.pdf
+.. image::  ../fig/kiviat_2D.pdf
 
 To be able to get a whole set of sample, a 3D version of the Kiviat plot is
 used [Hackstadt1994]_. Thus, each sample corresponds to a 2D Kiviat plot::
@@ -248,7 +248,7 @@ used [Hackstadt1994]_. Thus, each sample corresponds to a 2D Kiviat plot::
     kiviat = batman.visualization.Kiviat3D(space, bounds, feval, param_names)
     kiviat.plot()
 
-.. image::  fig/kiviat_3D.pdf
+.. image::  ../fig/kiviat_3D.pdf
 
 Note that only the DOE points are plotted in the Kiviat plot in order to
 limit the number of surfaces to visualize. Surrogate model is thus never used
@@ -268,7 +268,7 @@ functional-HOPs-Kiviat with sound::
     hdr = batman.visualization.HdrBoxplot(feval)
     hdr.sound()
 
-.. image::  fig/kiviat_3D.gif
+.. image::  ../fig/kiviat_3D.gif
 
 
 Probability Density Function
@@ -285,7 +285,7 @@ So taking a case with a functionnal output [Roy2017]_, we can recover its PDF wi
 
     fig_pdf = batman.visualization.pdf(data)
 
-.. image::  fig/pdf_ls89.pdf
+.. image::  ../fig/pdf_ls89.pdf
 
 
 Correlation matrix
@@ -295,7 +295,7 @@ The correlation and covariance matrices are also availlable::
 
     batman.visualization.corr_cov(data, sample, func.x, plabels=['Ks', 'Q'])
 
-.. image::  fig/corr.pdf
+.. image::  ../fig/corr.pdf
 
 *Sobol'*
 ========
@@ -305,7 +305,7 @@ Once *Sobol'* indices are computed , it is easy to plot them with::
     indices = [s_first, s_total]
     batman.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'])
 
-.. image::  fig/sobol_aggregated.pdf
+.. image::  ../fig/sobol_aggregated.pdf
 
 In case of functionnal data [Roy2017b]_, both aggregated and map indices can be
 passed to the function and both plot are made::
@@ -313,16 +313,7 @@ passed to the function and both plot are made::
     indices = [s_first, s_total, s_first_full, s_total_full]
     batman.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'], xdata=x)
 
-.. image::  fig/sobol_map.pdf
-
-References
-==========
-
-.. [Hyndman2009] Rob J. Hyndman and Han Lin Shang. Rainbow plots, bagplots and boxplots for functional data. Journal of Computational and Graphical Statistics, 19:29-45, 2009 
-.. [Hullman2015] Jessica Hullman and Paul Resnick and Eytan Adar. Hypothetical Outcome Plots Outperform Error Bars and Violin Plots for Inferences About Reliability of Variable Ordering. PLoS ONE 10(11): e0142444. 2015. DOI: 10.1371/journal.pone.0142444 
-.. [Hackstadt1994] Steven T. Hackstadt and Allen D. Malony and Bernd Mohr. Scalable Performance Visualization for Data-Parallel Programs. IEEE. 1994. DOI: 10.1109/SHPCC.1994.296663 
-.. [Wand1995] M.P. Wand and M.C. Jones. Kernel Smoothing. 1995. DOI: 10.1007/978-1-4899-4493-1 
-.. [Roy2017b] P.T. Roy et al.: Comparison of Polynomial Chaos and Gaussian Process surrogates for uncertainty quantification and correlation estimation of spatially distributed open-channel steady flows. SERRA. 2017. DOI: 10.1007/s00477-017-1470-4 
+.. image::  ../fig/sobol_map.pdf
 
 Acknowledgement
 ===============

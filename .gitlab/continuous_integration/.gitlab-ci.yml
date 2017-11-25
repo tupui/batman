@@ -1,7 +1,7 @@
 stages:
   - linter
-  - test
   - doc
+  - test
 
 python_linter:
   stage: linter
@@ -57,12 +57,10 @@ python_2:
     - python setup.py build_fortran
     - python setup.py install
     - cd doc
+    - mv /app/MathJax-master _static/.
     - make html
     - rm -rf ../public
     - mv _build/html/ ../public/
-  artifacts:
-    paths:
-      - public
 
 pages_feature_branch:
   <<: *template_doc
@@ -76,3 +74,6 @@ pages:
   only:
     - master
     - develop
+  artifacts:
+    paths:
+      - public

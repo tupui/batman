@@ -1,32 +1,32 @@
 Welcome to BATMAN's documentation!
 ==================================
 
-Contents:
+.. include:: ../README.rst
+  :end-before: inclusion-marker-do-not-remove
+
+Contents
+--------
 
 .. toctree::
    :maxdepth: 1
 
-   readme_link
-   changes_link
-   contributing_link
-   introduction
-   settings
+   Quick Start <quick_start>
    tutorial
-   space
-   surrogate
-   uq
-   visualization
-   pod
+   cli
+   technical
    api
+   contributing_link
+   changes_link
+   about
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
 
 About
-=====
+-----
 
 See :ref:`about`.

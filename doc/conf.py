@@ -61,7 +61,8 @@ autosummary_generate = True
 
 autodoc_mock_imports = ["antares"]
 
-mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML'
+# mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML'
+mathjax_path = 'MathJax-master/MathJax.js'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

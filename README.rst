@@ -7,6 +7,7 @@
 .. _Codecov: https://gitlab.com/cerfacs/batman/pipelines
 
 .. |Python| image:: https://img.shields.io/badge/python-2.7,_3.6-blue.svg
+.. _Python: https://python.org
 
 .. |License| image:: https://img.shields.io/badge/license-CECILL--B_License-blue.svg
 .. _License: http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
@@ -28,24 +29,26 @@ Main features are:
 
 - Design of Experiment (LHS, low discrepancy sequences, MC),
 - Resample the parameter space based on the physic and the sample,
-- Metamodel (Gaussian process, Polynomial Chaos, RBF),
+- Surrogate Models (Gaussian process, Polynomial Chaos, RBF),
 - Optimization (Expected Improvement),
-- Visualize both sample and CFD computations in *n*-dimensions (HDR, Kiviat),
+- Realizing Sensitivity Analysises (SA) and Uncertainty Quantifications (UQ),
+- Visualization in *n*-dimensions (HDR, Kiviat),
 - *POD* for database optimization or data reduction,
-- Automatically manage (parallel) the numerical computations.
+- Automatically managing code computations in parallel.
 
-Getting started
----------------
-
-A detailled example can be found in 
-`tutorial <https://cerfacs.gitlab.io/batman/tutorial.html>`_ and the
-full documentation is available at: 
+Full documentation is available at: 
 
     https://cerfacs.gitlab.io/batman
 
-The main folder contains three subfolders: ``doc`` ``batman`` and ``test_cases``.
-The latter contains examples that you can adapt to you needs. You can find more
-information about the cases within the respectives ``README.rst`` file. 
+.. inclusion-marker-do-not-remove
+
+Getting started
+===============
+
+A detailled example can be found in 
+`tutorial <https://cerfacs.gitlab.io/batman/tutorial.html>`_. The folder ``test_cases``
+contains examples that you can adapt to you needs. You can find more information
+about the cases within the respectives ``README.rst`` file. 
 
 Shoud you be interested by batman's implementation, consider
 reading `introduction <https://cerfacs.gitlab.io/batman/introduction.html>`_.
@@ -59,15 +62,12 @@ Last but not least, if you consider contributing check-out
 
 Happy batman.
 
-How to get it?
---------------
+How to install BATMAN?
+----------------------
 
 The sources are located on *GitLab*: 
 
     https://gitlab.com/cerfacs/batman
-
-How to Install?
----------------
 
 Dependencies
 ............
