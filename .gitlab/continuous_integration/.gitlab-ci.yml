@@ -57,7 +57,6 @@ python_2:
     - python setup.py build_fortran
     - python setup.py install
     - cd doc
-    - mv /app/MathJax-master _static/.
     - make html
     - rm -rf ../public
     - mv _build/html/ ../public/
