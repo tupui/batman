@@ -132,8 +132,6 @@ A snapshot defines a simulation.
 + ``data_filename``: name of the file that contains the output ``variables`` of a snapshot.
 + ``data_format``: ``npz``, ``fmt_tp_fortran`` (BATMAN) or all Antares formats if installed.
 
-The ``io`` block defines a snapshot as a pair of files.
-
 The ``provider`` block defines what a simulation is. It comes in two flavors.
 A simulation can either be the result of a user-provided python function,
 or it can be an external program that produces a data file.
@@ -178,9 +176,12 @@ are automatically discovered by this provider.
 + ``type``: type of provider. Must be set to ``file``.
 + ``discover_from``: path to a directory containing user-provided snapshots. (optional)
 + ``context_directory``: directory containing input data and script for building snapshot data files.
-+ ``coupling_directory``: directory in ``context_directory`` that will be used by batman to communicate with user program. Its creation and deletion is handled by BATMAN.
-+ ``command``: command to use to run the external program. Launched from ``context_directory``. The program shall read its input parameters from ``coupling_directory/point_filename`` and write its outputs to ``coupling_directory/data_filename``.
++ ``coupling_directory``: directory in ``context_directory`` that will contain input parameters and output file. Its creation and deletion is handled by BATMAN.
++ ``command``: command to run the external program. Launched from ``context_directory``. The program shall read its input parameters from ``coupling_directory/point_filename`` and write its outputs to ``coupling_directory/data_filename``.
 + ``clean``: delete after run all but snapshot files in execution directory. Content in ``context_directory`` is always preserved.
+
+.. note:: Not specifying ``context_directory`` or ``command`` means no job were specified. It can make sens for those who want to provide their own snapshot data through the ``discover_from`` directory.
+.. warning:: BATMAN will crash if it needs a snapshot point that were not provided and no job were specified !
 
 
 Optionnal Block 3 - Surrogate

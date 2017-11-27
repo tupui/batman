@@ -28,8 +28,23 @@ class ProviderFile(AbstractProvider):
 
     def __init__(self, executor, io_manager, job_settings):
         self._io = io_manager
-        self._job = job_settings
         self._executor = executor
+
+        # automatic data file generation
+        try:
+            self._job = {
+                'command': job_settings['command'],
+                'context_directory': job_settings['context_directory'],
+                'coupling_directory': job_settings.get('coupling_directory', 'batman-coupling'),
+                'clean': job_settings.get('clean', False),
+            }
+            self.logger.debug('Job for snapshot file creation: {}'.format(self._job))
+        except KeyError:
+            self._job = None
+            self.logger.warning(
+                'No job were specified for snapshot file creation. '
+                'BATMAN will crash if a non existing snapshot is requested.'
+            )
 
         # automatic discovery of existing points
         self._known_points = OrderedDict()
@@ -77,11 +92,16 @@ class ProviderFile(AbstractProvider):
 
         except KeyError:
             # point is not known
+
             data_filepath = os.path.join(snapshot_dir, self._io.data_filename)
             point_filepath = os.path.join(snapshot_dir, self._io.point_filename)
 
             if not (os.path.isfile(data_filepath) and os.path.isfile(point_filepath)):
                 # snapshot files must be created
+                if self._job is None:
+                    self.logger.error('Cannot build requested snapshot data for point {} !'
+                                      .format(point))
+                    raise SystemExit
 
                 # "Alfred, please prepare the batmobile"
                 work_dir = os.path.join(snapshot_dir, '.wkdir')

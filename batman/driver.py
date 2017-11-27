@@ -107,7 +107,7 @@ class Driver(object):
             variable_names=settings['snapshot']['variables'],
             **args
         )
-        provider_type = settings['snapshot']['provider']['type'].lower()
+        provider_type = settings['snapshot']['provider']['type']
         self.logger.info('Select data provider type "{}"'.format(provider_type))
         self.provider = self.provider_class[provider_type](
             self.async_pool,

@@ -93,8 +93,7 @@
                 "clean": {"type": "boolean", "default": false},
                 "restart": {"type": "string", "default": "false"}
               },
-              "required": ["type", "context_directory", "coupling_directory", 
-                           "command", "timeout", "clean", "restart"]
+              "required": ["type"]
             }
           ]
         },

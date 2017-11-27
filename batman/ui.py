@@ -62,12 +62,11 @@ def run(settings, options):
                 prompt = 'Re-use output results? [Y/n] > '
                 use_output = misc.check_yes_no(prompt, default='yes')
                 if not use_output:
-                    logger.warning(
-                        'Stopped to prevent deletion. Change options')
+                    logger.warning('Stopped to prevent deletion. Change options')
                     raise SystemExit
 
                 # auto-discovery of existing snapshots
-                if settings['snapshot']['provider']['type'].lower() == 'file':
+                if settings['snapshot']['provider']['type'] == 'file':
                     root = os.path.join(options.output, 'snapshots')
                     if not os.path.isdir(root):
                         logger.warning('No folder snapshots in output folder')
