@@ -21,6 +21,9 @@ class Snapshot(object):
 
     @property
     def point(self):
+        """
+        Returns snapshot point coordinates.
+        """
         return self._point
 
     @property

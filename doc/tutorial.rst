@@ -14,11 +14,11 @@ Examples can be found in BATMAN's installer subrepository ``test-cases``. To cre
 
     Michalewicz
     |
-    ├__ data
+    |__ data
     |   |__ script.sh
-    |   ├__ function.py
+    |   |__ function.py
     |
-    ├__ settings.json
+    |__ settings.json
 
 
 The working directory consists in two parts: 
@@ -59,11 +59,11 @@ To summarize, we have the Michalewicz 2*D* function as follows:
 
 * Create the case for BATMAN
 
-For each snapshot, BATMAN will copy the content of ``data`` and add a new folder ``batman-data`` which contains a single file ``point.json``. The content of this file is updated per snapshot and it only contains the input parameters to change for the current simulation. Hence, to use Michalewicz's function with BATMAN, we need to have this file read to gather input parameters.
+For each snapshot, BATMAN will copy the content of ``data`` and add a new folder ``batman-coupling`` which contains a single file ``point.json``. The content of this file is updated per snapshot and it only contains the input parameters to change for the current simulation. Hence, to use Michalewicz's function with BATMAN, we need to have this file read to gather input parameters.
 
-Aside from the simulation code and this headers, there is a ``data/script.sh``. It is this script that is launched by BATMAN. Once it is completed, the computation is considered as finished. Thus, this script manages a solver launch, calls a python script, etc.
+Aside from the simulation code and this headers, there is a ``script.sh``. It is this script that is launched by BATMAN. Once it is completed, the computation is considered as finished. Thus, this script manages a solver launch, calls a python script, etc.
 
-In the end, the quantity of interest has to be written in tecplot format within the repository ``cfd-output-data``.
+In the end, the quantity of interest has to be written in tecplot format within the directory ``batman-coupling``.
 
 .. note:: These directories' name and path are fully configurables.
 
@@ -93,45 +93,38 @@ The space of parameters is created using the two extrem points of the domain her
 
 * Block 2 - Snapshot provider
 
-Then, we configure the snapshot itself. We define the name of the header and output file as well as the dimension of the output. Here BATMAN will look at the variable ``F``, which is a scalar value, within the file ``function.dat``.
+Then, we configure the snapshot itself. We define the name of the header and output file as well as the dimension of the output. Here BATMAN will look at the variable ``F``, which is a scalar value, within the file ``point.dat``.
 
 .. code-block:: python
 
     "snapshot": {
         "max_workers": 10,
-        "io": {
-            "shapes": {
-                "0": [
-                    [1]
-                ]
-            },
-            "format": "fmt_tp",
-            "variables": ["F"],
-            "point_filename": "point.json",
-            "filenames": {
-                "0": ["function.dat"]
-            },
-            "template_directory": null,
-            "parameter_names": ["x1", "x2"]
-        },
+        "parameters": ["x1", "x2"],
+        "variables": ["F"],
         "provider": {
-            "command": "bash",
-            "timeout": 10,
-            "context": "data",
-            "script": "data/script.sh",
-            "clean": false,
-            "private-directory": "batman-data",
-            "data-directory": "cfd-output-data",
-            "restart": "False"
+            "type": "file"
+            "command": "bash script.sh",
+            "context_directory": "data",
+            "coupling_directory": "batman-coupling",
+            "clean": false
+        },
+        "io": {
+            "point_filename": "point.json",
+            "data_filename": "point.dat",
+            "data_format": "fmt_tp_fortran"
         }
     }
 
 
-.. note:: For a simple function script, you can pass it directly in the settings file::
+.. note:: For a simple python function, you can pass it directly in the settings file::
 
-        "provider": "function"
+        "provider": {
+            "type": "plugin",
+            "module": "python_module",
+            "function": "func_name"
+        }
 
-    with ``function`` the name of the file containing the function. For an example, see ``test_cases/Ishigami``.
+    with ``module`` the name of the python module containing the function ``function``. For an example, see ``test_cases/Ishigami``.
 
 * Block 3 - POD
 
