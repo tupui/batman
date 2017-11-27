@@ -29,8 +29,14 @@ class ProviderPlugin(AbstractProvider):
 
     @property
     def known_points(self):
+        """
+        Returns an empty mapping: never remember a snapshot.
+        """
         return {}
 
     def snapshot(self, point, *ignored):
+        """
+        Returns a snapshot bound to an asynchronous job that execute the provided plugin function.
+        """
         self.logger.debug('Request snapshot for point {}'.format(point))
         return Snapshot(point, self._executor.submit(self._function, point))

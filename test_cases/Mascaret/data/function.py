@@ -6,7 +6,7 @@ import json
 import numpy as np
 import ctypes
 import csv
-from batman.input_output import (IOFormatSelector, Dataset)
+from batman.input_output import IOFormatSelector, Dataset
 from batman.functions import MascaretApi
 from batman.functions.telemac_mascaret import print_statistics, histogram, plot_opt
 
@@ -15,8 +15,8 @@ study = MascaretApi('config_garonne_lnhe.json','config_garonne_lnhe_user.json')
 #print(study)
 
 
-# Input from header.py
-with open('./batman-data/header.py', 'r') as fd:
+# Input from point.json
+with open('./batman-coupling/point.json', 'r') as fd:
     params = json.load(fd)
 
 X1 = params['x1']
@@ -32,7 +32,7 @@ plot_opt('ResultatsOpthyca.opt')
 
 # Output
 nb_value = np.size(X)
-with open('./cfd-output-data/function.dat', 'w') as f:
+with open('./batman-coupling/point.dat', 'w') as f:
     f.writelines('TITLE = \"FUNCTION\" \n')
     f.writelines('VARIABLES = \"X\" \"F\"  \n')
     f.writelines('ZONE T=\"zone1\" , I=' + str(nb_value) + ', F=BLOCK  \n')

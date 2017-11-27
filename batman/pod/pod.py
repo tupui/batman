@@ -40,9 +40,8 @@ class Pod(object):
 
     # Directory structure to store a pod
     directories = {
-        'mean_snapshot': 'Mean',
-        'modes': 'Mod_%04d',
-#        'snapshot': 'Newsnap%04d',
+        'mean_snapshot': 'Mean.txt',
+        'modes': 'Mods.npz',
     }
 
     # File name for storing the MPI independent POD data
@@ -51,7 +50,7 @@ class Pod(object):
     # File name for storing the points
     points_file_name = 'points.dat'
 
-    def __init__(self, corners, nsample, tolerance, dim_max, snapshot_io, nrefine=0):
+    def __init__(self, corners, nsample, tolerance, dim_max, nrefine=0):
         """Initialize POD components.
 
         The decomposition of the snapshot matrix is stored as attributes:
@@ -70,7 +69,6 @@ class Pod(object):
         :param float tolerance: basis modes filtering criteria.
         :param int dim_max: number of basis modes to keep.
         """
-        self.snapshot_io = snapshot_io
         self.quality = None
         self.predictor = None
         self.leave_one_out_predictor = 'kriging'
@@ -167,18 +165,15 @@ class Pod(object):
 
         # mean snapshot
         path_snapshot = os.path.join(path, self.directories['mean_snapshot'])
-        self.snapshot_io.write_data(path_snapshot, self.mean_snapshot.data)
+        np.savetxt(path_snapshot, self.mean_snapshot)
 
         # basis
-        path_pattern = os.path.join(path, self.directories['modes'])
-        for i, u in enumerate(self.U.T):
-            self.snapshot_io.write_data(path_pattern % i, u)
-
-        points = np.vstack(tuple(self.space))
+        points = np.vstack(tuple(self.points))
         np.savez(os.path.join(path, self.pod_file_name),
                  parameters=points,
                  values=self.S,
-                 vectors=self.V)
+                 vectors=self.V,
+                 modes=self.U)
 
         self.logger.info('Wrote POD to %s', path)
 
@@ -192,19 +187,13 @@ class Pod(object):
 
         # mean snapshot
         path_snapshot = os.path.join(path, self.directories['mean_snapshot'])
-        self.mean_snapshot = self.snapshot_io.read_data(path_snapshot)
+        self.mean_snapshot = np.atleast_1d(np.loadtxt(path_snapshot))
 
+        # basis
         lazy_data = np.load(os.path.join(path, self.pod_file_name))
         self.S = lazy_data['values']
         self.V = lazy_data['vectors']
-
-        # basis
-        size = self.S.shape[0]
-        self.U = np.zeros([self.mean_snapshot.shape[0], size])
-
-        path_pattern = os.path.join(path, self.directories['modes'])
-        for i in range(size):
-            self.U[:, i] = self.snapshot_io.read_data(path_pattern % i)
+        self.U = lazy_data['modes']
 
         self.logger.info('Read POD from %s', path)
 

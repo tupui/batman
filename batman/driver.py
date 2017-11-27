@@ -22,13 +22,17 @@ Defines all methods used to interact with other classes.
 import logging
 import os
 import pickle
+<<<<<<< HEAD
+=======
+from copy import copy
+>>>>>>> Snapshots: fixed programming errors + change tests
 from concurrent import futures
 import numpy as np
 import sklearn.gaussian_process.kernels as kernels
 from .pod import Pod
 from .space import Space
 from .surrogate import SurrogateModel
-from .tasks import SnapshotManager
+from .tasks import SnapshotIO, ProviderPlugin, ProviderFile
 from .uq import UQ
 from .visualization import response_surface, Kiviat3D
 from .functions.utils import multi_eval
@@ -48,6 +52,11 @@ class Driver(object):
         'predictions': 'predictions',
         'uq': 'uq',
         'visualization': 'visualization',
+    }
+    # Data provider for snapshots
+    provider_class = {
+        'plugin': ProviderPlugin,
+        'file': ProviderFile,
     }
 
     def __init__(self, settings, fname):
@@ -87,15 +96,24 @@ class Driver(object):
                            duplicate=duplicate)
 
         # Asynchronous job manager
-        max_worker = self.settings['snapshot']['max_workers']
-        self.async_pool = futures.ThreadPoolExecutor(max_workers=max_worker)
+        self.async_pool = futures.ThreadPoolExecutor(
+            max_workers=self.settings['snapshot']['max_workers']
+        )
 
         # Snapshot Management
-        self.snapshot_manager = SnapshotManager(
-            self.async_pool,
-            self.settings['snapshot']
+        args = settings['snapshot'].get('io', {})
+        self.snapshot_io = SnapshotIO(
+            parameter_names=settings['snapshot']['parameters'],
+            variable_names=settings['snapshot']['variables'],
+            **args
         )
-        self.provider = self.snapshot_manager.provider
+        provider_type = settings['snapshot']['provider']['type'].lower()
+        self.logger.info('Select data provider type "{}"'.format(provider_type))
+        self.provider = self.provider_class[provider_type](
+            self.async_pool,
+            self.snapshot_io,
+            settings['snapshot']['provider']
+        )
         self.snapshot_counter = 0
 
         # Sampling initialisation
@@ -105,8 +123,8 @@ class Driver(object):
             for point in self.to_compute_points:
                 try:
                     self.space += point
-                except (AlienPointError, UnicityError, FullSpaceError) as tb:
-                    self.logger.warning('Ignoring: {}'.format(tb))
+                except (AlienPointError, UnicityError, FullSpaceError) as err:
+                    self.logger.warning('Ignoring: {}'.format(err))
         else:
             # generate points according to settings
             space_provider = self.settings['space']['sampling']
@@ -135,8 +153,7 @@ class Driver(object):
                          'dim_max': self.settings['pod']['dim_max'],
                          'corners': self.settings['space']['corners'],
                          'nsample': self.space.doe_init,
-                         'nrefine': resamp_size,
-                         'snapshot_io': self.snapshot_manager}
+                         'nrefine': resamp_size}
             self.pod = Pod(**settings_)
             self.pod.space.duplicate = duplicate
         else:
@@ -147,6 +164,7 @@ class Driver(object):
 
         # Surrogate model
         if 'surrogate' in self.settings:
+            settings_ = {}
             if self.settings['surrogate']['method'] == 'pc':
                 dists = self.settings['space']['sampling']['distributions']
                 try:
@@ -178,8 +196,6 @@ class Driver(object):
                     settings_ = {'kernel': kernel}
                 if 'noise' in self.settings['surrogate']:
                     settings_.update({'noise': self.settings['surrogate']['noise']})
-            else:
-                settings_ = {}
 
             self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
                                             self.settings['space']['corners'],
@@ -207,11 +223,11 @@ class Driver(object):
 
         # Generate snapshots
         snapshot_root = os.path.join(self.fname, self.fname_tree['snapshots'])
-        snapshot_points = OrderedDict(
+        snapshot_points = [
             (point, os.path.join(snapshot_root, str(i + self.snapshot_counter)))
             for i, point in enumerate(points)
-        )
-        snapshots = [self.provider.snapshot(p, d) for p, d in snapshot_points.items()]
+        ]
+        snapshots = [self.provider.snapshot(p, d) for p, d in snapshot_points]
         self.snapshot_counter += len(snapshots)
 
         # Fit the Surrogate [and POD]
@@ -306,7 +322,7 @@ class Driver(object):
             with open(path, 'wb') as fdata:
                 pickler = pickle.Pickler(fdata)
                 pickler.dump(self.data)
-            self.logger.debug('Wrote data to {}'.format(path))
+            self.logger.debug('Wrote data to %s', path)
 
     def read(self):
         """Read Surrogate [and POD] from disk."""
@@ -326,7 +342,7 @@ class Driver(object):
             with open(path, 'rb') as fdata:
                 unpickler = pickle.Unpickler(fdata)
                 self.data = unpickler.load()
-            self.logger.debug('Data read from {}'.format(path))
+            self.logger.debug('Data read from %s', path)
 
     def restart(self):
         """Restart process."""
@@ -359,11 +375,19 @@ class Driver(object):
         """
         results, sigma = self.surrogate(points)
         if write:
-            root_path = os.path.join(self.fname, self.fname_tree['predictions'])  
+            root_path = os.path.join(self.fname, self.fname_tree['predictions'])
+            try:
+                points[0][0]
+            except TypeError:
+                points = [points]
             for i, (data, point) in enumerate(zip(results, points)):
                 path = os.path.join(root_path, 'Newsnap{}'.format(i))
-                self.snapshot_manager.write_point(path, point)
-                self.snapshot_manager.write_data(path, data)
+                try:
+                    os.makedirs(path)
+                except OSError:
+                    pass
+                self.snapshot_io.write_point(path, point)
+                self.snapshot_io.write_data(path, data)
         return results, sigma
 
     def uq(self):
@@ -486,7 +510,7 @@ class Driver(object):
             try:
                 args['flabel'] = self.settings['visualization']['flabel']
             except KeyError:
-                args['flabel'] = self.settings['snapshot']['io']['variables'][0]
+                args['flabel'] = self.settings['snapshot']['variables'][0]
 
         path = os.path.join(self.fname, self.fname_tree['visualization'])
         try:

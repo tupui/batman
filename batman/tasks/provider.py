@@ -13,13 +13,6 @@ class AbstractProvider(object):
     """
     __metaclass__ = ABCMeta
 
-    @abstractmethod
-    def __init__(self, executor, settings):
-        """
-        :param executor: an executor pool with submit methode that returns a future.
-        """
-        pass
-
     @abstractproperty
     def known_points(self):
         """

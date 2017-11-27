@@ -9,10 +9,10 @@ author: Cyril Fournier
 """
 from collections import OrderedDict
 import os
-import json
 import shutil
 import logging
 import subprocess as sp
+import numpy as np
 
 from .provider import AbstractProvider
 from .snapshot import Snapshot
@@ -26,17 +26,16 @@ class ProviderFile(AbstractProvider):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, executor, io_manager, settings):
-
+    def __init__(self, executor, io_manager, job_settings):
         self._io = io_manager
-        self._job = settings
+        self._job = job_settings
         self._executor = executor
 
         # automatic discovery of existing points
         self._known_points = OrderedDict()
-        discover = settings.get('discover_from')
+        discover = job_settings.get('discover_from')
         if discover is not None:
-            for root, dirs, files in os.walk(discover):
+            for root, _, files in os.walk(discover):
                 if self._io.point_filename in files and self._io.data_filename in files:
                     # found a point
                     try:
@@ -49,9 +48,15 @@ class ProviderFile(AbstractProvider):
 
     @property
     def known_points(self):
+        """
+        Returns a dictionnary binding known snapshots with their location.
+        """
         return self._known_points
 
-    def snapshot(self, point, snapshot_dir, *ignored):
+    def snapshot(self, point, snapshot_dir):
+        """
+        Returns a snapshot bound to an asynchronous job that read data from a file.
+        """
         self.logger.debug('Request snapshot for point {}'.format(point))
         return Snapshot(point, self._executor.submit(self.load_data, point, snapshot_dir))
 
@@ -72,8 +77,8 @@ class ProviderFile(AbstractProvider):
 
         except KeyError:
             # point is not known
-            data_filepath = os.path.join(snapshot_dir, self.data_filename)
-            point_filepath = os.path.join(snapshot_dir, self.point_filename)
+            data_filepath = os.path.join(snapshot_dir, self._io.data_filename)
+            point_filepath = os.path.join(snapshot_dir, self._io.point_filename)
 
             if not (os.path.isfile(data_filepath) and os.path.isfile(point_filepath)):
                 # snapshot files must be created
@@ -87,10 +92,10 @@ class ProviderFile(AbstractProvider):
             # record current location as actual snapshot location
             self._known_points[point] = snapshot_dir
 
-
         # read data file
-        data = self._io.read_data(snapeshot_dir)
-        self.logger.debug('Read point {} from file {}'.format(point, data_filepath))
+        dataset = self._io.read_data(snapshot_dir)
+        data = np.ravel(dataset.data)  # reader do not return an array-like !
+        self.logger.debug('Read data for point {} from directory {}'.format(point, snapshot_dir))
         return data
 
     def job_initialize(self, point, work_dir):
@@ -101,11 +106,11 @@ class ProviderFile(AbstractProvider):
         - coupling subdirectory
         """
         coupling_dir = os.path.join(work_dir, self._job['coupling_directory'])
-        
+
         # copy-link the content of 'context_dir' to 'snapeshot_dir'
         # wkdir shall not exist at all
         os.makedirs(coupling_dir)
-        context_dir = self._job['context_directory']
+        context_dir = os.path.abspath(self._job['context_directory'])
         for root, dirs, files in os.walk(context_dir):
             local = root.replace(context_dir, work_dir)
             for d in dirs:
@@ -141,10 +146,10 @@ class ProviderFile(AbstractProvider):
         coupling_dir = os.path.join(work_dir, self._job['coupling_directory'])
 
         # move data to snapshot directory
-        os.rename(os.path.join(coupling_dir, self.point_filename), 
-                  os.path.join(snapshot_dir, self.point_filename))
-        os.rename(os.path.join(coupling_dir, self.data_filename), 
-                  os.path.join(snapshot_dir, self.data_filename))
+        os.rename(os.path.join(coupling_dir, self._io.point_filename),
+                  os.path.join(snapshot_dir, self._io.point_filename))
+        os.rename(os.path.join(coupling_dir, self._io.data_filename),
+                  os.path.join(snapshot_dir, self._io.data_filename))
         self.logger.debug('Point {} :: Moved snapshot from {} to {}'
                           .format(point, coupling_dir, snapshot_dir))
 
@@ -154,9 +159,9 @@ class ProviderFile(AbstractProvider):
             self.logger.debug('Point {} :: Removed workdir {}'.format(point, work_dir))
         else:
             # keep a symlink to snapshot data in coupling directory
-            os.symlink(os.path.join(snapshot_dir, self.point_filename), 
-                       os.path.join(coupling_dir, self.point_filename))
-            os.symlink(os.path.join(snapshot_dir, self.data_filename), 
-                       os.path.join(coupling_dir, self.data_filename))
+            os.symlink(os.path.join(snapshot_dir, self._io.point_filename),
+                       os.path.join(coupling_dir, self._io.point_filename))
+            os.symlink(os.path.join(snapshot_dir, self._io.data_filename),
+                       os.path.join(coupling_dir, self._io.data_filename))
             self.logger.debug('Point {} :: Set symlinks from {} to {}'
                               .format(point, snapshot_dir, work_dir))

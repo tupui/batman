@@ -160,8 +160,7 @@ class SurrogateModel(object):
 
             results = np.atleast_2d(pred)
 
-            return results, sigma
-
+        return results, sigma
 
     def estimate_quality(self, method='LOO'):
         """Estimate quality of the model.

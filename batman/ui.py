@@ -5,7 +5,6 @@ import logging
 from logging.config import dictConfig
 import argparse
 import os
-import re
 import shutil
 import json
 import openturns as ot
@@ -67,7 +66,8 @@ def run(settings, options):
                         'Stopped to prevent deletion. Change options')
                     raise SystemExit
 
-                if settings['snapshots']['provider']['type'].lower() == 'file':
+                # auto-discovery of existing snapshots
+                if settings['snapshot']['provider']['type'].lower() == 'file':
                     root = os.path.join(options.output, 'snapshots')
                     if not os.path.isdir(root):
                         logger.warning('No folder snapshots in output folder')

@@ -79,7 +79,7 @@
                 "module": {"type": "string"},
                 "function": {"type": "string"}
               },
-              "required": ["type", "name"]
+              "required": ["type", "module", "function"]
             },
             {
               "type": "object",

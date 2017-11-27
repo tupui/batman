@@ -141,15 +141,13 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     assert sigma is None
     assert pred[0] == pytest.approx(ishigami_data.target_point, 0.5)
     surrogate.write(tmp)
-    if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
-        assert False
+    assert os.path.isfile(os.path.join(tmp, 'surrogate.dat'))
 
     # Kriging
     surrogate = SurrogateModel('kriging', ishigami_data.space.corners)
     surrogate.fit(ishigami_data.space, ishigami_data.target_space)
     surrogate.write(tmp)
-    if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
-        assert False
+    assert os.path.isfile(os.path.join(tmp, 'surrogate.dat'))
 
     surrogate = SurrogateModel('kriging', ishigami_data.space.corners)
     surrogate.read(tmp)
@@ -161,8 +159,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
 
 #    pred, _ = surrogate(ishigami_data.point, path=tmp)
 #    assert pred[0].data == pytest.approx(ishigami_data.target_point, 0.1)
-#    if not os.path.isdir(os.path.join(tmp, 'Newsnap0')):
-#        assert False
+#    assert os.path.isdir(os.path.join(tmp, 'Newsnap0'))
 
     # Compute predictivity coefficient Q2
     def wrap_surrogate(x):

@@ -1,7 +1,6 @@
 # coding: utf8
 import copy
 from batman.driver import Driver
-from batman.functions import Branin
 from mock import patch
 
 
@@ -16,9 +15,12 @@ def test_optimization(mock_show, tmp, branin_data, settings_ishigami):
     test_settings['space']['resampling']['resamp_size'] = res_size
     test_settings['space']['resampling']['delta_space'] = 0.1
     test_settings['space']['corners'] = branin_data.space.corners
-    test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2']
-    f_obj = Branin()
-    test_settings['snapshot']['provider'] = f_obj
+    test_settings['snapshot']['parameters'] = ['x1', 'x2']
+    test_settings['snapshot']['provider'] = {
+        "type": "plugin",
+        "module": "batman.tests.plugins",
+        "function": "f_branin"
+    }
 
     driver = Driver(test_settings, tmp)
     driver.sampling()

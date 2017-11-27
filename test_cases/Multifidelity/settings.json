@@ -23,22 +23,18 @@
     },
     "snapshot": {
         "max_workers": 5,
-        "io": {
-            "shapes": {
-                "0": [
-                    [1]
-                ]
-            },
-            "format": "numpy",
-            "variables": ["F"],
-            "point_filename": "point.json",
-            "filenames": {
-                "0": ["function.npz"]
-            },
-            "template_directory": null,
-            "parameter_names": ["fidelity", "x1", "x2"]
+        "parameters": ["fidelity", "x1", "x2"],
+        "variables": ["F"],
+        "provider": {
+            "type": "plugin",
+            "module": "function",
+            "function": "f"
         },
-        "provider": "function"
+        "io": {
+            "point_filename": "point.json",
+            "data_filename": "point.npz",
+            "format": "numpy"
+        }
     },
     "surrogate": {
         "predictions": [[0.9, 0.2]],

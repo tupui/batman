@@ -7,7 +7,7 @@ import numpy as np
 from batman.functions import Channel_Flow
 
 # Input from point.json
-with open('./batman-data/point.json', 'r') as fd:
+with open('./batman-coupling/point.json', 'r') as fd:
     params = json.load(fd)
 
 Ks = params['x1']
@@ -24,7 +24,7 @@ Z = f([Ks, Q])
 
 # Output
 nb_value = np.size(X)
-with open('./cfd-output-data/function.dat', 'w') as f:
+with open('./batman-coupling/point.dat', 'w') as f:
     f.writelines('TITLE = \"FUNCTION\" \n')
     f.writelines('VARIABLES = \"X\" \"F\"  \n')
     f.writelines('ZONE T=\"zone1\" , I=' + str(nb_value) + ', F=BLOCK  \n')

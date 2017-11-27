@@ -23,30 +23,21 @@
     },
     "snapshot": {
         "max_workers": 10,
-        "io": {
-            "shapes": {
-                "0": [
-                    [1]
-                ]
-            },
-            "format": "fmt_tp_fortran",
-            "variables": ["F"],
-            "point_filename": "point.json",
-            "filenames": {
-                "0": ["function.dat"]
-            },
-            "template_directory": null,
-            "parameter_names": ["x1", "x2"]
-        },
+        "parameters": ["x1", "x2"],
+        "variables": ["F"],
         "provider": {
-            "command": "bash",
+            "type": "file",
+            "command": "bash script.sh",
+            "context_directory": "data",
+            "coupling_directory": "batman-coupling",
             "timeout": 10,
-            "context": "data",
-            "script": "data/script.sh",
             "clean": false,
-            "private-directory": "batman-data",
-            "data-directory": "cfd-output-data",
             "restart": "False"
+        },
+        "io": {
+            "point_filename": "point.json",
+            "data_filename": "point.dat",
+            "data_format": "fmt_tp_fortran"
         }
     },
     "surrogate": {
