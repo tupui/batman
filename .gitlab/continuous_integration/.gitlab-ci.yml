@@ -18,37 +18,6 @@ python_linter:
     - lint_res=`[[ $lint =~ $regex ]] && echo "${BASH_REMATCH[1]}"`
     - if [[ "$lint_res" > "9.5" ]]; then exit 0; else exit 1; fi
 
-.template_python_3: &template_python_3
-  stage: test
-  image: "tupui/bat_ci_3"
-  allow_failure: false
-  script:
-    - scriptdir=.gitlab/continuous_integration
-    - bash $scriptdir/CI.sh
-
-python_3:
-  <<: *template_python_3
-  only:
-    - master
-    - develop
-
-python_3_feature_branch:
-  <<: *template_python_3
-  when: manual
-  except:
-    - master
-    - develop
-
-python_2:
-  stage: test
-  image: "tupui/bat_ci_2"
-  only:
-    - master
-    - develop
-  script:
-    - scriptdir=.gitlab/continuous_integration
-    - bash $scriptdir/CI.sh
-
 .template_doc: &template_doc
   stage: doc
   image: "tupui/bat_ci_3"

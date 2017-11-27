@@ -1,0 +1,11 @@
+bat_ci_3:
+  build:
+    image: bat3
+    dockerfile: .gitlab/continuous_integration/Dockerfile_codeship_3
+  cached: true
+
+bat_ci_2:
+  build:
+    image: bat2
+    dockerfile: .gitlab/continuous_integration/Dockerfile_codeship_2
+  cached: true

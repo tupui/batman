@@ -1,0 +1,3 @@
+FROM tupui/bat_ci_2
+
+COPY . /app

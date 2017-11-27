@@ -1,0 +1,8 @@
+- type: parallel
+  name: test_python_3
+  steps:
+    - service: bat_ci_2
+      tag: (master|develop)
+      command: bash /app/.gitlab/continuous_integration/CI.sh
+    - service: bat_ci_3
+      command: bash /app/.gitlab/continuous_integration/CI.sh

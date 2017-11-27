@@ -3,6 +3,8 @@ python --version
 
 export MPLBACKEND="Agg"
 
+find . -regex "\(.*__pycache__.*\|*.py[co]\)" -delete
+
 python setup.py build_fortran
 python setup.py install
 which batman
