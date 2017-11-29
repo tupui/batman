@@ -350,6 +350,7 @@ class Refiner(object):
         by the corresponding percentage of the total indices.
 
         :param tuple point_loo: leave-one-out point.
+        :param lst(str) dists: List of valid openturns distributions as string.
         :return: The coordinate of the point to add.
         :rtype: lst(float).
         """
@@ -484,6 +485,7 @@ class Refiner(object):
         :param point_loo: leave one out point
         :type point_loo: :class:`batman.space.point.Point`
         :param str strategy: resampling method
+        :param lst(str) dists: List of valid openturns distributions as string.
         :return: The coordinate of the point to add
         :rtype: lst(float)
         """

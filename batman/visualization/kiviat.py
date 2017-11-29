@@ -42,7 +42,7 @@ class Kiviat3D:
     parameters used to perform the realization.
     """
 
-    def __init__(self, sample, data, bounds=None, param_names=None,
+    def __init__(self, sample, data, bounds=None, plabels=None,
                  range_cbar=None):
         """Prepare params for Kiviat plot.
 
@@ -52,7 +52,7 @@ class Kiviat3D:
           sample of parameters :attr:`sample` (n_samples, n_features).
         :param array_like bounds: Boundaries to scale the colors
            shape ([min, n_features], [max, n_features]).
-        :param list(str) param_names: Names of each parameters (n_features).
+        :param list(str) plabels: Names of each parameters (n_features).
         :param array_like range_cbar: Minimum and maximum values for output
           function (2 values).
         """
@@ -74,7 +74,7 @@ class Kiviat3D:
         left_for_triangle = 3 - self.sample.shape[1]
         if left_for_triangle > 0:
             self.sample = np.hstack((self.sample, np.ones((self.sample.shape[0],
-                                                      left_for_triangle))))
+                                                           left_for_triangle))))
             if bounds is not None:
                 bounds[0].extend([0] * left_for_triangle)
                 bounds[1].extend([2] * left_for_triangle)
@@ -99,8 +99,8 @@ class Kiviat3D:
         self.n_params = self.sample.shape[1]
         alpha = 2 * np.pi / self.n_params
         self.alphas = [alpha * (i + 1) for i in range(self.n_params)]
-        self.param_names = ['x' + str(i) for i in range(self.n_params)]\
-            if param_names is None else param_names
+        self.plabels = ['x' + str(i) for i in range(self.n_params)]\
+            if plabels is None else plabels
         self.z_offset = - 1
         self.ticks = np.tile(self.ticks, self.n_params).reshape(-1, len(self.ticks)).T
         self.ticks_values = self.scale.inverse_transform(self.ticks).T
@@ -162,9 +162,9 @@ class Kiviat3D:
                         [self.z_offset, self.z_offset],
                         mutation_scale=20, lw=1, arrowstyle="-|>", color="k")
             ax.add_artist(a)
-            # Annotate with param_names
+            # Annotate with plabels
             ax.text(1.1 * self.x_ticks[i], 1.1 * self.y_ticks[i],
-                    self.z_offset, self.param_names[i],
+                    self.z_offset, self.plabels[i],
                     fontsize=14, ha='center', va='center', color='k')
 
             # Add ticks with values

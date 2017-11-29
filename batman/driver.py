@@ -412,27 +412,36 @@ class Driver(object):
 
     def uq(self):
         """Perform UQ analysis."""
-        output = os.path.join(self.fname, self.fname_tree['uq'])
+        args = {}
+        args['fname'] = os.path.join(self.fname, self.fname_tree['uq'])
+        args['space'] = self.space
+        args['indices'] = self.settings['uq']['type']
+        args['plabels'] = self.settings['snapshot']['io']['parameter_names']
+        args['dists'] = self.settings['uq']['pdf']
+        args['nsample'] = self.settings['uq']['sample']
 
         if self.pod is not None:
-            data = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
+            args['data'] = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
         else:
-            data = self.data
-
-        test = self.settings['uq']['test'] if 'test' in self.settings['uq'] else None
+            args['data'] = self.data
 
         try:
-            xdata = self.settings['visualization']['xdata']
+            args['test'] = self.settings['uq']['test']
         except KeyError:
-            xdata = None
+            pass
 
-        analyse = UQ(self.surrogate, nsample=self.settings['uq']['sample'],
-                     dists=self.settings['uq']['pdf'],
-                     p_lst=self.settings['snapshot']['io']['parameter_names'],
-                     method=self.settings['uq']['method'],
-                     indices=self.settings['uq']['type'],
-                     space=self.space, data=data, xdata=xdata, fname=output,
-                     test=test)
+        try:
+            args['xdata'] = self.settings['visualization']['xdata']
+            args['xlabel'] = self.settings['visualization']['xlabel']
+        except KeyError:
+            pass
+
+        try:
+            args['flabel'] = self.settings['visualization']['flabel']
+        except KeyError:
+            pass
+
+        analyse = UQ(self.surrogate, **args)
 
         if self.surrogate is None:
             self.logger.warning("No surrogate model, be sure to have a "
@@ -455,23 +464,57 @@ class Driver(object):
 
         self.logger.info('Creating response surface...')
         if 'visualization' in self.settings:
-            args = copy(self.settings['visualization'])
+            args = {}
 
             # xdata for output with dim > 1
-            if ('xdata' not in args) and (output_len > 1):
+            if ('xdata' not in self.settings['visualization']) and (output_len > 1):
                 args['xdata'] = np.linspace(0, 1, output_len)
+            else:
+                args['xdata'] = self.settings['visualization']['xdata']
 
             # Plot Doe if doe option is True
-            args['doe'] = self.space if ('doe' in args) and args['doe']\
-                else None
+            if ('doe' in self.settings['visualization']) and\
+                    self.settings['visualization']['doe']:
+                args['doe'] = self.space
 
             # Display resampling if resampling option is true
-            args['resampling'] = self.settings['space']['resampling']['resamp_size']\
-                if ('resampling' in args) and args['resampling'] else 0
+            if ('resampling' in self.settings['visualization']) and\
+                    self.settings['visualization']['resampling']:
+                args['resampling'] = self.settings['space']['resampling']['resamp_size']
+            else:
+                args['resampling'] = 0
         else:
             args = {}
             args['xdata'] = np.linspace(0, 1, output_len)\
                 if output_len > 1 else None
+
+        try:
+            args['ticks_nbr'] = self.settings['visualization']['ticks_nbr']
+        except KeyError:
+            pass
+        try:
+            args['contours'] = self.settings['visualization']['contours']
+        except KeyError:
+            pass
+        try:
+            args['range_cbar'] = self.settings['visualization']['range_cbar']
+        except KeyError:
+            pass
+        try:
+            args['axis_disc'] = self.settings['visualization']['axis_disc']
+        except KeyError:
+            pass
+
+        try:
+            args['bounds'] = self.settings['visualization']['bounds']
+            for i, _ in enumerate(args['bounds'][0]):
+                if (args['bounds'][0][i] < self.settings['space']['corners'][0][i])\
+                    or (args['bounds'][1][i] > self.settings['space']['corners'][1][i]):
+                    args['bounds'] = self.settings['space']['corners']
+                    self.logger.warning("Specified bounds for visualisation are "
+                                        "wider than space corners. Default value used.")
+        except KeyError:
+            args['bounds'] = self.settings['space']['corners']
 
         # Data based on surrogate model (function) or not
         if 'surrogate' in self.settings:
@@ -480,21 +523,16 @@ class Driver(object):
             args['sample'] = self.space
             args['data'] = data
 
-        if 'bounds' not in args:
-            args['bounds'] = self.settings['space']['corners']
+        if 'plabels' not in self.settings['visualization']:
+            args['plabels'] = self.settings['snapshot']['io']['parameter_names']
         else:
-            for i, _ in enumerate(args['bounds'][0]):
-                if args['bounds'][0][i] < self.settings['space']['corners'][0][i]\
-                    or args['bounds'][1][i] > self.settings['space']['corners'][1][i]:
-                    args['bounds'] = self.settings['space']['corners']
-                    self.logger.warning("Specified bounds for visualisation are "
-                                        "wider than space corners. Default value used.")
+            args['plabels'] = self.settings['visualization']['plabels']
 
-        args['plabels'] = self.settings['snapshot']['io']['parameter_names']\
-            if 'plabels' not in args else args['plabels']
-        if ('flabel' not in args) and\
+        if ('flabel' not in self.settings['visualization']) and\
                 (len(self.settings['snapshot']['io']['variables']) < 2):
             args['flabel'] = self.settings['snapshot']['io']['variables'][0]
+        elif len(self.settings['snapshot']['io']['variables']) < 2:
+            args['flabel'] = self.settings['visualization']['flabel']
 
         path = os.path.join(self.fname, self.fname_tree['visualization'])
         try:
@@ -519,7 +557,8 @@ class Driver(object):
             if 'kiviat_fill' not in args:
                 args['kiviat_fill'] = True
             kiviat = Kiviat3D(args['sample'], args['bounds'], args['data'],
-                              param_names=args['plabels'], range_cbar=args['range_cbar'])
+                              param_names=args['plabels'],
+                              range_cbar=args['range_cbar'])
             kiviat.plot(fname=args['fname'], flabel=args['flabel'],
                         ticks_nbr=args['ticks_nbr'], fill=args['kiviat_fill'])
 

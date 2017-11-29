@@ -63,6 +63,7 @@
         ],
         "doe": false,
         "xdata": [1000, 2000, 2500, 3000, 4000],
+        "xlabel": "s (km)",
         "ticks_nbr": 5,
         "flabel": "F(Ks, Q)"
     },

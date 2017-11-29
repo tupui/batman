@@ -272,7 +272,7 @@ def test_pdf_nD(mock_show, tmp):
 
 
 def test_pdf_nD_moments(tmp):
-    pdf(data, moments=True,
+    pdf(data, xlabel='s', flabel='Y', moments=True,
         fname=os.path.join(tmp, 'pdf_nd_moments.pdf'))
 
 
@@ -284,7 +284,7 @@ def test_sobols_aggregated(mock_show, tmp):
     fig = reshow(fig[0])
     plt.plot([0, 10], [0.5, 0.5])
     fig.show()
-    sobol(indices, p_lst=['x1', 't', 'y'], fname=os.path.join(tmp, 'sobol.pdf'))
+    sobol(indices, plabels=['x1', 't', 'y'], fname=os.path.join(tmp, 'sobol.pdf'))
 
 
 @patch("matplotlib.pyplot.show")
@@ -292,7 +292,7 @@ def test_sobols_map(mock_show, tmp):
     fun = Mascaret()
     indices = [fun.s_first, fun.s_total, fun.s_first_full, fun.s_total_full]
     sobol(indices)
-    sobol(indices, p_lst=['Ks', 'Q'],
+    sobol(indices, plabels=['Ks', 'Q'],
           xdata=fun.x, fname=os.path.join(tmp, 'sobol_map.pdf'))
 
 

@@ -303,7 +303,7 @@ The correlation and covariance matrices are also availlable::
 Once *Sobol'* indices are computed , it is easy to plot them with::
 
     indices = [s_first, s_total]
-    batman.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'])
+    batman.visualization.sobol(indices, plabels=['Tu', r'$\alpha$'])
 
 .. image::  ../fig/sobol_aggregated.pdf
 
@@ -311,7 +311,7 @@ In case of functionnal data [Roy2017b]_, both aggregated and map indices can be
 passed to the function and both plot are made::
 
     indices = [s_first, s_total, s_first_full, s_total_full]
-    batman.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'], xdata=x)
+    batman.visualization.sobol(indices, plabels=['Tu', r'$\alpha$'], xdata=x)
 
 .. image::  ../fig/sobol_map.pdf
 

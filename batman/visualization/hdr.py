@@ -319,7 +319,7 @@ class HdrBoxplot:
 
         # Bivariate space
         fig, sub_ax = doe(data_r,
-                          p_lst=[str(i + 1) for i in range(self.n_components)],
+                          plabels=[str(i + 1) for i in range(self.n_components)],
                           show=False)
         figures.append(fig)
         axs.append(sub_ax)
