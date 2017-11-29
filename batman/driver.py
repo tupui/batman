@@ -24,7 +24,6 @@ import os
 import pickle
 from collections import OrderedDict
 from concurrent import futures
-from copy import copy
 import numpy as np
 import sklearn.gaussian_process.kernels as kernels
 from .pod import Pod
@@ -463,14 +462,13 @@ class Driver(object):
         output_len = np.asarray(data).shape[1]
 
         self.logger.info('Creating response surface...')
+        args = {}
         if 'visualization' in self.settings:
-            args = {}
-
             # xdata for output with dim > 1
-            if ('xdata' not in self.settings['visualization']) and (output_len > 1):
-                args['xdata'] = np.linspace(0, 1, output_len)
-            else:
+            if ('xdata' in self.settings['visualization']) and (output_len > 1):
                 args['xdata'] = self.settings['visualization']['xdata']
+            elif output_len > 1:
+                args['xdata'] = np.linspace(0, 1, output_len)
 
             # Plot Doe if doe option is True
             if ('doe' in self.settings['visualization']) and\
@@ -483,33 +481,32 @@ class Driver(object):
                 args['resampling'] = self.settings['space']['resampling']['resamp_size']
             else:
                 args['resampling'] = 0
+
+            try:
+                args['ticks_nbr'] = self.settings['visualization']['ticks_nbr']
+            except KeyError:
+                pass
+            try:
+                args['contours'] = self.settings['visualization']['contours']
+            except KeyError:
+                pass
+            try:
+                args['range_cbar'] = self.settings['visualization']['range_cbar']
+            except KeyError:
+                pass
+            try:
+                args['axis_disc'] = self.settings['visualization']['axis_disc']
+            except KeyError:
+                pass
         else:
-            args = {}
             args['xdata'] = np.linspace(0, 1, output_len)\
                 if output_len > 1 else None
-
-        try:
-            args['ticks_nbr'] = self.settings['visualization']['ticks_nbr']
-        except KeyError:
-            pass
-        try:
-            args['contours'] = self.settings['visualization']['contours']
-        except KeyError:
-            pass
-        try:
-            args['range_cbar'] = self.settings['visualization']['range_cbar']
-        except KeyError:
-            pass
-        try:
-            args['axis_disc'] = self.settings['visualization']['axis_disc']
-        except KeyError:
-            pass
 
         try:
             args['bounds'] = self.settings['visualization']['bounds']
             for i, _ in enumerate(args['bounds'][0]):
                 if (args['bounds'][0][i] < self.settings['space']['corners'][0][i])\
-                    or (args['bounds'][1][i] > self.settings['space']['corners'][1][i]):
+                        or (args['bounds'][1][i] > self.settings['space']['corners'][1][i]):
                     args['bounds'] = self.settings['space']['corners']
                     self.logger.warning("Specified bounds for visualisation are "
                                         "wider than space corners. Default value used.")
@@ -523,16 +520,16 @@ class Driver(object):
             args['sample'] = self.space
             args['data'] = data
 
-        if 'plabels' not in self.settings['visualization']:
-            args['plabels'] = self.settings['snapshot']['io']['parameter_names']
-        else:
+        try:
             args['plabels'] = self.settings['visualization']['plabels']
+        except KeyError:
+            args['plabels'] = self.settings['snapshot']['io']['parameter_names']
 
-        if ('flabel' not in self.settings['visualization']) and\
-                (len(self.settings['snapshot']['io']['variables']) < 2):
-            args['flabel'] = self.settings['snapshot']['io']['variables'][0]
-        elif len(self.settings['snapshot']['io']['variables']) < 2:
-            args['flabel'] = self.settings['visualization']['flabel']
+        if len(self.settings['snapshot']['io']['variables']) < 2:
+            try:
+                args['flabel'] = self.settings['visualization']['flabel']
+            except KeyError:
+                args['flabel'] = self.settings['snapshot']['io']['variables'][0]
 
         path = os.path.join(self.fname, self.fname_tree['visualization'])
         try:
@@ -557,7 +554,7 @@ class Driver(object):
             if 'kiviat_fill' not in args:
                 args['kiviat_fill'] = True
             kiviat = Kiviat3D(args['sample'], args['bounds'], args['data'],
-                              param_names=args['plabels'],
+                              plabels=args['plabels'],
                               range_cbar=args['range_cbar'])
             kiviat.plot(fname=args['fname'], flabel=args['flabel'],
                         ticks_nbr=args['ticks_nbr'], fill=args['kiviat_fill'])

@@ -213,9 +213,9 @@ def test_hdr_sample(hdr):
 def kiviat_data(mock_show):
     sample = [[30, 4000], [15, 5000]]
     data = [[12], [15]]
-    param_names = ['Ks', 'Q', '-']
+    plabels = ['Ks', 'Q', '-']
     bounds = [[15.0, 2500.0], [60.0, 6000.0]]
-    kiviat = Kiviat3D(sample, data, bounds, param_names=param_names)
+    kiviat = Kiviat3D(sample, data, bounds, plabels=plabels)
     kiviat.plot()
 
     return kiviat
