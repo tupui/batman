@@ -10,7 +10,7 @@
       "affiliation": "CERFACS"
     },
     {
-      "@id": "",
+      "@id": "0000-0002-4232-5626",
       "@type": "Person",
       "email": "ricci@cerfacs.fr",
       "name": "Sophie Ricci",
@@ -24,7 +24,7 @@
       "affiliation": "IRT/CERFACS"
     },
     {
-      "@id": "",
+      "@id": "0000-0002-4434-0854",
       "@type": "Person",
       "email": "campet@cerfacs.fr",
       "name": "Robin Campet",
@@ -47,11 +47,11 @@
   ],
   "identifier": "",
   "codeRepository": "https://gitlab.com/cerfacs/batman",
-  "datePublished": "2017-11-12",
-  "dateModified": "2017-11-12",
-  "dateCreated": "2017-11-12",
+  "datePublished": "2017-11-29",
+  "dateModified": "2017-11-29",
+  "dateCreated": "2017-11-23",
   "description": "Bayesian Analysis Tool for Modelling and uncertAinty quaNtification",
-  "keywords": "python, uncertainty quantification, statistical analysis, surrogate model, Computational Fluid Dynamics",
+  "keywords": "python, uncertainty quantification, statistical analysis, surrogate model, design of experiments, uncertainty visualization",
   "license": "CECILL-B",
   "title": "batman",
   "version": "v1.7.0"
