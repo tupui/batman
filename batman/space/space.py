@@ -252,8 +252,12 @@ class Space(list):
         points_set = set(self)
         new_point = []
         for p in point:
-            self += point
-            points_set.add(point)
+            try:
+                points_set.add(point)
+                self += point
+            except TypeError:
+                # Empty list
+                continue
 
             if point in points_set:
                 new_point.append(point)

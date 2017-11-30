@@ -103,6 +103,7 @@ def run(settings, options):
             driver.restart()
             update = True
 
+        logger.info("\n----- Sampling parameter space -----")
         driver.sampling(update=update)
         driver.write()
 
@@ -118,9 +119,8 @@ def run(settings, options):
         try:
             driver.read()
         except IOError:
-            logger.exception(
-                'Surrogate need to be computed: \
-                check output folder or re-try without -n')
+            logger.exception("Surrogate need to be computed: "
+                             "check output folder or re-try without -n")
             raise SystemExit
 
     try:

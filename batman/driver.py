@@ -284,7 +284,9 @@ class Driver(object):
         From a new sample, it re-generates the POD.
 
         """
+        self.logger.info("\n----- Resampling parameter space -----")
         while len(self.space) < self.space.max_points_nb:
+            self.logger.info("-> New iteration")
             quality, point_loo = self.surrogate.estimate_quality()
             # quality = 0.5
             # point_loo = [-1.1780625, -0.8144629629629629]
