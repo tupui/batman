@@ -171,6 +171,7 @@
         "axis_disc": {"type": "array",
                       "items": {"type": "integer", "maxItems": 4, "minimum": 2}},
         "flabel": {"type": "string"},
+        "xlabel": {"type": "string"},
         "plabels": {"type": "array",
                     "items": {"type": "string", "maxItems": 4}},
         "feat_order": {"type": "array",

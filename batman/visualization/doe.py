@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from .uncertainty import kernel_smoothing
 
 
-def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None,
+def doe(sample, plabels=None, resampling=0, multifidelity=False, fname=None,
         show=True):
     """Plot the space of parameters 2d-by-2d.
 
@@ -21,7 +21,7 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None,
     The distribution on each variable is shown on the diagonal.
 
     :param array_like sample: sample (n_samples, n_featrues).
-    :param list(str) p_lst: parameters' names.
+    :param list(str) plabels: parameters' names.
     :param int resampling: number of resampling points.
     :param bool multifidelity: whether or not the model is a multifidelity.
     :param str fname: whether to export to filename or display the figures.
@@ -33,8 +33,8 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None,
     n_samples, dim = sample.shape
     len_sampling = n_samples - resampling
 
-    if p_lst is None:
-        p_lst = ["x" + str(i) for i in range(dim)]
+    if plabels is None:
+        plabels = ["x" + str(i) for i in range(dim)]
 
     if multifidelity:
         sample = sample[:, 1:]
@@ -46,7 +46,7 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None,
                     [0] * len_sampling, c='k', marker='o')
         plt.scatter(sample[len_sampling:],
                     [0] * resampling, c='r', marker='^')
-        plt.xlabel(p_lst[0])
+        plt.xlabel(plabels[0])
         plt.tick_params(axis='y', which='both',
                         labelleft='off', left='off')
     else:
@@ -78,9 +78,9 @@ def doe(sample, p_lst=None, resampling=0, multifidelity=False, fname=None,
                     len_sampling:, j], s=5, c='r', marker='^')
 
             if i == 0:
-                ax.set_ylabel(p_lst[j])
+                ax.set_ylabel(plabels[j])
             if j == (dim - 1):
-                ax.set_xlabel(p_lst[i])
+                ax.set_xlabel(plabels[i])
 
             sub_ax.append(ax)
 

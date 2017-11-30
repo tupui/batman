@@ -51,7 +51,7 @@ def test_space(settings_ishigami):
     assert space.max_points_nb == 10
 
     space = Space(corners, sample=10, nrefine=6,
-                  p_lst=['x', 'y', 'z'])
+                  plabels=['x', 'y', 'z'])
 
     assert space.max_points_nb == 16
 

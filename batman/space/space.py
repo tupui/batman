@@ -58,7 +58,7 @@ class Space(list):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, corners, sample=np.inf, nrefine=0, p_lst=None,
+    def __init__(self, corners, sample=np.inf, nrefine=0, plabels=None,
                  multifidelity=None):
         """Generate a Space.
 
@@ -66,7 +66,7 @@ class Space(list):
         :param int/array_like sample: number of sample or list of sample of
           shape (n_samples, n_features).
         :param int nrefine: number of point to use for refinement.
-        :param list(str) p_lst: parameters' names.
+        :param list(str) plabels: parameters' names.
         :param list(float) multifidelity: Whether to consider the first
           parameter as the fidelity level. It is a list of ['cost_ratio',
           'grand_cost'].
@@ -92,14 +92,14 @@ class Space(list):
                              .format(self.doe_init, self.doe_cheap))
 
         # create parameter list and omit fidelity if relevent
-        if p_lst is not None:
-            self.p_lst = p_lst
+        if plabels is not None:
+            self.plabels = plabels
             try:
-                self.p_lst.remove('fidelity')
+                self.plabels.remove('fidelity')
             except ValueError:
                 pass
         else:
-            self.p_lst = ["x" + str(i) for i in range(self.dim)]
+            self.plabels = ["x" + str(i) for i in range(self.dim)]
 
         # corner points
         self.corners = [Point(p) for p in corners]
@@ -223,7 +223,9 @@ class Space(list):
         :param str method: Refinement method.
         :param array_like point_loo: Leave-one-out worst point (n_features,).
         :param float delta_space: Shrinking factor for the parameter space.
-        :param int discrete: index of the discrete variable
+        :param lst(str) dists: List of valid openturns distributions as string.
+        :param lst(lst(str, int)) hybrid: Navigator as list of [Method, n].
+        :param int discrete: index of the discrete variable.
         :return: List of points to add.
         :rtype: element or list of :class:`batman.space.Point`.
         """
@@ -353,6 +355,6 @@ class Space(list):
         np.savetxt(path, self)
         resampling = len(self) - self.doe_init
         path = os.path.join(os.path.dirname(os.path.abspath(path)), 'DOE.pdf')
-        visualization.doe(self, p_lst=self.p_lst, resampling=resampling,
+        visualization.doe(self, plabels=self.plabels, resampling=resampling,
                           multifidelity=self.multifidelity, fname=path)
         self.logger.debug('Space wrote to {}'.format(path))

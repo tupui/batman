@@ -13,19 +13,19 @@ there are several options implemented in the package.
 +                                  +----------------------------+                                       +
 |                                  | Input     | Output         |                                       |
 +----------------------------------+-----------+----------------+---------------------------------------+
-| :func:`doe.doe`                  | n-scalar  | scalar, vector | Design of Experiment                  |
+| :func:`doe`                      | n-scalar  | scalar, vector | Design of Experiment                  |
 +----------------------------------+-----------+----------------+---------------------------------------+
-| :func:`doe.response_surface`     | <5 scalar | scalar, vector | Response surface (fig or movies)      |
+| :func:`response_surface`         | <5 scalar | scalar, vector | Response surface (fig or movies)      |
 +----------------------------------+-----------+----------------+---------------------------------------+
-| :class:`hdr.HdrBoxplot`          | vector    | vector         | Median realization with PCA           |
+| :class:`HdrBoxplot`              | vector    | vector         | Median realization with PCA           |
 +----------------------------------+-----------+----------------+---------------------------------------+
-| :class:`kiviat.Kiviat3D`         | >5 scalar | scalar, vector | 3D version of the radar/spider plot   |
+| :class:`Kiviat3D`                | >5 scalar | scalar, vector | 3D version of the radar/spider plot   |
 +----------------------------------+-----------+----------------+---------------------------------------+
-| :func:`uncertainty.pdf`          |           | scalar, vector | Output PDF                            |
+| :func:`pdf`                      |           | scalar, vector | Output PDF                            |
 +----------------------------------+-----------+----------------+---------------------------------------+
-| :func:`uncertainty.corr_cov`     | scalar    | vector         | Correlation of the inputs and outputs |
+| :func:`corr_cov`                 | scalar    | vector         | Correlation of the inputs and outputs |
 +----------------------------------+-----------+----------------+---------------------------------------+
-| :func:`uncertainty.sobol`        | scalar    | scalar, vector | Sensitivity indices                   |
+| :func:`sobol`                    | scalar    | scalar, vector | Sensitivity indices                   |
 +----------------------------------+-----------+----------------+---------------------------------------+
 
 All options return a figure object that can be reuse using :func:`reshow`.
@@ -164,10 +164,11 @@ This module allows you to do exactly this:
 
 .. code-block:: python
     
+    import batman as bat
     data = np.loadtxt('data/elnino.dat')
     print('Data shape: ', data.shape)
 
-    hdr = batman.visualization.HdrBoxplot(data)
+    hdr = bat.visualization.HdrBoxplot(data)
     hdr.plot()
 
 The output is the following figure: 
@@ -245,7 +246,8 @@ colored by the value of the function.
 To be able to get a whole set of sample, a 3D version of the Kiviat plot is
 used [Hackstadt1994]_. Thus, each sample corresponds to a 2D Kiviat plot::
 
-    kiviat = batman.visualization.Kiviat3D(space, bounds, feval, param_names)
+    import batman as bat
+    kiviat = bat.visualization.Kiviat3D(space, bounds, feval, param_names)
     kiviat.plot()
 
 .. image::  ../fig/kiviat_3D.pdf
@@ -283,7 +285,7 @@ With :math:`h_{i}` the bandwidth for the *i* th component and :math:`K_{h_i}(.) 
 
 So taking a case with a functionnal output [Roy2017]_, we can recover its PDF with::
 
-    fig_pdf = batman.visualization.pdf(data)
+    fig_pdf = bat.visualization.pdf(data)
 
 .. image::  ../fig/pdf_ls89.pdf
 
@@ -293,7 +295,7 @@ Correlation matrix
 
 The correlation and covariance matrices are also availlable::
 
-    batman.visualization.corr_cov(data, sample, func.x, plabels=['Ks', 'Q'])
+    bat.visualization.corr_cov(data, sample, func.x, plabels=['Ks', 'Q'])
 
 .. image::  ../fig/corr.pdf
 
@@ -303,7 +305,7 @@ The correlation and covariance matrices are also availlable::
 Once *Sobol'* indices are computed , it is easy to plot them with::
 
     indices = [s_first, s_total]
-    batman.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'])
+    bat.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'])
 
 .. image::  ../fig/sobol_aggregated.pdf
 
@@ -311,7 +313,7 @@ In case of functionnal data [Roy2017b]_, both aggregated and map indices can be
 passed to the function and both plot are made::
 
     indices = [s_first, s_total, s_first_full, s_total_full]
-    batman.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'], xdata=x)
+    bat.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'], xdata=x)
 
 .. image::  ../fig/sobol_map.pdf
 
