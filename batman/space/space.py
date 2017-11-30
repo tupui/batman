@@ -253,19 +253,19 @@ class Space(list):
         new_point = []
         for p in point:
             try:
-                points_set.add(point)
-                self += point
+                points_set.add(p)
+                self += p
             except TypeError:
                 # Empty list
                 continue
 
-            if point in points_set:
-                new_point.append(point)
+            if p in points_set:
+                new_point.append(p)
 
-        self.logger.info('Refined sampling with new point: {}'.format(point))
+        self.logger.info('Refined sampling with new point: {}'.format(new_point))
         self.logger.info("New discrepancy is {}".format(self.discrepancy()))
 
-        return point
+        return new_point
 
     def empty(self):
         """Remove all points."""
