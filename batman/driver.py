@@ -27,7 +27,7 @@ from concurrent import futures
 import numpy as np
 import sklearn.gaussian_process.kernels as kernels
 from .pod import Pod
-from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
+from .space import Space
 from .surrogate import SurrogateModel
 from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
@@ -106,12 +106,8 @@ class Driver(object):
 
             for path in self.provider:
                 point = Snapshot.read_point(path)
-                try:
-                    self.space += point
-                except (AlienPointError, UnicityError, FullSpaceError) as tb:
-                    self.logger.warning("Ignoring: {}".format(tb))
-                else:
-                    self.to_compute_points[point] = path
+                self.space += point
+                self.to_compute_points[point] = path
         else:
             space_provider = self.settings['space']['sampling']
             if isinstance(space_provider, list):
@@ -191,13 +187,9 @@ class Driver(object):
             if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
                 sample = self.surrogate.predictor.sample
-                try:
-                    self.space += sample
-                except (AlienPointError, UnicityError, FullSpaceError) as tb:
-                    self.logger.warning("Ignoring: {}".format(tb))
-                finally:
-                    if not self.provider.is_file:
-                        self.to_compute_points = sample[:len(self.space)]
+                self.space += sample
+                if not self.provider.is_file:
+                    self.to_compute_points = sample[:len(self.space)]
         else:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')
@@ -273,11 +265,8 @@ class Driver(object):
                     if len(snapshots) != len(self.space):  # no resampling
                         snapshots = self.data
                         for snapshot in snapshots_:
-                            try:
-                                self.space += snapshot.point
-                                snapshots = np.vstack([snapshots, snapshot.data])
-                            except (AlienPointError, UnicityError, FullSpaceError) as tb:
-                                self.logger.warning("Ignoring: {}".format(tb))
+                            self.space += snapshot.point
+                            snapshots = np.vstack([snapshots, snapshot.data])
 
                 self.data = snapshots
 
@@ -311,17 +300,16 @@ class Driver(object):
             delta_space = self.settings['space']['resampling']['delta_space']
             method = self.settings['space']['resampling']['method']
 
-            try:
-                new_point = self.space.refine(self.surrogate,
-                                              method,
-                                              point_loo=point_loo,
-                                              delta_space=delta_space,
-                                              dists=pdf, hybrid=hybrid,
-                                              discrete=discrete)
-            except FullSpaceError:
-                break
+            new_point = self.space.refine(self.surrogate,
+                                          method,
+                                          point_loo=point_loo,
+                                          delta_space=delta_space, dists=pdf,
+                                          hybrid=hybrid, discrete=discrete)
 
-            self.sampling(new_point, update=True)
+            try:
+                self.sampling(new_point, update=True)
+            except ValueError:
+                break
 
             if self.settings['space']['resampling']['method'] == 'optimization':
                 self.space.optimization_results()
