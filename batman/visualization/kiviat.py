@@ -255,8 +255,6 @@ class Kiviat3D:
         azim_step = 360 / self.data.shape[0]
         elev_step = 40 / self.data.shape[0]
 
-        plt.tight_layout()
-
         with writer.saving(fig, fname, dpi=500):
             for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
                 self.plane(point, f_eval[0], i, ax, fill)

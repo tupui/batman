@@ -36,6 +36,7 @@ python_3_feature_branch:
   when: manual
   except:
     - master
+    - develop
 
 python_2:
   stage: test
