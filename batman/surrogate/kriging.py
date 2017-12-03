@@ -35,7 +35,6 @@ from ..functions.utils import multi_eval
 
 
 class Kriging(object):
-
     """Kriging based on Gaussian Process."""
 
     logger = logging.getLogger(__name__)

@@ -15,7 +15,6 @@ np.random.seed(123456)
 
 
 class Datatest(object):
-
     """Wrap results."""
 
     def __init__(self, kwds):
@@ -114,12 +113,14 @@ def g_function_data(settings_ishigami):
 @pytest.fixture(scope='session')
 def mascaret_data(settings_ishigami):
     data = {}
-    data['func'] = Mascaret()
+    fun = Mascaret()
+    data['func'] = lambda x: fun(x).reshape(-1, 14)[:, 0:3]
+    data['func'].x = fun.x[0:3]
     x1 = ot.Uniform(15., 60.)
     x2 = ot.Normal(4035., 400.)
     data['dists'] = [x1, x2]
     data['point'] = [31.54, 4237.025]
-    data['target_point'] = data['func'](data['point'])
+    data['target_point'] = data['func'](data['point'])[0]
     data['space'] = Space([[15.0, 2500.0], [60, 6000.0]],
                           settings_ishigami['space']['sampling']['init_size'],
                           settings_ishigami['space']['resampling']['resamp_size'],

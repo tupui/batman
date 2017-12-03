@@ -35,7 +35,6 @@ from ..space import Space
 
 
 class Pod(object):
-
     """POD class."""
 
     logger = logging.getLogger(__name__)

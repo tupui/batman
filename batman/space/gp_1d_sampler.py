@@ -37,7 +37,6 @@ ot.RandomGenerator.SetSeed(int(time.time() * 1e10))
 
 
 class Gp1dSampler:
-
     """Gp1dSampler class."""
 
     logger = logging.getLogger(__name__)
@@ -46,17 +45,17 @@ class Gp1dSampler:
                  threshold=0.01, cov="AbsoluteExponential", x=None):
         """Computes the Karhunen Loeve decomposition and initializes GP1D.
 
-            :param int t_ini: initial point of the mesh
-            :param int t_end: final point of the mesh
-            :param int Nt: size of the mesh
-            :param float sigma: GP standard deviation
-            :param float theta: GP correlation length
-            :param float threshold: minimal relative amplitude of the
-              eigenvalues to consider in the KLD wrt the maximum eigenvalue
-            :param str cov: covariance model ['SquaredExponential',
-              'AbsoluteExponential', 'Matern32', 'Matern52', 'Exponential',
-              'Spherical']
-            """
+        :param int t_ini: initial point of the mesh
+        :param int t_end: final point of the mesh
+        :param int Nt: size of the mesh
+        :param float sigma: GP standard deviation
+        :param float theta: GP correlation length
+        :param float threshold: minimal relative amplitude of the
+          eigenvalues to consider in the KLD wrt the maximum eigenvalue
+        :param str cov: covariance model ['SquaredExponential',
+          'AbsoluteExponential', 'Matern32', 'Matern52', 'Exponential',
+          'Spherical']
+        """
         self.t_ini = t_ini
         self.t_end = t_end
         self.Nt = Nt
@@ -210,8 +209,7 @@ class Gp1dSampler:
 
 
 class Gp2dSampler:
-
-    '''The class "Gp_2d_sampler" computes instances of a two-dimensional Gaussian Process (GP) discretized over a mesh. It can be decomposed into three steps: 
+    """The class "Gp_2d_sampler" computes instances of a two-dimensional Gaussian Process (GP) discretized over a mesh. It can be decomposed into three steps: 
         1) Compute the Karhunen Loeve decomposition (KLD); 
         2) Sample the weights of the KLD according to the standard normal distribution.
            OR set the weights to fixed values.
@@ -225,10 +223,10 @@ class Gp2dSampler:
         - theta: the GP correlation length (default = [0.5,0.5]).
         - threshold: the minimal relative amplitude of the eigenvalues to consider in the KLD wrt the maximum eigenvalue (default = 0.01).
         - modes: Modes of the KLD evaluated over the mesh ([prod(Nt) x Nmodes] matrix).
-    '''
+    """
 
     def __init__(self, t0=[0.0, 0.0], T=[1.0, 1.0], Nt=[10, 10], sigma=1.0, theta=[0.5, 0.5], threshold=0.01, covariance="AbsoluteExponential"):
-        ''' This function computes the Karhunen Loeve decomposition and initializes the GP2D object.
+        """ This function computes the Karhunen Loeve decomposition and initializes the GP2D object.
         Arguments:
             - t0: the initial point of the mesh (default = 0).
             - T: the final point of the mesh (default = 1).
@@ -238,7 +236,7 @@ class Gp2dSampler:
             - threshold: the minimal relative amplitude of the eigenvalues to consider in the KLD wrt the maximum eigenvalue (default = 0.01).
         Fields :
             - Arguments of the constructor (t0, T, Nt, sigma, theta, threshold)
-            - modes: the modes of the KLD evaluated over the mesh ([prod(Nt) x Nmodes] matrix).'''
+            - modes: the modes of the KLD evaluated over the mesh ([prod(Nt) x Nmodes] matrix)."""
         self.t0 = t0
         self.T = T
         self.Nt = Nt
@@ -275,7 +273,7 @@ class Gp2dSampler:
 
         # Evaluation of the eigen functions
         for i in range(n_modes):
-            modes[i] = ot.Field(mesh, modes[i].getValues() * [sqrt(ev[i])])
+            modes[i] = ot.Field(mesh, modes[i].getValues() * [np.sqrt(ev[i])])
 
         # Matrix of the modes over the grid (lines <> modes; columns <> times)
         vaep = np.eye(n_modes, np.prod(self.Nt))
@@ -298,7 +296,7 @@ class Gp2dSampler:
         return template.format(self.t0[0],self.T[0],self.t0[1],self.T[1],self.Nt[0],self.Nt[1],self.sigma,self.theta[0],self.theta[1],self.threshold,self.n_modes)
 
     def plot_modes(self):
-        '''This function plots the modes of the Karhunen Loeve decomposition.'''
+        """This function plots the modes of the Karhunen Loeve decomposition."""
         X, Y = np.meshgrid(np.arange(self.t0[0], self.T[0], (self.T[0] - self.t0[0]) / self.Nt[
                            0]), np.arange(self.t0[1], self.T[1], (self.T[1] - self.t0[1]) / self.Nt[1]))
         for i in range(min(self.n_modes, 9)):
@@ -311,14 +309,14 @@ class Gp2dSampler:
         plt.show()
 
     def sample(self, N=1):
-        ''' This function computes "Nm" realizations of the GP2D.
+        """ This function computes "Nm" realizations of the GP2D.
         Arguments:
             - Nm: the number of GP2D instances (default = 1).
         Outputs:
             - ['Values']: Nm instances of the 2D GP discretized over the mesh.
                 ** [Nm x prod(Nt)] matrix
             - ['Coefficients']: Coefficients for the KLD.
-                ** [Nm x Nmodes] matrix'''
+                ** [Nm x Nmodes] matrix"""
         # --- Input marginals
         normal = ot.Normal(0., 1.)
         collection = ot.DistributionCollection(self.n_modes)
@@ -338,14 +336,14 @@ class Gp2dSampler:
         return {'Values': Y.T, 'Coefficients': X}
 
     def build(self, coeff=[0]):
-        ''' This function computes the realization of the GP2D corresponding to the coefficients "coeff".
+        """ This function computes the realization of the GP2D corresponding to the coefficients "coeff".
         Arguments:
             - coeff: coefficients of the Karhunen Loeve decomposition (default = [0]).
         Outputs:
             - ['Values']: an instance of the 2D GP discretized over the mesh [t0:(T-T0)/(Nt-1):T].
                 ** [1 x Nt] matrix
             - ['Coefficients']: Coefficients for the KLD.
-                ** [1 x Nmodes] matrix'''
+                ** [1 x Nmodes] matrix"""
         X = list(coeff[0:self.n_modes]) + \
             list(np.zeros(max(0, self.n_modes - len(coeff))))
         Y = np.dot(self.modes.T, X)
@@ -353,8 +351,7 @@ class Gp2dSampler:
 
 
 class Gp3dSampler:
-
-    '''The class "Gp_nd_sampler" computes instances of a 3-dimensional Gaussian Process (GP) discretized over a mesh. It can be decomposed into three steps: 
+    """The class "Gp_nd_sampler" computes instances of a 3-dimensional Gaussian Process (GP) discretized over a mesh. It can be decomposed into three steps: 
         1) Compute the Karhunen Loeve decomposition (KLD); 
         2) Sample the weights of the KLD according to the standard normal distribution.
            OR set the weights to fixed values.
@@ -368,10 +365,10 @@ class Gp3dSampler:
         - theta: the GP correlation length (default = [0.5,0.5,0.5]).
         - threshold: the minimal relative amplitude of the eigenvalues to consider in the KLD wrt the maximum eigenvalue (default = 0.01).
         - modes: Modes of the KLD evaluated over the mesh ([prod(Nt) x Nmodes] matrix).
-    '''
+    """
 
     def __init__(self, t0=[0.,0.,0.], T=[1.,1.,1.], Nt=[10,10,10], sigma=1.0, theta=[0.5,0.5,0.5], threshold=0.01, covariance="AbsoluteExponential"):
-        ''' This function computes the Karhunen Loeve decomposition and initializes the GP2D object.
+        """ This function computes the Karhunen Loeve decomposition and initializes the GP2D object.
         Arguments:
             - t0: the initial point of the mesh (default = [0,0,0]).
             - T: the final point of the mesh (default = [1,1,1]).
@@ -381,7 +378,7 @@ class Gp3dSampler:
             - threshold: the minimal relative amplitude of the eigenvalues to consider in the KLD wrt the maximum eigenvalue (default = 0.01).
         Fields :
             - Arguments of the constructor (t0, T, Nt, sigma, theta, threshold)
-            - modes: the modes of the KLD evaluated over the mesh ([prod(Nt) x Nmodes] matrix).'''
+            - modes: the modes of the KLD evaluated over the mesh ([prod(Nt) x Nmodes] matrix)."""
         self.t0 = t0
         self.T = T
         self.Nt = Nt
@@ -418,7 +415,7 @@ class Gp3dSampler:
 
         # Evaluation of the eigen functions
         for i in range(n_modes):
-            modes[i] = ot.Field(mesh, modes[i].getValues() * [sqrt(ev[i])])
+            modes[i] = ot.Field(mesh, modes[i].getValues() * [np.sqrt(ev[i])])
 
         # Matrix of the modes over the grid (lines <> modes; columns <> times)
         vaep = np.eye(n_modes, np.prod(self.Nt))
@@ -441,14 +438,14 @@ class Gp3dSampler:
         return template.format(self.t0[0],self.T[0],self.t0[1],self.T[1],self.t0[2],self.T[2],self.Nt[0],self.Nt[1],self.Nt[2],self.sigma,self.theta[0],self.theta[1],self.theta[2],self.threshold,self.n_modes)
 
     def sample(self, N=1):
-        ''' This function computes "Nm" realizations of the GP3D.
+        """ This function computes "Nm" realizations of the GP3D.
         Arguments:
             - Nm: the number of GP3D instances (default = 1).
         Outputs:
             - ['Values']: Nm instances of the 3D GP discretized over the mesh.
                 ** [Nm x prod(Nt)] matrix
             - ['Coefficients']: Coefficients for the KLD.
-                ** [Nm x Nmodes] matrix'''
+                ** [Nm x Nmodes] matrix"""
         # --- Input marginals
         normal = ot.Normal(0., 1.)
         collection = ot.DistributionCollection(self.n_modes)
@@ -468,14 +465,14 @@ class Gp3dSampler:
         return {'Values': Y.T, 'Coefficients': X}
 
     def build(self, coeff=[0]):
-        ''' This function computes the realization of the GP3D corresponding to the coefficients "coeff".
+        """ This function computes the realization of the GP3D corresponding to the coefficients "coeff".
         Arguments:
             - coeff: coefficients of the Karhunen Loeve decomposition (default = [0]).
         Outputs:
             - ['Values']: an instance of the 3D GP discretized over the mesh [t0:(T-T0)/(Nt-1):T].
                 ** [1 x Nt] matrix
             - ['Coefficients']: Coefficients for the KLD.
-                ** [1 x Nmodes] matrix'''
+                ** [1 x Nmodes] matrix"""
         X = list(coeff[0:self.n_modes]) + \
             list(np.zeros(max(0, self.n_modes - len(coeff))))
         Y = np.dot(self.modes.T, X)

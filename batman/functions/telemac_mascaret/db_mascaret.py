@@ -15,7 +15,6 @@ from .. import mascaret
 
 
 class Mascaret(object):
-
     """Mascaret class."""
 
     logger = logging.getLogger(__name__)

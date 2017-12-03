@@ -11,7 +11,6 @@ from ..space import Point
 
 
 class SnapshotProvider(object):
-
     """Utility class to make the code more readable.
 
     This is how the provider type is figured out.
@@ -48,7 +47,6 @@ class SnapshotProvider(object):
 
 
 class Snapshot(object):
-
     """A snapshot container.
 
     A snapshot is a vector bound to a point in the space of parameter.

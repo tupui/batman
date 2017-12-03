@@ -39,7 +39,6 @@ from ..misc import optimization
 
 
 class Refiner(object):
-
     """Resampling the space of parameters."""
 
     logger = logging.getLogger(__name__)

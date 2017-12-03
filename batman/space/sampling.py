@@ -33,7 +33,6 @@ import openturns as ot
 
 
 class Doe():
-
     """DOE class."""
 
     logger = logging.getLogger(__name__)

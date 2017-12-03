@@ -18,7 +18,6 @@ import batman.space.gp_1d_sampler as gp_1d_sampler
 
 
 class MascaretApi(object):
-
     """Mascaret API."""
 
     logger = logging.getLogger(__name__)

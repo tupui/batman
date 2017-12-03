@@ -36,7 +36,6 @@ from .functions.utils import multi_eval
 
 
 class Driver(object):
-
     """Driver class."""
 
     logger = logging.getLogger(__name__)

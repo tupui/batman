@@ -59,7 +59,6 @@ from .utils import multi_eval
 
 
 class SixHumpCamel(object):
-
     r"""SixHumpCamel class [Molga2005]_.
 
     .. math:: \left(4-2.1x_1^2+\frac{x_1^4}{3}\right)x_1^2+x_1x_2+
@@ -97,7 +96,6 @@ class SixHumpCamel(object):
 
 
 class Branin(object):
-
     r"""Branin class [Forrester2008]_.
 
     .. math:: f(x) = \left( x_2 - \frac{5.1}{4\pi^2}x_1^2 + \frac{5}{\pi}x_1 - 6
@@ -137,7 +135,6 @@ class Branin(object):
 
 
 class Michalewicz(object):
-
     r"""Michalewicz class [Molga2005]_.
 
     It is a multimodal *d*-dimensional function which has :math:`d!`
@@ -183,7 +180,6 @@ class Michalewicz(object):
 
 
 class Rosenbrock(object):
-
     r"""Rosenbrock class [Dixon1978]_.
 
     .. math:: f(x)=\sum_{i=1}^{d-1}[100(x_{i+1}-x_i^2)^2+(x_i-1)^2]
@@ -223,7 +219,6 @@ class Rosenbrock(object):
 
 
 class Rastrigin(object):
-
     r"""Rastrigin class [Molga2005]_.
 
     It is a multimodal *d*-dimensional function which has regularly distributed
@@ -263,7 +258,6 @@ class Rastrigin(object):
 
 
 class Ishigami(object):
-
     r"""Ishigami class [Ishigami1990]_.
 
     .. math:: F = \sin(x_1)+7\sin(x_2)^2+0.1x_3^4\sin(x_1), x\in [-\pi, \pi]^3
@@ -318,7 +312,6 @@ class Ishigami(object):
 
 
 class G_Function(object):
-
     r"""G_Function class [Saltelli2000]_.
 
     .. math:: F = \Pi_{i=1}^d \frac{\lvert 4x_i - 2\rvert + a_i}{1 + a_i}
@@ -369,7 +362,6 @@ class G_Function(object):
 
 
 class Forrester(object):
-
     r"""Forrester class [Forrester2007]_.
 
     .. math:: F_{e}(x) = (6x-2)^2\sin(12x-4), \\
@@ -416,7 +408,6 @@ class Forrester(object):
 
 
 class Channel_Flow(object):
-
     r"""Channel Flow class.
 
     .. math:: \frac{dh}{ds}=\mathcal{F}(h)=I\frac{1-(h/h_n)^{-10/3}}{1-(h/h_c)^{-3}}\\
@@ -474,7 +465,6 @@ class Channel_Flow(object):
 
 
 class Manning(object):
-
     """Manning equation for rectangular channel class."""
 
     logger = logging.getLogger(__name__)
@@ -518,7 +508,6 @@ class Manning(object):
 
 
 class ChemicalSpill(object):
-
     r"""Environmental Model class [Bliznyuk2008]_.
 
     Model a pollutant spill caused by a chemical accident.

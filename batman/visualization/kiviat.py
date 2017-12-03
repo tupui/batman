@@ -18,7 +18,6 @@ import batman as bat
 
 
 class Arrow3D(FancyArrowPatch):
-
     """Render 3D arrows."""
 
     def __init__(self, xs, ys, zs, *args, **kwargs):
@@ -35,7 +34,6 @@ class Arrow3D(FancyArrowPatch):
 
 
 class Kiviat3D:
-
     """3D version of the Kiviat plot.
 
     Each realization is stacked on top of each other. The axis represent the
