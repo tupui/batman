@@ -33,7 +33,6 @@ ot.ResourceMap.SetAsUnsignedInteger("DesignProxy-DefaultCacheSize", 0)
 
 
 class PC(object):
-
     """Polynomial Chaos class."""
 
     logger = logging.getLogger(__name__)
@@ -61,7 +60,8 @@ class PC(object):
         if stieltjes:
             # Tend to result in performance issue
             self.basis = ot.OrthogonalProductPolynomialFactory(
-                [ot.StandardDistributionPolynomialFactory(ot.AdaptiveStieltjesAlgorithm(marginal))
+                [ot.StandardDistributionPolynomialFactory(
+                    ot.AdaptiveStieltjesAlgorithm(marginal))
                  for marginal in distributions], enumerateFunction)
         else:
             self.basis = ot.OrthogonalProductPolynomialFactory(
@@ -104,7 +104,8 @@ class PC(object):
         The result of the Polynomial Chaos is stored as :attr:`pc_result` and
         the surrogate is stored as :attr:`pc`.
 
-        :param array_like sample: The sample used to generate the data (n_samples, n_features).
+        :param array_like sample: The sample used to generate the data
+          (n_samples, n_features).
         :param array_like data: The observed data (n_samples, [n_features]).
         """
         sample_ = np.zeros_like(self.sample)
@@ -115,8 +116,9 @@ class PC(object):
         trunc_strategy = ot.FixedStrategy(self.basis, self.n_basis)
 
         pc_algo = ot.FunctionalChaosAlgorithm(sample, weights, data,
-                                              self.dist, trunc_strategy,
-                                              self.proj_strategy)
+                                              self.dist, trunc_strategy)
+        pc_algo.setProjectionStrategy(self.proj_strategy)
+
         ot.Log.Show(ot.Log.ERROR)
         pc_algo.run()
         self.pc_result = pc_algo.getResult()

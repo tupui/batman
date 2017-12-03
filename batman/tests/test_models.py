@@ -10,14 +10,14 @@ from batman.tests.conftest import sklearn_q2
 
 
 def test_PC_1d(ishigami_data):
-    surrogate = PC(distributions=ishigami_data.dists, n_sample=500, degree=10,
+    surrogate = PC(distributions=ishigami_data.dists, n_sample=2000, degree=10,
                    strategy='LS', stieltjes=False)
     input_ = surrogate.sample
-    assert len(input_) == 500
+    assert len(input_) == 2000
     output = ishigami_data.func(input_)
     surrogate.fit(input_, output)
     pred = np.array(surrogate.evaluate(ishigami_data.point))
-    assert pred == pytest.approx(ishigami_data.target_point, 0.01)
+    assert pred == pytest.approx(ishigami_data.target_point, 0.1)
 
     # Compute predictivity coefficient Q2
     q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, surrogate.evaluate)
@@ -78,16 +78,16 @@ def test_RBFnet_1d(ishigami_data):
     surrogate = RBFnet(ishigami_data.space, ishigami_data.target_space, regtree=1)
 
 
-def test_PC_14d(mascaret_data):
-    surrogate = PC(distributions=mascaret_data.dists, n_sample=100, degree=10,
+def test_PC_nd(mascaret_data):
+    surrogate = PC(distributions=mascaret_data.dists, n_sample=300, degree=10,
                    strategy='LS')
     input_ = surrogate.sample
     output = mascaret_data.func(input_)
     surrogate.fit(input_, output)
-    pred = np.array(surrogate.evaluate(mascaret_data.point)).reshape(14)
+    pred = np.array(surrogate.evaluate(mascaret_data.point)).reshape(-1)
     npt.assert_almost_equal(mascaret_data.target_point, pred, decimal=1)
 
-    surrogate = PC(distributions=mascaret_data.dists, degree=10,
+    surrogate = PC(distributions=mascaret_data.dists, degree=5,
                    strategy='Quad')
     input_ = surrogate.sample
     output = mascaret_data.func(input_)
@@ -98,7 +98,7 @@ def test_PC_14d(mascaret_data):
     assert q2 == pytest.approx(1, 0.1)
 
 
-def test_GP_14d(mascaret_data):
+def test_GP_nd(mascaret_data):
     surrogate = Kriging(mascaret_data.space, mascaret_data.target_space)
 
     # Test point evaluation
