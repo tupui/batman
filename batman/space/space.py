@@ -53,7 +53,6 @@ class FullSpaceError(Exception):
 
 
 class Space(list):
-
     """Manages the space of parameters."""
 
     logger = logging.getLogger(__name__)

@@ -14,7 +14,6 @@ import numpy as np
 
 
 class Point(tuple):
-
     """Point class."""
 
     logger = logging.getLogger(__name__)

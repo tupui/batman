@@ -74,7 +74,7 @@ Dependencies
 
 The required dependencies are: 
 
-- `Python <https://python.org>`_ >= 2.7 or >= 3.3
+- `Python <https://python.org>`_ >= 2.7 or >= 3.4
 - `scikit-learn <http://scikit-learn.org>`_ >= 0.18
 - `numpy <http://www.numpy.org>`_ >= 1.13
 - `scipy <http://scipy.org>`_ >= 0.15
@@ -88,7 +88,7 @@ Appart from OpenTURNS, required dependencies are satisfied by the installer.
 Optionnal dependencies are: 
 
 - `Antares <http://www.cerfacs.fr/antares>`_ for extra IO options
-- `ffmpeg <https://www.ffmpeg.org>`_ for movie visualizations
+- `ffmpeg <https://www.ffmpeg.org>`_ for movie visualizations (*n_features* > 2)
 
 Testing dependencies are: 
 
@@ -120,10 +120,6 @@ optionnal but is recommanded. (<30mins depending on your configuration).
 
 .. note:: If you don't have install priviledge, add ``--user`` option after install.
     But the simplest way might be to use a conda environment.
-
-Finally, if you want to install the optionnal package ``Antares`` (not provided)::
-
-    pip install --editable .[antares] --process-dependency-links
 
 If batman has been correctly installed, you should be able to call it simply::
 

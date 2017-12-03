@@ -30,7 +30,6 @@ opj = os.path.join
 
 
 class SnapshotTask(object):
-
     """SnapshotTask class."""
 
     logger = logging.getLogger(__name__)

@@ -16,7 +16,6 @@ class DataSizeError(Exception):
 
 
 class DatasetInfo(object):
-
     """A meta-data container.
 
     This class provides a container for the meta informations needed to
@@ -83,7 +82,6 @@ class DatasetInfo(object):
 
 
 class Dataset(DatasetInfo):
-
     """A data container.
 
     This class provides a container for datasets. Besides being a subclass of

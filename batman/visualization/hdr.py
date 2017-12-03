@@ -38,7 +38,6 @@ copyreg.pickle(types.MethodType, _pickle_method)
 
 
 class HdrBoxplot:
-
     """High Density Region boxplot.
 
     From a given dataset, it computes the HDR-boxplot. Results are accessibles

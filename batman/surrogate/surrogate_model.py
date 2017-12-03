@@ -38,7 +38,6 @@ from ..misc import ProgressBar, NestedPool, cpu_system
 
 
 class SurrogateModel(object):
-
     """Surrogate model."""
 
     logger = logging.getLogger(__name__)

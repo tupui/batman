@@ -9,14 +9,12 @@ __docformat__ = "reStructuredText"
 
 
 class FormatError(Exception):
-
     """Can be raised in sub-classes."""
 
     pass
 
 
 class IOBase(object):
-
     """Base class for IO operations.
 
     This class is an abstract class that implements the basic algorithms and

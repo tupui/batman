@@ -163,7 +163,6 @@ def import_config(path_config, path_schema):
 
 
 class ProgressBar(object):
-
     """Print progress bar in console."""
 
     def __init__(self, total):

@@ -71,7 +71,6 @@ from .. import visualization
 
 
 class UQ:
-
     """Uncertainty Quantification class."""
 
     logger = logging.getLogger(__name__)

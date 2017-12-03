@@ -16,7 +16,6 @@ __all__ = ['Dataset', 'IOFormatSelector']
 
 
 class IOFormatSelector(object):
-
     """Return an instance of io manager corresponding to a file `format`."""
 
     logger = logging.getLogger(__name__)

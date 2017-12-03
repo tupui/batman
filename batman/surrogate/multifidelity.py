@@ -21,7 +21,6 @@ from ..functions.utils import multi_eval
 
 
 class Evofusion(object):
-
     """Multifidelity algorithm using Evofusion."""
 
     logger = logging.getLogger(__name__)

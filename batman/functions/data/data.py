@@ -18,7 +18,6 @@ import numpy as np
 
 
 class Data(collections.Mapping):
-
     """Wrap datasets into a Mapping container.
 
     Store a dataset allong with some informations about it.

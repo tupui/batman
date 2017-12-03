@@ -1,11 +1,16 @@
 # coding: utf8
 from mock import patch
-from batman.space.gp_1d_sampler import Gp1dSampler
+import pytest
+from distutils.version import LooseVersion
 import numpy as np
 import numpy.testing as npt
 import openturns as ot
+from batman.space.gp_1d_sampler import Gp1dSampler
+
+ot_comp = LooseVersion(ot.__version__) < LooseVersion('1.10')
 
 
+@pytest.mark.skipif(not ot_comp, reason='openturns version > 1.9')
 @patch("matplotlib.pyplot.show")
 def test_Gp1dSampler(mock_show, tmp):
     sampler = Gp1dSampler(x=[[0.104], [1.]])
@@ -26,18 +31,22 @@ def test_Gp1dSampler(mock_show, tmp):
     sampler.plot_sample(Y, tmp)
 
 
-sampler = Gp1dSampler(t_ini=0, t_end=1, Nt=3, sigma=1.0, theta=0.5,
-                      threshold=0.01, cov="AbsoluteExponential")
+@pytest.fixture(scope="session")
+def sampler():
+    return Gp1dSampler(t_ini=0, t_end=1, Nt=3, sigma=1.0, theta=0.5,
+                       threshold=0.01, cov="AbsoluteExponential")
 
 
-def test_Gp1dSampler_modes():
+@pytest.mark.skipif(not ot_comp, reason='openturns version > 1.9')
+def test_Gp1dSampler_modes(sampler):
     sol = np.array([[5.98847892e-01, 6.57519854e-01, 4.57218596e-01],
                     [9.17674523e-01, -1.81049751e-16, -3.97332946e-01],
                     [5.98847892e-01, -6.57519854e-01, 4.57218596e-01]])
     npt.assert_almost_equal(sampler.modes, sol, decimal=2)
 
 
-def test_Gp1dSampler_sample_values():
+@pytest.mark.skipif(not ot_comp, reason='openturns version > 1.9')
+def test_Gp1dSampler_sample_values(sampler):
     size = 2
     ot.RandomGenerator.SetSeed(0)
     Y = sampler.sample(size)
@@ -47,7 +56,8 @@ def test_Gp1dSampler_sample_values():
     npt.assert_almost_equal(Y['Values'], sol, decimal=2)
 
 
-def test_Gp1dSampler_sample_coeff():
+@pytest.mark.skipif(not ot_comp, reason='openturns version > 1.9')
+def test_Gp1dSampler_sample_coeff(sampler):
     size = 2
     ot.RandomGenerator.SetSeed(0)
     Y = sampler.sample(size)
@@ -56,14 +66,16 @@ def test_Gp1dSampler_sample_coeff():
     npt.assert_almost_equal(Y['Coefficients'], sol, decimal=2)
 
 
-def test_Gp1dSampler_build_values():
+@pytest.mark.skipif(not ot_comp, reason='openturns version > 1.9')
+def test_Gp1dSampler_build_values(sampler):
     coeff = [0.2, 0.7, -0.4, 1.6, 0.2, 0.8, 0.4]
     Y = sampler.build(coeff)
     sol = np.array([0.39714604, 0.34246808, -0.52338176])
     npt.assert_almost_equal(Y['Values'], sol, decimal=2)
 
 
-def test_Gp1dSampler_build_coeff():
+@pytest.mark.skipif(not ot_comp, reason='openturns version > 1.9')
+def test_Gp1dSampler_build_coeff(sampler):
     coeff = [0.2, 0.7, -0.4, 1.6, 0.2, 0.8, 0.4]
     Y = sampler.build(coeff)
     sol = [0.2, 0.7, -0.4]
