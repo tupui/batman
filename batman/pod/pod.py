@@ -75,7 +75,7 @@ class Pod(object):
         self.predictor = None
         self.leave_one_out_predictor = 'kriging'
         self.corners = corners
-        self.points = Space(self.corners, nsample, nrefine)
+        self.space = Space(self.corners, nsample, nrefine)
 
         # POD computation related
         self.tolerance = tolerance
@@ -97,7 +97,7 @@ class Pod(object):
              "maximum number of modes: {}\n"
              "number of modes: {}\n"
              "modes: {}\n"
-             .format(self.tolerance, self.points.dim, len(self.points),
+             .format(self.tolerance, self.space.dim, len(self.space),
                      self.mean_snapshot.shape[0], self.dim_max,
                      self.S.shape[0], self.S))
         return s
@@ -115,7 +115,7 @@ class Pod(object):
         self._decompose(matrix)
 
         for s in snapshots:
-            self.points += s.point
+            self.space += s.point
 
         self.logger.info('Computed POD basis with %g modes', self.S.shape[0])
 
@@ -127,7 +127,7 @@ class Pod(object):
         self.logger.info('Updating POD basis...')
         snapshot = Snapshot.convert(snapshot)
         self._update(snapshot.data)
-        self.points += snapshot.point
+        self.space += snapshot.point
         self.logger.info('Updated POD basis with snapshot at point {}'
                          .format(snapshot.point))
 
@@ -145,7 +145,7 @@ class Pod(object):
         level_init = copy.copy(self.logger.getEffectiveLevel())
         logging.getLogger().setLevel(logging.WARNING)
 
-        quality, point = self._estimate_quality(self.points)
+        quality, point = self._estimate_quality(self.space)
 
         logging.getLogger().setLevel(level_init)
 
@@ -166,7 +166,7 @@ class Pod(object):
             pass
 
         # points
-        self.points.write(os.path.join(path, self.points_file_name))
+        self.space.write(os.path.join(path, self.points_file_name))
 
         # mean snapshot
         p = os.path.join(path, self.directories['mean_snapshot'])
@@ -177,7 +177,7 @@ class Pod(object):
         for i, u in enumerate(self.U.T):
             Snapshot.write_data(u, path_pattern % i)
 
-        points = np.vstack(tuple(self.points))
+        points = np.vstack(tuple(self.space))
         np.savez(os.path.join(path, self.pod_file_name),
                  parameters=points,
                  values=self.S,
@@ -191,7 +191,7 @@ class Pod(object):
         :param str path: path to a directory.
         """
         # points
-        self.points.read(os.path.join(path, self.points_file_name))
+        self.space.read(os.path.join(path, self.points_file_name))
 
         # mean snapshot
         p = os.path.join(path, self.directories['mean_snapshot'])
@@ -408,12 +408,12 @@ class Pod(object):
             points_1.pop(i)
 
             new_pod = copy.deepcopy(self)
-            new_pod.points = points_1
+            new_pod.space = points_1
             new_pod.V = V_1
             new_pod.S = S_1
 
             # New prediction with points_nb - 1
-            surrogate.fit(new_pod.points, new_pod.V * new_pod.S)
+            surrogate.fit(new_pod.space, new_pod.V * new_pod.S)
             prediction, _ = surrogate(points[i])
 
             # MSE on the missing point

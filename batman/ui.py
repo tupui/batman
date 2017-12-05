@@ -8,6 +8,7 @@ import os
 import re
 import shutil
 import json
+import openturns as ot
 
 from batman import __version__, __branch__, __commit__
 from batman.driver import Driver
@@ -32,6 +33,8 @@ with open(path + '/misc/logging.json', 'r') as file:
     logging_config = json.load(file)
 
 dictConfig(logging_config)
+
+ot.RandomGenerator.SetSeed(123456)
 
 
 def run(settings, options):

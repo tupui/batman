@@ -22,7 +22,6 @@ Defines all methods used to interact with other classes.
 import logging
 import os
 import pickle
-from collections import OrderedDict
 from concurrent import futures
 import numpy as np
 import sklearn.gaussian_process.kernels as kernels
@@ -77,10 +76,16 @@ class Driver(object):
             init_size = self.settings['space']['sampling']['init_size']
         else:  # when providing DoE as a list
             init_size = self.settings['space']['sampling']
+        try:
+            duplicate = self.settings['space']['sampling']['method'] == 'saltelli'
+        except (KeyError, TypeError):
+            duplicate = False
+
         self.space = Space(self.settings['space']['corners'],
                            init_size,
-                           resamp_size,
-                           self.settings['snapshot']['io']['parameter_names'])
+                           nrefine=resamp_size,
+                           plabels=self.settings['snapshot']['io']['parameter_names'],
+                           duplicate=duplicate)
 
         # Snapshots
         Snapshot.initialize(self.settings['snapshot']['io'])
@@ -102,12 +107,12 @@ class Driver(object):
             # get the point from existing snapshot files,
             self.logger.info('Reading points from a list of snapshots files.')
 
-            self.to_compute_points = OrderedDict()
+            self.to_compute_points = []
 
             for path in self.provider:
                 point = Snapshot.read_point(path)
                 self.space += point
-                self.to_compute_points[point] = path
+                self.to_compute_points.append(path)
         else:
             space_provider = self.settings['space']['sampling']
             if isinstance(space_provider, list):
@@ -139,6 +144,7 @@ class Driver(object):
                          'nsample': self.space.doe_init,
                          'nrefine': resamp_size}
             self.pod = Pod(**settings_)
+            self.pod.space.duplicate = duplicate
         else:
             self.pod = None
             self.logger.info('No POD is computed.')
@@ -206,7 +212,7 @@ class Driver(object):
             points = self.to_compute_points
         # snapshots generation
         if self.provider.is_file:
-            snapshots = points.values()
+            snapshots = points
         else:
             snapshots = []
             for point in points:
@@ -248,7 +254,7 @@ class Driver(object):
                 self.pod.decompose(snapshots)
 
             self.data = self.pod.VS()
-            points = self.pod.points
+            points = self.pod.space
         else:
             if self.provider.is_job:
                 _snapshots = []
