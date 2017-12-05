@@ -58,7 +58,7 @@
         "flabel": "F(Ks, Q)"
     },
     "uq": {
-        "sample": 1200,
+        "sample": 50000,
         "pdf": ["Uniform(15., 60.)", "Normal(4031, 400)" ],
         "type": "aggregated",
         "method": "sobol"

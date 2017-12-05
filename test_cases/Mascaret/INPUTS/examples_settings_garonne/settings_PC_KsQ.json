@@ -7,7 +7,7 @@
         "sampling": {
             "init_size": 121,
             "method": "halton",
-            "distributions": ["Uniform(15., 60.)", "Normal(4031, 400)"]
+            "distributions": ["Uniform(15., 60.)", "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()"]
         },
         "resampling":{
             "delta_space": 0.08,
@@ -58,8 +58,8 @@
         "flabel": "F(Ks, Q)"
     },
     "uq": {
-        "sample": 1200,
-        "pdf": ["Uniform(15., 60.)", "Normal(4031, 400)" ],
+        "sample": 50000,
+        "pdf": ["Uniform(15., 60.)", "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()" ],
         "type": "aggregated",
         "method": "sobol"
     }
