@@ -22,12 +22,11 @@ Defines all methods used to interact with other classes.
 import logging
 import os
 import pickle
-from collections import OrderedDict
 from concurrent import futures
 import numpy as np
 import sklearn.gaussian_process.kernels as kernels
 from .pod import Pod
-from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
+from .space import Space
 from .surrogate import SurrogateModel
 from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
@@ -77,10 +76,16 @@ class Driver(object):
             init_size = self.settings['space']['sampling']['init_size']
         else:  # when providing DoE as a list
             init_size = self.settings['space']['sampling']
+        try:
+            duplicate = self.settings['space']['sampling']['method'] == 'saltelli'
+        except (KeyError, TypeError):
+            duplicate = False
+
         self.space = Space(self.settings['space']['corners'],
                            init_size,
-                           resamp_size,
-                           self.settings['snapshot']['io']['parameter_names'])
+                           nrefine=resamp_size,
+                           plabels=self.settings['snapshot']['io']['parameter_names'],
+                           duplicate=duplicate)
 
         # Snapshots
         Snapshot.initialize(self.settings['snapshot']['io'])
@@ -102,16 +107,12 @@ class Driver(object):
             # get the point from existing snapshot files,
             self.logger.info('Reading points from a list of snapshots files.')
 
-            self.to_compute_points = OrderedDict()
+            self.to_compute_points = []
 
             for path in self.provider:
                 point = Snapshot.read_point(path)
-                try:
-                    self.space += point
-                except (AlienPointError, UnicityError, FullSpaceError) as tb:
-                    self.logger.warning("Ignoring: {}".format(tb))
-                else:
-                    self.to_compute_points[point] = path
+                self.space += point
+                self.to_compute_points.append(path)
         else:
             space_provider = self.settings['space']['sampling']
             if isinstance(space_provider, list):
@@ -143,6 +144,7 @@ class Driver(object):
                          'nsample': self.space.doe_init,
                          'nrefine': resamp_size}
             self.pod = Pod(**settings_)
+            self.pod.space.duplicate = duplicate
         else:
             self.pod = None
             self.logger.info('No POD is computed.')
@@ -191,13 +193,9 @@ class Driver(object):
             if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
                 sample = self.surrogate.predictor.sample
-                try:
-                    self.space += sample
-                except (AlienPointError, UnicityError, FullSpaceError) as tb:
-                    self.logger.warning("Ignoring: {}".format(tb))
-                finally:
-                    if not self.provider.is_file:
-                        self.to_compute_points = sample[:len(self.space)]
+                self.space += sample
+                if not self.provider.is_file:
+                    self.to_compute_points = sample[:len(self.space)]
         else:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')
@@ -214,7 +212,7 @@ class Driver(object):
             points = self.to_compute_points
         # snapshots generation
         if self.provider.is_file:
-            snapshots = points.values()
+            snapshots = points
         else:
             snapshots = []
             for point in points:
@@ -256,7 +254,7 @@ class Driver(object):
                 self.pod.decompose(snapshots)
 
             self.data = self.pod.VS()
-            points = self.pod.points
+            points = self.pod.space
         else:
             if self.provider.is_job:
                 _snapshots = []
@@ -273,11 +271,10 @@ class Driver(object):
                     if len(snapshots) != len(self.space):  # no resampling
                         snapshots = self.data
                         for snapshot in snapshots_:
-                            try:
-                                self.space += snapshot.point
-                                snapshots = np.vstack([snapshots, snapshot.data])
-                            except (AlienPointError, UnicityError, FullSpaceError) as tb:
-                                self.logger.warning("Ignoring: {}".format(tb))
+                            self.space += snapshot.point
+                            if snapshot.point in self.space:
+                                snapshots = np.vstack([snapshots,
+                                                       snapshot.data])
 
                 self.data = snapshots
 
@@ -295,7 +292,9 @@ class Driver(object):
         From a new sample, it re-generates the POD.
 
         """
+        self.logger.info("\n----- Resampling parameter space -----")
         while len(self.space) < self.space.max_points_nb:
+            self.logger.info("-> New iteration")
             quality, point_loo = self.surrogate.estimate_quality()
             # quality = 0.5
             # point_loo = [-1.1780625, -0.8144629629629629]
@@ -311,17 +310,16 @@ class Driver(object):
             delta_space = self.settings['space']['resampling']['delta_space']
             method = self.settings['space']['resampling']['method']
 
-            try:
-                new_point = self.space.refine(self.surrogate,
-                                              method,
-                                              point_loo=point_loo,
-                                              delta_space=delta_space,
-                                              dists=pdf, hybrid=hybrid,
-                                              discrete=discrete)
-            except FullSpaceError:
-                break
+            new_point = self.space.refine(self.surrogate,
+                                          method,
+                                          point_loo=point_loo,
+                                          delta_space=delta_space, dists=pdf,
+                                          hybrid=hybrid, discrete=discrete)
 
-            self.sampling(new_point, update=True)
+            try:
+                self.sampling(new_point, update=True)
+            except ValueError:
+                break
 
             if self.settings['space']['resampling']['method'] == 'optimization':
                 self.space.optimization_results()

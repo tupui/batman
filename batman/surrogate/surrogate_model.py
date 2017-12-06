@@ -135,7 +135,7 @@ class SurrogateModel(object):
         """
         if self.update:
             # pod has changed: update predictor
-            self.fit(self.pod.points, self.pod.VS())
+            self.fit(self.pod.space, self.pod.VS())
 
         try:
             points[0][0]
@@ -228,6 +228,8 @@ class SurrogateModel(object):
         for i in range(points_nb):
             y_pred[i] = results.next()
             progress()
+
+        pool.terminate()
 
         q2_loo = r2_score(self.data, y_pred)
         index = ((self.data - y_pred) ** 2).sum(axis=1).argmax()

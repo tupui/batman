@@ -342,7 +342,7 @@ class G_Function(object):
         v = -1 + np.prod(1 + vi)
         self.s_first = vi / v
         self.s_second = np.zeros((self.d_in, self.d_in))
-        self.s_total = np.zeros(self.d_in)
+        self.s_total = vi * np.prod(1 + vi) / v
 
         self.logger.info("Using function G-Function with d={}, a={}"
                          .format(self.d_in, self.a))

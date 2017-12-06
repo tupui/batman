@@ -240,8 +240,8 @@ def test_only_surrogate_kernel_noise(tmp, case='Ishigami'):
     settings.pop('uq')
     settings['surrogate'].update({
         'kernel': "ConstantKernel() + "
-                  "Matern(length_scale=1., nu=1.5)",
-        'noise': 0.85})
+                  "Matern(length_scale=0.5, nu=0.5)",
+        'noise': 1})
     shutil.rmtree(tmp)
     batman.ui.run(settings, options)
 

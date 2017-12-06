@@ -31,34 +31,13 @@ from .refiner import Refiner
 from .. import visualization
 
 
-class UnicityError(Exception):
-
-    """Exception for unicity error."""
-
-    pass
-
-
-class AlienPointError(Exception):
-
-    """Exception when a point is from outer space."""
-
-    pass
-
-
-class FullSpaceError(Exception):
-
-    """Exception when the maximum number of points is reached."""
-
-    pass
-
-
 class Space(list):
     """Manages the space of parameters."""
 
     logger = logging.getLogger(__name__)
 
     def __init__(self, corners, sample=np.inf, nrefine=0, plabels=None,
-                 multifidelity=None):
+                 multifidelity=None, duplicate=False):
         """Generate a Space.
 
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
@@ -69,6 +48,7 @@ class Space(list):
         :param list(float) multifidelity: Whether to consider the first
           parameter as the fidelity level. It is a list of ['cost_ratio',
           'grand_cost'].
+        :param bool duplicate: Whether to allow duplicate points in space.
         """
         if isinstance(sample, (int, float)):
             self.doe_init = sample
@@ -83,6 +63,7 @@ class Space(list):
 
         self.dim = len(corners[0])
         self.multifidelity = multifidelity
+        self.duplicate = duplicate
 
         # Multifidelity configuration
         if multifidelity is not None:
@@ -144,14 +125,16 @@ class Space(list):
         for point in points:
             # check point dimension is correct
             if (len(point) - 1 if self.multifidelity else len(point)) != self.dim:
-                self.logger.exception("Coordinates dimensions mismatch: is {},"
-                                      " should be {}"
-                                      .format(len(point), self.dim))
-                raise SystemExit
+                self.logger.warning("Ignoring Point - Coordinates dimensions"
+                                    "mismatch - is {}, should be {}"
+                                    .format(len(point), self.dim))
+                continue
 
             # check space is full
             if self.is_full():
-                raise FullSpaceError('Cannot add Point {}'.format(point))
+                self.logger.warning("Ignoring Point - Full Space - {}"
+                                    .format(point))
+                continue
 
             point = Point(point)
 
@@ -160,16 +143,18 @@ class Space(list):
             not_alien = (self.corners[0] <= test_point).all()\
                 & (test_point <= self.corners[1]).all()
             if not not_alien:
-                raise AlienPointError("Point {} is out of space"
-                                      .format(point))
+                self.logger.warning("Ignoring Point - Out of Space - {}"
+                                    .format(point))
+                continue
 
             # verify point is not already in space
-            if point not in points_set:
+            if (point not in points_set) or self.duplicate:
                 self.append(point)
                 points_set.add(point)
             else:
-                raise UnicityError("Point {} already exists in the space"
-                                   .format(point))
+                self.logger.warning("Ignoring Point - Duplicate - {}"
+                                    .format(point))
+                continue
         return self
 
     def sampling(self, n_sample=None, kind='halton', dists=None, discrete=None):
@@ -203,6 +188,9 @@ class Space(list):
                                 np.ones((self.doe_cheap, 1))))
             samples = np.vstack((samples[0:self.doe_init, :], samples))
             samples = np.hstack((levels, samples))
+
+        if kind == 'saltelli':
+            self.duplicate = True
 
         self.empty()
         self += samples
@@ -260,12 +248,24 @@ class Space(list):
         except TypeError:
             point = [Point(point) for point in new_point]
 
-        self += point
+        # Check if points are added to space so only added points are returned
+        points_set = set(self)
+        new_point = []
+        for p in point:
+            try:
+                points_set.add(p)
+                self += p
+            except TypeError:
+                # Empty list
+                continue
 
-        self.logger.info('Refined sampling with new point: {}'.format(point))
+            if p in self:
+                new_point.append(p)
+
+        self.logger.info('Refined sampling with new point: {}'.format(new_point))
         self.logger.info("New discrepancy is {}".format(self.discrepancy()))
 
-        return point
+        return new_point
 
     def empty(self):
         """Remove all points."""
