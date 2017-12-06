@@ -37,7 +37,7 @@ class PC(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, strategy, degree, distributions, n_sample=None,
+    def __init__(self, strategy, degree, distributions, sample=None,
                  stieltjes=True):
         """Generate truncature and projection strategies.
 
@@ -48,7 +48,7 @@ class PC(object):
         :param int degree: Polynomial degree.
         :param  distributions: Distributions of each input parameter.
         :type distributions: lst(:class:`openturns.Distribution`)
-        :param int n_sample: Number of samples for least square.
+        :param int sample: Samples for least square.
         :param bool stieltjes: Wether to use Stieltjes algorithm for the basis.
         """
         # distributions
@@ -73,9 +73,7 @@ class PC(object):
         # Strategy choice for expansion coefficient determination
         self.strategy = strategy
         if self.strategy == 'LS':  # least-squares method
-            montecarlo_design = ot.MonteCarloExperiment(self.dist, n_sample)
-            self.proj_strategy = ot.LeastSquaresStrategy(montecarlo_design)
-            self.sample, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
+            self.sample = sample
         else:  # integration method
             # redefinition of sample size
             # n_sample = (degree + 1) ** in_dim
@@ -108,6 +106,10 @@ class PC(object):
           (n_samples, n_features).
         :param array_like data: The observed data (n_samples, [n_features]).
         """
+        if self.strategy == 'LS':  # least-squares method
+            self.proj_strategy = ot.LeastSquaresStrategy(sample, data)    
+            self.sample, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
+
         sample_ = np.zeros_like(self.sample)
         sample_[:len(sample)] = sample
         sample_arg = np.all(np.isin(sample_, self.sample), axis=1)

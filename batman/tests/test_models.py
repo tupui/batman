@@ -1,16 +1,21 @@
 # coding: utf8
 import os
+import copy
 import pytest
 import numpy as np
 import numpy.testing as npt
 from sklearn.gaussian_process.kernels import Matern
+from batman.space import Doe
 from batman.surrogate import (PC, Kriging, RBFnet, Evofusion, SurrogateModel)
 from batman.tasks import Snapshot
 from batman.tests.conftest import sklearn_q2
 
 
 def test_PC_1d(ishigami_data):
-    surrogate = PC(distributions=ishigami_data.dists, n_sample=2000, degree=10,
+    space_ = copy.deepcopy(ishigami_data.space)
+    space_.max_points_nb = 2000
+    sample = space_.sampling(2000, 'halton')
+    surrogate = PC(distributions=ishigami_data.dists, sample=sample, degree=10,
                    strategy='LS', stieltjes=False)
     input_ = surrogate.sample
     assert len(input_) == 2000
@@ -78,8 +83,12 @@ def test_RBFnet_1d(ishigami_data):
     surrogate = RBFnet(ishigami_data.space, ishigami_data.target_space, regtree=1)
 
 
+
 def test_PC_nd(mascaret_data):
-    surrogate = PC(distributions=mascaret_data.dists, n_sample=300, degree=10,
+    space_ = copy.deepcopy(mascaret_data.space)
+    space_.max_points_nb = 1000
+    sample = space_.sampling(1000, 'halton')
+    surrogate = PC(distributions=mascaret_data.dists, sample=sample, degree=10,
                    strategy='LS')
     input_ = surrogate.sample
     output = mascaret_data.func(input_)
@@ -122,7 +131,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
 
     # PC
     pc_settings = {'strategy': 'LS', 'degree': 10,
-                   'distributions': ishigami_data.dists, 'n_sample': 500}
+                   'distributions': ishigami_data.dists, 'sample': 500}
     surrogate = SurrogateModel('pc', ishigami_data.space.corners, **pc_settings)
     input_ = surrogate.predictor.sample
     output = ishigami_data.func(input_)
