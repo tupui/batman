@@ -259,7 +259,7 @@ class Space(list):
                 # Empty list
                 continue
 
-            if p in points_set:
+            if p in self:
                 new_point.append(p)
 
         self.logger.info('Refined sampling with new point: {}'.format(new_point))

@@ -229,6 +229,8 @@ class SurrogateModel(object):
             y_pred[i] = results.next()
             progress()
 
+        pool.terminate()
+
         q2_loo = r2_score(self.data, y_pred)
         index = ((self.data - y_pred) ** 2).sum(axis=1).argmax()
 

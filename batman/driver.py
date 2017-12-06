@@ -272,7 +272,9 @@ class Driver(object):
                         snapshots = self.data
                         for snapshot in snapshots_:
                             self.space += snapshot.point
-                            snapshots = np.vstack([snapshots, snapshot.data])
+                            if snapshot.point in self.space:
+                                snapshots = np.vstack([snapshots,
+                                                       snapshot.data])
 
                 self.data = snapshots
 
