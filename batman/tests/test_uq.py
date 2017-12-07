@@ -11,7 +11,7 @@ def test_indices(tmp, ishigami_data, settings_ishigami):
 
     analyse = UQ(surrogate, nsample=settings_ishigami['uq']['sample'],
                  dists=settings_ishigami['uq']['pdf'],
-                 plabels=settings_ishigami['snapshot']['parameters'],
+                 plabels=settings_ishigami['snapshot']['plabels'],
                  method=settings_ishigami['uq']['method'],
                  indices=settings_ishigami['uq']['type'],
                  test=settings_ishigami['uq']['test'])
@@ -31,14 +31,14 @@ def test_block(mascaret_data, settings_ishigami):
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings['uq']['type'] = 'block'
     test_settings['uq'].pop('test')
-    test_settings['snapshot']['parameters'] = ['Ks', 'Q']
+    test_settings['snapshot']['plabels'] = ['Ks', 'Q']
 
     surrogate = SurrogateModel('rbf', mascaret_data.space.corners)
     surrogate.fit(mascaret_data.space, mascaret_data.target_space)
 
     analyse = UQ(surrogate, nsample=test_settings['uq']['sample'],
                  dists=['Uniform(15., 60.)', 'Normal(4035., 400.)'],
-                 plabels=test_settings['snapshot']['parameters'],
+                 plabels=test_settings['snapshot']['plabels'],
                  method=test_settings['uq']['method'],
                  indices=test_settings['uq']['type'])
 

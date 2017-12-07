@@ -18,8 +18,8 @@
     },
     "snapshot": {
         "max_workers": 5,
-        "parameters": ["x1"],
-        "variables": ["F"],
+        "plabels": ["x1"],
+        "flabels": ["F"],
         "provider": {
             "type": "file",
             "command": "bash script.sh",

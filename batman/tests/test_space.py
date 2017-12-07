@@ -185,7 +185,7 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     f_2d = branin_data.func
     space = branin_data.space
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['snapshot']['parameters'] = ['x1', 'x2']
+    test_settings['snapshot']['plabels'] = ['x1', 'x2']
     space.empty()
     space.sampling(5, 'halton')
     space.max_points_nb = 100

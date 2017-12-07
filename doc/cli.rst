@@ -115,8 +115,8 @@ A snapshot defines a simulation.
 
     "snapshot": {
         "max_workers": 5,
-        "parameters": ["x1", "x2"],
-        "variables": ["X", "F"],
+        "plabels": ["x1", "x2"],
+        "flabels": ["X", "F"],
         "io": {
             "point_filename": "point.json",
             "data_filename": "point.dat",
@@ -126,10 +126,10 @@ A snapshot defines a simulation.
     }
 
 + ``max_workers``: maximum number of simultaneous running snapshots.
-+ ``parameters``: names of the parameters that serve as coordinates of a snapshot point.
-+ ``variables``: names of the variables to treat and contained in a snapshot.
-+ ``point_filename``: name of the json file that contains the values associated to ``parameters``.
-+ ``data_filename``: name of the file that contains the output ``variables`` of a snapshot.
++ ``plabels``: names of the parameters that serve as coordinates of a snapshot point.
++ ``flabels``: names of the variables to treat that are contained in a snapshot.
++ ``point_filename``: name of the json file that contains the values associated to ``plabels``.
++ ``data_filename``: name of the file that contains the output ``flabels`` of a snapshot.
 + ``data_format``: ``npz``, ``fmt_tp_fortran`` (BATMAN) or all Antares formats if installed.
 
 The ``provider`` block defines what a simulation is. It comes in two flavors.

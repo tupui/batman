@@ -22,17 +22,14 @@ Defines all methods used to interact with other classes.
 import logging
 import os
 import pickle
-<<<<<<< HEAD
-=======
 from copy import copy
->>>>>>> Snapshots: fixed programming errors + change tests
 from concurrent import futures
 import numpy as np
 import sklearn.gaussian_process.kernels as kernels
 from .pod import Pod
 from .space import Space
 from .surrogate import SurrogateModel
-from .tasks import SnapshotIO, ProviderPlugin, ProviderFile
+from .tasks import (SnapshotIO, ProviderPlugin, ProviderFile)
 from .uq import UQ
 from .visualization import response_surface, Kiviat3D
 from .functions.utils import multi_eval
@@ -92,28 +89,24 @@ class Driver(object):
         self.space = Space(self.settings['space']['corners'],
                            init_size,
                            nrefine=resamp_size,
-                           plabels=self.settings['snapshot']['parameters'],
+                           plabels=self.settings['snapshot']['plabels'],
                            duplicate=duplicate)
 
         # Asynchronous job manager
         self.async_pool = futures.ThreadPoolExecutor(
-            max_workers=self.settings['snapshot']['max_workers']
-        )
+            max_workers=self.settings['snapshot']['max_workers'])
 
         # Snapshot Management
         args = settings['snapshot'].get('io', {})
-        self.snapshot_io = SnapshotIO(
-            parameter_names=settings['snapshot']['parameters'],
-            variable_names=settings['snapshot']['variables'],
-            **args
-        )
+        self.snapshot_io = SnapshotIO(parameter_names=settings['snapshot']['plabels'],
+                                      variable_names=settings['snapshot']['flabels'],
+                                      **args)
         provider_type = settings['snapshot']['provider']['type']
         self.logger.info('Select data provider type "{}"'.format(provider_type))
         self.provider = self.provider_class[provider_type](
             self.async_pool,
             self.snapshot_io,
-            settings['snapshot']['provider']
-        )
+            settings['snapshot']['provider'])
         self.snapshot_counter = 0
 
         # Sampling initialisation
@@ -141,8 +134,7 @@ class Driver(object):
                     space_provider['init_size'],
                     space_provider['method'],
                     distributions,
-                    discrete
-                )
+                    discrete)
             else:
                 self.logger.error('Bad space provider.')
                 raise SystemError
@@ -223,10 +215,8 @@ class Driver(object):
 
         # Generate snapshots
         snapshot_root = os.path.join(self.fname, self.fname_tree['snapshots'])
-        snapshot_points = [
-            (point, os.path.join(snapshot_root, str(i + self.snapshot_counter)))
-            for i, point in enumerate(points)
-        ]
+        snapshot_points = [(point, os.path.join(snapshot_root, str(i + self.snapshot_counter)))
+                           for i, point in enumerate(points)]
         snapshots = [self.provider.snapshot(p, d) for p, d in snapshot_points]
         self.snapshot_counter += len(snapshots)
 
@@ -322,7 +312,7 @@ class Driver(object):
             with open(path, 'wb') as fdata:
                 pickler = pickle.Pickler(fdata)
                 pickler.dump(self.data)
-            self.logger.debug('Wrote data to %s', path)
+            self.logger.debug('Wrote data to {}'.format(path))
 
     def read(self):
         """Read Surrogate [and POD] from disk."""
@@ -342,7 +332,7 @@ class Driver(object):
             with open(path, 'rb') as fdata:
                 unpickler = pickle.Unpickler(fdata)
                 self.data = unpickler.load()
-            self.logger.debug('Data read from %s', path)
+            self.logger.debug('Data read from {}'.format(path))
 
     def restart(self):
         """Restart process."""
@@ -367,7 +357,7 @@ class Driver(object):
 
         :param points: point(s) to predict.
         :type points: :class:`space.point.Point` or array_like (n_samples, n_features).
-        :param bool write: wether to write snapshots.
+        :param bool write: whether to write snapshots.
         :return: Result.
         :rtype: array_like (n_samples, n_features).
         :return: Standard deviation.
@@ -396,7 +386,7 @@ class Driver(object):
         args['fname'] = os.path.join(self.fname, self.fname_tree['uq'])
         args['space'] = self.space
         args['indices'] = self.settings['uq']['type']
-        args['plabels'] = self.settings['snapshot']['parameters']
+        args['plabels'] = self.settings['snapshot']['plabels']
         args['dists'] = self.settings['uq']['pdf']
         args['nsample'] = self.settings['uq']['sample']
 
@@ -480,8 +470,7 @@ class Driver(object):
             except KeyError:
                 pass
         else:
-            args['xdata'] = np.linspace(0, 1, output_len)\
-                if output_len > 1 else None
+            args['xdata'] = np.linspace(0, 1, output_len) if output_len > 1 else None
 
         try:
             args['bounds'] = self.settings['visualization']['bounds']
@@ -504,13 +493,13 @@ class Driver(object):
         try:
             args['plabels'] = self.settings['visualization']['plabels']
         except KeyError:
-            args['plabels'] = self.settings['snapshot']['parameters']
+            args['plabels'] = self.settings['snapshot']['plabels']
 
-        if len(self.settings['snapshot']['io']['variables']) < 2:
+        if len(self.settings['snapshot']['flabels']) < 2:
             try:
                 args['flabel'] = self.settings['visualization']['flabel']
             except KeyError:
-                args['flabel'] = self.settings['snapshot']['variables'][0]
+                args['flabel'] = self.settings['snapshot']['flabels'][0]
 
         path = os.path.join(self.fname, self.fname_tree['visualization'])
         try:

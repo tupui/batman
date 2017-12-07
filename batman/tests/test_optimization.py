@@ -15,7 +15,7 @@ def test_optimization(mock_show, tmp, branin_data, settings_ishigami):
     test_settings['space']['resampling']['resamp_size'] = res_size
     test_settings['space']['resampling']['delta_space'] = 0.1
     test_settings['space']['corners'] = branin_data.space.corners
-    test_settings['snapshot']['parameters'] = ['x1', 'x2']
+    test_settings['snapshot']['plabels'] = ['x1', 'x2']
     test_settings['snapshot']['provider'] = {
         "type": "plugin",
         "module": "batman.tests.plugins",

@@ -4,7 +4,7 @@
 import re
 import json
 from batman.functions import Michalewicz
-from batman.input_output import IOFormatSelector, Dataset
+from batman.input_output import (IOFormatSelector, Dataset)
 
 # Input from point.json
 with open('./batman-coupling/point.json', 'r') as fd:

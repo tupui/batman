@@ -55,8 +55,8 @@ def settings_ishigami():
         },
         "snapshot": {
             "max_workers": 10,
-            "parameters": ["x1", "x2", "x3"],
-            "variables": ["F"],
+            "plabels": ["x1", "x2", "x3"],
+            "flabels": ["F"],
             "provider": {
                 "type": "plugin",
                 "module": "batman.tests.plugins",
@@ -103,7 +103,7 @@ def ishigami_data(settings_ishigami):
     data['space'] = Space(settings_ishigami['space']['corners'],
                           settings_ishigami['space']['sampling']['init_size'],
                           settings_ishigami['space']['resampling']['resamp_size'],
-                          settings_ishigami['snapshot']['parameters'])
+                          settings_ishigami['snapshot']['plabels'])
     data['space'].sampling(150, settings_ishigami['space']['sampling']['method'])
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)

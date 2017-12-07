@@ -23,8 +23,8 @@
     },
     "snapshot": {
         "max_workers": 5,
-        "parameters": ["fidelity", "x1", "x2"],
-        "variables": ["F"],
+        "plabels": ["fidelity", "x1", "x2"],
+        "flabels": ["F"],
         "provider": {
             "type": "plugin",
             "module": "function",

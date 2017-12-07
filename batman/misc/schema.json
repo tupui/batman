@@ -68,8 +68,8 @@
       "type": "object",
       "properties": {
         "max_workers": {"type": "integer", "default": 2, "minimum": 1},
-        "parameters": {"type": "array", "items": {"type": "string"}},
-        "variables": {"type": "array", "items": {"type": "string"}},
+        "plabels": {"type": "array", "items": {"type": "string"}},
+        "flabels": {"type": "array", "items": {"type": "string"}},
         "provider": {
           "oneOf": [
             {
@@ -107,7 +107,7 @@
           "required": ["point_filename", "data_filename", "data_format"]
         }
       },
-      "required": ["parameters", "variables", "max_workers", "provider"]
+      "required": ["plabels", "flabels", "max_workers", "provider"]
     },
     "surrogate": {
       "type": "object",
@@ -172,7 +172,7 @@
         "feat_order": {"type": "array",
                        "items": {"type": "integer",
                                  "maximum": 4, "maxItems": 4}},
-        "ticks_nbr": {"type": "integer", "minimum": 4, "maximum":256},
+        "ticks_nbr": {"type": "integer", "minimum": 4, "maximum": 256},
         "range_cbar": {"type": "array",
                        "items": {"type": "number",
                                  "minItems": 2, "maxItems": 2}},

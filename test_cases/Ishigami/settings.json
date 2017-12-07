@@ -23,8 +23,8 @@
     },
     "snapshot": {
         "max_workers": 10,
-        "parameters": ["x1", "x2", "x3"],
-        "variables": ["F"],
+        "plabels": ["x1", "x2", "x3"],
+        "flabels": ["F"],
         "provider": {
             "type": "plugin",
             "module": "function",
