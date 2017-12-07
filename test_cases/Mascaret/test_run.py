@@ -9,9 +9,9 @@ from batman.functions.telemac_mascaret import print_statistics, histogram, plot_
 logging.basicConfig(level=logging.INFO)
 
 # Create an instance of MascaretApi
-study = MascaretApi('config_canal.json','config_canal_user.json')
+#study = MascaretApi('config_canal.json','config_canal_user.json')
 #study = MascaretApi('config_garonne_lnhe.json','config_garonne_lnhe_user.json')
-#study = MascaretApi('config_garonne_lnhe_casier.json','config_garonne_lnhe_user_casier.json')
+study = MascaretApi('config_garonne_lnhe_casier.json','config_garonne_lnhe_user_casier.json')
 
 # Print informations concerning this study
 print(study)
