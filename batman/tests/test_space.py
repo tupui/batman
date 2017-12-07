@@ -68,6 +68,7 @@ def test_space(settings_ishigami):
     space2 = Space(corners,
                    sample=settings_ishigami['space']['sampling']['init_size'],
                    nrefine=settings_ishigami['space']['resampling']['resamp_size'])
+    ot.RandomGenerator.SetSeed(123456)
     s2 = space2.sampling(10, kind='lhsc')
     assert len(s2) == 10
     assert s1[:] != s2[:]

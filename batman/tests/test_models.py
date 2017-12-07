@@ -83,7 +83,6 @@ def test_RBFnet_1d(ishigami_data):
     surrogate = RBFnet(ishigami_data.space, ishigami_data.target_space, regtree=1)
 
 
-
 def test_PC_nd(mascaret_data):
     space_ = copy.deepcopy(mascaret_data.space)
     space_.max_points_nb = 1000
@@ -129,9 +128,13 @@ def test_GP_nd(mascaret_data):
 def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     Snapshot.initialize(settings_ishigami['snapshot']['io'])
 
+    space_ = copy.deepcopy(ishigami_data.space)
+    space_.max_points_nb = 500
+    sample = space_.sampling(500, 'halton')
+
     # PC
     pc_settings = {'strategy': 'LS', 'degree': 10,
-                   'distributions': ishigami_data.dists, 'sample': 500}
+                   'distributions': ishigami_data.dists, 'sample': sample}
     surrogate = SurrogateModel('pc', ishigami_data.space.corners, **pc_settings)
     input_ = surrogate.predictor.sample
     output = ishigami_data.func(input_)

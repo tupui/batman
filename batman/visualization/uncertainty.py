@@ -146,7 +146,7 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
                      linewidth=2, label="Standard Deviation")
             plt.plot(xdata[0], mean, color='k', ls='-', linewidth=2, label="Mean")
             plt.plot(xdata[0], sd_max, color='k', ls='-.', linewidth=2, label=None)
-            plt.legend(bbox_to_anchor=(1.04,1), loc="upper left")
+            plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     else:
         plt.plot(xdata, pdf, color='k', ls='-', linewidth=3, label=None)
         plt.fill_between(xdata[:, 0], pdf, [0] * xdata.shape[0],
@@ -248,7 +248,7 @@ def sobol(sobols, conf=None, plabels=None, xdata=None, xlabel='x', fname=None):
         plt.ylim(-0.1, 1.1)
         plt.tick_params(axis='x', labelsize=23)
         plt.tick_params(axis='y', labelsize=23)
-        plt.legend(bbox_to_anchor=(1.04,1), loc="upper left")
+        plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
 
     bat.visualization.save_show(fname, figures)
 

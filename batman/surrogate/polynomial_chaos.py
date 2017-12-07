@@ -107,8 +107,8 @@ class PC(object):
         :param array_like data: The observed data (n_samples, [n_features]).
         """
         if self.strategy == 'LS':  # least-squares method
-            self.proj_strategy = ot.LeastSquaresStrategy(sample, data)    
-            self.sample, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
+            self.proj_strategy = ot.LeastSquaresStrategy(sample, data)
+            _, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
 
         sample_ = np.zeros_like(self.sample)
         sample_[:len(sample)] = sample

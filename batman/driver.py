@@ -166,7 +166,7 @@ class Driver(object):
                 settings_ = {'strategy': self.settings['surrogate']['strategy'],
                              'degree': self.settings['surrogate']['degree'],
                              'distributions': dists,
-                             'sample': self.space}
+                             'sample': self.space[:]}
             elif self.settings['surrogate']['method'] == 'evofusion':
                 settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
                              'grand_cost': self.settings['surrogate']['grand_cost']}

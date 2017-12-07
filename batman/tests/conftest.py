@@ -12,6 +12,7 @@ from batman.driver import Driver
 
 # Global optimization
 np.random.seed(123456)
+ot.RandomGenerator.SetSeed(123456)
 
 
 class Datatest(object):
