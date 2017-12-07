@@ -139,7 +139,6 @@ class TestHdr:
         npt.assert_almost_equal(hdr.median, median_t, decimal=2)
         hdr.plot()
 
-
     @patch("matplotlib.pyplot.show")
     def test_hdr_plot_data(self, mock_show, hdr):
         hdr.plot(samples=data, labels=labels.tolist())
@@ -183,7 +182,6 @@ class TestHdr:
                       21.35, 20.09, 19.54, 19.74, 20.15, 21.27]]
 
         npt.assert_almost_equal(samples, samples_t, decimal=2)
-
 
     # @pytest.mark.skipif(not have_ffmpeg, reason='ffmpeg not available')
     # @patch("matplotlib.pyplot.show")
