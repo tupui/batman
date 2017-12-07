@@ -5,8 +5,9 @@
             [40.0, 3000.0]
         ],
         "sampling": {
-            "init_size": 100,
-            "method": "halton"
+            "init_size": 120,
+            "method": "saltelli",
+            "distributions": ["Uniform(20., 40.)", "BetaMuSigma(2000, 500, 1000, 3000).getDistribution()"]
         }
     },
     "snapshot": {
@@ -44,8 +45,8 @@
         "flabel": "F(Ks, Q)"
     },
     "uq": {
-        "sample": 1000,
-        "pdf": ["Uniform(20., 40.)", "Uniform(1000., 3000.)"],
+        "sample": 1200,
+        "pdf": ["Uniform(20., 40.)", "BetaMuSigma(2000, 500, 1000, 3000).getDistribution()"],
         "type": "aggregated",
         "method": "sobol"
     }

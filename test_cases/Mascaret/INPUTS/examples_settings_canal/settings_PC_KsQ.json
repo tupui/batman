@@ -17,11 +17,6 @@
             "q2_criteria": 0.9
         }
     },
-    "pod": {
-        "dim_max": 100,
-        "tolerance": 0.99,
-        "type": "static"
-    },
     "snapshot": {
         "max_workers": 5,
         "io": {
