@@ -3,8 +3,7 @@ import copy
 import pytest
 import numpy as np
 import numpy.testing as npt
-from batman.space import (Point, Space, Doe,
-                          UnicityError, AlienPointError, FullSpaceError)
+from batman.space import (Point, Space, Doe)
 from batman.functions import Ishigami
 from batman.tasks import Snapshot
 from batman.surrogate import SurrogateModel
@@ -51,7 +50,7 @@ def test_space(settings_ishigami):
     assert space.max_points_nb == 10
 
     space = Space(corners, sample=10, nrefine=6,
-                  p_lst=['x', 'y', 'z'])
+                  plabels=['x', 'y', 'z'])
 
     assert space.max_points_nb == 16
 
@@ -69,23 +68,29 @@ def test_space(settings_ishigami):
     space2 = Space(corners,
                    sample=settings_ishigami['space']['sampling']['init_size'],
                    nrefine=settings_ishigami['space']['resampling']['resamp_size'])
+    ot.RandomGenerator.SetSeed(123456)
     s2 = space2.sampling(10, kind='lhsc')
     assert len(s2) == 10
     assert s1[:] != s2[:]
 
     space.empty()
-    with pytest.raises(UnicityError):
-        space += (1, 2, 3)
-        space += (1, 2, 3)
+    space += (1, 2, 3)
+    space += (1, 2, 3)
+    assert len(space) == 1
 
-    with pytest.raises(SystemExit):
-        space += (1, 2)
+    space = Space(corners, sample=16, duplicate=True)
+    space += (1, 2, 3)
+    space += (1, 2, 3)
+    assert len(space) == 2
 
-    with pytest.raises(AlienPointError):
-        space += (1, 7, 3)
+    space += (1, 2)
+    assert len(space) == 2
 
-    with pytest.raises(FullSpaceError):
-        space.sampling(17)
+    space += (1, 7, 3)
+    assert len(space) == 2
+
+    space.sampling(17)
+    assert len(space) == 16
 
     space.empty()
     dists = ['Uniform(0., 1.)', 'Uniform(-1., 2.)', 'Uniform(-2., 3.)']

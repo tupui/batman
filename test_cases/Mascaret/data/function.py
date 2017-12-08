@@ -8,18 +8,22 @@ import ctypes
 import csv
 from batman.input_output import (IOFormatSelector, Dataset)
 from batman.functions import MascaretApi
-from batman.functions.mascaret import print_statistics, histogram, plot_opt
+from batman.functions.telemac_mascaret import print_statistics, histogram, plot_opt
 
+#study = MascaretApi('config_canal.json','config_canal_user.json')
 study = MascaretApi('config_garonne_lnhe.json','config_garonne_lnhe_user.json')
-print(study)
+#print(study)
 
 
-# Input from point.json
-with open('./batman-data/point.json', 'r') as fd:
+# Input from header.py
+with open('./batman-data/header.py', 'r') as fd:
     params = json.load(fd)
 
 X1 = params['x1']
 X2 = params['x2']
+
+X1 = float(X1)
+X2 = float(X2)
 
 # Function
 X, F = study(x=[X1, X2])

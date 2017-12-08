@@ -163,7 +163,6 @@ def import_config(path_config, path_schema):
 
 
 class ProgressBar(object):
-
     """Print progress bar in console."""
 
     def __init__(self, total):
@@ -223,7 +222,7 @@ class ProgressBar(object):
         if self.progress == 100:
             sys.stdout.write('\n')
             del self
-        elif (eta and vel):
+        elif eta and vel:
             sys.stdout.write("| ETA: " + eta + " (at " + vel + " it/s) ")
 
         sys.stdout.flush()

@@ -1,11 +1,11 @@
 stages:
   - linter
-  - test
   - doc
+  - test
 
 python_linter:
   stage: linter
-  image: "tupui/bat_ci_3"
+  image: "registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3"
   script:
     - python setup.py build_fortran
     - python setup.py install
@@ -20,7 +20,8 @@ python_linter:
 
 .template_python_3: &template_python_3
   stage: test
-  image: "tupui/bat_ci_3"
+  image: "registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3"
+  allow_failure: false
   script:
     - scriptdir=.gitlab/continuous_integration
     - bash $scriptdir/CI.sh
@@ -29,7 +30,6 @@ python_3:
   <<: *template_python_3
   only:
     - master
-    - develop
 
 python_3_feature_branch:
   <<: *template_python_3
@@ -50,7 +50,7 @@ python_2:
 
 .template_doc: &template_doc
   stage: doc
-  image: "tupui/bat_ci_3"
+  image: "registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3"
   script:
     - export MPLBACKEND="Agg"
     - python setup.py build_fortran
@@ -59,9 +59,6 @@ python_2:
     - make html
     - rm -rf ../public
     - mv _build/html/ ../public/
-  artifacts:
-    paths:
-      - public
 
 pages_feature_branch:
   <<: *template_doc
@@ -75,3 +72,6 @@ pages:
   only:
     - master
     - develop
+  artifacts:
+    paths:
+      - public

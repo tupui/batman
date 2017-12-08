@@ -54,7 +54,7 @@ A fitting model is then applied to this semivariogram. Hence, the variability of
 
 with :math:`C` the correlation matrice and the parameter :math:`r` is optimized using the sample points.
 
-.. image:: fig/semivariogramme.pdf
+.. image:: ../fig/semivariogramme.pdf
 
 A model is described using:
 
@@ -110,7 +110,7 @@ As stated by Rasmussen et al. in [Rasmussen2006]_, a process is a generalization
     m(x) &= \mathbb{E}\left[ f(x)  \right], \\
     k(x,x') &= \mathbb{E}\left[ (f(x) -m(x))(f(x')-m(x')) \right].
 
-.. figure:: fig/rasmussenGP.png
+.. figure:: ../fig/rasmussenGP.png
 
     Subfigure (a) shows four samples from a prior distribution. (b) shows the situation after two observations have been made. [Rasmussen2006]_.
 
@@ -160,13 +160,3 @@ Using this cost relationship an setting a computational budget :math:`C`, it is 
           N_c &= \frac{C - N_e}{\alpha}.
 
 As the design being nested, the number of cheap experiments must be strictly superior to the number or expensive ones. Indeed, the opposite would result in no additional information to the system.
-
-References
-----------
-
-.. [Krige1989] D.G. Krige, et al. “Early South African geostatistical techniques in today’s perspective”. Geostatistics 1. 1989. 
-.. [Matheron1963] G. Matheron. “Principles of Geostatistics”. Economic Geology 58. 1963. 
-.. [Robinson1991] G.K.Robinson.“That BLUP is a good thing: the estimation of random effects”. Statistical Science 6.1. 1991. DOI: 10.1214/ss/1177011926. 
-.. [Bohling2005] G. Bohling. "Kriging". Tech.rep. 2005. 
-.. [Forrester2006] Forrester, Alexander I.J, et al. "Optimization using surrogate models and partially converged computational fluid dynamics simulations". Proceedings of the Royal Society A: Mathematical, Physical and Engineering Science. 2006. DOI: 10.1098/rspa.2006.1679 
-.. [Forrester2009] Forrester and A.J. Keane.“Recent advances in surrogate-based optimization”. Progress in Aerospace Sciences 2009. DOI: 10.1016/j.paerosci.2008.11.001 

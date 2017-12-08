@@ -1,5 +1,3 @@
-:orphan:
-
 .. _about:
 
 About us

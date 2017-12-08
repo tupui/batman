@@ -52,14 +52,14 @@ def kernel_smoothing(data, optimize=False):
         bandwidth = np.hstack([np.linspace(0.1, 5.0, 30), scott, silverman])
         grid = GridSearchCV(KernelDensity(),
                             {'bandwidth': bandwidth},
-                            cv=cv, n_jobs=-1)  # 30-fold cross-validation
+                            cv=cv, n_jobs=-1)  # n-fold cross-validation
         grid.fit(data)
         ks_gaussian = grid.best_estimator_
 
     return ks_gaussian
 
 
-def pdf(data, xdata=None, labels=None, moments=False, fname=None):
+def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
     """Plot PDF in 1D or 2D.
 
     :param nd_array/dict data: array of shape (n_samples, n_features)
@@ -74,13 +74,16 @@ def pdf(data, xdata=None, labels=None, moments=False, fname=None):
           joint distribution.
 
     :param array_like xdata: 1D discretization of the function (n_features,).
-    :param list(str) labels: `x` label and `PDF` label.
+    :param str xlabel: label of the discretization parameter.
+    :param str flabel: name of the quantity of interest.
     :param bool moments: whether to plot moments along with PDF if dim > 1.
     :param str fname: whether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """
-    labels = ['x', 'F'] if labels is None else labels
+    xlabel = 'x' if xlabel is None else xlabel
+    flabel = 'F' if flabel is None else flabel
+
     dx = 100
     if isinstance(data, dict):
         try:
@@ -130,19 +133,20 @@ def pdf(data, xdata=None, labels=None, moments=False, fname=None):
     plt.tick_params(axis='x', labelsize=26)
     plt.tick_params(axis='y', labelsize=26)
     if output_len > 1:
-        max_pdf_bound = np.max(pdf)
-        max_pdf_bound = max_pdf_bound if max_pdf_bound < 1 else 1
-        bound_pdf = np.linspace(0., max_pdf_bound, 50, endpoint=True)
-        plt.contourf(xdata, ydata, pdf, bound_pdf, cmap=c_map)
-        cbar = plt.colorbar()
+        max_pdf = np.percentile(pdf, 97) if np.max(pdf) < 1 else 1
+        min_pdf = np.percentile(pdf, 3) if np.min(pdf) < max_pdf else 0
+        bound_pdf = np.linspace(min_pdf, max_pdf, 50, endpoint=True)
+        plt.contourf(xdata, ydata, pdf, bound_pdf, cmap=c_map, extend="max")
+        cbar = plt.colorbar(shrink=0.5)
         cbar.set_label(r"PDF")
-        plt.xlabel(labels[0], fontsize=26)
-        plt.ylabel(labels[1], fontsize=26)
+        plt.xlabel(xlabel, fontsize=26)
+        plt.ylabel(flabel, fontsize=26)
         if moments:
-            plt.plot(xdata[0], sd_min, color='k', ls='-.', linewidth=2, label="Standard Deviation")
+            plt.plot(xdata[0], sd_min, color='k', ls='-.',
+                     linewidth=2, label="Standard Deviation")
             plt.plot(xdata[0], mean, color='k', ls='-', linewidth=2, label="Mean")
             plt.plot(xdata[0], sd_max, color='k', ls='-.', linewidth=2, label=None)
-            plt.legend(loc='best')
+            plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     else:
         plt.plot(xdata, pdf, color='k', ls='-', linewidth=3, label=None)
         plt.fill_between(xdata[:, 0], pdf, [0] * xdata.shape[0],
@@ -151,7 +155,7 @@ def pdf(data, xdata=None, labels=None, moments=False, fname=None):
         plt.plot(z_array[:, 0],
                  -z_delta - z_delta * np.random.random(z_array.shape[0]), '+k',
                  label=None)
-        plt.xlabel(labels[1], fontsize=26)
+        plt.xlabel(flabel, fontsize=26)
         plt.ylabel("PDF", fontsize=26)
 
     plt.tight_layout()
@@ -187,7 +191,7 @@ def pdf(data, xdata=None, labels=None, moments=False, fname=None):
     return fig
 
 
-def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
+def sobol(sobols, conf=None, plabels=None, xdata=None, xlabel='x', fname=None):
     """Plot total Sobol' indices.
 
     If `len(sobols)>2` map indices are also plotted along with aggregated
@@ -198,7 +202,7 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
     :param float/array_like conf: relative error around indices. If float,
         same error is applied for all parameters. Otherwise shape
         ([min, n_features], [max, n_features]).
-    :param list(str) p_lst: parameters' names.
+    :param list(str) plabels: parameters' names.
     :param array_like xdata: 1D discretization of the function (n_features,).
     :param str xlabel: label of the discretization parameter.
     :param str fname: wether to export to filename or display the figures.
@@ -206,12 +210,12 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """
     p_len = len(sobols[0])
-    if p_lst is None:
-        p_lst = ["x" + str(i) for i in range(p_len)]
+    if plabels is None:
+        plabels = ["x" + str(i) for i in range(p_len)]
     objects = [[r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"]
-               for i, p in enumerate(p_lst)]
+               for i, p in enumerate(plabels)]
     color = [[cm.Pastel1(i), cm.Pastel1(i)]
-             for i, p in enumerate(p_lst)]
+             for i, p in enumerate(plabels)]
 
     s_lst = [item for sublist in objects for item in sublist]
     color = [item for sublist in color for item in sublist]
@@ -244,7 +248,7 @@ def sobol(sobols, conf=None, p_lst=None, xdata=None, xlabel='x', fname=None):
         plt.ylim(-0.1, 1.1)
         plt.tick_params(axis='x', labelsize=23)
         plt.tick_params(axis='y', labelsize=23)
-        plt.legend(fontsize=26, loc='center right')
+        plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
 
     bat.visualization.save_show(fname, figures)
 

@@ -20,11 +20,11 @@ config_user = {
 }
 
 
-def test_Single_Run():
+def test_single_run():
     f = MascaretApi('config_canal.json', StringIO(config_user))
     assert f() == pytest.approx(16.12553589, 0.0001)
 
-    ks = {"Ks": {"zone": True,"value": 25.0,"ind_zone": 0}}
+    ks = {"Ks": {"zone": True, "value": 25.0, "ind_zone": 0}}
     config_user.update(ks)
     f = MascaretApi('config_canal.json', StringIO(config_user))
     assert f() == pytest.approx(16.82152109, 0.0001)

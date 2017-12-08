@@ -41,7 +41,7 @@
         },
         "provider": {
             "command": "bash",
-            "timeout": 10,
+            "timeout": 40,
             "context": "data",
             "script": "data/script.sh",
             "clean": false,
@@ -57,8 +57,13 @@
         "degree": 10
     },
     "visualization": {
+        "bounds": [
+            [30.0, 3000.0],
+            [55.0, 5500.0]
+        ],
         "doe": false,
         "xdata": [1000, 2000, 2500, 3000, 4000],
+        "xlabel": "s (km)",
         "ticks_nbr": 5,
         "flabel": "F(Ks, Q)"
     },

@@ -22,11 +22,10 @@ import subprocess
 from setuptools import (setup, find_packages, Command)
 from distutils.version import LooseVersion
 
-cmdclasses = dict()
+cmdclasses = {}
 
 
 class BuildSphinx(Command):
-
     """Build Sphinx documentation."""
 
     description = 'Build Sphinx documentation'
@@ -45,7 +44,6 @@ class BuildSphinx(Command):
 
 
 class CompileSources(Command):
-
     """Compile fortran sources."""
 
     description = 'Compile fortran sources'
@@ -95,7 +93,7 @@ install_requires = ['sphinx_rtd_theme',
                     'matplotlib>=1.5',
                     'scikit-learn>=0.18']
 
-if sys.version_info <= (3, 3):
+if sys.version_info <= (3, 4):
     install_requires.append('futures')
 
 
@@ -138,13 +136,11 @@ setup(
     version=find_version("batman", "__init__.py"),
     packages=find_packages(exclude=['test_cases', 'doc']),
     entry_points={'console_scripts': ['batman=batman.ui:main']},
-    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
+    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
     # Package requirements
     setup_requires=setup_requires,
     tests_require=tests_require,
     install_requires=install_requires,
-    extras_require={'Antares': ["antares"]},
-    dependency_links=['git+ssh://git@nitrox.cerfacs.fr:cfd-apps/antares.git#egg=Antares-1.9.0'],
     cmdclass=cmdclasses,
     # metadata
     maintainer="Pamphile ROY",
@@ -153,13 +149,17 @@ setup(
     long_description=open('./README.rst').read(),
     classifiers=['Development Status :: 5 - Production/Stable',
                  'Environment :: Console',
+                 'License :: OSI Approved',
                  'Intended Audience :: Science/Research',
                  'Intended Audience :: Developers',
                  'Natural Language :: English',
                  'Operating System :: Unix',
+                 'Programming Language :: Python :: 2',
                  'Programming Language :: Python :: 2.7',
-                 'Programming Language :: Python :: 3.3',
-                 'Topic :: Communications :: Email',
+                 'Programming Language :: Python :: 3',
+                 'Programming Language :: Python :: 3.4',
+                 'Programming Language :: Python :: 3.5',
+                 'Programming Language :: Python :: 3.6',
                  'Topic :: Documentation :: Sphinx',
                  'Topic :: Software Development',
                  'Topic :: Scientific/Engineering',
@@ -168,5 +168,6 @@ setup(
     zip_safe=False,
     license="CECILL-B",
     url=["https://gitlab.com/cerfacs/batman",
-         "https://cerfacs.gitlab.io/batman"],
+         "https://cerfacs.gitlab.io/batman",
+         ""],
 )

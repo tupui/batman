@@ -17,11 +17,10 @@ Engineering Sciences. 2006. DOI: 10.1098/rspa.2006.1679
 import logging
 import numpy as np
 from .kriging import Kriging
-from ..functions import multi_eval
+from ..functions.utils import multi_eval
 
 
 class Evofusion(object):
-
     """Multifidelity algorithm using Evofusion."""
 
     logger = logging.getLogger(__name__)

@@ -22,22 +22,19 @@ Defines all methods used to interact with other classes.
 import logging
 import os
 import pickle
-from collections import OrderedDict
 from concurrent import futures
-from copy import copy
 import numpy as np
 import sklearn.gaussian_process.kernels as kernels
 from .pod import Pod
-from .space import (Space, FullSpaceError, AlienPointError, UnicityError)
+from .space import Space
 from .surrogate import SurrogateModel
 from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
 from .uq import UQ
-from .visualization import response_surface
-from .functions import multi_eval
+from .visualization import response_surface, Kiviat3D
+from .functions.utils import multi_eval
 
 
 class Driver(object):
-
     """Driver class."""
 
     logger = logging.getLogger(__name__)
@@ -79,10 +76,16 @@ class Driver(object):
             init_size = self.settings['space']['sampling']['init_size']
         else:  # when providing DoE as a list
             init_size = self.settings['space']['sampling']
+        try:
+            duplicate = self.settings['space']['sampling']['method'] == 'saltelli'
+        except (KeyError, TypeError):
+            duplicate = False
+
         self.space = Space(self.settings['space']['corners'],
                            init_size,
-                           resamp_size,
-                           self.settings['snapshot']['io']['parameter_names'])
+                           nrefine=resamp_size,
+                           plabels=self.settings['snapshot']['io']['parameter_names'],
+                           duplicate=duplicate)
 
         # Snapshots
         Snapshot.initialize(self.settings['snapshot']['io'])
@@ -104,16 +107,12 @@ class Driver(object):
             # get the point from existing snapshot files,
             self.logger.info('Reading points from a list of snapshots files.')
 
-            self.to_compute_points = OrderedDict()
+            self.to_compute_points = []
 
             for path in self.provider:
                 point = Snapshot.read_point(path)
-                try:
-                    self.space += point
-                except (AlienPointError, UnicityError, FullSpaceError) as tb:
-                    self.logger.warning("Ignoring: {}".format(tb))
-                else:
-                    self.to_compute_points[point] = path
+                self.space += point
+                self.to_compute_points.append(path)
         else:
             space_provider = self.settings['space']['sampling']
             if isinstance(space_provider, list):
@@ -145,6 +144,7 @@ class Driver(object):
                          'nsample': self.space.doe_init,
                          'nrefine': resamp_size}
             self.pod = Pod(**settings_)
+            self.pod.space.duplicate = duplicate
         else:
             self.pod = None
             self.logger.info('No POD is computed.')
@@ -166,7 +166,7 @@ class Driver(object):
                 settings_ = {'strategy': self.settings['surrogate']['strategy'],
                              'degree': self.settings['surrogate']['degree'],
                              'distributions': dists,
-                             'n_sample': self.settings['space']['sampling']['init_size']}
+                             'sample': self.space[:]}
             elif self.settings['surrogate']['method'] == 'evofusion':
                 settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
                              'grand_cost': self.settings['surrogate']['grand_cost']}
@@ -193,13 +193,9 @@ class Driver(object):
             if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
                 sample = self.surrogate.predictor.sample
-                try:
-                    self.space += sample
-                except (AlienPointError, UnicityError, FullSpaceError) as tb:
-                    self.logger.warning("Ignoring: {}".format(tb))
-                finally:
-                    if not self.provider.is_file:
-                        self.to_compute_points = sample[:len(self.space)]
+                self.space += sample
+                if not self.provider.is_file:
+                    self.to_compute_points = sample[:len(self.space)]
         else:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')
@@ -216,7 +212,7 @@ class Driver(object):
             points = self.to_compute_points
         # snapshots generation
         if self.provider.is_file:
-            snapshots = points.values()
+            snapshots = points
         else:
             snapshots = []
             for point in points:
@@ -258,7 +254,7 @@ class Driver(object):
                 self.pod.decompose(snapshots)
 
             self.data = self.pod.VS()
-            points = self.pod.points
+            points = self.pod.space
         else:
             if self.provider.is_job:
                 _snapshots = []
@@ -275,11 +271,10 @@ class Driver(object):
                     if len(snapshots) != len(self.space):  # no resampling
                         snapshots = self.data
                         for snapshot in snapshots_:
-                            try:
-                                self.space += snapshot.point
-                                snapshots = np.vstack([snapshots, snapshot.data])
-                            except (AlienPointError, UnicityError, FullSpaceError) as tb:
-                                self.logger.warning("Ignoring: {}".format(tb))
+                            self.space += snapshot.point
+                            if snapshot.point in self.space:
+                                snapshots = np.vstack([snapshots,
+                                                       snapshot.data])
 
                 self.data = snapshots
 
@@ -297,7 +292,9 @@ class Driver(object):
         From a new sample, it re-generates the POD.
 
         """
+        self.logger.info("\n----- Resampling parameter space -----")
         while len(self.space) < self.space.max_points_nb:
+            self.logger.info("-> New iteration")
             quality, point_loo = self.surrogate.estimate_quality()
             # quality = 0.5
             # point_loo = [-1.1780625, -0.8144629629629629]
@@ -313,17 +310,16 @@ class Driver(object):
             delta_space = self.settings['space']['resampling']['delta_space']
             method = self.settings['space']['resampling']['method']
 
-            try:
-                new_point = self.space.refine(self.surrogate,
-                                              method,
-                                              point_loo=point_loo,
-                                              delta_space=delta_space,
-                                              dists=pdf, hybrid=hybrid,
-                                              discrete=discrete)
-            except FullSpaceError:
-                break
+            new_point = self.space.refine(self.surrogate,
+                                          method,
+                                          point_loo=point_loo,
+                                          delta_space=delta_space, dists=pdf,
+                                          hybrid=hybrid, discrete=discrete)
 
-            self.sampling(new_point, update=True)
+            try:
+                self.sampling(new_point, update=True)
+            except ValueError:
+                break
 
             if self.settings['space']['resampling']['method'] == 'optimization':
                 self.space.optimization_results()
@@ -412,27 +408,36 @@ class Driver(object):
 
     def uq(self):
         """Perform UQ analysis."""
-        output = os.path.join(self.fname, self.fname_tree['uq'])
+        args = {}
+        args['fname'] = os.path.join(self.fname, self.fname_tree['uq'])
+        args['space'] = self.space
+        args['indices'] = self.settings['uq']['type']
+        args['plabels'] = self.settings['snapshot']['io']['parameter_names']
+        args['dists'] = self.settings['uq']['pdf']
+        args['nsample'] = self.settings['uq']['sample']
 
         if self.pod is not None:
-            data = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
+            args['data'] = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
         else:
-            data = self.data
-
-        test = self.settings['uq']['test'] if 'test' in self.settings['uq'] else None
+            args['data'] = self.data
 
         try:
-            xdata = self.settings['visualization']['xdata']
+            args['test'] = self.settings['uq']['test']
         except KeyError:
-            xdata = None
+            pass
 
-        analyse = UQ(self.surrogate, nsample=self.settings['uq']['sample'],
-                     dists=self.settings['uq']['pdf'],
-                     p_lst=self.settings['snapshot']['io']['parameter_names'],
-                     method=self.settings['uq']['method'],
-                     indices=self.settings['uq']['type'],
-                     space=self.space, data=data, xdata=xdata, fname=output,
-                     test=test)
+        try:
+            args['xdata'] = self.settings['visualization']['xdata']
+            args['xlabel'] = self.settings['visualization']['xlabel']
+        except KeyError:
+            pass
+
+        try:
+            args['flabel'] = self.settings['visualization']['flabel']
+        except KeyError:
+            pass
+
+        analyse = UQ(self.surrogate, **args)
 
         if self.surrogate is None:
             self.logger.warning("No surrogate model, be sure to have a "
@@ -453,49 +458,110 @@ class Driver(object):
 
         output_len = np.asarray(data).shape[1]
 
-        if p_len < 5:
-            self.logger.info('Creating response surface...')
-            if 'visualization' in self.settings:
-                args = copy(self.settings['visualization'])
+        self.logger.info('Creating response surface...')
+        args = {}
+        if 'visualization' in self.settings:
+            # xdata for output with dim > 1
+            if ('xdata' in self.settings['visualization']) and (output_len > 1):
+                args['xdata'] = self.settings['visualization']['xdata']
+            elif output_len > 1:
+                args['xdata'] = np.linspace(0, 1, output_len)
 
-                # xdata for output with dim > 1
-                if ('xdata' not in args) and (output_len > 1):
-                    args['xdata'] = np.linspace(0, 1, output_len)
+            # Plot Doe if doe option is True
+            if ('doe' in self.settings['visualization']) and\
+                    self.settings['visualization']['doe']:
+                args['doe'] = self.space
 
-                # Plot Doe if doe option is True
-                args['doe'] = self.space if ('doe' in args) and args['doe']\
-                    else None
-
-                # Display resampling if resampling option is true
-                args['resampling'] = self.settings['space']['resampling']['resamp_size']\
-                    if ('resampling' in args) and args['resampling'] else 0
+            # Display resampling if resampling option is true
+            if ('resampling' in self.settings['visualization']) and\
+                    self.settings['visualization']['resampling']:
+                args['resampling'] = self.settings['space']['resampling']['resamp_size']
             else:
-                args = {}
-                args['xdata'] = np.linspace(0, 1, output_len)\
-                    if output_len > 1 else None
+                args['resampling'] = 0
 
-            # Data based on surrogate model (function) or not
-            if 'surrogate' in self.settings:
-                args['fun'] = self.func
-            else:
-                args['sample'] = self.space
-                args['data'] = data
+            try:
+                args['ticks_nbr'] = self.settings['visualization']['ticks_nbr']
+            except KeyError:
+                pass
+            try:
+                args['contours'] = self.settings['visualization']['contours']
+            except KeyError:
+                pass
+            try:
+                args['range_cbar'] = self.settings['visualization']['range_cbar']
+            except KeyError:
+                pass
+            try:
+                args['axis_disc'] = self.settings['visualization']['axis_disc']
+            except KeyError:
+                pass
+        else:
+            args['xdata'] = np.linspace(0, 1, output_len)\
+                if output_len > 1 else None
 
+        try:
+            args['bounds'] = self.settings['visualization']['bounds']
+            for i, _ in enumerate(args['bounds'][0]):
+                if (args['bounds'][0][i] < self.settings['space']['corners'][0][i])\
+                        or (args['bounds'][1][i] > self.settings['space']['corners'][1][i]):
+                    args['bounds'] = self.settings['space']['corners']
+                    self.logger.warning("Specified bounds for visualisation are "
+                                        "wider than space corners. Default value used.")
+        except KeyError:
             args['bounds'] = self.settings['space']['corners']
-            args['plabels'] = self.settings['snapshot']['io']['parameter_names']\
-                if 'plabels' not in args else args['plabels']
-            if ('flabel' not in args) and\
-                    (len(self.settings['snapshot']['io']['variables']) < 2):
+
+        # Data based on surrogate model (function) or not
+        if 'surrogate' in self.settings:
+            args['fun'] = self.func
+        else:
+            args['sample'] = self.space
+            args['data'] = data
+
+        try:
+            args['plabels'] = self.settings['visualization']['plabels']
+        except KeyError:
+            args['plabels'] = self.settings['snapshot']['io']['parameter_names']
+
+        if len(self.settings['snapshot']['io']['variables']) < 2:
+            try:
+                args['flabel'] = self.settings['visualization']['flabel']
+            except KeyError:
                 args['flabel'] = self.settings['snapshot']['io']['variables'][0]
 
-            path = os.path.join(self.fname, self.fname_tree['visualization'])
-            try:
-                os.makedirs(path)
-            except OSError:
-                pass
-            args['fname'] = os.path.join(path, 'Response_Surface')
+        path = os.path.join(self.fname, self.fname_tree['visualization'])
+        try:
+            os.makedirs(path)
+        except OSError:
+            pass
 
+        if p_len < 5:
+            # Creation of the response surface(s)
+            args['fname'] = os.path.join(path, 'Response_Surface')
             response_surface(**args)
+
+        else:
+            # Creation of the Kiviat image
+            args['fname'] = os.path.join(path, 'Kiviat.pdf')
+            args['sample'] = self.space
+            args['data'] = data
+            if 'range_cbar' not in args:
+                args['range_cbar'] = None
+            if 'ticks_nbr' not in args:
+                args['ticks_nbr'] = 10
+            if 'kiviat_fill' not in args:
+                args['kiviat_fill'] = True
+            kiviat = Kiviat3D(args['sample'], args['bounds'], args['data'],
+                              plabels=args['plabels'],
+                              range_cbar=args['range_cbar'])
+            kiviat.plot(fname=args['fname'], flabel=args['flabel'],
+                        ticks_nbr=args['ticks_nbr'], fill=args['kiviat_fill'])
+
+            # Creation of the Kiviat movie:
+            args['fname'] = os.path.join(path, 'Kiviat.mp4')
+            rate = 400
+            kiviat.f_hops(frame_rate=rate, fname=args['fname'],
+                          flabel=args['flabel'], fill=args['kiviat_fill'],
+                          ticks_nbr=args['ticks_nbr'])
 
     @multi_eval
     def func(self, coords):

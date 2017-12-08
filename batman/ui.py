@@ -8,6 +8,7 @@ import os
 import re
 import shutil
 import json
+import openturns as ot
 
 from batman import __version__, __branch__, __commit__
 from batman.driver import Driver
@@ -32,6 +33,8 @@ with open(path + '/misc/logging.json', 'r') as file:
     logging_config = json.load(file)
 
 dictConfig(logging_config)
+
+ot.RandomGenerator.SetSeed(123456)
 
 
 def run(settings, options):
@@ -103,6 +106,7 @@ def run(settings, options):
             driver.restart()
             update = True
 
+        logger.info("\n----- Sampling parameter space -----")
         driver.sampling(update=update)
         driver.write()
 
@@ -118,9 +122,8 @@ def run(settings, options):
         try:
             driver.read()
         except IOError:
-            logger.exception(
-                'Surrogate need to be computed: \
-                check output folder or re-try without -n')
+            logger.exception("Surrogate need to be computed: "
+                             "check output folder or re-try without -n")
             raise SystemExit
 
     try:

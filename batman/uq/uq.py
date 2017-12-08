@@ -64,21 +64,20 @@ import numpy as np
 import openturns as ot
 from openturns.viewer import View
 from sklearn.metrics import (r2_score, mean_squared_error)
-from ..functions import multi_eval
+from ..functions.utils import multi_eval
 from ..input_output import (IOFormatSelector, Dataset)
 from .. import functions as func_ref
 from .. import visualization
 
 
 class UQ:
-
     """Uncertainty Quantification class."""
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, surrogate, dists=None, nsample=5000, p_lst=None,
-                 method='sobol', indices='aggregated', space=None, data=None,
-                 xdata=None, fname=None, test=None):
+    def __init__(self, surrogate, dists=None, nsample=5000, method='sobol',
+                 indices='aggregated', space=None, data=None, plabels=None,
+                 xlabel=None, flabel=None, xdata=None, fname=None, test=None):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -99,12 +98,18 @@ class UQ:
         :param space: sample space (can be a list).
         :type space: class:`batman.space.Space`.
         :param array_like data: Snapshot's data (n_samples, n_features).
+        :param list(str) plabels: parameters' names.
+        :param str xlabel: label of the discretization parameter.
+        :param str flabel: name of the quantity of interest.
         :param array_like xdata: 1D discretization of the function (n_features,).
         :param str fname: folder output path.
+        :param str test: Test function from class:`batman.functions`.
         """
         self.logger.info("\n----- UQ module -----")
         self.test = test
         self.fname = fname
+        self.xlabel = xlabel
+        self.flabel = flabel
 
         if self.fname is not None:
             try:
@@ -119,10 +124,10 @@ class UQ:
         self.surrogate = surrogate
 
         self.p_len = len(dists)
-        if p_lst is None:
-            self.p_lst = ["x" + str(i) for i in range(self.p_len)]
+        if plabels is None:
+            self.plabels = ["x" + str(i) for i in range(self.p_len)]
         else:
-            self.p_lst = p_lst
+            self.plabels = plabels
         self.method_sobol = method
         self.type_indices = indices
         self.space = space
@@ -168,7 +173,7 @@ class UQ:
     def __repr__(self):
         """Information about object."""
         return ("UQ object: Method({}), Input({}), Distribution({})"
-                .format(self.method_sobol, self.p_lst, self.distribution))
+                .format(self.method_sobol, self.plabels, self.distribution))
 
     @multi_eval
     def func(self, coords):
@@ -325,7 +330,7 @@ class UQ:
             else:
                 input_design = self.space
                 output_design = self.output
-                size = self.points_sample // (2 * self.p_len + 2)
+                size = len(self.space) // (2 * self.p_len + 2)
             # Martinez, Saltelli, MauntzKucherenko, Jansen
             ot.ResourceMap.SetAsBool('MartinezSensitivityAlgorithm-UseAsmpytoticInterval', True)
             sobol = ot.SaltelliSensitivityAlgorithm(input_design,
@@ -373,9 +378,9 @@ class UQ:
             i2 = np.array(indices[2]).flatten('F')
             data = np.append(i1, i2)
             names = []
-            for p in self.p_lst:
+            for p in self.plabels:
                 names += ['S_' + str(p)]
-            for p in self.p_lst:
+            for p in self.plabels:
                 names += ['S_T_' + str(p)]
             if (self.output_len > 1) and (self.type_indices != 'block'):
                 full_names = ['x'] + names
@@ -444,7 +449,7 @@ class UQ:
                     names = [i + str(p) for i, p in
                              itertools.product(['S_min_', 'S_', 'S_max_',
                                                 'S_T_min_', 'S_T_', 'S_T_max_'],
-                                               self.p_lst)]
+                                               self.plabels)]
 
                     conf1 = np.vstack((i1_min, i2_min)).flatten('F')
                     conf1 = ind_total_first - conf1
@@ -455,7 +460,7 @@ class UQ:
                     conf = None
                     names = [i + str(p) for i, p in
                              itertools.product(['S_', 'S_T_'],
-                                               self.p_lst)]
+                                               self.plabels)]
                     data = np.append(i1, i2)
                 dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
                 self.io.write(os.path.join(self.fname,
@@ -476,7 +481,7 @@ class UQ:
         # Plot
         if self.fname is not None:
             path = os.path.join(self.fname, 'sensitivity.pdf')
-            visualization.sobol(full_indices, p_lst=self.p_lst, conf=conf,
+            visualization.sobol(full_indices, plabels=self.plabels, conf=conf,
                                 xdata=self.xdata, fname=path)
 
         # Compute error of the POD with a known function
@@ -502,16 +507,6 @@ class UQ:
         """
         self.logger.info("\n----- Uncertainty Propagation -----")
 
-        # Response surface
-        if self.p_len < 3:
-            self.logger.info('Creating response surface...')
-            visualization.response_surface(bounds=[np.min(self.sample, axis=0),
-                                                   np.max(self.sample, axis=0)],
-                                           fun=self.func,
-                                           doe=self.space, xdata=self.xdata,
-                                           fname=os.path.join(self.fname,
-                                                              'response'))
-
         # Covariance and correlation matrices
         self.logger.info('Creating Covariance/correlation and figures...')
         if (self.output_len > 1) and (self.type_indices != 'block'):
@@ -521,5 +516,7 @@ class UQ:
         # Create and plot the PDFs + moments
         self.logger.info('Creating PDF and figures...')
         visualization.pdf(self.output, self.xdata,
+                          xlabel=self.xlabel,
+                          flabel=self.flabel,
                           fname=os.path.join(self.fname, 'pdf.pdf'),
                           moments=True)

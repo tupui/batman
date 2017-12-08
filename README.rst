@@ -7,6 +7,7 @@
 .. _Codecov: https://gitlab.com/cerfacs/batman/pipelines
 
 .. |Python| image:: https://img.shields.io/badge/python-2.7,_3.6-blue.svg
+.. _Python: https://python.org
 
 .. |License| image:: https://img.shields.io/badge/license-CECILL--B_License-blue.svg
 .. _License: http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
@@ -28,24 +29,26 @@ Main features are:
 
 - Design of Experiment (LHS, low discrepancy sequences, MC),
 - Resample the parameter space based on the physic and the sample,
-- Metamodel (Gaussian process, Polynomial Chaos, RBF),
+- Surrogate Models (Gaussian process, Polynomial Chaos, RBF),
 - Optimization (Expected Improvement),
-- Visualize both sample and CFD computations in *n*-dimensions (HDR, Kiviat),
+- Realizing Sensitivity Analysises (SA) and Uncertainty Quantifications (UQ),
+- Visualization in *n*-dimensions (HDR, Kiviat),
 - *POD* for database optimization or data reduction,
-- Automatically manage (parallel) the numerical computations.
+- Automatically managing code computations in parallel.
 
-Getting started
----------------
-
-A detailled example can be found in 
-`tutorial <https://cerfacs.gitlab.io/batman/tutorial.html>`_ and the
-full documentation is available at: 
+Full documentation is available at: 
 
     https://cerfacs.gitlab.io/batman
 
-The main folder contains three subfolders: ``doc`` ``batman`` and ``test_cases``.
-The latter contains examples that you can adapt to you needs. You can find more
-information about the cases within the respectives ``README.rst`` file. 
+.. inclusion-marker-do-not-remove
+
+Getting started
+===============
+
+A detailled example can be found in 
+`tutorial <https://cerfacs.gitlab.io/batman/tutorial.html>`_. The folder ``test_cases``
+contains examples that you can adapt to you needs. You can find more information
+about the cases within the respectives ``README.rst`` file. 
 
 Shoud you be interested by batman's implementation, consider
 reading `introduction <https://cerfacs.gitlab.io/batman/introduction.html>`_.
@@ -55,26 +58,23 @@ If you encounter a bug (or have a feature request), please report it via
 falling but "Why do we fall sir? So we can learn to pick ourselves up".
 
 Last but not least, if you consider contributing check-out
-`contributing <https://cerfacs.gitlab.io/batman/contributing.html>`_.
+`contributing <https://cerfacs.gitlab.io/batman/contributing_link.html>`_.
 
 Happy batman.
 
-How to get it?
---------------
+How to install BATMAN?
+----------------------
 
 The sources are located on *GitLab*: 
 
     https://gitlab.com/cerfacs/batman
-
-How to Install?
----------------
 
 Dependencies
 ............
 
 The required dependencies are: 
 
-- `Python <https://python.org>`_ >= 2.7 or >= 3.3
+- `Python <https://python.org>`_ >= 2.7 or >= 3.4
 - `scikit-learn <http://scikit-learn.org>`_ >= 0.18
 - `numpy <http://www.numpy.org>`_ >= 1.13
 - `scipy <http://scipy.org>`_ >= 0.15
@@ -88,7 +88,7 @@ Appart from OpenTURNS, required dependencies are satisfied by the installer.
 Optionnal dependencies are: 
 
 - `Antares <http://www.cerfacs.fr/antares>`_ for extra IO options
-- `ffmpeg <https://www.ffmpeg.org>`_ for movie visualizations
+- `ffmpeg <https://www.ffmpeg.org>`_ for movie visualizations (*n_features* > 2)
 
 Testing dependencies are: 
 
@@ -120,10 +120,6 @@ optionnal but is recommanded. (<30mins depending on your configuration).
 
 .. note:: If you don't have install priviledge, add ``--user`` option after install.
     But the simplest way might be to use a conda environment.
-
-Finally, if you want to install the optionnal package ``Antares`` (not provided)::
-
-    pip install --editable .[antares] --process-dependency-links
 
 If batman has been correctly installed, you should be able to call it simply::
 

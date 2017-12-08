@@ -1,0 +1,40 @@
+{
+    "space": {
+        "corners": [
+            [999.0, 999.0], 
+            [9999.0, 9999.0]
+        ],
+        "sampling": {
+            "init_size": 5,
+            "method": "halton"
+        }
+    },
+    "snapshot": {
+        "max_workers": 5,
+        "io": {
+            "shapes": {
+                "0": [
+                    [1]
+                ]
+            },
+            "format": "fmt_tp_fortran",
+            "variables": ["F"],
+            "point_filename": "header.py",
+            "filenames": {
+                "0": ["function.dat"]
+            },
+            "template_directory": null,
+            "parameter_names": ["x1", "x2"]
+        },
+        "provider": {
+            "command": "bash",
+            "timeout": 20,
+            "context": "data",
+            "script": "data/script.sh",
+            "clean": false,
+            "private-directory": "batman-data",
+            "data-directory": "cfd-output-data",
+            "restart": "False"
+        }
+    }
+}

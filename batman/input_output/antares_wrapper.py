@@ -12,7 +12,6 @@ from .base import IOBase
 
 
 class AntaresWrapper(IOBase):
-
     """AntaresWrapper class.
 
     Inherit from :class:`IOBase`

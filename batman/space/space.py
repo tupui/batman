@@ -31,45 +31,24 @@ from .refiner import Refiner
 from .. import visualization
 
 
-class UnicityError(Exception):
-
-    """Exception for unicity error."""
-
-    pass
-
-
-class AlienPointError(Exception):
-
-    """Exception when a point is from outer space."""
-
-    pass
-
-
-class FullSpaceError(Exception):
-
-    """Exception when the maximum number of points is reached."""
-
-    pass
-
-
 class Space(list):
-
     """Manages the space of parameters."""
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, corners, sample=np.inf, nrefine=0, p_lst=None,
-                 multifidelity=None):
+    def __init__(self, corners, sample=np.inf, nrefine=0, plabels=None,
+                 multifidelity=None, duplicate=False):
         """Generate a Space.
 
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
         :param int/array_like sample: number of sample or list of sample of
           shape (n_samples, n_features).
         :param int nrefine: number of point to use for refinement.
-        :param list(str) p_lst: parameters' names.
+        :param list(str) plabels: parameters' names.
         :param list(float) multifidelity: Whether to consider the first
           parameter as the fidelity level. It is a list of ['cost_ratio',
           'grand_cost'].
+        :param bool duplicate: Whether to allow duplicate points in space.
         """
         if isinstance(sample, (int, float)):
             self.doe_init = sample
@@ -84,6 +63,7 @@ class Space(list):
 
         self.dim = len(corners[0])
         self.multifidelity = multifidelity
+        self.duplicate = duplicate
 
         # Multifidelity configuration
         if multifidelity is not None:
@@ -92,14 +72,14 @@ class Space(list):
                              .format(self.doe_init, self.doe_cheap))
 
         # create parameter list and omit fidelity if relevent
-        if p_lst is not None:
-            self.p_lst = p_lst
+        if plabels is not None:
+            self.plabels = plabels
             try:
-                self.p_lst.remove('fidelity')
+                self.plabels.remove('fidelity')
             except ValueError:
                 pass
         else:
-            self.p_lst = ["x" + str(i) for i in range(self.dim)]
+            self.plabels = ["x" + str(i) for i in range(self.dim)]
 
         # corner points
         self.corners = [Point(p) for p in corners]
@@ -145,14 +125,16 @@ class Space(list):
         for point in points:
             # check point dimension is correct
             if (len(point) - 1 if self.multifidelity else len(point)) != self.dim:
-                self.logger.exception("Coordinates dimensions mismatch: is {},"
-                                      " should be {}"
-                                      .format(len(point), self.dim))
-                raise SystemExit
+                self.logger.warning("Ignoring Point - Coordinates dimensions"
+                                    "mismatch - is {}, should be {}"
+                                    .format(len(point), self.dim))
+                continue
 
             # check space is full
             if self.is_full():
-                raise FullSpaceError('Cannot add Point {}'.format(point))
+                self.logger.warning("Ignoring Point - Full Space - {}"
+                                    .format(point))
+                continue
 
             point = Point(point)
 
@@ -161,16 +143,18 @@ class Space(list):
             not_alien = (self.corners[0] <= test_point).all()\
                 & (test_point <= self.corners[1]).all()
             if not not_alien:
-                raise AlienPointError("Point {} is out of space"
-                                      .format(point))
+                self.logger.warning("Ignoring Point - Out of Space - {}"
+                                    .format(point))
+                continue
 
             # verify point is not already in space
-            if point not in points_set:
+            if (point not in points_set) or self.duplicate:
                 self.append(point)
                 points_set.add(point)
             else:
-                raise UnicityError("Point {} already exists in the space"
-                                   .format(point))
+                self.logger.warning("Ignoring Point - Duplicate - {}"
+                                    .format(point))
+                continue
         return self
 
     def sampling(self, n_sample=None, kind='halton', dists=None, discrete=None):
@@ -205,6 +189,9 @@ class Space(list):
             samples = np.vstack((samples[0:self.doe_init, :], samples))
             samples = np.hstack((levels, samples))
 
+        if kind == 'saltelli':
+            self.duplicate = True
+
         self.empty()
         self += samples
 
@@ -223,7 +210,9 @@ class Space(list):
         :param str method: Refinement method.
         :param array_like point_loo: Leave-one-out worst point (n_features,).
         :param float delta_space: Shrinking factor for the parameter space.
-        :param int discrete: index of the discrete variable
+        :param lst(str) dists: List of valid openturns distributions as string.
+        :param lst(lst(str, int)) hybrid: Navigator as list of [Method, n].
+        :param int discrete: index of the discrete variable.
         :return: List of points to add.
         :rtype: element or list of :class:`batman.space.Point`.
         """
@@ -259,12 +248,24 @@ class Space(list):
         except TypeError:
             point = [Point(point) for point in new_point]
 
-        self += point
+        # Check if points are added to space so only added points are returned
+        points_set = set(self)
+        new_point = []
+        for p in point:
+            try:
+                points_set.add(p)
+                self += p
+            except TypeError:
+                # Empty list
+                continue
 
-        self.logger.info('Refined sampling with new point: {}'.format(point))
+            if p in self:
+                new_point.append(p)
+
+        self.logger.info('Refined sampling with new point: {}'.format(new_point))
         self.logger.info("New discrepancy is {}".format(self.discrepancy()))
 
-        return point
+        return new_point
 
     def empty(self):
         """Remove all points."""
@@ -353,6 +354,6 @@ class Space(list):
         np.savetxt(path, self)
         resampling = len(self) - self.doe_init
         path = os.path.join(os.path.dirname(os.path.abspath(path)), 'DOE.pdf')
-        visualization.doe(self, p_lst=self.p_lst, resampling=resampling,
+        visualization.doe(self, plabels=self.plabels, resampling=resampling,
                           multifidelity=self.multifidelity, fname=path)
         self.logger.debug('Space wrote to {}'.format(path))

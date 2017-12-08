@@ -7,7 +7,6 @@ from .base import *
 
 
 class Npz(IOBase):
-
     """Manages IO for numpy npz files.
 
     See numpy documentation for details.

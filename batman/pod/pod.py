@@ -35,7 +35,6 @@ from ..space import Space
 
 
 class Pod(object):
-
     """POD class."""
 
     logger = logging.getLogger(__name__)
@@ -76,7 +75,7 @@ class Pod(object):
         self.predictor = None
         self.leave_one_out_predictor = 'kriging'
         self.corners = corners
-        self.points = Space(self.corners, nsample, nrefine)
+        self.space = Space(self.corners, nsample, nrefine)
 
         # POD computation related
         self.tolerance = tolerance
@@ -98,7 +97,7 @@ class Pod(object):
              "maximum number of modes: {}\n"
              "number of modes: {}\n"
              "modes: {}\n"
-             .format(self.tolerance, self.points.dim, len(self.points),
+             .format(self.tolerance, self.space.dim, len(self.space),
                      self.mean_snapshot.shape[0], self.dim_max,
                      self.S.shape[0], self.S))
         return s
@@ -116,7 +115,7 @@ class Pod(object):
         self._decompose(matrix)
 
         for s in snapshots:
-            self.points += s.point
+            self.space += s.point
 
         self.logger.info('Computed POD basis with %g modes', self.S.shape[0])
 
@@ -128,7 +127,7 @@ class Pod(object):
         self.logger.info('Updating POD basis...')
         snapshot = Snapshot.convert(snapshot)
         self._update(snapshot.data)
-        self.points += snapshot.point
+        self.space += snapshot.point
         self.logger.info('Updated POD basis with snapshot at point {}'
                          .format(snapshot.point))
 
@@ -146,7 +145,7 @@ class Pod(object):
         level_init = copy.copy(self.logger.getEffectiveLevel())
         logging.getLogger().setLevel(logging.WARNING)
 
-        quality, point = self._estimate_quality(self.points)
+        quality, point = self._estimate_quality(self.space)
 
         logging.getLogger().setLevel(level_init)
 
@@ -167,7 +166,7 @@ class Pod(object):
             pass
 
         # points
-        self.points.write(os.path.join(path, self.points_file_name))
+        self.space.write(os.path.join(path, self.points_file_name))
 
         # mean snapshot
         p = os.path.join(path, self.directories['mean_snapshot'])
@@ -178,7 +177,7 @@ class Pod(object):
         for i, u in enumerate(self.U.T):
             Snapshot.write_data(u, path_pattern % i)
 
-        points = np.vstack(tuple(self.points))
+        points = np.vstack(tuple(self.space))
         np.savez(os.path.join(path, self.pod_file_name),
                  parameters=points,
                  values=self.S,
@@ -192,7 +191,7 @@ class Pod(object):
         :param str path: path to a directory.
         """
         # points
-        self.points.read(os.path.join(path, self.points_file_name))
+        self.space.read(os.path.join(path, self.points_file_name))
 
         # mean snapshot
         p = os.path.join(path, self.directories['mean_snapshot'])
@@ -383,8 +382,10 @@ class Pod(object):
         """
         points_nb = len(points)
         data_len = self.U.shape[0]
-        error = np.empty(points_nb)
-        mean = np.empty((points_nb, data_len))
+        error_l_two = np.empty(points_nb)
+        snapshot_value = np.empty((points_nb, data_len))
+        error_matrix = np.empty((points_nb, data_len))
+        var_matrix = np.empty((points_nb, data_len))
         surrogate = SurrogateModel(self.leave_one_out_predictor,
                                    self.corners)
 
@@ -407,24 +408,24 @@ class Pod(object):
             points_1.pop(i)
 
             new_pod = copy.deepcopy(self)
-            new_pod.points = points_1
+            new_pod.space = points_1
             new_pod.V = V_1
             new_pod.S = S_1
 
             # New prediction with points_nb - 1
-            surrogate.fit(new_pod.points, new_pod.V * new_pod.S)
-
+            surrogate.fit(new_pod.space, new_pod.V * new_pod.S)
             prediction, _ = surrogate(points[i])
 
             # MSE on the missing point
-            error = np.sum((np.dot(Urot, prediction[0]) - float(points_nb)
-                            / float(points_nb - 1) * self.V[i] * self.S)
-                           ** 2)
+            error_no_mod = np.dot(Urot, prediction[0]) - float(points_nb) /\
+                float(points_nb - 1) * self.V[i] * self.S
+            error_vector_ = np.dot(self.U, error_no_mod)
+            error_l_two_ = np.sqrt(np.sum(error_no_mod ** 2))
 
             # Because V = V.T -> V[i] is a column so V[i]S = SV.T
-            mean = np.dot(self.U, self.V[i] * self.S)
+            snapshot_value_ = np.dot(self.U, self.V[i] * self.S)
 
-            return mean, error
+            return snapshot_value_, error_l_two_, error_vector_
 
         # Multi-threading strategy
         n_cpu_system = cpu_system()
@@ -439,20 +440,34 @@ class Pod(object):
         results = pool.imap(quality, range(points_nb))
 
         for i in range(points_nb):
-            mean[i], error[i] = results.next()
+            snapshot_value[i], error_l_two[i], error_matrix[i] = results.next()
             progress()
 
         pool.terminate()
 
-        mean = np.sum(mean)
-        mean = mean / points_nb
-        var = 0.
+        mean = np.mean(snapshot_value, axis=0)
         for i in range(points_nb):
-            var += np.sum((mean - np.dot(self.U, self.V[i] * self.S)) ** 2)
+            var_matrix[i] = (mean - np.dot(self.U, self.V[i] * self.S)) ** 2
 
         # Compute Q2
-        err_q2 = 1 - np.sum(error) / var
+        # Use a part of the code of the r2_score function
+        # From scikit-learn library
+        numerator = (error_matrix ** 2).sum(axis=0, dtype=np.float64)
+        denominator = np.sum(var_matrix, axis=0, dtype=np.float64)
 
-        index = error.argmax()
+        nonzero_denominator = denominator != 0
+        nonzero_numerator = numerator != 0
+        valid_score = nonzero_denominator & nonzero_numerator
+        output_scores = np.ones([data_len])
+
+        output_scores[valid_score] = 1 - (numerator[valid_score] /
+                                          denominator[valid_score])
+        # arbitrary set to zero to avoid -inf scores, having a constant
+        # y_true is not interesting for scoring a regression anyway
+        output_scores[nonzero_numerator & ~nonzero_denominator] = 0.
+
+        q2 = output_scores
+        index = error_l_two.argmax()
+        err_q2 = np.mean(q2)
 
         return err_q2, points[index]

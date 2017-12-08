@@ -2,6 +2,7 @@
 Visualization module
 ********************
 """
+import warnings
 from matplotlib import pyplot as plt
 import matplotlib.backends.backend_pdf
 from .kiviat import Kiviat3D
@@ -34,7 +35,9 @@ def save_show(fname, figures):
     :param str fname: wether to export to filename or display the figures.
     :param list(Matplotlib figure instance) figures: Figures to handle.
     """
-    plt.tight_layout()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        plt.tight_layout()
 
     if fname is not None:
         pdf = matplotlib.backends.backend_pdf.PdfPages(fname)

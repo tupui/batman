@@ -35,7 +35,7 @@ sys.path.insert(0, os.path.abspath('../.'))
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
               'sphinx.ext.todo', 'sphinx.ext.coverage',
-              'sphinx.ext.mathjax', 'sphinx.ext.viewcode',
+              'sphinx.ext.imgmath', 'sphinx.ext.viewcode',
               'sphinx.ext.intersphinx']
 
 intersphinx_mapping = {'openturns': ('http://doc.openturns.org/openturns-latest/sphinx/', None),
@@ -61,7 +61,9 @@ autosummary_generate = True
 
 autodoc_mock_imports = ["antares"]
 
-mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML'
+# mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML'
+# mathjax_path = 'MathJax-master/MathJax.js'
+imgmath_image_format = 'svg'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

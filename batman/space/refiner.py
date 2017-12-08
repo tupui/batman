@@ -34,13 +34,11 @@ from scipy.stats import norm
 import numpy as np
 from sklearn import preprocessing
 import batman as bat
-from ..uq import UQ
 from .sampling import Doe
 from ..misc import optimization
 
 
 class Refiner(object):
-
     """Resampling the space of parameters."""
 
     logger = logging.getLogger(__name__)
@@ -351,6 +349,7 @@ class Refiner(object):
         by the corresponding percentage of the total indices.
 
         :param tuple point_loo: leave-one-out point.
+        :param lst(str) dists: List of valid openturns distributions as string.
         :return: The coordinate of the point to add.
         :rtype: lst(float).
         """
@@ -359,7 +358,7 @@ class Refiner(object):
         point = np.array(point_loo)
 
         # Get Sobol' indices
-        analyse = UQ(self.surrogate, dists=dists)
+        analyse = bat.uq.UQ(self.surrogate, dists=dists)
         indices = analyse.sobol()[2]
         indices = indices * (indices > 0)
         indices = preprocessing.normalize(indices.reshape(1, -1), norm='max')
@@ -485,6 +484,7 @@ class Refiner(object):
         :param point_loo: leave one out point
         :type point_loo: :class:`batman.space.point.Point`
         :param str strategy: resampling method
+        :param lst(str) dists: List of valid openturns distributions as string.
         :return: The coordinate of the point to add
         :rtype: lst(float)
         """

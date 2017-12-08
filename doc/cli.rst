@@ -249,6 +249,10 @@ Set up for the visualization options. Batman creates a response function (1 inpu
 .. code-block:: python
 
      "visualization": {
+        "bounds": [
+            [15.0, 2500.0],
+            [60.0, 6000.0]
+        ],
         "doe": true,
         "resampling": true,
         "axis_disc": [20, 20],
@@ -258,17 +262,21 @@ Set up for the visualization options. Batman creates a response function (1 inpu
         "ticks_nbr": 14,
         "range_cbar": [0.0, 2.3],
         "contours": [0.5, 1.0, 1.5],
+        "kiviat_fill": true
      }
 
-+ ``doe``: Boolean. If *true*, the Design of Experiment is represented on the response surface by black dots. Defaults value is *false*,
++ ``bounds``: Floats. Response surface boundaries. Those boundaries should be included inside the space corners defined in the Space of Parameters block. Default values are the space corners,
++ ``doe``: Boolean. If *true*, the Design of Experiment is represented on the response surface by black dots. Default value is *false*,
 + ``resampling``: Boolean. If *true*, Design of Experiment corresponding to the resampling points are displayed in a different color. Such points are represented by red triangles. Only activates if doe is *true*,
 + ``axis_disc``: Integers. Discretisation of each axis. Indicated value for the x and the y axis modify the surface resolution, while values corresponding the the 3rd and 4th parameters impact the frame number per movie and the movie number,
 + ``flabel``: String. Name of the cost function,
++ ``xlabel``: String. Name of the abscissa,
 + ``plabels``: Strings. Name of the input parameters to be plotted on each axis,
 + ``feat_order``: Integers. Associate each input parameter to an axis, the first indicated number corresponding to the parameter to be plotted on the x-axis, etc... A size equal to the input parameter number is expected, all integers from 1 to the parameter number should be used. Default is *[1, 2, 3, 4]*,
 + ``ticks_nbr``: Integer. Number of ticks on the colorbar (Display n-1 colors). Default is *10*,
 + ``range_cbar``: Floats. Minimum and maximum values on the colorbar,
 + ``contours``: Floats. Values of the iso-contours to be plotted on the response surface,
++ ``kiviat_fill``: Boolean. If *true*, will fill the surface of the Kiviat plot.
 
 
 .. py:module:: driver

@@ -7,7 +7,6 @@ __docformat__ = "reStructuredText"
 
 
 class TecplotAscii(IOBase):
-
     """Manages IO for ASCII tecplot files.
 
     See data format documentation on tecplot web site.

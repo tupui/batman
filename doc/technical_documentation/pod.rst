@@ -33,9 +33,3 @@ with :math:`V` diagonalizes :math:`A^TA`, :math:`U` diagonalizes :math:`AA^T` an
    A = \sum_{i=1}^{r} \sigma_i u_i v_i^T,
 
 :math:`r` being the rank of the matrix. If taken :math:`k < r`, an approximation of the initial matrix can be constructed. This allows to compress the data as only an extract of :math:`u` and :math:`v` need to be stored.
-
-References
-..........
-
-.. [AnindyaChatterjee2000] Anindya Chatterjee. “An introduction to the proper orthogonal decomposition”. Current Science 78.7. 2000. 
-.. [Cordier2006] L. Cordierand M. Bergmann. “Réduction de dynamique par décomposition orthogonale aux valeurs propres (POD)”. Ecole de printemps OCET. 2006. 

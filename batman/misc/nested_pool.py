@@ -10,7 +10,6 @@ import multiprocess
 
 
 class NoDaemonProcess(multiprocess.Process):
-
     """NoDaemonProcess class.
 
     Inherit from :class:`multiprocessing.Process`.
@@ -27,7 +26,6 @@ class NoDaemonProcess(multiprocess.Process):
 
 
 class NestedPool(pathos.multiprocessing.Pool):
-
     """NestedPool class.
 
     Inherit from :class:`pathos.multiprocessing.Pool`.
