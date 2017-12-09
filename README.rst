@@ -15,6 +15,9 @@
 .. |Zulip| image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
 .. _Zulip: https://batman-cerfacs.zulipchat.com
 
+.. |Conda| image:: https://img.shields.io/badge/Install_with-conda-brightgreen.svg
+.. _Conda: https://conda.anaconda.org/conda-forge/batman
+
 BATMAN
 ======
 
@@ -103,8 +106,21 @@ Extra testing flavours:
 .. note:: OpenTURNS and ffmpeg are available on *conda* through
     the *conda-forge* channel.
 
-User installation
-.................
+Latest release
+..............
+
+batman is distributed through ``conda``. To create a new environment which
+contains batman simply::
+
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash Miniconda3-latest-Linux-x86_64.sh
+    conda create -n bat_env -c conda-forge batman
+
+You can access the newly created environment with ``source activate bat_env``.
+All dependencies are automatically handled by ``conda``.
+
+From sources
+............
 
 Using the latest python version is prefered! Then to install::
 
@@ -129,15 +145,6 @@ If batman has been correctly installed, you should be able to call it simply::
     ``export PATH=$PATH:~/.local/bin``. Care to be taken with both your ``PATH``
     and ``PYTHONPATH`` environment variables. Make sure you do not call different
     installation folders. It is recommanded that you leave your ``PYTHONPATH`` empty.
-
-Otherwize you can create your ``conda`` environment::
-
-    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-    bash Miniconda3-latest-Linux-x86_64.sh
-    conda create -n bat_env -c conda-forge openturns matplotlib numpy scipy scikit-learn pathos jsonschema sphinx sphinx_rtd_theme pytest pytest-runner mock ffmpeg
-
-Then you can install all packages without ``root`` access. You can access
-the newly created environment with ``source activate bat_env``.
 
 Help and Support
 ----------------
