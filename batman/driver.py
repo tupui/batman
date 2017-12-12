@@ -313,14 +313,12 @@ class Driver(object):
 
     def read(self):
         """Read Surrogate [and POD] from disk."""
+        path = os.path.join(self.fname, self.fname_tree['space'])
+        self.space.read(path)
         if self.surrogate is not None:
             self.surrogate.read(os.path.join(self.fname,
                                              self.fname_tree['surrogate']))
-            self.space[:] = self.surrogate.space[:]
             self.data = self.surrogate.data
-        else:
-            path = os.path.join(self.fname, self.fname_tree['space'])
-            self.space.read(path)
         if self.pod is not None:
             self.pod.read(os.path.join(self.fname, self.fname_tree['pod']))
             self.surrogate.pod = self.pod

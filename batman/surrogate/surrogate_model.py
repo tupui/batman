@@ -28,6 +28,7 @@ import numpy as np
 from sklearn import preprocessing
 from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import r2_score
+from batman.driver import Driver
 from .kriging import Kriging
 from .sk_interface import SklearnRegressor
 from .polynomial_chaos import PC
@@ -253,7 +254,7 @@ class SurrogateModel(object):
         self.logger.info('Model and data wrote.')
 
     def read(self, fname):
-        """Load model, data and space from disk.
+        """Load model and data from disk.
 
         :param str fname: path to a directory.
         """
@@ -263,13 +264,10 @@ class SurrogateModel(object):
             self.predictor = unpickler.load()
         self.logger.debug('Model read from {}'.format(path))
 
-        path = os.path.join(fname, self.dir['space'])
-        self.space.read(path)
-
         path = os.path.join(fname, self.dir['data'])
         with open(path, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.data = unpickler.load()
         self.logger.debug('Data read from {}'.format(path))
 
-        self.logger.info('Model, data and space loaded.')
+        self.logger.info('Model and data loaded.')
