@@ -234,7 +234,7 @@ class SurrogateModel(object):
         return q2_loo, point
 
     def write(self, fname):
-        """Save model, data and space to disk.
+        """Save model and data to disk.
 
         :param str fname: path to a directory.
         """
@@ -244,16 +244,13 @@ class SurrogateModel(object):
             pickler.dump(self.predictor)
         self.logger.debug('Model wrote to {}'.format(path))
 
-        path = os.path.join(fname, self.dir['space'])
-        self.space.write(path)
-
         path = os.path.join(fname, self.dir['data'])
         with open(path, 'wb') as f:
             pickler = pickle.Pickler(f)
             pickler.dump(self.data)
         self.logger.debug('Data wrote to {}'.format(path))
 
-        self.logger.info('Model, data and space wrote.')
+        self.logger.info('Model and data wrote.')
 
     def read(self, fname):
         """Load model, data and space from disk.

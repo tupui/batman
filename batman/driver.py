@@ -287,7 +287,9 @@ class Driver(object):
                 self.space.optimization_results(extremum=extremum)
 
     def write(self):
-        """Write Surrogate [and POD] to disk."""
+        """Write DOE, Surrogate [and POD] to disk."""
+        path = os.path.join(self.fname, self.fname_tree['space'])
+        self.space.write(path)
         if self.surrogate is not None:
             path = os.path.join(self.fname, self.fname_tree['surrogate'])
             try:
@@ -295,9 +297,6 @@ class Driver(object):
             except OSError:
                 pass
             self.surrogate.write(path)
-        else:
-            path = os.path.join(self.fname, self.fname_tree['space'])
-            self.space.write(path)
         if self.pod is not None:
             path = os.path.join(self.fname, self.fname_tree['pod'])
             try:

@@ -160,9 +160,6 @@ class Pod(object):
         except OSError:
             pass
 
-        # points
-        self.space.write(os.path.join(path, self.points_file_name))
-
         # mean snapshot
         path_snapshot = os.path.join(path, self.directories['mean_snapshot'])
         np.savetxt(path_snapshot, self.mean_snapshot)
