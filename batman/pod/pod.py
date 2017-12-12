@@ -179,9 +179,6 @@ class Pod(object):
 
         :param str path: path to a directory.
         """
-        # points
-        self.space.read(os.path.join(path, self.points_file_name))
-
         # mean snapshot
         path_snapshot = os.path.join(path, self.directories['mean_snapshot'])
         self.mean_snapshot = np.atleast_1d(np.loadtxt(path_snapshot))

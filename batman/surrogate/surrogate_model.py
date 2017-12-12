@@ -28,7 +28,6 @@ import numpy as np
 from sklearn import preprocessing
 from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import r2_score
-from batman.driver import Driver
 from .kriging import Kriging
 from .sk_interface import SklearnRegressor
 from .polynomial_chaos import PC
