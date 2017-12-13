@@ -190,7 +190,6 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     surrogate = SurrogateModel('kriging', ishigami_data.space.corners)
     surrogate.read(tmp)
     assert surrogate.predictor is not None
-    assert surrogate.space == ishigami_data.space
 
     pred, _ = surrogate(ishigami_data.point)
     assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)

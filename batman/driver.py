@@ -42,7 +42,7 @@ class Driver(object):
     # Structure of the output directory
     fname_tree = {
         'snapshots': 'snapshots',
-        'space': 'space.dat',
+        'space': 'space',
         'data': 'data.dat',
         'pod': 'surrogate/pod',
         'surrogate': 'surrogate',
@@ -289,6 +289,10 @@ class Driver(object):
     def write(self):
         """Write DOE, Surrogate [and POD] to disk."""
         path = os.path.join(self.fname, self.fname_tree['space'])
+        try:
+            os.makedirs(path)
+        except OSError:
+            pass
         self.space.write(path)
         if self.surrogate is not None:
             path = os.path.join(self.fname, self.fname_tree['surrogate'])
@@ -314,7 +318,7 @@ class Driver(object):
     def read(self):
         """Read Surrogate [and POD] from disk."""
         path = os.path.join(self.fname, self.fname_tree['space'])
-        self.space.read(path)
+        self.space.read(os.path.join(path, 'space.dat'))
         if self.surrogate is not None:
             self.surrogate.read(os.path.join(self.fname,
                                              self.fname_tree['surrogate']))
