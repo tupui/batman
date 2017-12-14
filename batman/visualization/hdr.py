@@ -259,7 +259,7 @@ class HdrBoxplot:
         return outliers
 
     def plot(self, samples=None, fname=None, x_common=None, labels=None,
-             xlabel='t', ylabel='y'):
+             xlabel='t', flabel='F'):
         """Functional plot and n-variate space.
 
         If :attr:`self.n_components` is 2, an additional contour plot is done.
@@ -271,7 +271,7 @@ class HdrBoxplot:
         :param array_like x_common: abscissa (1, n_features).
         :param list(str) labels: labels for each curve.
         :param str xlabel: label for x axis.
-        :param str ylabel: label for y axis.
+        :param str flabel: label for y axis.
         :returns: figures and all axis.
         :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
         """
@@ -355,7 +355,7 @@ class HdrBoxplot:
             self.logger.debug('It seems that there are no outliers...')
 
         plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
+        plt.ylabel(flabel)
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
         plt.legend(by_label.values(), by_label.keys(), loc='best')
@@ -365,7 +365,7 @@ class HdrBoxplot:
         return figures, axs
 
     def f_hops(self, frame_rate=400, fname='f-HOPs.mp4', samples=None,
-               x_common=None, labels=None, xlabel='t', ylabel='y', offset=0.05):
+               x_common=None, labels=None, xlabel='t', flabel='F', offset=0.05):
         """Functional Hypothetical Outcome Plots.
 
         Each frame consists in a HDR boxplot and an additional outcome.
@@ -381,7 +381,7 @@ class HdrBoxplot:
         :param array_like x_common: abscissa.
         :param list(str) labels: labels for each curve.
         :param str xlabel: label for x axis.
-        :param str ylabel: label for y axis.
+        :param str flabel: label for y axis.
         :param float offset: Margin around the extreme values of the plot.
         """
         movie_writer = manimation.writers['ffmpeg']
@@ -409,7 +409,7 @@ class HdrBoxplot:
         frame_outliers, = plt.plot([], [], c='r', ls='--')
 
         plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
+        plt.ylabel(flabel)
 
         if samples is None:
             data_r = self.data_r

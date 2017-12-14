@@ -66,7 +66,7 @@ class TestHdr:
                              labels=labels,
                              x_common=np.linspace(1, 12, 12),
                              xlabel='Month of the year (-)',
-                             ylabel='Water surface temperature (C)')
+                             flabel='Water surface temperature (C)')
 
         assert len(figs) == 3
         assert len(axs) == 3
@@ -148,7 +148,7 @@ class TestHdr:
         hdr.f_hops(x_common=np.linspace(1, 12, 12),
                    labels=labels,
                    xlabel='Month of the year (-)',
-                   ylabel='Water surface temperature (C)',
+                   flabel='Water surface temperature (C)',
                    fname=os.path.join(tmp, 'f-HOPs.mp4'))
         hdr.f_hops(samples=10, fname=os.path.join(tmp, 'f-HOPs.mp4'))
         hdr.f_hops(samples=data, fname=os.path.join(tmp, 'f-HOPs.mp4'))
@@ -259,6 +259,7 @@ class TestPdf:
         reshow(fig_pdf)
         plt.plot([0, 10], [25, 25])
         plt.show()
+        plt.close()
 
     def test_pdf_nD_moments(self, tmp):
         pdf(data, xlabel='s', flabel='Y', moments=True,

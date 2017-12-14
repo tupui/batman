@@ -105,18 +105,20 @@ class Kiviat3D:
         self.x_ticks = np.cos(self.alphas)
         self.y_ticks = np.sin(self.alphas)
 
-    def plane(self, params, feval, idx, ax, fill=True):
+    def plane(self, ax, params, feval, idx, fill=True):
         """Create a Kiviat in 2D.
 
         From a set of parameters and the corresponding function evaluation,
         a 2D Kiviat plane is created. Create the mesh in polar coordinates and
         compute corresponding Z.
 
+        :param ax: Matplotlib AxesSubplot instances to draw to.
         :param array_like params: Parameters of the plane (n_params).
         :param feval: Function evaluation corresponding to :attr:`params`.
         :param idx: *Z* coordinate of the plane.
-        :param ax: Matplotlib AxesSubplot instances.
         :param bool fill: Whether to fill the surface.
+        :return: List of artists added.
+        :rtype: list.
         """
         params = self.scale.transform(np.asarray(params).reshape(1, -1))[0]
 
@@ -142,9 +144,11 @@ class Kiviat3D:
                                        alpha=0.3)
             polygon.set_color(color)
             polygon.set_edgecolor(color)
-            ax.add_collection3d(polygon)
+            out = ax.add_collection3d(polygon)
         else:
-            ax.plot(X, Y, Z, alpha=0.5, lw=3, c=color)
+            out = ax.plot(X, Y, Z, alpha=0.5, lw=3, c=color)
+
+        return out
 
     def _axis(self, ax):
         """n-dimentions axis definition.
@@ -152,26 +156,31 @@ class Kiviat3D:
         Create axis arrows along with annotations with parameters name and
         ticks.
 
-        :param ax: Matplotlib AxesSubplot instances.
+        :param ax: Matplotlib AxesSubplot instances to draw to.
+        :return: List of artists added.
+        :rtype: list.
         """
+        out = []
         for i in range(self.n_params):
             # Create axis
             a = Arrow3D([0, self.x_ticks[i]], [0, self.y_ticks[i]],
                         [self.z_offset, self.z_offset],
                         mutation_scale=20, lw=1, arrowstyle="-|>", color="k")
-            ax.add_artist(a)
+            out.append(ax.add_artist(a))
             # Annotate with plabels
-            ax.text(1.1 * self.x_ticks[i], 1.1 * self.y_ticks[i],
-                    self.z_offset, self.plabels[i],
-                    fontsize=14, ha='center', va='center', color='k')
+            out.append(ax.text(1.1 * self.x_ticks[i], 1.1 * self.y_ticks[i],
+                       self.z_offset, self.plabels[i],
+                       fontsize=14, ha='center', va='center', color='k'))
 
             # Add ticks with values
             for j, tick in enumerate(self.ticks[:, 0]):
                 x = tick * self.x_ticks[i]
                 y = tick * self.y_ticks[i]
-                ax.scatter(x, y, self.z_offset, c='k', marker='|')
-                ax.text(x, y, self.z_offset, self.ticks_values[i][j],
-                        fontsize=8, ha='right', va='center', color='k')
+                out.append(ax.scatter(x, y, self.z_offset, c='k', marker='|'))
+                out.append(ax.text(x, y, self.z_offset, self.ticks_values[i][j],
+                                   fontsize=8, ha='right', va='center', color='k'))
+
+        return ax
 
     def plot(self, fname=None, flabel='F', ticks_nbr=10, fill=True):
         """Plot 3D kiviat.
@@ -196,7 +205,7 @@ class Kiviat3D:
         cbar.set_label(flabel)
 
         for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
-            self.plane(point, f_eval[0], i, ax, fill)
+            self.plane(ax, point, f_eval[0], i, fill)
 
         self._axis(ax)
 
@@ -227,7 +236,7 @@ class Kiviat3D:
         ax.set_axis_off()
 
         for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
-            self.plane(point, f_eval[0], i, ax, fill)
+            self.plane(ax, point, f_eval[0], i, fill)
 
         self._axis(ax)
 
@@ -255,7 +264,7 @@ class Kiviat3D:
 
         with writer.saving(fig, fname, dpi=500):
             for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
-                self.plane(point, f_eval[0], i, ax, fill)
+                self.plane(ax, point, f_eval[0], i, fill)
                 # Rotate the view
                 ax.view_init(elev=-20 + elev_step * i, azim=i * azim_step)
 

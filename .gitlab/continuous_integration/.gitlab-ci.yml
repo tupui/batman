@@ -20,6 +20,7 @@ python_linter:
 
 .template_python_3: &template_python_3
   stage: test
+  dependencies: []
   image: "registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3"
   allow_failure: false
   script:
@@ -40,6 +41,7 @@ python_3_feature_branch:
 
 python_2:
   stage: test
+  dependencies: []
   image: "tupui/bat_ci_2"
   only:
     - master
