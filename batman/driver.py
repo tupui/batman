@@ -114,10 +114,7 @@ class Driver(object):
         if self.to_compute_points:
             # use points that were automatically discovered by the provider
             for point in self.to_compute_points:
-                try:
-                    self.space += point
-                except (AlienPointError, UnicityError, FullSpaceError) as err:
-                    self.logger.warning('Ignoring: {}'.format(err))
+                self.space += point
         else:
             # generate points according to settings
             space_provider = self.settings['space']['sampling']
@@ -224,8 +221,7 @@ class Driver(object):
         if self.pod is not None:
             if update:
                 self.surrogate.space.empty()
-                for snapshot in snapshots:
-                    self.pod.update(snapshot)
+                [self.pod.update(snapshot) for snapshot in snapshots]
             else:
                 self.pod.decompose(snapshots)
             self.data = self.pod.VS()
@@ -395,21 +391,10 @@ class Driver(object):
         else:
             args['data'] = self.data
 
-        try:
-            args['test'] = self.settings['uq']['test']
-        except KeyError:
-            pass
-
-        try:
-            args['xdata'] = self.settings['visualization']['xdata']
-            args['xlabel'] = self.settings['visualization']['xlabel']
-        except KeyError:
-            pass
-
-        try:
-            args['flabel'] = self.settings['visualization']['flabel']
-        except KeyError:
-            pass
+        args['test'] = self.settings['uq'].get('test')
+        args['xdata'] = self.settings.get('visualization', {}).get('xdata')
+        args['xlabel'] = self.settings.get('visualization', {}).get('xlabel')
+        args['flabel'] = self.settings.get('visualization', {}).get('flabel')
 
         analyse = UQ(self.surrogate, **args)
 
@@ -453,22 +438,10 @@ class Driver(object):
             else:
                 args['resampling'] = 0
 
-            try:
-                args['ticks_nbr'] = self.settings['visualization']['ticks_nbr']
-            except KeyError:
-                pass
-            try:
-                args['contours'] = self.settings['visualization']['contours']
-            except KeyError:
-                pass
-            try:
-                args['range_cbar'] = self.settings['visualization']['range_cbar']
-            except KeyError:
-                pass
-            try:
-                args['axis_disc'] = self.settings['visualization']['axis_disc']
-            except KeyError:
-                pass
+            args['ticks_nbr'] = self.settings.get('visualization', {}).get('ticks_nbr')
+            args['contours'] = self.settings.get('visualization', {}).get('contours')
+            args['range_cbar'] = self.settings.get('visualization', {}).get('range_cbar')
+            args['axis_disc'] = self.settings.get('visualization', {}).get('axis_disc')
         else:
             args['xdata'] = np.linspace(0, 1, output_len) if output_len > 1 else None
 

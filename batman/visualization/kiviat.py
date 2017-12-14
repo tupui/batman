@@ -169,8 +169,8 @@ class Kiviat3D:
             out.append(ax.add_artist(a))
             # Annotate with plabels
             out.append(ax.text(1.1 * self.x_ticks[i], 1.1 * self.y_ticks[i],
-                       self.z_offset, self.plabels[i],
-                       fontsize=14, ha='center', va='center', color='k'))
+                               self.z_offset, self.plabels[i], fontsize=14,
+                               ha='center', va='center', color='k'))
 
             # Add ticks with values
             for j, tick in enumerate(self.ticks[:, 0]):

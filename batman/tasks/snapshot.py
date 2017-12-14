@@ -13,14 +13,14 @@ class Snapshot(object):
     """
 
     def __init__(self, point, data):
-        """ Initialize a snapshot.
+        """Initialize a snapshot.
 
-        :param point: a point in parameter space.
-        :param data: either a dataset or a :class:`concurrent.futures.Future` to a dataset.
-
+        :param point: A point in parameter space.
         :type point: :class:`batman.space.Point`
+        :param data: Data corresponding to the point.
+        :type data: dataset or a :class:`concurrent.futures.Future`
+          to a dataset.
         """
-
         self._point = Point(point)
         self._data = data
 

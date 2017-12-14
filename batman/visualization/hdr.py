@@ -317,9 +317,8 @@ class HdrBoxplot:
             plt.tight_layout()
 
         # Bivariate space
-        fig, sub_ax = doe(data_r,
-                          plabels=[str(i + 1) for i in range(self.n_components)],
-                          show=False)
+        fig, sub_ax = doe(data_r, plabels=[str(i + 1)
+                                           for i in range(self.n_components)])
         figures.append(fig)
         axs.append(sub_ax)
 

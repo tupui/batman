@@ -263,6 +263,7 @@ class Refiner(object):
 
         @optimization(self.corners, self.discrete)
         def func_discrepancy(coords):
+            """Discrepancy of the augmented space."""
             sample = np.vstack([self.surrogate.space[:], coords])
             return self.surrogate.space.discrepancy(sample)
 

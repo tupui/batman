@@ -10,8 +10,6 @@ import os
 import shutil
 import logging
 import subprocess as sp
-import numpy as np
-
 from .snapshot import Snapshot
 from ..space import Point
 
@@ -26,18 +24,17 @@ class ProviderFile(object):
 
         :param executor: a task pool executor.
         :param io_manager: defines snapshots as files.
-        :param job_settings: specify a job for building snapshot data.
+        :param dict job_settings: specify a job for building snapshot data
+            with the following:
+
+            - **command** (str): command to execute.
+            - **context_directory** (str): directory from wich to get jobs resources.
+            - **coupling_directory** (str): default is ``batman-coupling``.
+            - **clean** (bool): default is ``False``.
 
         :type executor: :class:`concurrent.futures.Executor`
         :type io_manager: :class:`SnapshotIO`
-        :type job_settings: dict
         """
-
-        # job_settings: 
-        # - "command": command to execute.
-        # - "context_directory": directory from wich to get jobs resources.
-        # - "coupling_directory": default = "batman-coupling".
-        # - "clean": default = False.
         self._io = io_manager
         self._executor = executor
 
@@ -46,7 +43,8 @@ class ProviderFile(object):
             self._job = {
                 'command': job_settings['command'],
                 'context_directory': job_settings['context_directory'],
-                'coupling_directory': job_settings.get('coupling_directory', 'batman-coupling'),
+                'coupling_directory': job_settings.get('coupling_directory',
+                                                       'batman-coupling'),
                 'clean': job_settings.get('clean', False),
             }
             self.logger.debug('Job for snapshot file creation: {}'.format(self._job))
@@ -78,15 +76,17 @@ class ProviderFile(object):
         return self._known_points
 
     def snapshot(self, point, snapshot_dir):
-        """Returns a snapshot bound to an asynchronous job that read data from a file.
+        """Snapshot bound to an asynchronous job that read data from a file.
 
-        :param point: the point in parameter space at which to provide a snapshot.
-        :param str snapshot_dir: the directory containing the snapshot data files.
+        :param point: the point in parameter space at which to provide a
+          snapshot.
+        :param str snapshot_dir: the directory containing the snapshot data
+          files.
 
-        :type point: :class:`batman.space.Point`
-        :rtype: :class:`Snapshot`
+        :type point: :class:`batman.space.Point`.
+        :return: A snapshot.
+        :rtype: :class:`Snapshot`.
         """
-
         self.logger.debug('Request snapshot for point {}'.format(point))
         return Snapshot(point, self._executor.submit(self._load_data, point, snapshot_dir))
 
@@ -94,13 +94,10 @@ class ProviderFile(object):
         """Load data from a file. Build it if not exist.
 
         :param point: point in parameter space.
-        :param snapshot_dir: directory containing files to read.
-
-        :type point: :class:`batman.space.Point`
-        :type snapshot_dir: str
+        :param str snapshot_dir: directory containing files to read.
+        :type point: :class:`batman.space.Point`.
         :rtype: :class:`numpy.ndarray`
         """
-
         point = Point(point)
         try:
             # link current location to actual snapshot location
@@ -144,12 +141,10 @@ class ProviderFile(object):
         - coupling subdirectory
 
         :param point: point in parameter space.
-        :param str work_dir: directory to populate with job script and resource files.
-
+        :param str work_dir: directory to populate with job script and resource
+          files.
         :type point: :class:`Point`
-        :type work_dir: str
         """
-
         coupling_dir = os.path.join(work_dir, self._job['coupling_directory'])
 
         # copy-link the content of 'context_dir' to 'snapeshot_dir'
@@ -170,14 +165,10 @@ class ProviderFile(object):
         """Execute job.
 
         :param point: point in parameter space.
-        :param work_dir: directory from which to launch the job.
-
+        :param str work_dir: directory from which to launch the job.
         :type point: :class:`Point`
-        :type work_dir: str
         :raises :exc:`subprocess.CalledProcessError`
         """
-
-        # [TODO::BATMOBILE] 3 phases: pre/-/post processing
         cmd = self._job['command'].split()
         job = sp.Popen(cmd, cwd=work_dir)
         self.logger.debug('Point {} :: Starting job in {}'.format(point, work_dir))
@@ -187,18 +178,15 @@ class ProviderFile(object):
 
     def _job_finalize(self, point, work_dir, snapshot_dir):
         """Finalize job execution.
+
         - move snapshot data from coupling subdir to snapshot dir
         - clean workdir
 
         :param point: point in parameter space.
-        :param work_dir: directory containing job output.
-        :param snapshot_dir: directory in which to put snapshot files.
-
+        :param str work_dir: directory containing job output.
+        :param str snapshot_dir: directory in which to put snapshot files.
         :type point: :class:`Point`
-        :type work_dir: str
-        :type snapshot_dir: str
         """
-
         coupling_dir = os.path.join(work_dir, self._job['coupling_directory'])
 
         # move data to snapshot directory

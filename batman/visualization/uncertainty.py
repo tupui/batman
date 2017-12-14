@@ -142,7 +142,7 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
         min_pdf = np.percentile(pdf, 3) if np.min(pdf) < max_pdf else 0
         bound_pdf = np.linspace(min_pdf, max_pdf, 50, endpoint=True)
         cax = ax.contourf(xdata, ydata, pdf, bound_pdf,
-                              cmap=c_map, extend="max")
+                          cmap=c_map, extend="max")
         cbar = fig.colorbar(cax, shrink=0.5)
         cbar.set_label(r"PDF")
         ax.set_xlabel(xlabel, fontsize=26)
@@ -231,7 +231,7 @@ def sobol(sobols, conf=None, plabels=None, xdata=None, xlabel='x', fname=None):
     ax = fig.add_subplot(111)
     figures.append(fig)
     ax.bar(y_pos, np.array(sobols[:2]).flatten('F'),
-            yerr=conf, align='center', alpha=0.5, color=color)
+           yerr=conf, align='center', alpha=0.5, color=color)
     ax.set_xticks(y_pos, s_lst)
     ax.tick_params(axis='x', labelsize=20)
     ax.tick_params(axis='y', labelsize=20)

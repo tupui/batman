@@ -1,3 +1,8 @@
+"""
+Tasks module
+************
+"""
+
 from .snapshot import Snapshot
 from .snapshot_io import SnapshotIO
 from .provider_file import ProviderFile

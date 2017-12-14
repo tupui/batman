@@ -157,10 +157,6 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     pred, _ = surrogate(ishigami_data.point)
     assert pred[0] == pytest.approx(ishigami_data.target_point, 0.1)
 
-#    pred, _ = surrogate(ishigami_data.point, path=tmp)
-#    assert pred[0].data == pytest.approx(ishigami_data.target_point, 0.1)
-#    assert os.path.isdir(os.path.join(tmp, 'Newsnap0'))
-
     # Compute predictivity coefficient Q2
     def wrap_surrogate(x):
         evaluation, _ = surrogate(x)

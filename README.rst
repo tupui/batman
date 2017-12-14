@@ -18,6 +18,9 @@
 .. |Conda| image:: https://img.shields.io/badge/Install_with-conda-brightgreen.svg
 .. _Conda: https://conda.anaconda.org/conda-forge/batman
 
+.. |Joss| image:: https://joss.theoj.org/papers/a1c4bddc33a1d8ab55fce1a3596196d8/status.svg
+.. _Joss: https://joss.theoj.org/papers/a1c4bddc33a1d8ab55fce1a3596196d8
+
 BATMAN
 ======
 
