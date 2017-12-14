@@ -168,7 +168,7 @@ class Pod(object):
         np.savetxt(path_snapshot, self.mean_snapshot)
 
         # basis
-        points = np.vstack(tuple(self.points))
+        points = np.vstack(tuple(self.space))
         np.savez(os.path.join(path, self.pod_file_name),
                  parameters=points,
                  values=self.S,

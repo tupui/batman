@@ -196,7 +196,7 @@ class Driver(object):
                 self.space.empty()
                 sample = self.surrogate.predictor.sample
                 self.space += sample
-                if not self.provider.is_file:
+                if not self.provider.known_points:
                     self.to_compute_points = sample[:len(self.space)]
         else:
             self.surrogate = None
@@ -229,7 +229,7 @@ class Driver(object):
             else:
                 self.pod.decompose(snapshots)
             self.data = self.pod.VS()
-            points = self.pod.points
+            points = self.pod.space
 
         else:
             if snapshots:
