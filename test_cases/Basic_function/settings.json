@@ -18,30 +18,21 @@
     },
     "snapshot": {
         "max_workers": 5,
-        "io": {
-            "shapes": {
-                "0": [
-                    [1]
-                ]
-            },
-            "format": "numpy",
-            "variables": ["F"],
-            "point_filename": "point.json",
-            "filenames": {
-                "0": ["function.npz"]
-            },
-            "template_directory": null,
-            "parameter_names": ["x1"]
-        },
+        "plabels": ["x1"],
+        "flabels": ["F"],
         "provider": {
-            "command": "bash",
-            "timeout": 40,
-            "context": "data",
-            "script": "data/script.sh",
+            "type": "file",
+            "command": "bash script.sh",
+            "context_directory": "data",
+            "coupling_directory": "batman-coupling",
+            "timeout": 10,
             "clean": false,
-            "private-directory": "batman-data",
-            "data-directory": "cfd-output-data",
             "restart": "False"
+        },
+        "io": {
+            "point_filename": "point.json",
+            "data_filename": "point.npz",
+            "data_format": "numpy"
         }
     },
     "surrogate": {

@@ -21,14 +21,10 @@ else:
 
 
 def check_output(tmp):
-    if not os.path.isfile(os.path.join(tmp, 'surrogate/DOE.pdf')):
-        assert False
-    if not os.path.isfile(os.path.join(tmp, 'surrogate/surrogate.dat')):
-        assert False
-    if not os.path.isfile(os.path.join(tmp, 'surrogate/space.dat')):
-        assert False
-    if not os.path.isfile(os.path.join(tmp, 'surrogate/data.dat')):
-        assert False
+    assert os.path.isfile(os.path.join(tmp, 'surrogate/DOE.pdf'))
+    assert os.path.isfile(os.path.join(tmp, 'surrogate/surrogate.dat'))
+    assert os.path.isfile(os.path.join(tmp, 'surrogate/space.dat'))
+    assert os.path.isfile(os.path.join(tmp, 'surrogate/data.dat'))
 
 
 def init_case(tmp, case, output=True, force=False):
@@ -70,8 +66,7 @@ def test_no_model(tmp, case='Michalewicz'):
     sys.argv = ['batman', 'settings.json', '-n', '-o', tmp]
     batman.ui.main()
     check_output(tmp)
-    if not os.path.isfile(os.path.join(tmp, 'surrogate/pod/pod.npz')):
-        assert False
+    assert os.path.isfile(os.path.join(tmp, 'surrogate/pod/pod.npz'))
 
 
 def test_no_model_pred(tmp, case='Michalewicz'):
@@ -79,8 +74,7 @@ def test_no_model_pred(tmp, case='Michalewicz'):
     sys.argv = ['batman', 'settings.json', '-ns', '-o', tmp]
     batman.ui.main()
     check_output(tmp)
-    if not os.path.isdir(os.path.join(tmp, 'predictions')):
-        assert False
+    assert os.path.isdir(os.path.join(tmp, 'predictions'))
 
 
 def test_quality(tmp, case='Michalewicz'):
@@ -93,8 +87,7 @@ def test_uq(tmp, case='Michalewicz'):
     init_case(tmp, case)
     sys.argv = ['batman', 'settings.json', '-nu', '-o', tmp]
     batman.ui.main()
-    if not os.path.isdir(os.path.join(tmp, 'uq')):
-        assert False
+    assert os.path.isdir(os.path.join(tmp, 'uq'))
 
 
 def test_checks(tmp, case='Michalewicz'):
@@ -135,12 +128,10 @@ def test_restart_pod(tmp, case='Michalewicz'):
     settings = batman.misc.import_config(options.settings, SCHEMA)
     settings['space']['resampling']['resamp_size'] = 1
     batman.ui.run(settings, options)
-    if not os.path.isdir(os.path.join(tmp, 'snapshots/4')):
-        assert False
+    assert os.path.isdir(os.path.join(tmp, 'snapshots/4'))
 
     init_case(tmp, case, force=True)
     # Restart from snapshots and read a template directory
-    settings['snapshot']['io']['template_directory'] = os.path.join(tmp, 'snapshots/0/batman-data')
     batman.ui.run(settings, options)
 
     init_case(tmp, case, force=True)
@@ -151,8 +142,7 @@ def test_restart_pod(tmp, case='Michalewicz'):
     except TypeError:  # Case with list instead of dict
         settings['space']['sampling'] = {'init_size': 6, 'method': 'halton'}
     batman.ui.run(settings, options)
-    if not os.path.isdir(os.path.join(tmp, 'snapshots/5')):
-        assert False
+    assert os.path.isdir(os.path.join(tmp, 'snapshots/5'))
 
 
 def test_resampling(tmp, case='Michalewicz'):
@@ -170,8 +160,8 @@ def test_resampling(tmp, case='Michalewicz'):
             settings['space']['resampling']['resamp_size'] = 4
         batman.ui.run(settings, options)
         check_output(tmp)
-        if not os.path.isdir(os.path.join(tmp, 'snapshots/5')):
-            assert False
+        assert os.path.isdir(os.path.join(tmp, 'snapshots/5'))
+
 
 # Ishigami: 3D -> 1D
 # Oakley & O'Hagan: 1D -> 1D

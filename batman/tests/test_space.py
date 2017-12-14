@@ -5,7 +5,6 @@ import numpy as np
 import numpy.testing as npt
 from batman.space import (Point, Space, Doe)
 from batman.functions import Ishigami
-from batman.tasks import Snapshot
 from batman.surrogate import SurrogateModel
 from batman.space.refiner import Refiner
 import openturns as ot
@@ -186,12 +185,11 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     f_2d = branin_data.func
     space = branin_data.space
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['snapshot']['io']['parameter_names'] = ['x1', 'x2']
+    test_settings['snapshot']['plabels'] = ['x1', 'x2']
     space.empty()
     space.sampling(5, 'halton')
     space.max_points_nb = 100
 
-    Snapshot.initialize(test_settings['snapshot']['io'])
     surrogate = SurrogateModel('kriging', space.corners)
     surrogate.fit(space, f_2d(space))
 

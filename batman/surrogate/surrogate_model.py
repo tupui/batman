@@ -32,7 +32,6 @@ from .kriging import Kriging
 from .polynomial_chaos import PC
 from .RBFnet import RBFnet
 from .multifidelity import Evofusion
-from ..tasks import Snapshot
 from ..space import Space
 from ..misc import ProgressBar, NestedPool, cpu_system
 
@@ -75,7 +74,6 @@ class SurrogateModel(object):
             'surrogate': 'surrogate.dat',
             'space': 'space.dat',
             'data': 'data.dat',
-            'snapshot': 'Newsnap{}'
         }
 
         self.settings = kwargs
@@ -121,7 +119,7 @@ class SurrogateModel(object):
         self.logger.info('Predictor created')
         self.update = False
 
-    def __call__(self, points, path=None):
+    def __call__(self, points):
         """Predict snapshots.
 
         :param points: point(s) to predict.
@@ -129,7 +127,7 @@ class SurrogateModel(object):
         :param str path: if not set, will return a list of predicted snapshots
           instances, otherwise write them to disk.
         :return: Result.
-        :rtype: lst(:class:`batman.tasks.Snapshot`) or array_like (n_samples, n_features).
+        :rtype: array_like (n_samples, n_features).
         :return: Standard deviation.
         :rtype: array_like (n_samples, n_features).
         """
@@ -162,17 +160,7 @@ class SurrogateModel(object):
 
             results = np.atleast_2d(pred)
 
-        if path is not None:
-            points = self.scaler.inverse_transform(points)
-            snapshots = [None] * len(points)
-            for i, point in enumerate(points):
-                snapshots[i] = Snapshot(point, results[i])
-                s_path = os.path.join(path, self.dir['snapshot'].format(i))
-                snapshots[i].write(s_path)
-        else:
-            return results, sigma
-
-        return snapshots, sigma
+        return results, sigma
 
     def estimate_quality(self, method='LOO'):
         """Estimate quality of the model.

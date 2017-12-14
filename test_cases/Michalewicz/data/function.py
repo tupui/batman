@@ -7,7 +7,7 @@ from batman.functions import Michalewicz
 from batman.input_output import (IOFormatSelector, Dataset)
 
 # Input from point.json
-with open('./batman-data/point.json', 'r') as fd:
+with open('./batman-coupling/point.json', 'r') as fd:
     params = json.load(fd)
 
 X1 = params['x1']
@@ -20,4 +20,4 @@ data = f([X1, X2])
 # Output
 io = IOFormatSelector('fmt_tp_fortran')
 dataset = Dataset(names=["F"], shape=[1, 1, 1], data=data)
-io.write('./cfd-output-data/function.dat', dataset)
+io.write('./batman-coupling/point.dat', dataset)

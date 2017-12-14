@@ -138,9 +138,10 @@ specifications may not be enough to give full guidelines on their uses.
 
 .. autosummary::
 
-   tasks.SnapshotTask
-   tasks.SnapshotProvider
+   tasks.SnapshotIO
    tasks.Snapshot
+   tasks.ProviderFile
+   tasks.ProviderPlugin
 
 .. py:module:: tasks
 .. automodule:: batman.tasks
