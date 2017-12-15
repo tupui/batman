@@ -7,6 +7,8 @@ executing a python function from user-provided plugin.
 """
 import logging
 import importlib
+import sys
+import os
 from .snapshot import Snapshot
 
 
@@ -30,6 +32,7 @@ class ProviderPlugin(object):
         :type io_manager: :class:`SnapshotIO`
         :type plug_settings: dict
         """
+        sys.path.append(os.path.abspath('.'))
         plugin = importlib.import_module(plug_settings['module'])
         self._function = getattr(plugin, plug_settings['function'])
         self._executor = executor
