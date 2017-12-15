@@ -438,7 +438,7 @@ class Driver(object):
             else:
                 args['resampling'] = 0
 
-            args['ticks_nbr'] = self.settings.get('visualization', {}).get('ticks_nbr')
+            args['ticks_nbr'] = self.settings.get('visualization', {}).get('ticks_nbr', 10)
             args['contours'] = self.settings.get('visualization', {}).get('contours')
             args['range_cbar'] = self.settings.get('visualization', {}).get('range_cbar')
             args['axis_disc'] = self.settings.get('visualization', {}).get('axis_disc')
