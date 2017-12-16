@@ -1,20 +1,22 @@
-"""
-Kiviat in 3D
-------------
-"""
+"""Tree."""
 import copy
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
+from scipy.spatial.distance import cdist
 from matplotlib import pyplot as plt
 from matplotlib import cm
 import matplotlib.animation as manimation
 from matplotlib.colors import Normalize
 from matplotlib.patches import FancyArrowPatch
+from matplotlib.patches import Wedge, Circle
 from matplotlib.lines import Line2D
+import matplotlib.tri as tri
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-import batman as bat
+from batman.visualization.hdr import HdrBoxplot
+
+np.set_printoptions(precision=3)
 
 
 class Arrow3D(FancyArrowPatch):
@@ -33,15 +35,10 @@ class Arrow3D(FancyArrowPatch):
         FancyArrowPatch.draw(self, renderer)
 
 
-class Kiviat3D:
-    """3D version of the Kiviat plot.
+class Tree:
+    """Tree."""
 
-    Each realization is stacked on top of each other. The axis represent the
-    parameters used to perform the realization.
-    """
-
-    def __init__(self, sample, data, bounds=None, plabels=None,
-                 range_cbar=None):
+    def __init__(self, sample, data, bounds=None, plabels=None, range_cbar=None):
         """Prepare params for Kiviat plot.
 
         :param array_like sample: Sample of parameters of Shape
@@ -68,20 +65,8 @@ class Kiviat3D:
         self.ticks = [0.2, 0.5, 0.8]
         scaler = MinMaxScaler()
 
-        # Sample scaling and take into account n_features < 3
-        left_for_triangle = 3 - self.sample.shape[1]
-        if left_for_triangle > 0:
-            self.sample = np.hstack((self.sample, np.ones((self.sample.shape[0],
-                                                           left_for_triangle))))
-            if bounds is not None:
-                bounds[0].extend([0] * left_for_triangle)
-                bounds[1].extend([2] * left_for_triangle)
         if bounds is None:
             bounds = copy.deepcopy(self.sample)
-
-            if left_for_triangle > 0:
-                bounds[0, -left_for_triangle:] = 0
-                bounds[1, -left_for_triangle:] = 2
 
         self.scale = scaler.fit(bounds)
 
@@ -94,18 +79,29 @@ class Kiviat3D:
             self.scale_f = Normalize(vmin=self.range_cbar[0],
                                      vmax=self.range_cbar[1], clip=True)
 
-        self.n_params = self.sample.shape[1]
-        alpha = 2 * np.pi / self.n_params
-        self.alphas = [alpha * (i + 1) for i in range(self.n_params)]
+        self.n_params = 2
+        self.alphas = [0, np.pi]
         self.plabels = ['x' + str(i) for i in range(self.n_params)]\
             if plabels is None else plabels
         self.z_offset = - 1
         self.ticks = np.tile(self.ticks, self.n_params).reshape(-1, len(self.ticks)).T
         self.ticks_values = self.scale.inverse_transform(self.ticks).T
-        self.x_ticks = np.cos(self.alphas)
-        self.y_ticks = np.sin(self.alphas)
+        self.x_ticks = [-1, 1]
 
-    def plane(self, ax, params, feval, idx, fill=True):
+        self.y_ticks = [0] * 2
+
+        # Distance based on HDR
+        hdr = HdrBoxplot(data)
+        centroide = hdr.pca.transform(hdr.median.reshape(1, -1))
+        dists = cdist(centroide, hdr.pca.transform(data))[0]
+        scaler = MinMaxScaler(feature_range=[0, np.pi / 4])
+        self.dists = scaler.fit_transform(dists.reshape(-1, 1))
+
+        hdr_90 = hdr.pca.transform(np.array(hdr.hdr_90))
+        dists = cdist(centroide, hdr_90)[0]
+        self.dist_max = max(scaler.transform(dists.reshape(-1, 1)))
+
+    def leaf(self, ax, params, feval, idx):
         """Create a Kiviat in 2D.
 
         From a set of parameters and the corresponding function evaluation,
@@ -116,34 +112,18 @@ class Kiviat3D:
         :param array_like params: Parameters of the plane (n_params).
         :param feval: Function evaluation corresponding to :attr:`params`.
         :param idx: *Z* coordinate of the plane.
-        :param bool fill: Whether to fill the surface.
         :return: List of artists added.
         :rtype: list.
         """
         params = self.scale.transform(np.asarray(params).reshape(1, -1))[0]
 
-        X = params * np.cos(self.alphas)
-        Y = params * np.sin(self.alphas)
-        Z = [idx] * (self.n_params + 1)  # +1 to close the geometry
-
-        # Random numbers to prevent null surfaces area
-        X[np.where(X == 0.0)] = np.random.rand(1) * 0.001
-        Y[np.where(Y == 0.0)] = np.random.rand(1) * 0.001
-
-        # Add first point to close the geometry
-        X = np.concatenate((X, [X[0]]))
-        Y = np.concatenate((Y, [Y[0]]))
+        X = params * np.cos(self.dists[idx]) * [-1, 1]
+        Y = params * np.sin(self.dists[idx]) * [-1, 1]
+        Z = [idx] * (self.n_params)
 
         # Plot the surface
         color = self.cmap(self.scale_f(feval))
-        if fill:
-            polygon = Poly3DCollection([np.stack([X, Y, Z], axis=1)],
-                                       alpha=0.3)
-            polygon.set_color(color)
-            polygon.set_edgecolor(color)
-            out = ax.add_collection3d(polygon)
-        else:
-            out = ax.plot(X, Y, Z, alpha=0.5, lw=3, c=color)
+        out = ax.plot(X, Y, Z, alpha=0.5, lw=3, c=color)
 
         return out
 
@@ -178,16 +158,79 @@ class Kiviat3D:
                                    '{:0.2f}'.format(self.ticks_values[i][j]),
                                    fontsize=8, ha='right', va='center', color='k'))
 
+        # Vertical line on z to separate coordinates
+        a = Arrow3D([0, 0], [0, 0], [self.z_offset, len(self.data)],
+                    mutation_scale=20, lw=2, arrowstyle="-", color="k")
+        out.append(ax.add_artist(a))
+
+        # Wedges for HDR
+        x_ = np.cos(self.dist_max)[0]
+        y_ = np.sin(self.dist_max)[0]
+        # xx = np.array([-x_, -x_, x_, x_])
+        # yy = np.array([-y_, -y_, y_, y_])
+        # z = np.array([self.z_offset, len(self.data),
+        #               self.z_offset, len(self.data)]).reshape(-1, 1)
+        # ax.plot_surface(xx, yy, z, alpha=0.2)
+
+        a = Arrow3D([x_*0.85, x_], [y_*0.85, y_],
+                    [self.z_offset, self.z_offset],
+                    mutation_scale=20, lw=2, arrowstyle="-", color="r")
+        out.append(ax.add_artist(a))
+        out.append(ax.text(1.2 * x_, 1.2 * y_,
+                           self.z_offset, '90% HDR', fontsize=10,
+                           ha='center', va='center', color='k'))
+        a = Arrow3D([-x_*0.85, -x_], [-y_*0.85, -y_],
+                    [self.z_offset, self.z_offset],
+                    mutation_scale=20, lw=2, arrowstyle="-", color="r")
+        out.append(ax.add_artist(a))
+        out.append(ax.text(-1.2 * x_, -1.2 * y_,
+                           self.z_offset, '90% HDR', fontsize=10,
+                           ha='center', va='center', color='k'))
+
+        def wedge(alpha_i, alpha_e):
+            """Wedge in 3-dimensions."""
+            # First create the x and y coordinates of the points.
+            n_angles = 50
+            n_radii = 2
+            min_radius = 0.9
+            radii = np.linspace(min_radius, 0.95, n_radii)
+
+            angles = np.linspace(alpha_i, alpha_e, n_angles, endpoint=False)
+            angles = np.repeat(angles[..., np.newaxis], n_radii, axis=1)
+            angles[:, 1::2] += np.pi/n_angles
+
+            x = (radii * np.cos(angles)).flatten()
+            y = (radii * np.sin(angles)).flatten()
+
+            # z set to small scale to appear as flat
+            scaler = MinMaxScaler(feature_range=[0, 1e-5])
+            z = scaler.fit_transform(angles.reshape(-1, 1)).flatten()
+
+            # Create the Triangulation; no triangles so Delaunay triangulation
+            triang = tri.Triangulation(x, y)
+
+            # Mask off unwanted triangles.
+            xmid = x[triang.triangles].mean(axis=1)
+            ymid = y[triang.triangles].mean(axis=1)
+            mask = np.where(xmid**2 + ymid**2 < min_radius**2, 1, 0)
+            triang.set_mask(mask)
+
+            return triang, z
+
+        triang, z = wedge(0, np.pi / 4)
+        ax.plot_trisurf(triang, z, cmap=cm.get_cmap('inferno'), edgecolor='none')
+        triang, z = wedge(np.pi, np.pi + np.pi / 4)
+        ax.plot_trisurf(triang, z, cmap=cm.get_cmap('inferno'), edgecolor='none')
+
         return ax
 
-    def plot(self, fname=None, flabel='F', ticks_nbr=10, fill=True):
+    def plot(self, fname=None, flabel='F', ticks_nbr=10):
         """Plot 3D kiviat.
 
         :param str fname: Whether to export to filename or display the figures.
         :param str flabel: Name of the output function to be plotted next to
           the colorbar.
         :param int ticks_nbr: Number of ticks in the colorbar.
-        :param bool fill: Whether to fill the surface.
         :returns: figure.
         :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instances.
         """
@@ -203,7 +246,7 @@ class Kiviat3D:
         cbar.set_label(flabel)
 
         for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
-            self.plane(ax, point, f_eval[0], i, fill)
+            self.leaf(ax, point, f_eval[0], i)
 
         self._axis(ax)
 
@@ -213,8 +256,7 @@ class Kiviat3D:
 
         return fig, ax
 
-    def f_hops(self, frame_rate=400, fname='kiviat-HOPs.mp4', flabel='F',
-               ticks_nbr=10, fill=True):
+    def f_hops(self, frame_rate=400, fname='kiviat-HOPs.mp4', flabel='F', ticks_nbr=10):
         """Plot HOPs 3D kiviat.
 
         Each frame consists in a 3D Kiviat with an additional outcome
@@ -224,7 +266,6 @@ class Kiviat3D:
         :param str fname: Export movie to filename.
         :param str flabel: Name of the output function to be plotted next to
           the colorbar.
-        :param bool fill: Whether to fill the surface.
         :param int ticks_nbr: Number of ticks in the colorbar.
         """
         # Base plot
@@ -234,7 +275,7 @@ class Kiviat3D:
         ax.set_axis_off()
 
         for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
-            self.plane(ax, point, f_eval[0], i, fill)
+            self.leaf(ax, point, f_eval[0], i)
 
         self._axis(ax)
 
@@ -262,7 +303,7 @@ class Kiviat3D:
 
         with writer.saving(fig, fname, dpi=500):
             for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
-                self.plane(ax, point, f_eval[0], i, fill)
+                self.leaf(ax, point, f_eval[0], i)
                 # Rotate the view
                 ax.view_init(elev=-20 + elev_step * i, azim=i * azim_step)
 
@@ -272,3 +313,31 @@ class Kiviat3D:
                           loc='upper left', handlelength=0, handletextpad=0)
 
                 writer.grab_frame()
+
+
+
+from batman.space import Space
+from batman.functions import Mascaret, el_nino
+import batman as bat
+
+data_ = el_nino()
+data_.toarray()
+feval = data_.data
+
+
+settings = {
+        "corners": [[15., 3000.], [60., 6000.]],
+        "init_size": 100
+        }
+f = Mascaret()
+space = Space(settings["corners"], settings["init_size"])
+space.sampling(kind="halton", dists=["Uniform(15, 60)", "Normal(4035, 400)"])
+feval = f(space)#[:, 0].reshape(-1, 1)
+space = np.array(space)
+print('Space shape: {}\nFunction shape: {}'.format(space.shape, feval.shape))
+
+tree = Tree(space, feval, plabels=['Ks', 'Q'])
+tree.plot(flabel='Water level (m)')
+# tree.f_hops(frame_rate=400)
+
+
