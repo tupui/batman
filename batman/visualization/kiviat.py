@@ -154,16 +154,17 @@ class Kiviat3D:
         ticks.
 
         :param ax: Matplotlib AxesSubplot instances to draw to.
-        :return: List of artists added.
+        :return: List of artists added
+          [[axis, plabel, [tick, tick_label] * n_ticks] * n_features].
         :rtype: list.
         """
         out = []
         for i in range(self.n_params):
             # Create axis
-            a = Arrow3D([0, self.x_ticks[i]], [0, self.y_ticks[i]],
+            out.append(ax.add_artist(
+                Arrow3D([0, self.x_ticks[i]], [0, self.y_ticks[i]],
                         [self.z_offset, self.z_offset],
-                        mutation_scale=20, lw=1, arrowstyle="-|>", color="k")
-            out.append(ax.add_artist(a))
+                        mutation_scale=20, lw=1, arrowstyle="-|>", color="k")))
             # Annotate with plabels
             out.append(ax.text(1.1 * self.x_ticks[i], 1.1 * self.y_ticks[i],
                                self.z_offset, self.plabels[i], fontsize=14,
@@ -178,7 +179,7 @@ class Kiviat3D:
                                    '{:0.2f}'.format(self.ticks_values[i][j]),
                                    fontsize=8, ha='right', va='center', color='k'))
 
-        return ax
+        return out
 
     def plot(self, fname=None, flabel='F', ticks_nbr=10, fill=True):
         """Plot 3D kiviat.

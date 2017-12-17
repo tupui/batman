@@ -85,7 +85,7 @@ class HdrBoxplot:
         :param bool optimize: bandwidth global optimization or grid search.
         :param int n_contours: discretization to compute contour.
         """
-        self.data = data
+        self.data = np.asarray(data)
         self.threshold = threshold
         self.outliers_method = outliers_method
         self.optimize = optimize
