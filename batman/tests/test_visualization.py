@@ -6,8 +6,8 @@ import numpy.testing as npt
 from scipy.io import wavfile
 import openturns as ot
 from mock import patch
-from batman.visualization import (HdrBoxplot, Kiviat3D, pdf, sobol, reshow,
-                                  response_surface, doe, corr_cov)
+from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf, sobol,
+                                  reshow, response_surface, doe, corr_cov)
 from batman.surrogate import SurrogateModel
 from batman.functions import (Ishigami, Mascaret, el_nino)
 import matplotlib.pyplot as plt
@@ -232,6 +232,17 @@ class TestKiviat:
         kiviat_data.f_hops(frame_rate=40, ticks_nbr=30,
                            fname=os.path.join(tmp, 'kiviat_fill.mp4'))
         kiviat_data.f_hops(fname=os.path.join(tmp, 'kiviat.mp4'), fill=False)
+
+    @patch("matplotlib.pyplot.show")
+    @pytest.mark.skipif(not have_ffmpeg, reason='ffmpeg not available')
+    def test_tree(self, mock_show, tmp):
+        sample = [[30, 4000], [15, 5000], [20, 4500]]
+        functional_data = [[12, 300], [15, 347], [14, 320]]
+        tree = Tree(sample, functional_data,
+                    bounds=[[10.0, 2500.0], [60.0, 6000.0]])
+        tree.plot(fname=os.path.join(tmp, 'tree.pdf'),
+                  flabel='Water level (m)')
+        tree.f_hops(fname=os.path.join(tmp, 'tree.mp4'))
 
 
 class TestPdf:

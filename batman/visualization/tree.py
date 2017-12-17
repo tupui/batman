@@ -6,18 +6,10 @@ import copy
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 from scipy.spatial.distance import cdist
-from matplotlib import pyplot as plt
 from matplotlib import cm
-import matplotlib.animation as manimation
-from matplotlib.colors import Normalize
-from matplotlib.lines import Line2D
 import matplotlib.tri as tri
-from mpl_toolkits.mplot3d import Axes3D
-from mpl_toolkits.mplot3d import proj3d
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from .hdr import HdrBoxplot
 from .kiviat import Arrow3D, Kiviat3D
-import batman as bat
 
 np.set_printoptions(precision=3)
 
@@ -54,6 +46,8 @@ class Tree(Kiviat3D):
 
         if bounds is None:
             bounds = copy.deepcopy(self.sample)
+        else:
+            bounds = np.asarray(bounds)[:, :-1]
 
         self.scale = scaler.fit(bounds)
 
