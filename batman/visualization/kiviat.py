@@ -127,11 +127,8 @@ class Kiviat3D:
         Z = [idx] * (self.n_params + 1)  # +1 to close the geometry
 
         # Random numbers to prevent null surfaces area
-        for i, _ in enumerate(X):
-            if X[i] == 0.0:
-                X[i] = np.random.rand(1) * 0.001
-            if Y[i] == 0.0:
-                Y[i] = np.random.rand(1) * 0.001
+        X[np.where(X == 0.0)] = np.random.rand(1) * 0.001
+        Y[np.where(Y == 0.0)] = np.random.rand(1) * 0.001
 
         # Add first point to close the geometry
         X = np.concatenate((X, [X[0]]))
@@ -157,16 +154,17 @@ class Kiviat3D:
         ticks.
 
         :param ax: Matplotlib AxesSubplot instances to draw to.
-        :return: List of artists added.
+        :return: List of artists added
+          [[axis, plabel, [tick, tick_label] * n_ticks] * n_features].
         :rtype: list.
         """
         out = []
         for i in range(self.n_params):
             # Create axis
-            a = Arrow3D([0, self.x_ticks[i]], [0, self.y_ticks[i]],
+            out.append(ax.add_artist(
+                Arrow3D([0, self.x_ticks[i]], [0, self.y_ticks[i]],
                         [self.z_offset, self.z_offset],
-                        mutation_scale=20, lw=1, arrowstyle="-|>", color="k")
-            out.append(ax.add_artist(a))
+                        mutation_scale=20, lw=1, arrowstyle="-|>", color="k")))
             # Annotate with plabels
             out.append(ax.text(1.1 * self.x_ticks[i], 1.1 * self.y_ticks[i],
                                self.z_offset, self.plabels[i], fontsize=14,
@@ -177,10 +175,11 @@ class Kiviat3D:
                 x = tick * self.x_ticks[i]
                 y = tick * self.y_ticks[i]
                 out.append(ax.scatter(x, y, self.z_offset, c='k', marker='|'))
-                out.append(ax.text(x, y, self.z_offset, self.ticks_values[i][j],
+                out.append(ax.text(x, y, self.z_offset,
+                                   '{:0.2f}'.format(self.ticks_values[i][j]),
                                    fontsize=8, ha='right', va='center', color='k'))
 
-        return ax
+        return out
 
     def plot(self, fname=None, flabel='F', ticks_nbr=10, fill=True):
         """Plot 3D kiviat.
@@ -268,7 +267,7 @@ class Kiviat3D:
                 # Rotate the view
                 ax.view_init(elev=-20 + elev_step * i, azim=i * azim_step)
 
-                label = "Parameters: {}\nValue: {}".format(point[:-1], f_eval[0])
+                label = "Parameters: {}\nValue: {}".format(point, f_eval[0])
                 scatter_proxy = Line2D([0], [0], linestyle="none")
                 ax.legend([scatter_proxy], [label], markerscale=0,
                           loc='upper left', handlelength=0, handletextpad=0)
