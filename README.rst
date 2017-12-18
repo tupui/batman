@@ -1,4 +1,4 @@
-|CI|_ |Codecov|_ |Python|_ |License|_ |Zulip|_
+|CI|_ |Codecov|_ |Python|_ |License|_ |Zulip|_ |Joss|_
 
 .. |CI| image:: https://gitlab.com/cerfacs/batman/badges/develop/pipeline.svg
 .. _CI: https://gitlab.com/cerfacs/batman/pipelines

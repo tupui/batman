@@ -97,7 +97,7 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
         sample = np.array(ot.LHSExperiment(data['dist'], 500).generate())
         z_array, _ = f(sample)
     else:
-        z_array = data
+        z_array = np.asarray(data)
 
     # Compute PDF
     output_len = z_array.shape[1]
@@ -158,9 +158,9 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
         ax.hist(z_array, 30, fc='gray', histtype='stepfilled',
                 alpha=0.2, density=True)
         z_delta = np.max(z_array) * 5e-4
-        ax.plot(z_array[:, 0],
-                -z_delta - z_delta * np.random.random(z_array.shape[0]), '+k',
-                label=None)
+        ax.plot(z_array[:199, 0],
+                -z_delta - z_delta * np.random.random(z_array[:199].shape[0]),
+                '+k', label=None)
         ax.set_xlabel(flabel, fontsize=26)
         ax.set_ylabel("PDF", fontsize=26)
 

@@ -23,7 +23,7 @@ Aside from following the `git-flow <http://nvie.com/posts/a-successful-git-branc
 here are some additionnal points:
 
 1. Write the changelog (``CHANGELOG.rst``). Commit counts can be generated using
-  ``git log <last_release>.. | git shortlog -s -n`` for sorting by commits.
+   ``git log <last_release>.. | git shortlog -s -n`` for sorting by commits.
 2. Fix Milestone issues.
 3. Change the version number in ``batman/__init__.py`` (do not write the *ReleaseName*).
 4. Update the docs configuration file (credit).

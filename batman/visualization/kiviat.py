@@ -33,7 +33,7 @@ class Arrow3D(FancyArrowPatch):
         FancyArrowPatch.draw(self, renderer)
 
 
-class Kiviat3D:
+class Kiviat3D(object):
     """3D version of the Kiviat plot.
 
     Each realization is stacked on top of each other. The axis represent the
