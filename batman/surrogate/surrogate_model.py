@@ -174,7 +174,7 @@ class SurrogateModel(object):
         :return: Max MSE point.
         :rtype: lst(float).
         """
-        if self.pod.estimate is not None:
+        if self.pod is not None:
             return self.pod.estimate_quality()
 
         self.logger.info('Estimating Surrogate quality...')
