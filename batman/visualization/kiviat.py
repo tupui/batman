@@ -105,6 +105,10 @@ class Kiviat3D(object):
         self.x_ticks = np.cos(self.alphas)
         self.y_ticks = np.sin(self.alphas)
 
+        # Mesh as CSV
+        self.mesh = []
+        self.mesh_ratio = 5
+
     def plane(self, ax, params, feval, idx, fill=True):
         """Create a Kiviat in 2D.
 
@@ -129,6 +133,10 @@ class Kiviat3D(object):
         # Random numbers to prevent null surfaces area
         X[np.where(X == 0.0)] = np.random.rand(1) * 0.001
         Y[np.where(Y == 0.0)] = np.random.rand(1) * 0.001
+
+        # Construct mesh
+        self.mesh.append(np.stack((X, Y, Z[:-1], [feval] * self.n_params),
+                         axis=1))
 
         # Add first point to close the geometry
         X = np.concatenate((X, [X[0]]))
@@ -211,6 +219,11 @@ class Kiviat3D(object):
         ax.set_zlim(self.z_offset, len(self.data))
 
         bat.visualization.save_show(fname, [fig])
+
+        # Rescale Z axis and export the mesh
+        self.mesh = np.array(self.mesh).reshape(-1, 4)
+        self.mesh[:, 2] = self.mesh[:, 2] / self.data.shape[0] * self.mesh_ratio
+        np.savetxt('coords.csv', self.mesh, delimiter=',', header='x,y,z,f', comments='')
 
         return fig, ax
 
