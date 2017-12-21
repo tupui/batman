@@ -74,6 +74,7 @@ class Kiviat3D(object):
             self.sample = np.hstack((self.sample, np.ones((self.sample.shape[0],
                                                            left_for_triangle))))
             if bounds is not None:
+                bounds = copy.deepcopy(bounds)
                 bounds[0].extend([0] * left_for_triangle)
                 bounds[1].extend([2] * left_for_triangle)
         if bounds is None:
@@ -107,7 +108,7 @@ class Kiviat3D(object):
 
         # Mesh containing: (X, Y, Z, feval, parameter_index)
         self.mesh = []
-        self.mesh_ratio = 5
+        self.mesh_ratio = 3
 
     def plane(self, ax, params, feval, idx, fill=True):
         """Create a Kiviat in 2D.
@@ -230,8 +231,8 @@ class Kiviat3D(object):
         fname = fname.rsplit('.', 1)[0] + '.vtk'\
             if fname is not None else 'mesh_kiviat.vtk'
         connectivity = self.mesh_connectivity(self.mesh.shape[0], self.n_params)
-        self.mesh_vtk_ascii(self.mesh[:, :self.n_params],
-                            self.mesh[:, self.n_params:], connectivity,
+        self.mesh_vtk_ascii(self.mesh[:, :3],
+                            self.mesh[:, 3:], connectivity,
                             fname=fname)
 
         return fig, ax
@@ -421,9 +422,10 @@ class Kiviat3D(object):
                           for _ in range(connectivity.shape[0])])
 
             # Point data
-            data_header = ("\nPOINT_DATA {}\n".format(n_points))
+            data_header = ('\nPOINT_DATA {}\n'.format(n_points))
             f.write(data_header.encode('utf8'))
             for i, datum in enumerate(np.split(data, data.shape[1], axis=1)):
                 np.savetxt(f, datum,
-                           header='SCALARS value{} double\nLOOKUP_TABLE default'.format(i),
+                           header=("SCALARS value{} double\n"
+                                   "LOOKUP_TABLE default".format(i)),
                            footer=' ', comments='')

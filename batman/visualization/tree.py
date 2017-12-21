@@ -47,7 +47,7 @@ class Tree(Kiviat3D):
         if bounds is None:
             bounds = copy.deepcopy(self.sample)
         else:
-            bounds = np.asarray(bounds)[:, :-1]
+            bounds = np.asarray(bounds)
 
         self.scale = scaler.fit(bounds)
 
