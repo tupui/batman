@@ -55,7 +55,7 @@ class SurrogateModel(object):
             - **degree** (int) -- Polynomial degree.
             - **distributions** (lst(:class:`openturns.Distribution`)) --
               Distributions of each input parameter.
-            - **n_sample** (int) -- Number of samples for least square.
+            - **n_samples** (int) -- Number of samples for least square.
 
           For Kriging the following keywords are available
 

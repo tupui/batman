@@ -37,10 +37,10 @@ class Doe():
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, n_sample, bounds, kind, dists=None, discrete=None):
+    def __init__(self, n_samples, bounds, kind, dists=None, discrete=None):
         """Initialize the DOE generation.
 
-        In case of :attr:`kind` is ``uniform``, :attr:`n_sample` is decimated
+        In case of :attr:`kind` is ``uniform``, :attr:`n_samples` is decimated
         in order to have the same number of points in all dimensions.
 
         If :attr:`kind` is ``discrete``, a join distribution between a discrete
@@ -50,7 +50,7 @@ class Doe():
         can do: `dists=['Uniform(15., 60.)', 'Normal(4035., 400.)']`. If not
         set, uniform distributions are used.
 
-        :param int n_sample: number of samples.
+        :param int n_samples: number of samples.
         :param array_like bounds: Space's corners [[min, n dim], [max, n dim]]
         :param str kind: Sampling Method if string can be one of
           ['halton', 'sobol', 'faure', 'lhs[c]', 'sobolscramble', 'uniform',
@@ -58,7 +58,7 @@ class Doe():
         :param lst(str) dists: List of valid openturns distributions as string.
         :param int discrete: Position of the discrete variable.
         """
-        self.n_sample = n_sample
+        self.n_samples = n_samples
         self.bounds = np.asarray(bounds)
         self.kind = kind
         self.dim = self.bounds.shape[1]
@@ -94,24 +94,24 @@ class Doe():
         if self.kind == 'halton':
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
                                                              distribution,
-                                                             self.n_sample)
+                                                             self.n_samples)
         elif self.kind == 'sobol':
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.SobolSequence(),
                                                              distribution,
-                                                             self.n_sample)
+                                                             self.n_samples)
         elif self.kind == 'faure':
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.FaureSequence(),
                                                              distribution,
-                                                             self.n_sample)
+                                                             self.n_samples)
         elif (self.kind == 'lhs') or (self.kind == 'lhsc'):
-            self.sequence_type = ot.LHSExperiment(distribution, self.n_sample)
+            self.sequence_type = ot.LHSExperiment(distribution, self.n_samples)
         elif self.kind == 'lhsopt':
-            lhs = ot.LHSExperiment(distribution, self.n_sample)
+            lhs = ot.LHSExperiment(distribution, self.n_samples)
             self.sequence_type = ot.SimulatedAnnealingLHS(lhs, ot.GeometricProfile(),
                                                           ot.SpaceFillingC2())
         elif self.kind == 'saltelli':
             # Only relevant for computation of Sobol' indices
-            size = self.n_sample // (2 * self.dim + 2)  # N(2*dim + 2)
+            size = self.n_samples // (2 * self.dim + 2)  # N(2*dim + 2)
             self.sequence_type = ot.SobolIndicesAlgorithmImplementation.Generate(
                 distribution, size, True)
 
@@ -134,8 +134,8 @@ class Doe():
 
         # Scale the DOE from [0, 1] to bounds
         if self.kind == 'lhsc':
-            sample = ((np.floor_divide(sample, (1. / self.n_sample)) + 1)
-                      - 0.5) / self.n_sample
+            sample = ((np.floor_divide(sample, (1. / self.n_samples)) + 1)
+                      - 0.5) / self.n_samples
         else:
             sample = self.scaler.inverse_transform(sample)
 
@@ -143,16 +143,16 @@ class Doe():
 
     def uniform(self):
         """Uniform sampling."""
-        n_sample = int(np.floor(np.power(self.n_sample, 1.0 / len(self.bounds[1]))))
-        n_sample = [n_sample] * len(self.bounds[1])
-        n = np.product(n_sample)
-        h = [1. / float(n_sample[i] - 1) for i in range(self.dim)]
+        n_samples = int(np.floor(np.power(self.n_samples, 1.0 / len(self.bounds[1]))))
+        n_samples = [n_samples] * len(self.bounds[1])
+        n = np.product(n_samples)
+        h = [1. / float(n_samples[i] - 1) for i in range(self.dim)]
         r = np.zeros([n, self.dim])
         compt = np.zeros([1, self.dim], np.int)
         for i in range(1, n):
             compt[0, 0] = compt[0, 0] + 1
             for j in range(self.dim - 1):
-                if compt[0, j] > n_sample[j] - 1:
+                if compt[0, j] > n_samples[j] - 1:
                     compt[0, j] = 0
                     compt[0, j + 1] = compt[0, j + 1] + 1
             for j in range(self.dim):
@@ -166,8 +166,8 @@ class Doe():
         """
         # Generate sobol sequence
         self.sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(self.dim))
-        samples = self.sequence_type.generate(self.n_sample)
-        r = np.empty([self.n_sample, self.dim])
+        samples = self.sequence_type.generate(self.n_samples)
+        r = np.empty([self.n_samples, self.dim])
 
         for i, p in enumerate(samples):
             for j in range(self.dim):
