@@ -11,7 +11,8 @@ from batman.functions import MascaretApi
 from batman.functions.telemac_mascaret import print_statistics, histogram, plot_opt
 
 #study = MascaretApi('config_canal.json','config_canal_user.json')
-study = MascaretApi('config_garonne_lnhe.json','config_garonne_lnhe_user.json')
+#study = MascaretApi('config_garonne_lnhe.json','config_garonne_lnhe_user.json')
+study = MascaretApi('config_garonne_lnhe_casier.json','config_garonne_lnhe_user_casier.json')
 #print(study)
 
 
