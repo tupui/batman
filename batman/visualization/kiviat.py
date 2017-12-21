@@ -107,10 +107,9 @@ class Kiviat3D(object):
         self.y_ticks = np.sin(self.alphas)
 
         # Mesh containing: (X, Y, Z, feval, parameter_index)
-        self.mesh = []
         self.mesh_ratio = 3
 
-    def plane(self, ax, params, feval, idx, fill=True):
+    def _plane(self, ax, params, feval, idx, fill=True):
         """Create a Kiviat in 2D.
 
         From a set of parameters and the corresponding function evaluation,
@@ -215,8 +214,9 @@ class Kiviat3D(object):
         cbar = plt.colorbar(m, shrink=0.5, extend='both', ticks=vticks)
         cbar.set_label(flabel)
 
+        self.mesh = []
         for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
-            self.plane(ax, point, f_eval[0], i, fill)
+            self._plane(ax, point, f_eval[0], i, fill)
 
         self._axis(ax)
 
@@ -257,8 +257,9 @@ class Kiviat3D(object):
         ax = Axes3D(fig)
         ax.set_axis_off()
 
+        self.mesh = []
         for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
-            self.plane(ax, point, f_eval[0], i, fill)
+            self._plane(ax, point, f_eval[0], i, fill)
 
         self._axis(ax)
 
@@ -286,7 +287,7 @@ class Kiviat3D(object):
 
         with writer.saving(fig, fname, dpi=500):
             for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
-                self.plane(ax, point, f_eval[0], i, fill)
+                self._plane(ax, point, f_eval[0], i, fill)
                 # Rotate the view
                 ax.view_init(elev=-20 + elev_step * i, azim=i * azim_step)
 
