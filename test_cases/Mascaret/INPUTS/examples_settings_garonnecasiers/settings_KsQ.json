@@ -5,8 +5,9 @@
             [60.0, 6000.0]
         ],
         "sampling": {
-            "init_size": 121,
-            "method": "halton"
+            "init_size": 120,
+            "method": "saltelli",
+            "distributions": ["Uniform(15., 60.)",  "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()"]
         },
         "resampling":{
             "delta_space": 0.08,
@@ -15,11 +16,6 @@
             "hybrid": [["sigma", 4], ["loo_sobol", 2]],
             "q2_criteria": 0.9
         }
-    },
-    "pod": {
-        "dim_max": 100,
-        "tolerance": 0.99,
-        "type": "static"
     },
     "snapshot": {
         "max_workers": 5,
@@ -56,7 +52,7 @@
         "flabel": "F(Ks, Q)"
     },
     "uq": {
-        "sample": 10000,
+        "sample": 1200,
         "pdf": ["Uniform(15., 60.)", "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()" ],
         "type": "aggregated",
         "method": "sobol"

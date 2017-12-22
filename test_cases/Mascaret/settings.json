@@ -5,9 +5,9 @@
             [60.0, 6000.0]
         ],
         "sampling": {
-            "init_size": 120,
+            "init_size": 6000,
             "method": "saltelli",
-            "distributions": ["Uniform(15., 60.)", "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()"]
+            "distributions": ["Uniform(15., 60.)",  "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()"]
         },
         "resampling":{
             "delta_space": 0.08,
@@ -43,8 +43,8 @@
         "flabel": "F(Ks, Q)"
     },
     "uq": {
-        "sample": 120,
-        "pdf": ["Uniform(15., 60.)", "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()"],
+        "sample": 6000,
+        "pdf": ["Uniform(15., 60.)", "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()" ],
         "type": "aggregated",
         "method": "sobol"
     }
