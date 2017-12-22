@@ -283,7 +283,8 @@ class TestPdf:
     @patch("matplotlib.pyplot.show")
     def test_pdf_nD(self, mock_show, tmp):
         fig_pdf = pdf(data, xdata=np.linspace(1, 12, 12),
-                      fname=os.path.join(tmp, 'pdf_nd.pdf'))
+                      range_cbar=[0, 0.5], ticks_nbr=6,
+                      fname=os.path.join('.', 'pdf_nd.pdf'))
         reshow(fig_pdf)
         plt.plot([0, 10], [25, 25])
         plt.show()

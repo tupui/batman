@@ -62,7 +62,8 @@ def kernel_smoothing(data, optimize=False):
     return ks_gaussian
 
 
-def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
+def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
+        ticks_nbr=10, range_cbar=None, fname=None):
     """Plot PDF in 1D or 2D.
 
     :param nd_array/dict data: array of shape (n_samples, n_features)
@@ -80,6 +81,9 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
     :param str xlabel: label of the discretization parameter.
     :param str flabel: name of the quantity of interest.
     :param bool moments: whether to plot moments along with PDF if dim > 1.
+    :param int ticks_nbr: number of color isolines for response surfaces.
+    :param array_like range_cbar: Minimum and maximum values for output
+      function (2 values).
     :param str fname: whether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
@@ -132,18 +136,21 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
         max_ = np.max(z_array, axis=0)
 
     # Plotting
-    c_map = cm.viridis
     fig = plt.figure('PDF')
     ax = fig.add_subplot(111)
     ax.tick_params(axis='x', labelsize=26)
     ax.tick_params(axis='y', labelsize=26)
     if output_len > 1:
-        max_pdf = np.percentile(pdf, 97) if np.max(pdf) < 1 else 1
-        min_pdf = np.percentile(pdf, 3) if np.min(pdf) < max_pdf else 0
+        if range_cbar is None:
+            max_pdf = np.percentile(pdf, 97) if np.max(pdf) < 1 else 1
+            min_pdf = np.percentile(pdf, 3) if 0 < np.min(pdf) < max_pdf else 0
+        else:
+            min_pdf, max_pdf = range_cbar
+        ticks = np.linspace(min_pdf, max_pdf, num=ticks_nbr)
         bound_pdf = np.linspace(min_pdf, max_pdf, 50, endpoint=True)
         cax = ax.contourf(xdata, ydata, pdf, bound_pdf,
-                          cmap=c_map, extend="max")
-        cbar = fig.colorbar(cax, shrink=0.5)
+                          cmap=cm.viridis, extend="max")
+        cbar = fig.colorbar(cax, shrink=0.5, ticks=ticks)
         cbar.set_label(r"PDF")
         ax.set_xlabel(xlabel, fontsize=26)
         ax.set_ylabel(flabel, fontsize=26)
