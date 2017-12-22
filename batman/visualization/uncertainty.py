@@ -267,7 +267,7 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
     Compute the covariance regarding YY and XY as well as the correlation
     regarding YY.
 
-    :param array_like data: function evaluations (n_sample, n_features).
+    :param array_like data: function evaluations (n_samples, n_features).
     :param array_like sample: sample (n_samples, n_featrues).
     :param array_like xdata: 1D discretization of the function (n_features,).
     :param str xlabel: label of the discretization parameter.

@@ -157,29 +157,29 @@ class Space(list):
                 continue
         return self
 
-    def sampling(self, n_sample=None, kind='halton', dists=None, discrete=None):
+    def sampling(self, n_samples=None, kind='halton', dists=None, discrete=None):
         """Create point samples in the parameter space.
 
         Minimum number of samples for halton and sobol: 4
         For uniform sampling, the number of points is per dimensions.
         The points are registered into the space and replace existing ones.
 
-        :param int n_sample: number of samples.
+        :param int n_samples: number of samples.
         :param str kind: method of sampling.
         :param lst(str) dists: List of valid openturns distributions as string.
         :param int discrete: index of the discrete variable
         :return: List of points.
         :rtype: self.
         """
-        if self.multifidelity and n_sample is None:
-            n_sample = self._cheap_doe_from_expensive(self.doe_init)
-        elif self.multifidelity and n_sample is not None:
-            n_sample = self._cheap_doe_from_expensive(n_sample)
-        elif not self.multifidelity and n_sample is None:
-            n_sample = self.doe_init
+        if self.multifidelity and n_samples is None:
+            n_samples = self._cheap_doe_from_expensive(self.doe_init)
+        elif self.multifidelity and n_samples is not None:
+            n_samples = self._cheap_doe_from_expensive(n_samples)
+        elif not self.multifidelity and n_samples is None:
+            n_samples = self.doe_init
 
         bounds = np.array(self.corners)
-        doe = Doe(n_sample, bounds, kind, dists, discrete)
+        doe = Doe(n_samples, bounds, kind, dists, discrete)
         samples = doe.generate()
 
         # concatenate cheap and expensive space and add identifier 0 or 1

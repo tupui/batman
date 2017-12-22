@@ -146,10 +146,10 @@ class Gp1dSampler:
             format_.extend([temp_x, temp_idx])
         return s.format(*format_)
 
-    def sample(self, n_sample=1):
+    def sample(self, n_samples=1):
         """Compute realizations of the GP1D sampler.
 
-        :param int n_sample: number of GP1D instances
+        :param int n_samples: number of GP1D instances
         :return: instances of GP discretized over the mesh
           [t_ini:(T-T_ini)/(Nt-1):T] and Coefficients for the KLD
         :rtype: np.array([Nm x Nt]), np.array([Nm x Nmodes])
@@ -158,7 +158,7 @@ class Gp1dSampler:
                                        ot.IndependentCopula(self.n_modes))
 
         # Sampled weights
-        X = np.array(dist.getSample(n_sample))
+        X = np.array(dist.getSample(n_samples))
         # Predictions
         Y = np.dot(self.modes, X.T)
 

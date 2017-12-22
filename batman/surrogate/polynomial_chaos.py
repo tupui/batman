@@ -76,7 +76,7 @@ class PC(object):
             self.sample = sample
         else:  # integration method
             # redefinition of sample size
-            # n_sample = (degree + 1) ** in_dim
+            # n_samples = (degree + 1) ** in_dim
             # marginal degree definition
             # by default: the marginal degree for each input random
             # variable is set to the total polynomial degree 'degree'+1

@@ -74,6 +74,7 @@ class Kiviat3D(object):
             self.sample = np.hstack((self.sample, np.ones((self.sample.shape[0],
                                                            left_for_triangle))))
             if bounds is not None:
+                bounds = copy.deepcopy(bounds)
                 bounds[0].extend([0] * left_for_triangle)
                 bounds[1].extend([2] * left_for_triangle)
         if bounds is None:
@@ -105,7 +106,10 @@ class Kiviat3D(object):
         self.x_ticks = np.cos(self.alphas)
         self.y_ticks = np.sin(self.alphas)
 
-    def plane(self, ax, params, feval, idx, fill=True):
+        # Mesh containing: (X, Y, Z, feval, parameter_index)
+        self.mesh_ratio = 3
+
+    def _plane(self, ax, params, feval, idx, fill=True):
         """Create a Kiviat in 2D.
 
         From a set of parameters and the corresponding function evaluation,
@@ -129,6 +133,11 @@ class Kiviat3D(object):
         # Random numbers to prevent null surfaces area
         X[np.where(X == 0.0)] = np.random.rand(1) * 0.001
         Y[np.where(Y == 0.0)] = np.random.rand(1) * 0.001
+
+        # Construct mesh
+        self.mesh.append(np.stack((X, Y, Z[:-1], [feval] * self.n_params,
+                                   [i for i in range(self.n_params)]),
+                                  axis=1))
 
         # Add first point to close the geometry
         X = np.concatenate((X, [X[0]]))
@@ -184,6 +193,8 @@ class Kiviat3D(object):
     def plot(self, fname=None, flabel='F', ticks_nbr=10, fill=True):
         """Plot 3D kiviat.
 
+        Along with the matplotlib visualization, a VTK mesh is created.
+
         :param str fname: Whether to export to filename or display the figures.
         :param str flabel: Name of the output function to be plotted next to
           the colorbar.
@@ -203,14 +214,26 @@ class Kiviat3D(object):
         cbar = plt.colorbar(m, shrink=0.5, extend='both', ticks=vticks)
         cbar.set_label(flabel)
 
+        self.mesh = []
         for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
-            self.plane(ax, point, f_eval[0], i, fill)
+            self._plane(ax, point, f_eval[0], i, fill)
 
         self._axis(ax)
 
         ax.set_zlim(self.z_offset, len(self.data))
 
         bat.visualization.save_show(fname, [fig])
+
+        # Rescale Z axis and export the mesh
+        self.mesh = np.array(self.mesh).reshape(-1, 5)
+        self.mesh[:, 2] = self.mesh[:, 2] / self.data.shape[0] * self.mesh_ratio
+
+        fname = fname.rsplit('.', 1)[0] + '.vtk'\
+            if fname is not None else 'mesh_kiviat.vtk'
+        connectivity = self.mesh_connectivity(self.mesh.shape[0], self.n_params)
+        self.mesh_vtk_ascii(self.mesh[:, :3],
+                            self.mesh[:, 3:], connectivity,
+                            fname=fname)
 
         return fig, ax
 
@@ -234,8 +257,9 @@ class Kiviat3D(object):
         ax = Axes3D(fig)
         ax.set_axis_off()
 
+        self.mesh = []
         for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
-            self.plane(ax, point, f_eval[0], i, fill)
+            self._plane(ax, point, f_eval[0], i, fill)
 
         self._axis(ax)
 
@@ -263,7 +287,7 @@ class Kiviat3D(object):
 
         with writer.saving(fig, fname, dpi=500):
             for i, (point, f_eval) in enumerate(zip(self.sample, self.data)):
-                self.plane(ax, point, f_eval[0], i, fill)
+                self._plane(ax, point, f_eval[0], i, fill)
                 # Rotate the view
                 ax.view_init(elev=-20 + elev_step * i, azim=i * azim_step)
 
@@ -273,3 +297,136 @@ class Kiviat3D(object):
                           loc='upper left', handlelength=0, handletextpad=0)
 
                 writer.grab_frame()
+
+    @staticmethod
+    def mesh_connectivity(n_points, n_params):
+        """Compute connectivity for Kiviat.
+
+        Using the :attr:`n_points` and :attr:`n_params`, it creates the
+        connectivity required by VTK's pixel elements::
+
+                   4
+            3 *----*----* 5
+              |    |    |
+            0 *----*----* 2
+                   1
+
+        This will output::
+
+            4 0 1 3 4
+            4 1 2 4 5
+
+        :param int n_points: Number of points.
+        :param int n_params: Number of features.
+        :return: Connectivity.
+        :rtype: array_like of shape (n_cells, 5)
+        """
+        if n_points % n_params != 0:
+            raise ValueError("Incorrect points number to create cells, "
+                             "n_points % n_params must be 0")
+        n_cell = n_points // n_params // 2
+
+        # Building list of node for a given parameter: X1 -> 0 3 6 9
+        base = np.array([i * n_params for i in range(n_cell)])
+        base = np.array([base + i for i in range(n_params * 2)]).T
+
+        # Building cells for the first stack
+        first_cycle = [i for i in range(n_params)]
+        second_cycle = [i for i in range(n_params, n_params * 2)]
+
+        # 01 12 23 30
+        first_stack = [[first_cycle[i], first_cycle[i] + 1] for i in range(n_params)]
+        second_stack = [[second_cycle[i], second_cycle[i] + 1] for i in range(n_params)]
+        first_stack[-1][1] = 0
+        second_stack[-1][1] = n_params
+
+        first_cells = np.array(list(zip(first_stack, second_stack))).reshape(-1, 4)
+
+        # Combining base using first_cells indices
+        out = [base[:, first_cells[i]] for i in range(n_params)]
+        connectivity = np.array(list(zip(*out))).reshape(-1, 4)
+
+        connectivity = np.concatenate((4 * np.ones((connectivity.shape[0], 1)),
+                                       connectivity), axis=1)
+        connectivity = connectivity.astype(int, copy=False)
+
+        return connectivity
+
+    @staticmethod
+    def mesh_vtk_ascii(coords, data, connectivity, fname='mesh_kiviat.vtk'):
+        """Write mesh file in VTK ascii format.
+
+        Format is as following (example with 3 cells)::
+
+            # vtk DataFile Version 2.0
+            Kiviat 3D
+            ASCII
+
+            DATASET UNSTRUCTURED_GRID
+
+            POINTS 6 float
+            -0.40  0.73 0.00
+            -0.00 -0.03 0.00
+             0.50  0.00 0.00
+            -0.40  0.85 0.04
+            -0.00 -0.12 0.04
+             0.50  0.00 0.04
+
+
+            CELLS 3 15
+            4 0 1 3 4
+            4 1 2 4 5
+            4 2 0 5 3
+
+            CELL_TYPES 3
+            8
+            8
+            8
+
+            POINT_DATA 6
+            SCALARS value double
+            LOOKUP_TABLE default
+            17.770e+0
+            17.770e+0
+            17.770e+0
+            17.774e+0
+            17.774e+0
+            17.774e+0
+
+        :param array_like coordinates: Sample coordinates of shape
+          (n_samples, n_features).
+        :param array_like data: function evaluations of shape
+          (n_samples, n_features).
+        """
+        n_points = coords.shape[0]
+
+        with open(fname, 'wb') as f:
+            header = ("# vtk DataFile Version 2.0\n"
+                      "Kiviat 3D\n"
+                      "ASCII\n\n"
+                      "DATASET UNSTRUCTURED_GRID\n\n")
+            f.write(header.encode('utf8'))
+
+            # Sample coordinates
+            np.savetxt(f, coords, header='POINTS {} float'.format(n_points),
+                       delimiter=' ', footer=' ', comments='')
+            # Connectivity
+            np.savetxt(f, connectivity, fmt='%d',
+                       header='CELLS {} {}'.format(connectivity.shape[0],
+                                                   np.prod(connectivity.shape)),
+                       footer=' ', comments='')
+
+            # Cell types
+            cell_types = 'CELL_TYPES {}\n'.format(connectivity.shape[0])
+            f.write(cell_types.encode('utf8'))
+            f.writelines(['8\n'.encode('utf8')
+                          for _ in range(connectivity.shape[0])])
+
+            # Point data
+            data_header = ('\nPOINT_DATA {}\n'.format(n_points))
+            f.write(data_header.encode('utf8'))
+            for i, datum in enumerate(np.split(data, data.shape[1], axis=1)):
+                np.savetxt(f, datum,
+                           header=("SCALARS value{} double\n"
+                                   "LOOKUP_TABLE default".format(i)),
+                           footer=' ', comments='')

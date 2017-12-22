@@ -244,6 +244,23 @@ class TestKiviat:
                   flabel='Water level (m)')
         tree.f_hops(fname=os.path.join(tmp, 'tree.mp4'))
 
+    def test_connectivity(self):
+        connectivity = Kiviat3D.mesh_connectivity(6, 3)
+        connectivity_t = np.array([[4, 0, 1, 3, 4],
+                                   [4, 1, 2, 4, 5],
+                                   [4, 2, 0, 5, 3]], dtype=int)
+        npt.assert_equal(connectivity, connectivity_t)
+
+        with pytest.raises(ValueError):
+            Kiviat3D.mesh_connectivity(6, 4)
+
+        connectivity = Kiviat3D.mesh_connectivity(8, 4)
+        connectivity_t = np.array([[4, 0, 1, 4, 5],
+                                   [4, 1, 2, 5, 6],
+                                   [4, 2, 3, 6, 7],
+                                   [4, 3, 0, 7, 4]], dtype=int)
+        npt.assert_equal(connectivity, connectivity_t)
+
 
 class TestPdf:
 

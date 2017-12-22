@@ -47,7 +47,7 @@ class Tree(Kiviat3D):
         if bounds is None:
             bounds = copy.deepcopy(self.sample)
         else:
-            bounds = np.asarray(bounds)[:, :-1]
+            bounds = np.asarray(bounds)
 
         self.scale = scaler.fit(bounds)
 
@@ -72,7 +72,7 @@ class Tree(Kiviat3D):
         dists = cdist(centroide, hdr_90)[0]
         self.dist_max = max(scaler.transform(dists.reshape(-1, 1)))
 
-    def plane(self, ax, params, feval, idx, *args):
+    def _plane(self, ax, params, feval, idx, *args):
         """Create a Leaf in 2D.
 
         From a set of parameters and the corresponding function evaluation,
