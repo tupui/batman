@@ -427,7 +427,9 @@ class MascaretApi(object):
                 / (ticks[id_tick + 1] - ticks[id_tick])
             return output
         elif self.user_settings['misc']['all_outstate'] is True:
-            return self.curv_abs(), self.allstate()
+            print ('Z dans la classe', self.allstate())
+            print ('Q dans la classe', self.allstateQ())
+            return self.curv_abs(), self.allstate(), self.allstateQ()
         else:
             return self.state(self.user_settings['misc']['index_outstate']).value
 
@@ -794,6 +796,40 @@ class MascaretApi(object):
 
         self.logger.debug('State get.')
         return state_res
+
+    def allstateQ(self):
+        """Get state Q at all simulation points in :attr:`user_settings['misc']['all_outstate']`.
+
+        Use Mascaret Api :meth:`C_GET_TAILLE_VAR_MASCARET` and
+        :meth:`C_GET_DOUBLE_MASCARET`.
+
+        :boolean index: Flag to return all state
+        :return: State at each simulation point
+        :rtype: list of floats
+        """
+        var_name = ctypes.c_char_p(b'State.Q')
+
+        itemp0 = ctypes.c_int()
+        itemp1 = ctypes.c_int()
+        itemp2 = ctypes.c_int()
+        self.logger.debug('Getting the size of State.Q...')
+        self.error = self.libmascaret.C_GET_TAILLE_VAR_MASCARET(
+            self.id_masc, var_name, 0, ctypes.byref(itemp0),
+            ctypes.byref(itemp1), ctypes.byref(itemp2))
+        self.logger.debug('itemp= {} {} {}.'
+                          .format(itemp0.value, itemp1.value, itemp2.value))
+
+        stateQ_res = []
+        q_res_c = ctypes.c_double()
+        self.logger.debug('Getting the value of all State.Q...')
+        for index in range(1, itemp0.value + 1):
+            self.error = self.libmascaret.C_GET_DOUBLE_MASCARET(
+                self.id_masc, var_name, index, 0, 0, ctypes.byref(q_res_c))
+            stateQ_res.append(q_res_c.value)
+
+        self.logger.debug('State Q get.')
+        return stateQ_res
+
 
     def state(self, index):
         """Get state at given index in :attr:`user_settings['misc']['index_outstate']`.
