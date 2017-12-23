@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding:utf-8
 
-import re
 import json
 from batman.functions import G_Function
 from batman.input_output import (IOFormatSelector, Dataset)

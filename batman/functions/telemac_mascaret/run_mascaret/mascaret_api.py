@@ -427,8 +427,8 @@ class MascaretApi(object):
                 / (ticks[id_tick + 1] - ticks[id_tick])
             return output
         elif self.user_settings['misc']['all_outstate'] is True:
-            print ('Z dans la classe', self.allstate())
-            print ('Q dans la classe', self.allstateQ())
+            self.logger.debug('Z in class: {}'.format(self.allstate()))
+            self.logger.debug('Q in class: {}'.format(self.allstateQ()))
             return self.curv_abs(), self.allstate(), self.allstateQ()
         else:
             return self.state(self.user_settings['misc']['index_outstate']).value

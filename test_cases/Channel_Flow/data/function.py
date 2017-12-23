@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding:utf-8
 
-import re
 import json
 import numpy as np
 from batman.functions import Channel_Flow
@@ -28,14 +27,10 @@ with open('./batman-coupling/point.dat', 'w') as f:
     f.writelines('TITLE = \"FUNCTION\" \n')
     f.writelines('VARIABLES = \"X\" \"F\"  \n')
     f.writelines('ZONE T=\"zone1\" , I=' + str(nb_value) + ', F=BLOCK  \n')
-    for i in range(len(X)):
+    for i, _ in enumerate(X):
         f.writelines("{:.7E}".format(float(X[i])) + "\t ")
-        if i % 1000:
-            f.writelines('\n')
-    f.writelines('\n')
+    f.write('\n')
 
-    for i in range(len(Z)):
+    for i, _ in enumerate(Z):
         f.writelines("{:.7E}".format(float(Z[i])) + "\t ")
-        if i % 1000:
-            f.writelines('\n')
-        f.writelines('\n')
+    f.write('\n')

@@ -250,6 +250,7 @@ def sobol(sobols, conf=None, plabels=None, xdata=None, xlabel='x', fname=None):
         if xdata is None:
             xdata = np.linspace(0, 1, n_xdata)
         fig = plt.figure('Sensitivity Map')
+        ax = fig.add_subplot(111)
         figures.append(fig)
         sobols = np.hstack(sobols[2:]).T
         s_lst = np.array(objects).T.flatten('C').tolist()
