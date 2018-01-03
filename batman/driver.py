@@ -211,9 +211,13 @@ class Driver(object):
             points = self.to_compute_points
 
         # Generate snapshots
-        snapshot_root = os.path.join(self.fname, self.fname_tree['snapshots'])
-        snapshot_points = [(point, os.path.join(snapshot_root, str(i + self.snapshot_counter)))
-                           for i, point in enumerate(points)]
+        if isinstance(points, dict):
+            snapshot_points = points.items()
+        else:
+            snapshot_root = os.path.join(self.fname, self.fname_tree['snapshots'])
+            snapshot_points = [(point, os.path.join(
+                                    snapshot_root, str(i + self.snapshot_counter)))
+                               for i, point in enumerate(points)]
         snapshots = [self.provider.snapshot(p, d) for p, d in snapshot_points]
         self.snapshot_counter += len(snapshots)
 
