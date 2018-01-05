@@ -28,9 +28,9 @@ import warnings
 import numpy as np
 from scipy.optimize import differential_evolution
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, WhiteKernel
+from sklearn.gaussian_process.kernels import (WhiteKernel, Matern, ConstantKernel)
 import sklearn.gaussian_process.kernels as kernels
-from ..misc import NestedPool, cpu_system
+from ..misc import (NestedPool, cpu_system)
 from ..functions.utils import multi_eval
 
 
@@ -39,7 +39,8 @@ class Kriging(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, sample, data, kernel=None, noise=False):
+    def __init__(self, sample, data, kernel=None, noise=False,
+                 global_optimizer=True):
         r"""Create the predictor.
 
         Uses sample and data to construct a predictor using Gaussian Process.
@@ -69,6 +70,8 @@ class Kriging(object):
         :param kernel: Kernel from scikit-learn.
         :type kernel: :class:`sklearn.gaussian_process.kernels`.*.
         :param float/bool noise: Noise used into kriging.
+        :param bool global_optimizer: Whether to do global optimization or
+          gradient based optimization to estimate hyperparameters.
         """
         try:
             sample[0][0]
@@ -77,7 +80,7 @@ class Kriging(object):
         else:
             sample = np.array(sample).reshape(len(sample), -1)
 
-        sample_len = sample.shape[1]
+        dim = sample.shape[1]
         self.model_len = data.shape[1]
         if self.model_len == 1:
             data = data.ravel()
@@ -85,10 +88,10 @@ class Kriging(object):
             self.kernel = kernel
         else:
             # Define the model settings
-            l_scale = (1.0,) * sample_len
-            scale_bounds = [(1e-03, 1000.0)] * sample_len
-            self.kernel = 1.0 * RBF(length_scale=l_scale,
-                                    length_scale_bounds=scale_bounds)
+            l_scale = (1.0,) * dim
+            scale_bounds = [(1e-3, 1e3)] * dim
+            self.kernel = ConstantKernel() * Matern(length_scale=l_scale,
+                                                    length_scale_bounds=scale_bounds)
 
         # Add a noise on the kernel using WhiteKernel
         if noise:
@@ -98,7 +101,16 @@ class Kriging(object):
                 noise = kernels.WhiteKernel(noise_level=noise)
             self.kernel += noise
 
-        self.n_restart = 3
+        # Global optimization
+        args_optim = {'kernel': self.kernel, 'normalize_y': True}
+        if global_optimizer:
+            args_optim.update({'optimizer': self._optim_evolution,
+                               'n_restarts_optimizer': 0})
+            self.n_restart = 3
+        else:
+            args_optim.update({'n_restarts_optimizer': 10 * dim})
+            self.n_restart = 1
+
         # Define the CPU multi-threading/processing strategy
         n_cpu_system = cpu_system()
         self.n_cpu = self.model_len
@@ -109,10 +121,7 @@ class Kriging(object):
 
         def model_fitting(column):
             """Fit an instance of :class:`sklearn.GaussianProcessRegressor`."""
-            gp = GaussianProcessRegressor(kernel=self.kernel,
-                                          n_restarts_optimizer=0,
-                                          optimizer=self._optim_evolution,
-                                          normalize_y=True)
+            gp = GaussianProcessRegressor(**args_optim)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 data = gp.fit(sample, column)

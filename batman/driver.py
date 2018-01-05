@@ -172,9 +172,7 @@ class Driver(object):
                 settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
                              'grand_cost': self.settings['surrogate']['grand_cost']}
             elif self.settings['surrogate']['method'] == 'kriging':
-                if 'kernel' not in self.settings['surrogate']:
-                    settings_ = {}
-                else:
+                if 'kernel' in self.settings['surrogate']:
                     kernel = self.settings['surrogate']['kernel']
                     try:
                         kernel = eval(kernel, {'__builtins__': None},
@@ -183,8 +181,12 @@ class Driver(object):
                         self.logger.error('Scikit-Learn kernel unknown.')
                         raise SystemError
                     settings_ = {'kernel': kernel}
-                if 'noise' in self.settings['surrogate']:
-                    settings_.update({'noise': self.settings['surrogate']['noise']})
+
+                settings_.update({
+                    'noise': self.settings['surrogate'].get('noise', False),
+                    'global_optimizer': self.settings['surrogate'].get('global_optimizer', True)
+                })
+
 
             self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
                                             self.settings['space']['corners'],

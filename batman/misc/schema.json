@@ -122,7 +122,8 @@
                    "enum": ["Quad", "LS"]},
         "degree": {"type": "integer", "default": 10, "minimum": 1},
         "kernel": {"type": "string"},
-        "noise": {"type": ["number", "boolean"], "default": false}
+        "noise": {"type": ["number", "boolean"], "default": false},
+        "global_optimizer": {"type": "boolean", "default": true}
       },
       "required": ["method"],
       "oneOf": [
