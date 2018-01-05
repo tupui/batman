@@ -164,7 +164,7 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
         ax.plot(xdata, pdf, color='k', ls='-', linewidth=3, label=None)
         ax.hist(z_array, 30, fc='gray', histtype='stepfilled',
                 alpha=0.2, density=True)
-        z_delta = np.max(z_array) * 5e-4
+        z_delta = np.max(pdf) * 5e-2
         ax.plot(z_array[:199, 0],
                 -z_delta - z_delta * np.random.random(z_array[:199].shape[0]),
                 '+k', label=None)

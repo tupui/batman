@@ -72,7 +72,7 @@ class ProviderFile(object):
 
     @property
     def known_points(self):
-        """A dictionnary binding known snapshots with their location."""
+        """Dictionnary binding known snapshots with their location."""
         return self._known_points
 
     def snapshot(self, point, snapshot_dir):
@@ -136,6 +136,7 @@ class ProviderFile(object):
 
     def _job_initialize(self, point, work_dir):
         """Setup job execution.
+
         Create and populate:
         - work-directory from context-directory (use symbolic links)
         - coupling subdirectory
@@ -147,7 +148,7 @@ class ProviderFile(object):
         """
         coupling_dir = os.path.join(work_dir, self._job['coupling_directory'])
 
-        # copy-link the content of 'context_dir' to 'snapeshot_dir'
+        # copy-link the content of 'context_dir' to 'snapshot_dir'
         # wkdir shall not exist at all
         os.makedirs(coupling_dir)
         context_dir = os.path.abspath(self._job['context_directory'])
