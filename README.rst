@@ -86,14 +86,14 @@ The required dependencies are:
 - `scipy <http://scipy.org>`_ >= 0.15
 - `OpenTURNS <http://www.openturns.org>`_ >= 1.9
 - `pathos <https://github.com/uqfoundation/pathos>`_ >= 0.2
-- `matplotlib <http://matplotlib.org>`_ >= 1.5
+- `matplotlib <http://matplotlib.org>`_ >= 2.1
 - `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_
-- `sphinx <http://www.sphinx-doc.org>`_ >= 1.4
 
 Appart from OpenTURNS, required dependencies are satisfied by the installer.
 Optionnal dependencies are: 
 
 - `Antares <http://www.cerfacs.fr/antares>`_ for extra IO options
+- `sphinx <http://www.sphinx-doc.org>`_ >= 1.4 for documentation
 - `ffmpeg <https://www.ffmpeg.org>`_ for movie visualizations (*n_features* > 2)
 
 Testing dependencies are: 

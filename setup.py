@@ -84,14 +84,14 @@ except ImportError:
 
 setup_requires = ['pytest-runner']
 tests_require = ['pytest', 'mock', 'coverage', 'pylint']
-install_requires = ['sphinx_rtd_theme',
-                    'sphinx>=1.4',
-                    'scipy>=0.15',
+install_requires = ['scipy>=0.15',
                     'numpy>=1.13',
                     'jsonschema',
                     'pathos>=0.2',
-                    'matplotlib>=1.5',
+                    'matplotlib>=2.1',
                     'scikit-learn>=0.18']
+extras_require = {'doc': ['sphinx_rtd_theme', 'sphinx>=1.4'],
+                  'movie': ['ffmpeg']}
 
 if sys.version_info <= (3, 4):
     install_requires.append('futures')
@@ -141,6 +141,7 @@ setup(
     setup_requires=setup_requires,
     tests_require=tests_require,
     install_requires=install_requires,
+    extras_require=extras_require,
     cmdclass=cmdclasses,
     # metadata
     maintainer="Pamphile ROY",
