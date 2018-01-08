@@ -30,6 +30,7 @@ from scipy import stats
 from sklearn import preprocessing
 import numpy as np
 import openturns as ot
+import batman as bat
 
 
 class Doe():
@@ -71,13 +72,7 @@ class Doe():
                                 float(self.bounds[1][i]))
                      for i in range(self.dim)]
         else:
-            try:
-                dists = [eval('ot.' + dist, {'__builtins__': None},
-                              {'ot': __import__('openturns')})
-                         for dist in dists]
-            except (TypeError, AttributeError):
-                self.logger.error('OpenTURNS distribution unknown.')
-                raise SystemError
+            dists = bat.space.dists_to_ot(dists)
 
         if discrete is not None:
             # Creating uniform discrete distribution for OT

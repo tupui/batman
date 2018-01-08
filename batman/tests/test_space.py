@@ -3,7 +3,7 @@ import copy
 import pytest
 import numpy as np
 import numpy.testing as npt
-from batman.space import (Point, Space, Doe)
+from batman.space import (Point, Space, Doe, dists_to_ot)
 from batman.functions import Ishigami
 from batman.surrogate import SurrogateModel
 from batman.space.refiner import Refiner
@@ -38,6 +38,15 @@ def test_point_evaluation():
     point = Point([2.20, 1.57, 3])
     target_point = f_3d(point)
     assert target_point == pytest.approx(14.357312835804658, 0.05)
+
+
+def test_dists_to_ot():
+    dists = dists_to_ot(['Uniform(12, 15)', 'Normal(400, 10)'])
+    out = [ot.Uniform(12, 15), ot.Normal(400, 10)]
+    assert dists == out
+
+    with pytest.raises(AttributeError):
+        dists_to_ot(['Uniorm(12, 15)'])
 
 
 def test_space(settings_ishigami):
@@ -159,7 +168,7 @@ def test_doe():
 
     bounds = [[15.0, 2500.0], [60.0, 6000.0]]
 
-    with pytest.raises(SystemError):
+    with pytest.raises(AttributeError):
         dists = ['Um(15., 60.)', 'Normal(4035., 400.)']
         doe = Doe(n, bounds, 'halton', dists)
 
@@ -216,16 +225,16 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     npt.assert_almost_equal(sigma, [8.47,  13.65], decimal=1)
 
     optim_EI = refiner.optimization(method='EI')
-    npt.assert_almost_equal(optim_EI, [-1.387, 8.586], decimal=1)
+    npt.assert_almost_equal(optim_EI, [-2.1, 9.0], decimal=1)
 
     optim_PI = refiner.optimization(method='PI')
-    npt.assert_almost_equal(optim_PI, [-1.985, 8.87], decimal=1)
+    npt.assert_almost_equal(optim_PI, [-2.2, 9.2], decimal=1)
 
     disc = refiner.discrepancy()
-    npt.assert_almost_equal(disc, [8.47, 12.415], decimal=1)
+    npt.assert_almost_equal(disc, [8.47, 9.1], decimal=1)
 
     extrema = np.array(refiner.extrema([])[0])
-    npt.assert_almost_equal(extrema, [[-2.694, 2.331], [2.219, 1.979]], decimal=1)
+    npt.assert_almost_equal(extrema, [[-2.694, 2.331], [2.576, 2.242]], decimal=1)
 
     base_sigma_disc = refiner.sigma_discrepancy()
     npt.assert_almost_equal(base_sigma_disc,

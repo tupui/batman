@@ -18,7 +18,7 @@ def test_driver_chain(driver_init, tmp, ishigami_data):
     driver.read()
     pred, _ = driver.prediction(points=ishigami_data.point, write=True)
     assert os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0'))
-    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.1)
+    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
 
 
 def test_no_pod(ishigami_data, tmp, settings_ishigami):
@@ -28,7 +28,7 @@ def test_no_pod(ishigami_data, tmp, settings_ishigami):
     driver.sampling()
 
     pred, _ = driver.prediction(write=True, points=ishigami_data.point)
-    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.1)
+    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
     assert os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0'))
 
     def wrap_surrogate(x):

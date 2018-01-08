@@ -248,9 +248,9 @@ def plot_storage(filename='Resultats.res_casier', tlab='time (s)', xlab='Storage
     l10, = ax2.plot(t, vsto10, color='magenta')
     l11, = ax2.plot(t, vsto11, color='purple')
     l12, = ax2.plot(t, vsto12, color='blue')
-    l13, =  ax2.plot(t, vsto13, color='green')
+    l13, = ax2.plot(t, vsto13, color='green')
     l14, = ax2.plot(t, vsto14, color='brown')
-    l15, =  ax2.plot(t, vsto15, color='grey')
+    l15, = ax2.plot(t, vsto15, color='grey')
     ax2.set_ylabel(ylab2, color='black')
     ax2.tick_params('y', colors='black')
     ax2.yaxis.set_major_formatter(y_formatter)
@@ -287,8 +287,8 @@ def tecplot_reader(file, nb_var):
     return output
 
 
-def plot_pdf(filename='pdf.dat', xlab='Curvilinear abscissa (m)',
-             ylab1='Water level (m)', title='pdf'):
-    """Plot results contained in the results file :file:`pdf.dat`."""
-    z = {'name': "Z", 'label': r"$Z$ (m)", 'data': None, 'shape': 463}
-    x_pdf, z['data'], pdf = tecplot_reader(filename, 3)
+# def plot_pdf(filename='pdf.dat', xlab='Curvilinear abscissa (m)',
+#              ylab1='Water level (m)', title='pdf'):
+#     """Plot results contained in the results file :file:`pdf.dat`."""
+#     z = {'name': "Z", 'label': r"$Z$ (m)", 'data': None, 'shape': 463}
+#     x_pdf, z['data'], pdf = tecplot_reader(filename, 3)
