@@ -44,7 +44,7 @@ def test_GP_1d(ishigami_data):
 
     # Test one point evaluation
     pred, _ = np.array(surrogate.evaluate(ishigami_data.point))
-    assert pred == pytest.approx(ishigami_data.target_point, 0.1)
+    assert pred == pytest.approx(ishigami_data.target_point, 0.2)
 
     # Test space evaluation
     pred, _ = np.array(surrogate.evaluate(ishigami_data.space))
@@ -57,8 +57,18 @@ def test_GP_1d(ishigami_data):
     q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, wrap_surrogate)
     assert q2 == pytest.approx(1, 0.1)
 
+    # Kernel and noise
     surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
                         kernel=Matern(), noise=0.8)
+
+    surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
+                        kernel=Matern(), noise=True)
+
+    # Optimizer
+    surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
+                        global_optimizer=False)
+    pred, _ = np.array(surrogate.evaluate(ishigami_data.point))
+    assert pred == pytest.approx(ishigami_data.target_point, 0.2)
 
 
 def test_RBFnet_1d(ishigami_data):
@@ -155,7 +165,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     assert surrogate.space == ishigami_data.space
 
     pred, _ = surrogate(ishigami_data.point)
-    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.1)
+    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
 
     # Compute predictivity coefficient Q2
     def wrap_surrogate(x):

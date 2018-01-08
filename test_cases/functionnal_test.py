@@ -220,7 +220,7 @@ def test_only_surrogate(tmp, case='Michalewicz'):
 
 
 @pytest.mark.xfail(raises=ValueError, reason='Flat response, no contour possible')
-def test_only_surrogate_kernel_noise(tmp, case='Ishigami'):
+def test_only_surrogate_kernel_noise_optimizer(tmp, case='Ishigami'):
     os.chdir(os.path.join(PATH, case))
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
@@ -231,7 +231,8 @@ def test_only_surrogate_kernel_noise(tmp, case='Ishigami'):
     settings['surrogate'].update({
         'kernel': "ConstantKernel() + "
                   "Matern(length_scale=0.5, nu=0.5)",
-        'noise': 1})
+        'noise': 1,
+        'global_optimizer': False})
     shutil.rmtree(tmp)
     batman.ui.run(settings, options)
 

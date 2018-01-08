@@ -27,11 +27,11 @@ from concurrent import futures
 import numpy as np
 import sklearn.gaussian_process.kernels as kernels
 from .pod import Pod
-from .space import Space
+from .space import (Space, dists_to_ot)
 from .surrogate import SurrogateModel
 from .tasks import (SnapshotIO, ProviderPlugin, ProviderFile)
 from .uq import UQ
-from .visualization import response_surface, Kiviat3D
+from .visualization import (response_surface, Kiviat3D)
 from .functions.utils import multi_eval
 
 
@@ -156,13 +156,7 @@ class Driver(object):
             settings_ = {}
             if self.settings['surrogate']['method'] == 'pc':
                 dists = self.settings['space']['sampling']['distributions']
-                try:
-                    dists = [eval('ot.' + dist, {'__builtins__': None},
-                                  {'ot': __import__('openturns')})
-                             for dist in dists]
-                except (TypeError, AttributeError):
-                    self.logger.error('OpenTURNS distribution unknown.')
-                    raise SystemError
+                dists = dists_to_ot(dists)
 
                 settings_ = {'strategy': self.settings['surrogate']['strategy'],
                              'degree': self.settings['surrogate']['degree'],
@@ -172,9 +166,7 @@ class Driver(object):
                 settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
                              'grand_cost': self.settings['surrogate']['grand_cost']}
             elif self.settings['surrogate']['method'] == 'kriging':
-                if 'kernel' not in self.settings['surrogate']:
-                    settings_ = {}
-                else:
+                if 'kernel' in self.settings['surrogate']:
                     kernel = self.settings['surrogate']['kernel']
                     try:
                         kernel = eval(kernel, {'__builtins__': None},
@@ -183,8 +175,11 @@ class Driver(object):
                         self.logger.error('Scikit-Learn kernel unknown.')
                         raise SystemError
                     settings_ = {'kernel': kernel}
-                if 'noise' in self.settings['surrogate']:
-                    settings_.update({'noise': self.settings['surrogate']['noise']})
+
+                settings_.update({
+                    'noise': self.settings['surrogate'].get('noise', False),
+                    'global_optimizer': self.settings['surrogate'].get('global_optimizer', True)
+                })
 
             self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
                                             self.settings['space']['corners'],
@@ -215,8 +210,9 @@ class Driver(object):
             snapshot_points = points.items()
         else:
             snapshot_root = os.path.join(self.fname, self.fname_tree['snapshots'])
-            snapshot_points = [(point, os.path.join(
-                                    snapshot_root, str(i + self.snapshot_counter)))
+            snapshot_points = [(point,
+                                os.path.join(snapshot_root,
+                                             str(i + self.snapshot_counter)))
                                for i, point in enumerate(points)]
         snapshots = [self.provider.snapshot(p, d) for p, d in snapshot_points]
         self.snapshot_counter += len(snapshots)

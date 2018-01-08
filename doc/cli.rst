@@ -203,6 +203,7 @@ For *kriging* the following extra attributes **can** be set:
 
 + [``kernel``]: kernel to use. Ex: ``"ConstantKernel() + Matern(length_scale=1., nu=1.5)"``.
 + [``noise``]: noise level as boolean or as a float.
++ [``global_optimizer``]: whether to do global optimization or gradient based optimization to estimate hyperparameters.
 
 For *pc* the following extra attributes **must** be set: 
 
