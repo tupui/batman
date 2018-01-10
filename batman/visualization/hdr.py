@@ -208,8 +208,8 @@ class HdrBoxplot:
 
         Global optimization to find the extrema per component.
 
-        :param int idx: curve index
-        :returns: [max, min] curve values at :attr:`idx`
+        :param int idx: curve index.
+        :returns: [max, min] curve values at :attr:`idx`.
         :rtype: tuple(float)
         """
         max_ = differential_evolution(self._curve_constrain, bounds=self.bounds,
@@ -229,12 +229,14 @@ class HdrBoxplot:
         :attr:`self.detector`. Thus calling, several times the method will not
         cause any overhead.
 
-        :param array_like data: data from which to extract outliers.
-          (n_samples, n_features)
+        :param array_like data: data from which to extract outliers
+          (n_samples, n_features).
         :param array_like samples: samples values to examine
           (n_samples, n_features/n_components).
         :param str method: detection method ['kde', 'forest'].
         :param float threshold: detection sensitivity.
+        :return: Outliers.
+        :rtype: array_like (n_outliers, n_features)
         """
         if method == 'kde':
             outliers = np.where(samples < self.pvalues[self.alpha.index(threshold)])
@@ -426,12 +428,11 @@ class HdrBoxplot:
         with writer.saving(fig, fname, dpi=200):
             for i, (pdf, curve_r, curve) in enumerate(zip(pdf_r, data_r, data)):
                 curve_r = np.atleast_2d(curve_r)
-                outliers = self.find_outliers(data=curve_r, samples=pdf,
-                                              method=self.outliers_method,
-                                              threshold=self.threshold)
-                outliers = self.pca.inverse_transform(outliers)
+                outlier = self.find_outliers(data=curve_r, samples=pdf,
+                                             method=self.outliers_method,
+                                             threshold=self.threshold)
 
-                if len(outliers) == 0:
+                if len(outlier) == 0:
                     label = 'HOP: ' + str(labels[i]) \
                         if labels is not None else 'HOP'
                     frame.set_data(x_common, curve)
@@ -441,7 +442,7 @@ class HdrBoxplot:
                 else:
                     label = 'HOP Outlier: ' + str(labels[i]) \
                         if labels is not None else 'HOP Outlier'
-                    frame_outliers.set_data(x_common, outliers)
+                    frame_outliers.set_data(x_common, curve)
                     frame_outliers.set_label(label)
                     frame.set_data([], [])
                     frame.set_label(None)
