@@ -359,7 +359,7 @@ class HdrBoxplot:
         plt.ylabel(flabel)
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys(), loc='best')
+        plt.legend(list(by_label.values()), list(by_label.keys()), loc='best')
 
         bat.visualization.save_show(fname, figures)
 
@@ -449,7 +449,7 @@ class HdrBoxplot:
 
                 handles, labels_ = plt.gca().get_legend_handles_labels()
                 by_label = dict(zip(labels_, handles))
-                plt.legend(by_label.values(), by_label.keys(), loc='best')
+                plt.legend(list(by_label.values()), list(by_label.keys()), loc='best')
 
                 writer.grab_frame()
 
