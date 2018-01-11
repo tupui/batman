@@ -140,7 +140,7 @@ def import_config(path_config, path_schema):
         settings = minify_comments(file)
 
     with open(path_schema, 'rb') as file:
-        schema = json.loads(file.read(), encoding="utf-8")
+        schema = json.loads(file.read().decode('utf8'))
 
     error = False
     try:
