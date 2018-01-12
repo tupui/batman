@@ -202,9 +202,6 @@ def parse_options():
     # parse command line
     options = parser.parse_args()
 
-    if options.check:
-        raise SystemExit
-
     return options
 
 
@@ -213,6 +210,9 @@ def main():
     options = parse_options()
     schema = path + '/misc/schema.json'
     settings = misc.import_config(options.settings, schema)
+
+    if options.check:
+        raise SystemExit
 
     run(settings, options)
 

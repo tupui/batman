@@ -278,7 +278,7 @@ def test_wrong_settings(tmp, case='Ishigami'):
     # First check some correct settings
     sys.argv = ['batman', 'settings.json', '-c', '-o', tmp]
     with pytest.raises(SystemExit):
-        options = batman.ui.parse_options()
+        batman.ui.main()
 
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
@@ -291,7 +291,7 @@ def test_wrong_settings(tmp, case='Ishigami'):
     with open(wrong_path, 'w') as f:
         json.dump(settings, f, indent=4)
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(SyntaxError):
         batman.misc.import_config(wrong_path, SCHEMA)
 
     # Invalid JSON file
@@ -303,5 +303,5 @@ def test_wrong_settings(tmp, case='Ishigami'):
     with open(wrong_path, 'wb') as ws:
         ws.write(file.encode('utf8'))
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(SyntaxError):
         batman.misc.import_config(wrong_path, SCHEMA)
