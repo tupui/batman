@@ -140,6 +140,8 @@ The Kriging method is one of the most employed as of today. We can even enhance 
 Polynomial chaos expansion
 --------------------------
 
+Some citations: [Blatman2009phd]_ [Lemaitreknio2010]_ [Migliorati2013]_ [Sudret2008]_ [Xiu2010]_ [Xiu2002]_
+
 Polynomial chaos expansion (PCE) is a type of surrogate model widely used in uncertainty quantification studies. It takes place in a stochastic framework where model inputs are random variables whose probabilistic distributions determine the families of polynomial regressors. We set out below the details of a PCE construction and its implementation with BATMAN.
 
 Generalities
@@ -202,7 +204,7 @@ and the Legendre polynomials are the counterpart for the standard uniform distri
 
    \forall n\in\mathbb{N},~L_{n+1}(x) = \frac{2n+1}{n+1}xL_n(x) - \frac{n}{n+1}L_{n-1}(x) \text{ with }L_{0}(x)=1\text{ and }L_{1}(x)=x.
 
-Note that even if standard uniform and Gaussian distributions are widely used to represent input variable uncertainty, the Askey's scheme can also be applied to a wider set of distributions [xiu2002]_.
+Note that even if standard uniform and Gaussian distributions are widely used to represent input variable uncertainty, the Askey's scheme can also be applied to a wider set of distributions [Xiu2002]_.
 
 Surrogate model
 ***************
@@ -244,7 +246,7 @@ For the :math:`j^{\text{th}}` and :math:`k^{\text{th}}` outputs, the expectation
 
    \mathbb{C}\left[\hat{y}_j,\hat{y}_k\left(\mathbf{X}\right)\right]=\sum_{i = 1}^r\gamma_{j,i}\gamma_{k,i}
 
-In the context of global sensitivity analysis, there are similar results for the Sobol' indices [sudret2008]_.
+In the context of global sensitivity analysis, there are similar results for the Sobol' indices [Sudret2008]_.
 
 Options
 .......
@@ -310,7 +312,7 @@ Truncation strategies
 In this section, we present different truncation strategies.
 
 
-Note that for small :math:`d`, advanced truncation strategies that consist in eliminating high-order interaction terms or using sparse structure [blatman2009phd]_ [migliorati2013]_ are not necessary.
+Note that for small :math:`d`, advanced truncation strategies that consist in eliminating high-order interaction terms or using sparse structure [Blatman2009phd]_ [Migliorati2013]_ are not necessary.
 
 **Fixed truncation strategy**
 
