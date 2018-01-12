@@ -31,3 +31,9 @@ Bibliography
 .. [Hackstadt1994] Steven T. Hackstadt and Allen D. Malony and Bernd Mohr. Scalable Performance Visualization for Data-Parallel Programs. IEEE. 1994. DOI: 10.1109/SHPCC.1994.296663 
 .. [Wand1995] M.P. Wand and M.C. Jones. Kernel Smoothing. 1995. DOI: 10.1007/978-1-4899-4493-1 
 .. [Roy2017b] P.T. Roy et al.: Comparison of Polynomial Chaos and Gaussian Process surrogates for uncertainty quantification and correlation estimation of spatially distributed open-channel steady flows. SERRA. 2017. DOI: 10.1007/s00477-017-1470-4
+.. [Blatman2009phd] Blatman, G., *Adaptative sparse Polynomial Chaos expansions for uncertainty propagation and sensitivity analysis*, Universit\'e Blaise Pascal, Clermont-Ferrand, 2009.
+.. [Lemaitreknio2010] Le Maitre, O. and Knio, O., *Spectral Methods for Uncertainty Quantification*, Springer, 2010.
+.. [Migliorati2013] Migliorati, G. and Nobile, F. and Von Schwerin, E. and Tempone, R., *Approximation of quantities of interest in stochastic PDEs by the random Discret L2 Projection on polynomial spaces*, SIAM J. Sci Comput., 35(3), pp. A1440-A1460, 2013.
+.. [Sudret2008] Sudret, B., *Global sensitivity analysis using polynomial chaos expansions*, Reliab. Eng. Sys. Safety, 93, pp. 964–979, 2008.
+.. [Xiu2010] Xiu, D., *Numerical Methods for Stochastic Computations: A Spectral Method Approach*, Princeton University Press, 2010.
+.. [Xiu2002] Xiu, D. and Karniadakis, G.E., *The Wiener--Askey Polynomial Chaos for Stochastic Differential Equations*, SIAM Journal on Scientific Computing, 24 (2), pp. 619-644, 2002.
