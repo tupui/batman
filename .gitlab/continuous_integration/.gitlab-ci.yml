@@ -59,8 +59,6 @@ python_2:
     - python setup.py install
     - cd doc
     - make html
-    - rm -rf ../public
-    - mv _build/html/ ../public/
 
 pages_feature_branch:
   <<: *template_doc
@@ -74,6 +72,3 @@ pages:
   only:
     - master
     - develop
-  artifacts:
-    paths:
-      - public

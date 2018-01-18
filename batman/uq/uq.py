@@ -230,20 +230,12 @@ class UQ:
         """
         fun = func_ref.__dict__[function]()
 
-        if fun.d_out > 1:
-            wrap_fun = fun
-        else:
-            def wrap_fun(x):
-                return [fun(x)]
-
-        model_ref = ot.PythonFunction(fun.d_in, fun.d_out, wrap_fun)
-
         s_l2_2nd = np.sqrt(np.sum((fun.s_second - indices[0]) ** 2))
         s_l2_1st = np.sqrt(np.sum((fun.s_first - indices[1]) ** 2))
         s_l2_total = np.sqrt(np.sum((fun.s_total - indices[2]) ** 2))
 
         # Q2 computation
-        y_ref = np.array(model_ref(self.sample))
+        y_ref = np.array(fun(self.sample))
         y_pred = np.array(self.func(self.sample))
         err_q2 = r2_score(y_ref, y_pred, multioutput='uniform_average')
 

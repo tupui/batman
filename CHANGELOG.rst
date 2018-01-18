@@ -6,6 +6,38 @@
 Release history
 ===============
 
+Version 1.7.2 - Lucius
+======================
+
+New features
+------------
+
+    - Refactor :class:`tasks.snapshot`. Settings have been simplified and
+      code maintenance has been eased. *by Cyril Fournier*,
+    - Add new visualization :class:`visualization.Tree` for 2D, *by Pamphile Roy*,
+    - Add ``global_optimizer`` option in settings for Kriging, *by Pamphile Roy*,
+    - Move documentation to *read the docs*, *by Pamphile Roy*,
+    - Add documentation for MASCARET and PCE, *by Matthias De Lozzo*.
+
+Enhancements
+------------
+
+    - Export :class:`visualization.Kiviat` as a mesh, *by Pamphile Roy*,
+    - Some visualization for MASCARET, *by Sophie Ricci*.
+
+Bug fixes
+---------
+
+    - Point mixing when snapshots already exists, *by Pamphile Roy*,
+    - Outlier are computed only once in f-HOPs, *by Pamphile Roy*,
+    - PDF scaling, *by Pamphile Roy*,
+    - Legend list for forward compatibility with MPL, *by Pamphile Roy*,
+    - Range color bar, visualization ticks default, *by Pamphile Roy*,
+    - Driver exceptions, *by Pamphile Roy*,
+    - Encoding errors in schema with python 3.5, *by Pamphile Roy*,
+    - Settings checking was not effective, *by Pamphile Roy*.
+
+
 Version 1.7.1 - Lucius
 ======================
 

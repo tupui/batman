@@ -44,6 +44,19 @@ intersphinx_mapping = {'openturns': ('http://doc.openturns.org/openturns-latest/
 }
 
 
+# Mock fortran
+if os.environ.get("READTHEDOCS") == "True":
+    from mock import Mock as MagicMock
+
+    class Mock(MagicMock):
+        @classmethod
+        def __getattr__(cls, name):
+                return MagicMock()
+
+    MOCK_MODULES = ['batman.input_output._tecplot']
+    sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+
 def skip(app, what, name, obj, skip, options):
     if name == "__init__":
         return False
@@ -83,7 +96,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'BATMAN'
-copyright = '2017, CERFACS'
+copyright = '2018, CERFACS - CECILL-B Licensed'
 author = 'Pamphile ROY'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -186,7 +199,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
 #
-# html_title = 'BATMAN v1.3'
+# html_title = 'BATMAN'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #
