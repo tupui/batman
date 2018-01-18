@@ -21,6 +21,8 @@ there are several options implemented in the package.
 +----------------------------------+-----------+----------------+---------------------------------------+
 | :class:`Kiviat3D`                | >5 scalar | scalar, vector | 3D version of the radar/spider plot   |
 +----------------------------------+-----------+----------------+---------------------------------------+
+| :class:`Tree`                    | 2D scalar | scalar, vector | 2D version (kind) of the Kiviat plot  |
++----------------------------------+-----------+----------------+---------------------------------------+
 | :func:`pdf`                      |           | scalar, vector | Output PDF                            |
 +----------------------------------+-----------+----------------+---------------------------------------+
 | :func:`corr_cov`                 | scalar    | vector         | Correlation of the inputs and outputs |
@@ -247,7 +249,7 @@ To be able to get a whole set of sample, a 3D version of the Kiviat plot is
 used [Hackstadt1994]_. Thus, each sample corresponds to a 2D Kiviat plot::
 
     import batman as bat
-    kiviat = bat.visualization.Kiviat3D(space, bounds, feval, param_names)
+    kiviat = bat.visualization.Kiviat3D(space, feval, bounds)
     kiviat.plot()
 
 .. image::  ../fig/kiviat_3D.pdf
@@ -272,6 +274,21 @@ functional-HOPs-Kiviat with sound::
 
 .. image::  ../fig/kiviat_3D.gif
 
+Tree
+====
+
+In case of a 2-dimension parameter space, Kiviat plot can be improved by
+considering segment instead of plane. Thus, the sampling is still represented
+as a vertical stack and this leaves the ability to encode another information
+in the remaining dimension. With a functional dataset, difference from the
+median computed by HDR is encoded as an azimutal component. The more the
+segment is tilted, the more the sample is different from the median::
+
+    import batman as bat
+    tree = bat.visualization.Tree(space, feval)
+    tree.plot()
+
+.. image::  ../fig/mascaret_tree.pdf
 
 Probability Density Function
 ============================

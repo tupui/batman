@@ -18,17 +18,20 @@ print(study)
 
 # Run study with Ks and Q specified constant values 
 #res = study(x=[30, 3000])
-#print('Water level computed with Ks = 30, Q = 3000',res)
+x, z, q = study(x=[30, 3000])
+print ('toto')
+print('Water level computed with Ks = 30, Q = 3000',z)
+print('Discharge computed with Ks = 30, Q = 3000',q)
 #print('Water level computed with Ks = 30, Q = 3000',res[1])
 # Plot the water level along the open-channel at final time
-#plot_opt('ResultatsOpthyca.opt')
+plot_opt('ResultatsOpthyca.opt')
 
 # Run study  with the user defined tasks and values 
-res = study()
-print('Water level computed with json user defined values', res)
+#res = study()
+#print('Water level computed with json user defined values', res)
 #print('Water level computed with json user defined values', res[1])
 # Plot the water level along the open-channel at final time
-plot_opt('ResultatsOpthyca.opt')
+#plot_opt('ResultatsOpthyca.opt')
 
 # Run study  with user provided Boundary Conditions matrix in .csv 
 # User defined BC matrix (here 10 time steps and 2 BC - Q and Z)

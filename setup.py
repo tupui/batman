@@ -84,14 +84,14 @@ except ImportError:
 
 setup_requires = ['pytest-runner']
 tests_require = ['pytest', 'mock', 'coverage', 'pylint']
-install_requires = ['sphinx_rtd_theme',
-                    'sphinx>=1.4',
-                    'scipy>=0.15',
+install_requires = ['scipy>=0.15',
                     'numpy>=1.13',
                     'jsonschema',
                     'pathos>=0.2',
-                    'matplotlib>=1.5',
+                    'matplotlib>=2.1',
                     'scikit-learn>=0.18']
+extras_require = {'doc': ['sphinx_rtd_theme', 'sphinx>=1.4'],
+                  'movie': ['ffmpeg']}
 
 if sys.version_info <= (3, 4):
     install_requires.append('futures')
@@ -132,7 +132,8 @@ def find_version(*file_paths):
 
 setup(
     name='batman',
-    keywords='surrogate model, uncertainty quantification, statistical analysis',
+    keywords=("surrogate model, uncertainty quantification,statistical analysis,"
+              "design of experiments, uncertainty visualization"),
     version=find_version("batman", "__init__.py"),
     packages=find_packages(exclude=['test_cases', 'doc']),
     entry_points={'console_scripts': ['batman=batman.ui:main']},
@@ -141,11 +142,12 @@ setup(
     setup_requires=setup_requires,
     tests_require=tests_require,
     install_requires=install_requires,
+    extras_require=extras_require,
     cmdclass=cmdclasses,
     # metadata
     maintainer="Pamphile ROY",
     maintainer_email="roy@cerfacs.fr",
-    description="BATMAN creates a surrogate model and perform UQ.",
+    description="BATMAN: Statistical analysis for expensive computer codes made easy",
     long_description=open('./README.rst').read(),
     classifiers=['Development Status :: 5 - Production/Stable',
                  'Environment :: Console',
@@ -168,6 +170,7 @@ setup(
     zip_safe=False,
     license="CECILL-B",
     url=["https://gitlab.com/cerfacs/batman",
-         "https://cerfacs.gitlab.io/batman",
-         ""],
+         "http://batman.readthedocs.io",
+         "https://batman-cerfacs.zulipchat.com",
+         "https://cerfacs.fr"],
 )

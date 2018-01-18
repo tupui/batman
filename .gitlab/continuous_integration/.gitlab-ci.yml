@@ -11,7 +11,7 @@ python_linter:
     - python setup.py install
     - pycodestyle --max-line-length=120 --exclude=gp_1d_sampler.py,function*,TreeCut*,RBFnet*,tecplot* batman > pycodestyle.log || echo 0
     - cat pycodestyle.log
-    - pylint batman --rcfile=setup.cfg --ignore-patterns='gp_1d_sampler.py','RBFnet.py','TreeCut.py','resampling.py' > linter.log || echo 0
+    - pylint batman --rcfile=setup.cfg --ignore-patterns='gp_1d_sampler.py','RBFnet.py','TreeCut.py' > linter.log || echo 0
     - cat linter.log
     - lint=`cat linter.log`
     - regex='at ([0-9][-.][0-9]{2})[-/]10'
@@ -20,6 +20,7 @@ python_linter:
 
 .template_python_3: &template_python_3
   stage: test
+  dependencies: []
   image: "registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3"
   allow_failure: false
   script:
@@ -40,6 +41,7 @@ python_3_feature_branch:
 
 python_2:
   stage: test
+  dependencies: []
   image: "tupui/bat_ci_2"
   only:
     - master
@@ -57,8 +59,6 @@ python_2:
     - python setup.py install
     - cd doc
     - make html
-    - rm -rf ../public
-    - mv _build/html/ ../public/
 
 pages_feature_branch:
   <<: *template_doc
@@ -72,6 +72,3 @@ pages:
   only:
     - master
     - develop
-  artifacts:
-    paths:
-      - public

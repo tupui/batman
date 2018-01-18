@@ -134,13 +134,13 @@ def import_config(path_config, path_schema):
         except Exception as tb:
             logger.exception("JSON error, cannot load configuration file: {}"
                              .format(tb))
-            raise SystemExit
+            raise SyntaxError
 
     with open(path_config, 'rb') as file:
         settings = minify_comments(file)
 
     with open(path_schema, 'rb') as file:
-        schema = json.loads(file.read(), encoding="utf-8")
+        schema = json.loads(file.read().decode('utf8'))
 
     error = False
     try:
@@ -157,7 +157,7 @@ def import_config(path_config, path_schema):
         logger.info('Settings successfully imported and checked')
     else:
         logger.error('Error were found in configuration file: JSON syntax...')
-        raise SystemExit
+        raise SyntaxError
 
     return settings
 

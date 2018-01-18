@@ -67,6 +67,7 @@ specifications may not be enough to give full guidelines on their uses.
 .. autosummary::
 
    visualization.Kiviat3D
+   visualization.Tree
    visualization.HdrBoxplot
    visualization.doe
    visualization.response_surface
@@ -138,9 +139,10 @@ specifications may not be enough to give full guidelines on their uses.
 
 .. autosummary::
 
-   tasks.SnapshotTask
-   tasks.SnapshotProvider
+   tasks.SnapshotIO
    tasks.Snapshot
+   tasks.ProviderFile
+   tasks.ProviderPlugin
 
 .. py:module:: tasks
 .. automodule:: batman.tasks

@@ -5,9 +5,9 @@
             [60.0, 6000.0]
         ],
         "sampling": {
-            "init_size": 120,
+            "init_size": 6000,
             "method": "saltelli",
-            "distributions": ["Uniform(15., 60.)", "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()"]
+            "distributions": ["Uniform(15., 60.)",  "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()"]
         },
         "resampling":{
             "delta_space": 0.08,
@@ -19,30 +19,21 @@
     },
     "snapshot": {
         "max_workers": 5,
-        "io": {
-            "shapes": {
-                "0": [
-                    [463]
-                ]
-            },
-            "format": "fmt_tp_fortran",
-            "variables": ["F"],
-            "point_filename": "header.py",
-            "filenames": {
-                "0": ["function.dat"]
-            },
-            "template_directory": null,
-            "parameter_names": ["x1", "x2"]
-        },
+        "plabels": ["x1", "x2"],
+        "flabels": ["F"],
         "provider": {
-            "command": "bash",
+            "type": "file"
+            "command": "bash script.sh",
+            "context_directory": "data",
+            "coupling_directory": "batman-coupling",
             "timeout": 20,
-            "context": "data",
-            "script": "data/script.sh",
             "clean": false,
-            "private-directory": "batman-data",
-            "data-directory": "cfd-output-data",
             "restart": "False"
+        },
+        "io": {
+            "point_filename": "point.json",
+            "data_filename": "point.dat",
+            "format": "fmt_tp_fortran"
         }
     },
     "visualization": {
@@ -52,8 +43,8 @@
         "flabel": "F(Ks, Q)"
     },
     "uq": {
-        "sample": 120,
-        "pdf": ["Uniform(15., 60.)", "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()"],
+        "sample": 6000,
+        "pdf": ["Uniform(15., 60.)", "BetaMuSigma(4031, 400, 1000, 6000).getDistribution()" ],
         "type": "aggregated",
         "method": "sobol"
     }

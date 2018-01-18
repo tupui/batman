@@ -5,7 +5,6 @@ import logging
 from logging.config import dictConfig
 import argparse
 import os
-import re
 import shutil
 import json
 import openturns as ot
@@ -62,28 +61,17 @@ def run(settings, options):
             if not delete:
                 prompt = 'Re-use output results? [Y/n] > '
                 use_output = misc.check_yes_no(prompt, default='yes')
-                root = os.path.join(options.output, 'snapshots')
-
                 if not use_output:
-                    logger.warning(
-                        'Stopped to prevent deletion. Change options')
+                    logger.warning('Stopped to prevent deletion. Change options')
                     raise SystemExit
 
-                if not os.path.isdir(root):
-                    logger.warning('No folder snapshots in output folder')
-                    raise SystemExit
-
-                # get list of directories that follow the specified name pattern
-                pattern = re.compile(r'^\d+$')
-                folders = sorted(filter(
-                    lambda d: pattern.match(d) is not None,
-                    os.listdir(root)
-                ), key=int)
-                settings['snapshot']['provider'] = [os.path.join(root, d, 'batman-data')
-                                                    for d in folders]
-                settings['snapshot']['io']['template_directory'] = \
-                    os.path.join(root, '0', 'batman-data')
-                settings['snapshot']['io']['shapes'] = None
+                # auto-discovery of existing snapshots
+                if settings['snapshot']['provider']['type'] == 'file':
+                    root = os.path.join(options.output, 'snapshots')
+                    if not os.path.isdir(root):
+                        logger.warning('No folder snapshots in output folder')
+                        raise SystemExit
+                    settings['snapshot']['provider']['discover_from'] = root
 
         if delete:
             try:
@@ -96,7 +84,7 @@ def run(settings, options):
     driver = Driver(settings, options.output)
 
     try:
-        update = True if settings['pod']['type'] != 'static' else False
+        update = settings['pod']['type'] != 'static'
     except KeyError:
         update = None
 
@@ -214,9 +202,6 @@ def parse_options():
     # parse command line
     options = parser.parse_args()
 
-    if options.check:
-        raise SystemExit
-
     return options
 
 
@@ -225,6 +210,9 @@ def main():
     options = parse_options()
     schema = path + '/misc/schema.json'
     settings = misc.import_config(options.settings, schema)
+
+    if options.check:
+        raise SystemExit
 
     run(settings, options)
 

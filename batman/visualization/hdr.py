@@ -85,7 +85,7 @@ class HdrBoxplot:
         :param bool optimize: bandwidth global optimization or grid search.
         :param int n_contours: discretization to compute contour.
         """
-        self.data = data
+        self.data = np.asarray(data)
         self.threshold = threshold
         self.outliers_method = outliers_method
         self.optimize = optimize
@@ -208,8 +208,8 @@ class HdrBoxplot:
 
         Global optimization to find the extrema per component.
 
-        :param int idx: curve index
-        :returns: [max, min] curve values at :attr:`idx`
+        :param int idx: curve index.
+        :returns: [max, min] curve values at :attr:`idx`.
         :rtype: tuple(float)
         """
         max_ = differential_evolution(self._curve_constrain, bounds=self.bounds,
@@ -229,12 +229,14 @@ class HdrBoxplot:
         :attr:`self.detector`. Thus calling, several times the method will not
         cause any overhead.
 
-        :param array_like data: data from which to extract outliers.
-          (n_samples, n_features)
+        :param array_like data: data from which to extract outliers
+          (n_samples, n_features).
         :param array_like samples: samples values to examine
           (n_samples, n_features/n_components).
         :param str method: detection method ['kde', 'forest'].
         :param float threshold: detection sensitivity.
+        :return: Outliers.
+        :rtype: array_like (n_outliers, n_features)
         """
         if method == 'kde':
             outliers = np.where(samples < self.pvalues[self.alpha.index(threshold)])
@@ -259,7 +261,7 @@ class HdrBoxplot:
         return outliers
 
     def plot(self, samples=None, fname=None, x_common=None, labels=None,
-             xlabel='t', ylabel='y'):
+             xlabel='t', flabel='F'):
         """Functional plot and n-variate space.
 
         If :attr:`self.n_components` is 2, an additional contour plot is done.
@@ -271,7 +273,7 @@ class HdrBoxplot:
         :param array_like x_common: abscissa (1, n_features).
         :param list(str) labels: labels for each curve.
         :param str xlabel: label for x axis.
-        :param str ylabel: label for y axis.
+        :param str flabel: label for y axis.
         :returns: figures and all axis.
         :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
         """
@@ -317,9 +319,8 @@ class HdrBoxplot:
             plt.tight_layout()
 
         # Bivariate space
-        fig, sub_ax = doe(data_r,
-                          plabels=[str(i + 1) for i in range(self.n_components)],
-                          show=False)
+        fig, sub_ax = doe(data_r, plabels=[str(i + 1)
+                                           for i in range(self.n_components)])
         figures.append(fig)
         axs.append(sub_ax)
 
@@ -355,17 +356,17 @@ class HdrBoxplot:
             self.logger.debug('It seems that there are no outliers...')
 
         plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
+        plt.ylabel(flabel)
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys(), loc='best')
+        plt.legend(list(by_label.values()), list(by_label.keys()), loc='best')
 
         bat.visualization.save_show(fname, figures)
 
         return figures, axs
 
     def f_hops(self, frame_rate=400, fname='f-HOPs.mp4', samples=None,
-               x_common=None, labels=None, xlabel='t', ylabel='y', offset=0.05):
+               x_common=None, labels=None, xlabel='t', flabel='F', offset=0.05):
         """Functional Hypothetical Outcome Plots.
 
         Each frame consists in a HDR boxplot and an additional outcome.
@@ -381,7 +382,7 @@ class HdrBoxplot:
         :param array_like x_common: abscissa.
         :param list(str) labels: labels for each curve.
         :param str xlabel: label for x axis.
-        :param str ylabel: label for y axis.
+        :param str flabel: label for y axis.
         :param float offset: Margin around the extreme values of the plot.
         """
         movie_writer = manimation.writers['ffmpeg']
@@ -409,7 +410,7 @@ class HdrBoxplot:
         frame_outliers, = plt.plot([], [], c='r', ls='--')
 
         plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
+        plt.ylabel(flabel)
 
         if samples is None:
             data_r = self.data_r
@@ -427,12 +428,11 @@ class HdrBoxplot:
         with writer.saving(fig, fname, dpi=200):
             for i, (pdf, curve_r, curve) in enumerate(zip(pdf_r, data_r, data)):
                 curve_r = np.atleast_2d(curve_r)
-                outliers = self.find_outliers(data=curve_r, samples=pdf,
-                                              method=self.outliers_method,
-                                              threshold=self.threshold)
-                outliers = self.pca.inverse_transform(outliers)
+                outlier = self.find_outliers(data=curve_r, samples=pdf,
+                                             method=self.outliers_method,
+                                             threshold=self.threshold)
 
-                if len(outliers) == 0:
+                if len(outlier) == 0:
                     label = 'HOP: ' + str(labels[i]) \
                         if labels is not None else 'HOP'
                     frame.set_data(x_common, curve)
@@ -442,14 +442,14 @@ class HdrBoxplot:
                 else:
                     label = 'HOP Outlier: ' + str(labels[i]) \
                         if labels is not None else 'HOP Outlier'
-                    frame_outliers.set_data(x_common, outliers)
+                    frame_outliers.set_data(x_common, curve)
                     frame_outliers.set_label(label)
                     frame.set_data([], [])
                     frame.set_label(None)
 
                 handles, labels_ = plt.gca().get_legend_handles_labels()
                 by_label = dict(zip(labels_, handles))
-                plt.legend(by_label.values(), by_label.keys(), loc='best')
+                plt.legend(list(by_label.values()), list(by_label.keys()), loc='best')
 
                 writer.grab_frame()
 

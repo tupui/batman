@@ -1,4 +1,4 @@
-|CI|_ |Codecov|_ |Python|_ |License|_ |Zulip|_
+|CI|_ |Codecov|_ |Python|_ |License|_ |Zulip|_ |Joss|_
 
 .. |CI| image:: https://gitlab.com/cerfacs/batman/badges/develop/pipeline.svg
 .. _CI: https://gitlab.com/cerfacs/batman/pipelines
@@ -14,6 +14,12 @@
 
 .. |Zulip| image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
 .. _Zulip: https://batman-cerfacs.zulipchat.com
+
+.. |Conda| image:: https://img.shields.io/badge/Install_with-conda-brightgreen.svg
+.. _Conda: https://conda.anaconda.org/conda-forge/batman
+
+.. |Joss| image:: https://joss.theoj.org/papers/a1c4bddc33a1d8ab55fce1a3596196d8/status.svg
+.. _Joss: https://joss.theoj.org/papers/a1c4bddc33a1d8ab55fce1a3596196d8
 
 BATMAN
 ======
@@ -38,7 +44,7 @@ Main features are:
 
 Full documentation is available at: 
 
-    https://cerfacs.gitlab.io/batman
+    http://batman.readthedocs.io
 
 .. inclusion-marker-do-not-remove
 
@@ -46,19 +52,19 @@ Getting started
 ===============
 
 A detailled example can be found in 
-`tutorial <https://cerfacs.gitlab.io/batman/tutorial.html>`_. The folder ``test_cases``
+`tutorial <http://batman.readthedocs.io/tutorial.html>`_. The folder ``test_cases``
 contains examples that you can adapt to you needs. You can find more information
 about the cases within the respectives ``README.rst`` file. 
 
 Shoud you be interested by batman's implementation, consider
-reading `introduction <https://cerfacs.gitlab.io/batman/introduction.html>`_.
+reading `introduction <http://batman.readthedocs.io/introduction.html>`_.
 
 If you encounter a bug (or have a feature request), please report it via
 `GitLab <https://gitlab.com/cerfacs/batman/issues>`_. Or it might be you
 falling but "Why do we fall sir? So we can learn to pick ourselves up".
 
 Last but not least, if you consider contributing check-out
-`contributing <https://cerfacs.gitlab.io/batman/contributing_link.html>`_.
+`contributing <http://batman.readthedocs.io/contributing_link.html>`_.
 
 Happy batman.
 
@@ -80,14 +86,14 @@ The required dependencies are:
 - `scipy <http://scipy.org>`_ >= 0.15
 - `OpenTURNS <http://www.openturns.org>`_ >= 1.9
 - `pathos <https://github.com/uqfoundation/pathos>`_ >= 0.2
-- `matplotlib <http://matplotlib.org>`_ >= 1.5
+- `matplotlib <http://matplotlib.org>`_ >= 2.1
 - `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_
-- `sphinx <http://www.sphinx-doc.org>`_ >= 1.4
 
 Appart from OpenTURNS, required dependencies are satisfied by the installer.
 Optionnal dependencies are: 
 
 - `Antares <http://www.cerfacs.fr/antares>`_ for extra IO options
+- `sphinx <http://www.sphinx-doc.org>`_ >= 1.4 for documentation
 - `ffmpeg <https://www.ffmpeg.org>`_ for movie visualizations (*n_features* > 2)
 
 Testing dependencies are: 
@@ -103,8 +109,21 @@ Extra testing flavours:
 .. note:: OpenTURNS and ffmpeg are available on *conda* through
     the *conda-forge* channel.
 
-User installation
-.................
+Latest release
+..............
+
+batman is distributed through ``conda``. To create a new environment which
+contains batman simply::
+
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash Miniconda3-latest-Linux-x86_64.sh
+    conda create -n bat_env -c conda-forge batman
+
+You can access the newly created environment with ``source activate bat_env``.
+All dependencies are automatically handled by ``conda``.
+
+From sources
+............
 
 Using the latest python version is prefered! Then to install::
 
@@ -130,22 +149,13 @@ If batman has been correctly installed, you should be able to call it simply::
     and ``PYTHONPATH`` environment variables. Make sure you do not call different
     installation folders. It is recommanded that you leave your ``PYTHONPATH`` empty.
 
-Otherwize you can create your ``conda`` environment::
-
-    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-    bash Miniconda3-latest-Linux-x86_64.sh
-    conda create -n bat_env -c conda-forge openturns matplotlib numpy scipy scikit-learn pathos jsonschema sphinx sphinx_rtd_theme pytest pytest-runner mock ffmpeg
-
-Then you can install all packages without ``root`` access. You can access
-the newly created environment with ``source activate bat_env``.
-
 Help and Support
 ----------------
 
 About us
 ........
 
-See authors and project history at: `about us <https://cerfacs.gitlab.io/batman/about.html>`_.
+See authors and project history at: `about us <http://batman.readthedocs.io/about.html>`_.
 
 Community
 .........
@@ -156,4 +166,4 @@ Or send us an email. We would really appreciate that as we keep record of the us
 Citation
 ........
 
-If you use batman in a scientific publication, we would appreciate `citations <https://cerfacs.gitlab.io/batman/about.html#citing-batman>`_.
+If you use batman in a scientific publication, we would appreciate `citations <http://batman.readthedocs.io/about.html#citing-batman>`_.

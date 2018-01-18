@@ -3,7 +3,9 @@ Tasks module
 ************
 """
 
-from .snapshot_task import SnapshotTask
-from .snapshot import (SnapshotProvider, Snapshot)
+from .snapshot import Snapshot
+from .snapshot_io import SnapshotIO
+from .provider_file import ProviderFile
+from .provider_plugin import ProviderPlugin
 
-__all__ = ['SnapshotTask', 'SnapshotProvider', 'Snapshot']
+__all__ = ['Snapshot', 'SnapshotIO', 'ProviderFile', 'ProviderPlugin']

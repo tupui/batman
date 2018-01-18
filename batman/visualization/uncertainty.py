@@ -26,13 +26,16 @@ def kernel_smoothing(data, optimize=False):
 
     The optimization option could lead to longer computation of the PDF.
 
-    :param array_like data: output sample to draw a PDF from (n_samples, n_features).
+    :param array_like data: output sample to draw a PDF from
+      (n_samples, n_features).
     :param bool optimize: use global optimization of grid search.
     :return: gaussian kernel.
     :rtype: :class:`sklearn.neighbors.KernelDensity`.
     """
     n_samples, dim = data.shape
     cv = n_samples if n_samples < 50 else 50
+    var = np.std(data, ddof=1)
+    scott = n_samples ** (-1. / (dim + 4)) * var
 
     if optimize:
         def bw_score(bw):
@@ -41,15 +44,15 @@ def kernel_smoothing(data, optimize=False):
                                     data, cv=cv, n_jobs=-1)
             return - score.mean()
 
-        bounds = [(0.1, 5.)]
+        bounds = [(0.1 * var, 5. * var)]
         results = differential_evolution(bw_score, bounds, maxiter=5)
         bw = results.x
         ks_gaussian = KernelDensity(bandwidth=bw)
         ks_gaussian.fit(data)
     else:
-        scott = n_samples ** (-1. / (dim + 4))
-        silverman = (n_samples * (dim + 2) / 4.) ** (-1. / (dim + 4))
-        bandwidth = np.hstack([np.linspace(0.1, 5.0, 30), scott, silverman])
+        silverman = (n_samples * (dim + 2) / 4.) ** (-1. / (dim + 4)) * var
+        bandwidth = np.hstack([np.logspace(-1, 1.0, 10) * var,
+                               scott, silverman])
         grid = GridSearchCV(KernelDensity(),
                             {'bandwidth': bandwidth},
                             cv=cv, n_jobs=-1)  # n-fold cross-validation
@@ -59,7 +62,8 @@ def kernel_smoothing(data, optimize=False):
     return ks_gaussian
 
 
-def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
+def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
+        ticks_nbr=10, range_cbar=None, fname=None):
     """Plot PDF in 1D or 2D.
 
     :param nd_array/dict data: array of shape (n_samples, n_features)
@@ -77,6 +81,9 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
     :param str xlabel: label of the discretization parameter.
     :param str flabel: name of the quantity of interest.
     :param bool moments: whether to plot moments along with PDF if dim > 1.
+    :param int ticks_nbr: number of color isolines for response surfaces.
+    :param array_like range_cbar: Minimum and maximum values for output
+      function (2 values).
     :param str fname: whether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
@@ -94,7 +101,7 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
         sample = np.array(ot.LHSExperiment(data['dist'], 500).generate())
         z_array, _ = f(sample)
     else:
-        z_array = data
+        z_array = np.asarray(data)
 
     # Compute PDF
     output_len = z_array.shape[1]
@@ -104,7 +111,8 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
         ydata = []
         for i in range(output_len):
             ks_gaussian = kernel_smoothing(z_array[:, i].reshape(-1, 1), False)
-            xpdf = np.linspace(min(z_array[:, i]), max(z_array[:, i]), dx).reshape(-1, 1)
+            xpdf = np.linspace(min(z_array[:, i]),
+                               max(z_array[:, i]), dx).reshape(-1, 1)
             pdf.append(np.exp(ks_gaussian.score_samples(xpdf)))
             ydata.append(xpdf.flatten())
         pdf = np.array(pdf).T
@@ -128,37 +136,41 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
         max_ = np.max(z_array, axis=0)
 
     # Plotting
-    c_map = cm.viridis
     fig = plt.figure('PDF')
-    plt.tick_params(axis='x', labelsize=26)
-    plt.tick_params(axis='y', labelsize=26)
+    ax = fig.add_subplot(111)
+    ax.tick_params(axis='x', labelsize=26)
+    ax.tick_params(axis='y', labelsize=26)
     if output_len > 1:
-        max_pdf = np.percentile(pdf, 97) if np.max(pdf) < 1 else 1
-        min_pdf = np.percentile(pdf, 3) if np.min(pdf) < max_pdf else 0
+        if range_cbar is None:
+            max_pdf = np.percentile(pdf, 97) if np.max(pdf) < 1 else 1
+            min_pdf = np.percentile(pdf, 3) if 0 < np.min(pdf) < max_pdf else 0
+        else:
+            min_pdf, max_pdf = range_cbar
+        ticks = np.linspace(min_pdf, max_pdf, num=ticks_nbr)
         bound_pdf = np.linspace(min_pdf, max_pdf, 50, endpoint=True)
-        plt.contourf(xdata, ydata, pdf, bound_pdf, cmap=c_map, extend="max")
-        cbar = plt.colorbar(shrink=0.5)
+        cax = ax.contourf(xdata, ydata, pdf, bound_pdf,
+                          cmap=cm.viridis, extend="max")
+        cbar = fig.colorbar(cax, shrink=0.5, ticks=ticks)
         cbar.set_label(r"PDF")
-        plt.xlabel(xlabel, fontsize=26)
-        plt.ylabel(flabel, fontsize=26)
+        ax.set_xlabel(xlabel, fontsize=26)
+        ax.set_ylabel(flabel, fontsize=26)
         if moments:
-            plt.plot(xdata[0], sd_min, color='k', ls='-.',
-                     linewidth=2, label="Standard Deviation")
-            plt.plot(xdata[0], mean, color='k', ls='-', linewidth=2, label="Mean")
-            plt.plot(xdata[0], sd_max, color='k', ls='-.', linewidth=2, label=None)
-            plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+            ax.plot(xdata[0], sd_min, color='k', ls='-.',
+                    linewidth=2, label="Standard Deviation")
+            ax.plot(xdata[0], mean, color='k', ls='-', linewidth=2, label="Mean")
+            ax.plot(xdata[0], sd_max, color='k', ls='-.', linewidth=2, label=None)
+            ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     else:
-        plt.plot(xdata, pdf, color='k', ls='-', linewidth=3, label=None)
-        plt.fill_between(xdata[:, 0], pdf, [0] * xdata.shape[0],
-                         color='gray', alpha=0.1)
-        z_delta = np.max(z_array) * 5e-4
-        plt.plot(z_array[:, 0],
-                 -z_delta - z_delta * np.random.random(z_array.shape[0]), '+k',
-                 label=None)
-        plt.xlabel(flabel, fontsize=26)
-        plt.ylabel("PDF", fontsize=26)
+        ax.plot(xdata, pdf, color='k', ls='-', linewidth=3, label=None)
+        ax.hist(z_array, 30, fc='gray', histtype='stepfilled',
+                alpha=0.2, density=True)
+        z_delta = np.max(pdf) * 5e-2
+        ax.plot(z_array[:199, 0],
+                -z_delta - z_delta * np.random.random(z_array[:199].shape[0]),
+                '+k', label=None)
+        ax.set_xlabel(flabel, fontsize=26)
+        ax.set_ylabel("PDF", fontsize=26)
 
-    plt.tight_layout()
     if fname is not None:
         # Write PDF to file
         xdata_flattened = xdata.flatten('C')
@@ -178,7 +190,7 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False, fname=None):
         # Write moments to file
         if moments:
             data = np.append([min_], [sd_min, mean, sd_max, max_])
-            names = ["Min", "SD_min", "Mean", "SD_max", "Max"]
+            names = ['Min', 'SD_min', 'Mean', 'SD_max', 'Max']
             if output_len != 1:
                 names = ['x'] + names
                 data = np.append(xdata[0], data)
@@ -211,10 +223,10 @@ def sobol(sobols, conf=None, plabels=None, xdata=None, xlabel='x', fname=None):
     """
     p_len = len(sobols[0])
     if plabels is None:
-        plabels = ["x" + str(i) for i in range(p_len)]
+        plabels = ['x' + str(i) for i in range(p_len)]
     objects = [[r"$S_{" + p + r"}$", r"$S_{T_{" + p + r"}}$"]
                for i, p in enumerate(plabels)]
-    color = [[cm.Pastel1(i), cm.Pastel1(i)]
+    color = [[cm.Pastel2(i), cm.Pastel2(i)]
              for i, p in enumerate(plabels)]
 
     s_lst = [item for sublist in objects for item in sublist]
@@ -223,32 +235,33 @@ def sobol(sobols, conf=None, plabels=None, xdata=None, xlabel='x', fname=None):
 
     figures = []
     fig = plt.figure('Aggregated Indices')
+    ax = fig.add_subplot(111)
     figures.append(fig)
-    plt.bar(y_pos, np.array(sobols[:2]).flatten('F'),
-            yerr=conf, align='center', alpha=0.5, color=color)
-    plt.set_cmap('Pastel2')
-    plt.xticks(y_pos, s_lst)
-    plt.tick_params(axis='x', labelsize=20)
-    plt.tick_params(axis='y', labelsize=20)
-    plt.ylabel("Sobol' aggregated indices", fontsize=20)
-    plt.xlabel("Input parameters", fontsize=20)
+    ax.bar(y_pos, np.array(sobols[:2]).flatten('F'),
+           yerr=conf, align='center', alpha=0.5, color=color)
+    ax.set_xticks(y_pos, s_lst)
+    ax.tick_params(axis='x', labelsize=20)
+    ax.tick_params(axis='y', labelsize=20)
+    ax.set_ylabel("Sobol' aggregated indices", fontsize=20)
+    ax.set_xlabel("Input parameters", fontsize=20)
 
     if len(sobols) > 2:
         n_xdata = len(sobols[3])
         if xdata is None:
             xdata = np.linspace(0, 1, n_xdata)
         fig = plt.figure('Sensitivity Map')
+        ax = fig.add_subplot(111)
         figures.append(fig)
         sobols = np.hstack(sobols[2:]).T
         s_lst = np.array(objects).T.flatten('C').tolist()
         for sobol, label in zip(sobols, s_lst):
-            plt.plot(xdata, sobol, linewidth=3, label=label)
-        plt.xlabel(xlabel, fontsize=26)
-        plt.ylabel(r"Indices", fontsize=26)
-        plt.ylim(-0.1, 1.1)
-        plt.tick_params(axis='x', labelsize=23)
-        plt.tick_params(axis='y', labelsize=23)
-        plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+            ax.plot(xdata, sobol, linewidth=3, label=label)
+        ax.set_xlabel(xlabel, fontsize=26)
+        ax.set_ylabel(r"Indices", fontsize=26)
+        ax.set_ylim(-0.1, 1.1)
+        ax.tick_params(axis='x', labelsize=23)
+        ax.tick_params(axis='y', labelsize=23)
+        ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
 
     bat.visualization.save_show(fname, figures)
 
@@ -262,14 +275,14 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
     Compute the covariance regarding YY and XY as well as the correlation
     regarding YY.
 
-    :param array_like data: function evaluations (n_sample, n_features).
+    :param array_like data: function evaluations (n_samples, n_features).
     :param array_like sample: sample (n_samples, n_featrues).
     :param array_like xdata: 1D discretization of the function (n_features,).
     :param str xlabel: label of the discretization parameter.
     :param list(str) plabels: parameters' labels.
     :param str interpolation: If None, does not interpolate correlation and
-        covariance matrices (YY). Otherwize use Matplotlib methods from `imshow`
-        such as `['bilinear', 'lanczos', 'spline16', 'hermite', ...]`.
+        covariance matrices (YY). Otherwize use Matplotlib methods from
+        `imshow` such as `['bilinear', 'lanczos', 'spline16', 'hermite', ...]`.
     :param str fname: wether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
@@ -298,10 +311,10 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
     cbar = fig.colorbar(cax)
     cbar.set_label(r"Covariance", size=26)
     cbar.ax.tick_params(labelsize=23)
-    plt.xlabel(xlabel, fontsize=26)
-    plt.ylabel(xlabel, fontsize=26)
-    plt.tick_params(axis='x', labelsize=23)
-    plt.tick_params(axis='y', labelsize=23)
+    ax.set_xlabel(xlabel, fontsize=26)
+    ax.set_ylabel(xlabel, fontsize=26)
+    ax.tick_params(axis='x', labelsize=23)
+    ax.tick_params(axis='y', labelsize=23)
 
     # Correlation matrix YY
     fig, ax = plt.subplots()
@@ -310,13 +323,13 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
     cbar = fig.colorbar(cax)
     cbar.set_label(r"Correlation", size=26)
     cbar.ax.tick_params(labelsize=23)
-    plt.xlabel(xlabel, fontsize=26)
-    plt.ylabel(xlabel, fontsize=26)
-    plt.tick_params(axis='x', labelsize=23)
-    plt.tick_params(axis='y', labelsize=23)
+    ax.set_xlabel(xlabel, fontsize=26)
+    ax.set_ylabel(xlabel, fontsize=26)
+    ax.tick_params(axis='x', labelsize=23)
+    ax.tick_params(axis='y', labelsize=23)
 
     if plabels is None:
-        plabels = ["x" + str(i) for i in range(p_len + 1)]
+        plabels = ['x' + str(i) for i in range(p_len + 1)]
     else:
         plabels.insert(0, 0)
 
@@ -329,10 +342,10 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
     cbar = fig.colorbar(cax)
     cbar.set_label(r"Covariance", size=26)
     cbar.ax.tick_params(labelsize=23)
-    plt.xlabel(xlabel, fontsize=26)
-    plt.ylabel('Input parameters', fontsize=26)
-    plt.tick_params(axis='x', labelsize=23)
-    plt.tick_params(axis='y', labelsize=23)
+    ax.set_xlabel(xlabel, fontsize=26)
+    ax.set_ylabel('Input parameters', fontsize=26)
+    ax.tick_params(axis='x', labelsize=23)
+    ax.tick_params(axis='y', labelsize=23)
 
     if fname is not None:
         data = np.append(x_2d_yy, [y_2d_yy, corr_yy, cov_yy])

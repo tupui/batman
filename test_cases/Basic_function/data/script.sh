@@ -5,6 +5,6 @@
 #SBATCH --job-name=1Dfunction
 #SBATCH --share
 
-mkdir cfd-output-data
+#mkdir cfd-output-data
 
 python function.py > function.out

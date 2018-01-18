@@ -105,8 +105,9 @@ Regarding the resampling, all methods need a good initial sample. Meanning that 
 
 .. warning:: If using a PC surrogate model, the only possibilities are ``discrepancy`` and ``extrema``. Furthermore, sampling ``method`` must be set as a list of distributions.
 
-Block 2 - Snapshot provider
----------------------------
+
+Block 2 - Snapshot specification
+--------------------------------
 
 A snapshot defines a simulation.
 
@@ -114,51 +115,74 @@ A snapshot defines a simulation.
 
     "snapshot": {
         "max_workers": 5,
+        "plabels": ["x1", "x2"],
+        "flabels": ["X", "F"],
         "io": {
-            "shapes": {
-                "0": [
-                    [400]
-                ]
-            },
-            "format": "fmt_tp_fortran",
-            "variables": ["X", "F"],
             "point_filename": "point.json",
-            "filenames": {
-                "0": ["function.dat"]
-            },
-            "template_directory": "output/snapshots/0/batman-data/point.json",
-            "parameter_names": ["x1", "x2"]
+            "data_filename": "point.dat",
+            "data_format": "fmt_tp_fortran"
         },
-        "provider": {
-            "command": "bash",
-            "timeout": 20,
-            "context": "data",
-            "script": "data/script.sh",
-            "clean": false,
-            "private-directory": "batman-data",
-            "data-directory": "cfd-output-data",
-            "restart": "False"
-        }
+        "provider": ...  # comes in 2 flavors
+    }
 
-+ ``max_workers``: maximum number of simultaneous running snapshot,
-+ ``shapes``: shape per variable and per file,
-+ ``format``:  ``npz``, ``fmt_tp_fortran`` (BATMAN) or all Antares formats if installed,
-+ ``variables``: names of the variables to treat and contained in a snapshot,
-+ ``point_filename``: name of the file that contains the coordinates of a point in the parameter space,
-+ ``filenames``: dictionary of list, if several filenames, several independant analysis are done. It contains the output ``variables`` of a snapshot to use by BATMAN,
-+ ``template_directory``: path to the point file name of the first snapshot, used to restart from existing jobs not created with BATMAN,
-+ ``parameter_names``: names of the parameters.
++ ``max_workers``: maximum number of simultaneous running snapshots.
++ ``plabels``: names of the parameters that serve as coordinates of a snapshot point.
++ ``flabels``: names of the variables to treat that are contained in a snapshot.
++ ``point_filename``: name of the json file that contains the values associated to ``plabels``.
++ ``data_filename``: name of the file that contains the output ``flabels`` of a snapshot.
++ ``data_format``: ``npz``, ``fmt_tp_fortran`` (BATMAN) or all Antares formats if installed.
 
-The ``provider`` defines what is a simulation. If we simply want to evaluate a python function, we can pass the ``function_name`` as a string. ``function_name.py`` will be imported and the function named ``f`` will be used. Otherwize, for a complexe case, use a dictionary:
+The ``provider`` block defines what a simulation is. It comes in two flavors.
+A simulation can either be the result of a user-provided python function,
+or it can be an external program that produces a data file.
 
-+ ``command``: command to use to launch the script,
-+ ``timeout``: timeout of each jobs in seconds,
-+ ``context``: directiory where the data for the BATMAN computations are stored,
-+ ``script``: path of the script or batch to run,
-+ ``clean``: delete after run all except what is inside ``private-directory``
-+ ``private-directory``: folder containing the ``point_filename`` and the result of the snapshot
-+ ``data-directory``: output folder to store the ``filenames``,
-+ ``restart``: restart the computation if the job has failed.
+Provider Plugin - User-provided python function
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Snapshot data is produced by calling a python function.
+No I/O is performed, it is the provider that shall bring the better performance.
+
+.. code-block:: python
+
+    "provider": {
+        "type": "plugin",
+        "module": "my.python.module",
+        "function": "f"
+    }
+
++ ``type``: type of provider. Must be set to ``plugin``.
++ ``module``: name of the python module to load.
++ ``function``: name of the function in ``module``. Called whenever a snapshot is required.
+
+Provider File - Read data from files. 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Snapshot data is read from files.
+If a file for a particular snapshot doesn't exist, it is produce by executing  
+a user-specified external program. Snapshots existing in standard directories
+are automatically discovered by this provider.
+
+.. code-block:: python
+
+    "provider": {
+        "type": "file",
+        "discover_from": "my/existing/snapshot/directory",
+        "context_directory": "data",
+        "coupling_directory": "batman-coupling",
+        "command": "bash script.sh",
+        "clean": false
+    }
+
++ ``type``: type of provider. Must be set to ``file``.
++ ``discover_from``: path to a directory containing user-provided snapshots. (optional)
++ ``context_directory``: directory containing input data and script for building snapshot data files.
++ ``coupling_directory``: directory in ``context_directory`` that will contain input parameters and output file. Its creation and deletion is handled by BATMAN.
++ ``command``: command to run the external program. Launched from ``context_directory``. The program shall read its input parameters from ``coupling_directory/point_filename`` and write its outputs to ``coupling_directory/data_filename``.
++ ``clean``: delete after run all but snapshot files in execution directory. Content in ``context_directory`` is always preserved.
+
+.. note:: Not specifying ``context_directory`` or ``command`` means no job were specified. It can make sens for those who want to provide their own snapshot data through the ``discover_from`` directory.
+.. warning:: BATMAN will crash if it needs a snapshot point that were not provided and no job were specified !
+
 
 Optionnal Block 3 - Surrogate
 -----------------------------
@@ -179,6 +203,7 @@ For *kriging* the following extra attributes **can** be set:
 
 + [``kernel``]: kernel to use. Ex: ``"ConstantKernel() + Matern(length_scale=1., nu=1.5)"``.
 + [``noise``]: noise level as boolean or as a float.
++ [``global_optimizer``]: whether to do global optimization or gradient based optimization to estimate hyperparameters.
 
 For *pc* the following extra attributes **must** be set: 
 
@@ -193,7 +218,6 @@ For *evofusion* the following extra attributes **must** be set:
 + ``grand_cost``: total cost of the study in terms of number of function evaluation of the high fidelity model.
 
 .. note:: We can fill *directly* the number of points into the brackets or *indirectly* using the script ``prediction.py`` located in ``test_cases/Snippets``.
-
 
 
 Optionnal Block 4 - UQ

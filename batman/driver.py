@@ -22,15 +22,16 @@ Defines all methods used to interact with other classes.
 import logging
 import os
 import pickle
+from copy import copy
 from concurrent import futures
 import numpy as np
 import sklearn.gaussian_process.kernels as kernels
 from .pod import Pod
-from .space import Space
+from .space import (Space, dists_to_ot)
 from .surrogate import SurrogateModel
-from .tasks import (SnapshotTask, Snapshot, SnapshotProvider)
+from .tasks import (SnapshotIO, ProviderPlugin, ProviderFile)
 from .uq import UQ
-from .visualization import response_surface, Kiviat3D
+from .visualization import (response_surface, Kiviat3D)
 from .functions.utils import multi_eval
 
 
@@ -49,6 +50,11 @@ class Driver(object):
         'uq': 'uq',
         'visualization': 'visualization',
     }
+    # Data provider for snapshots
+    provider_class = {
+        'plugin': ProviderPlugin,
+        'file': ProviderFile,
+    }
 
     def __init__(self, settings, fname):
         """Initialize Driver.
@@ -64,8 +70,7 @@ class Driver(object):
         try:
             os.makedirs(self.fname)
         except OSError:
-            pass
-        self.snapshot_counter = 0
+            pass  # directory exists already
 
         # Space
         if 'resampling' in self.settings['space']:
@@ -84,36 +89,34 @@ class Driver(object):
         self.space = Space(self.settings['space']['corners'],
                            init_size,
                            nrefine=resamp_size,
-                           plabels=self.settings['snapshot']['io']['parameter_names'],
+                           plabels=self.settings['snapshot']['plabels'],
                            duplicate=duplicate)
 
-        # Snapshots
-        Snapshot.initialize(self.settings['snapshot']['io'])
-        self.provider = SnapshotProvider(self.settings['snapshot']['provider'])
+        # Asynchronous job manager
+        self.async_pool = futures.ThreadPoolExecutor(
+            max_workers=self.settings['snapshot']['max_workers'])
 
-        if self.provider.is_job:
-            # compute relative path to snapshot files
-            data_files = []
-            for files in self.settings['snapshot']['io']['filenames'].values():
-                data_files = [os.path.join(self.provider['data-directory'], f)
-                              for f in files]
-            SnapshotTask.initialize(self.provider, data_files)
+        # Snapshot Management
+        args = settings['snapshot'].get('io', {})
+        self.snapshot_io = SnapshotIO(parameter_names=settings['snapshot']['plabels'],
+                                      variable_names=settings['snapshot']['flabels'],
+                                      **args)
+        provider_type = settings['snapshot']['provider']['type']
+        self.logger.info('Select data provider type "{}"'.format(provider_type))
+        self.provider = self.provider_class[provider_type](
+            self.async_pool,
+            self.snapshot_io,
+            settings['snapshot']['provider'])
+        self.snapshot_counter = 0
 
-            # snapshots generation manager
-            self.snapshooter = futures.ThreadPoolExecutor(
-                max_workers=self.settings['snapshot']['max_workers'])
-
-        if self.provider.is_file:
-            # get the point from existing snapshot files,
-            self.logger.info('Reading points from a list of snapshots files.')
-
-            self.to_compute_points = []
-
-            for path in self.provider:
-                point = Snapshot.read_point(path)
+        # Sampling initialisation
+        self.to_compute_points = copy(self.provider.known_points)
+        if self.to_compute_points:
+            # use points that were automatically discovered by the provider
+            for point in self.to_compute_points:
                 self.space += point
-                self.to_compute_points.append(path)
         else:
+            # generate points according to settings
             space_provider = self.settings['space']['sampling']
             if isinstance(space_provider, list):
                 # a list of points is provided
@@ -122,16 +125,13 @@ class Driver(object):
                 self.space += space_provider
             elif isinstance(space_provider, dict):
                 # use sampling method
-                distributions = space_provider['distributions']\
-                    if 'distributions' in space_provider else None
-
-                discrete = self.settings['space']['sampling']['discrete']\
-                    if 'discrete' in self.settings['space']['sampling'] else None
-
-                self.to_compute_points = self.space.sampling(space_provider['init_size'],
-                                                             space_provider['method'],
-                                                             distributions,
-                                                             discrete)
+                distributions = space_provider.get('distributions')
+                discrete = self.settings['space']['sampling'].get('discrete')
+                self.to_compute_points = self.space.sampling(
+                    space_provider['init_size'],
+                    space_provider['method'],
+                    distributions,
+                    discrete)
             else:
                 self.logger.error('Bad space provider.')
                 raise SystemError
@@ -153,15 +153,10 @@ class Driver(object):
 
         # Surrogate model
         if 'surrogate' in self.settings:
+            settings_ = {}
             if self.settings['surrogate']['method'] == 'pc':
                 dists = self.settings['space']['sampling']['distributions']
-                try:
-                    dists = [eval('ot.' + dist, {'__builtins__': None},
-                                  {'ot': __import__('openturns')})
-                             for dist in dists]
-                except (TypeError, AttributeError):
-                    self.logger.error('OpenTURNS distribution unknown.')
-                    raise SystemError
+                dists = dists_to_ot(dists)
 
                 settings_ = {'strategy': self.settings['surrogate']['strategy'],
                              'degree': self.settings['surrogate']['degree'],
@@ -171,9 +166,7 @@ class Driver(object):
                 settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
                              'grand_cost': self.settings['surrogate']['grand_cost']}
             elif self.settings['surrogate']['method'] == 'kriging':
-                if 'kernel' not in self.settings['surrogate']:
-                    settings_ = {}
-                else:
+                if 'kernel' in self.settings['surrogate']:
                     kernel = self.settings['surrogate']['kernel']
                     try:
                         kernel = eval(kernel, {'__builtins__': None},
@@ -182,10 +175,11 @@ class Driver(object):
                         self.logger.error('Scikit-Learn kernel unknown.')
                         raise SystemError
                     settings_ = {'kernel': kernel}
-                if 'noise' in self.settings['surrogate']:
-                    settings_.update({'noise': self.settings['surrogate']['noise']})
-            else:
-                settings_ = {}
+
+                settings_.update({
+                    'noise': self.settings['surrogate'].get('noise', False),
+                    'global_optimizer': self.settings['surrogate'].get('global_optimizer', True)
+                })
 
             self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
                                             self.settings['space']['corners'],
@@ -194,7 +188,7 @@ class Driver(object):
                 self.space.empty()
                 sample = self.surrogate.predictor.sample
                 self.space += sample
-                if not self.provider.is_file:
+                if not self.provider.known_points:
                     self.to_compute_points = sample[:len(self.space)]
         else:
             self.surrogate = None
@@ -210,74 +204,40 @@ class Driver(object):
         """
         if points is None:
             points = self.to_compute_points
-        # snapshots generation
-        if self.provider.is_file:
-            snapshots = points
-        else:
-            snapshots = []
-            for point in points:
-                if not self.provider.is_job:
-                    # snapshots are in memory
-                    path = None
-                else:
-                    # snapshots are on disk
-                    path = os.path.join(self.fname,
-                                        self.fname_tree['snapshots'],
-                                        str(self.snapshot_counter))
-                    self.snapshot_counter += 1
 
-                if self.provider.is_function:
-                    # create a snapshot on disk or in memory
-                    snapshot = Snapshot(point, self.provider(point))
-                    snapshots += [Snapshot.convert(snapshot, path=path)]
-                elif self.provider.is_job:
-                    # create a snapshot task
-                    t = SnapshotTask(point, path)
-                    snapshots += [self.snapshooter.submit(t.run)]
+        # Generate snapshots
+        if isinstance(points, dict):
+            snapshot_points = points.items()
+        else:
+            snapshot_root = os.path.join(self.fname, self.fname_tree['snapshots'])
+            snapshot_points = [(point,
+                                os.path.join(snapshot_root,
+                                             str(i + self.snapshot_counter)))
+                               for i, point in enumerate(points)]
+        snapshots = [self.provider.snapshot(p, d) for p, d in snapshot_points]
+        self.snapshot_counter += len(snapshots)
 
         # Fit the Surrogate [and POD]
         if self.pod is not None:
             if update:
                 self.surrogate.space.empty()
-                if self.provider.is_job:
-                    for snapshot in futures.as_completed(snapshots):
-                        self.pod.update(snapshot.result())
-                else:
-                    for snapshot in snapshots:
-                        self.pod.update(snapshot)
+                [self.pod.update(snapshot) for snapshot in snapshots]
             else:
-                if self.provider.is_job:
-                    _snapshots = []
-                    for snapshot in futures.as_completed(snapshots):
-                        _snapshots += [snapshot.result()]
-                    snapshots = _snapshots
                 self.pod.decompose(snapshots)
-
             self.data = self.pod.VS()
             points = self.pod.space
+
         else:
-            if self.provider.is_job:
-                _snapshots = []
-                for snapshot in futures.as_completed(snapshots):
-                    _snapshots += [snapshot.result()]
-                snapshots = _snapshots
-
             if snapshots:
-                snapshots_ = [Snapshot.convert(snapshot) for snapshot in snapshots]
-                snapshots = np.vstack([snapshot.data for snapshot in snapshots_])
-
+                snapdata = np.vstack([snap.data for snap in snapshots])
                 if update:
-                    snapshots = np.vstack([self.data, snapshots])
-                    if len(snapshots) != len(self.space):  # no resampling
-                        snapshots = self.data
-                        for snapshot in snapshots_:
+                    snapdata = np.vstack([self.data, snapdata])
+                    if len(snapdata) != len(self.space):  # no resampling
+                        snapdata = self.data
+                        for snapshot in snapshots:
                             self.space += snapshot.point
-                            if snapshot.point in self.space:
-                                snapshots = np.vstack([snapshots,
-                                                       snapshot.data])
-
-                self.data = snapshots
-
+                            snapdata = np.vstack([snapdata, snapshot.data])
+                self.data = snapdata
             points = self.space
 
         try:  # if surrogate
@@ -393,18 +353,28 @@ class Driver(object):
 
         :param points: point(s) to predict.
         :type points: :class:`space.point.Point` or array_like (n_samples, n_features).
-        :param bool write: write a snapshot or not.
+        :param bool write: whether to write snapshots.
         :return: Result.
-        :rtype: lst(:class:`tasks.snapshot.Snapshot`) or array_like (n_samples, n_features).
+        :rtype: array_like (n_samples, n_features).
         :return: Standard deviation.
         :rtype: array_like (n_samples, n_features).
         """
+        results, sigma = self.surrogate(points)
         if write:
-            output = os.path.join(self.fname, self.fname_tree['predictions'])
-        else:
-            output = None
-
-        return self.surrogate(points, path=output)
+            root_path = os.path.join(self.fname, self.fname_tree['predictions'])
+            try:
+                points[0][0]
+            except TypeError:
+                points = [points]
+            for i, (data, point) in enumerate(zip(results, points)):
+                path = os.path.join(root_path, 'Newsnap{}'.format(i))
+                try:
+                    os.makedirs(path)
+                except OSError:
+                    pass
+                self.snapshot_io.write_point(path, point)
+                self.snapshot_io.write_data(path, data)
+        return results, sigma
 
     def uq(self):
         """Perform UQ analysis."""
@@ -412,7 +382,7 @@ class Driver(object):
         args['fname'] = os.path.join(self.fname, self.fname_tree['uq'])
         args['space'] = self.space
         args['indices'] = self.settings['uq']['type']
-        args['plabels'] = self.settings['snapshot']['io']['parameter_names']
+        args['plabels'] = self.settings['snapshot']['plabels']
         args['dists'] = self.settings['uq']['pdf']
         args['nsample'] = self.settings['uq']['sample']
 
@@ -421,21 +391,10 @@ class Driver(object):
         else:
             args['data'] = self.data
 
-        try:
-            args['test'] = self.settings['uq']['test']
-        except KeyError:
-            pass
-
-        try:
-            args['xdata'] = self.settings['visualization']['xdata']
-            args['xlabel'] = self.settings['visualization']['xlabel']
-        except KeyError:
-            pass
-
-        try:
-            args['flabel'] = self.settings['visualization']['flabel']
-        except KeyError:
-            pass
+        args['test'] = self.settings['uq'].get('test')
+        args['xdata'] = self.settings.get('visualization', {}).get('xdata')
+        args['xlabel'] = self.settings.get('visualization', {}).get('xlabel')
+        args['flabel'] = self.settings.get('visualization', {}).get('flabel')
 
         analyse = UQ(self.surrogate, **args)
 
@@ -479,25 +438,12 @@ class Driver(object):
             else:
                 args['resampling'] = 0
 
-            try:
-                args['ticks_nbr'] = self.settings['visualization']['ticks_nbr']
-            except KeyError:
-                pass
-            try:
-                args['contours'] = self.settings['visualization']['contours']
-            except KeyError:
-                pass
-            try:
-                args['range_cbar'] = self.settings['visualization']['range_cbar']
-            except KeyError:
-                pass
-            try:
-                args['axis_disc'] = self.settings['visualization']['axis_disc']
-            except KeyError:
-                pass
+            args['ticks_nbr'] = self.settings.get('visualization', {}).get('ticks_nbr', 10)
+            args['contours'] = self.settings.get('visualization', {}).get('contours')
+            args['range_cbar'] = self.settings.get('visualization', {}).get('range_cbar')
+            args['axis_disc'] = self.settings.get('visualization', {}).get('axis_disc')
         else:
-            args['xdata'] = np.linspace(0, 1, output_len)\
-                if output_len > 1 else None
+            args['xdata'] = np.linspace(0, 1, output_len) if output_len > 1 else None
 
         try:
             args['bounds'] = self.settings['visualization']['bounds']
@@ -520,13 +466,13 @@ class Driver(object):
         try:
             args['plabels'] = self.settings['visualization']['plabels']
         except KeyError:
-            args['plabels'] = self.settings['snapshot']['io']['parameter_names']
+            args['plabels'] = self.settings['snapshot']['plabels']
 
-        if len(self.settings['snapshot']['io']['variables']) < 2:
+        if len(self.settings['snapshot']['flabels']) < 2:
             try:
                 args['flabel'] = self.settings['visualization']['flabel']
             except KeyError:
-                args['flabel'] = self.settings['snapshot']['io']['variables'][0]
+                args['flabel'] = self.settings['snapshot']['flabels'][0]
 
         path = os.path.join(self.fname, self.fname_tree['visualization'])
         try:

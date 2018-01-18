@@ -6,8 +6,8 @@ import numpy.testing as npt
 from scipy.io import wavfile
 import openturns as ot
 from mock import patch
-from batman.visualization import (HdrBoxplot, Kiviat3D, pdf, sobol, reshow,
-                                  response_surface, doe, corr_cov)
+from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf, sobol,
+                                  reshow, response_surface, doe, corr_cov)
 from batman.surrogate import SurrogateModel
 from batman.functions import (Ishigami, Mascaret, el_nino)
 import matplotlib.pyplot as plt
@@ -34,6 +34,7 @@ class TestHdr:
     def hdr(self):
         return HdrBoxplot(data)
 
+    @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
     def test_hdr_basic(self, hdr, tmp):
         print('Data shape: ', data.shape)
 
@@ -66,7 +67,7 @@ class TestHdr:
                              labels=labels,
                              x_common=np.linspace(1, 12, 12),
                              xlabel='Month of the year (-)',
-                             ylabel='Water surface temperature (C)')
+                             flabel='Water surface temperature (C)')
 
         assert len(figs) == 3
         assert len(axs) == 3
@@ -148,7 +149,7 @@ class TestHdr:
         hdr.f_hops(x_common=np.linspace(1, 12, 12),
                    labels=labels,
                    xlabel='Month of the year (-)',
-                   ylabel='Water surface temperature (C)',
+                   flabel='Water surface temperature (C)',
                    fname=os.path.join(tmp, 'f-HOPs.mp4'))
         hdr.f_hops(samples=10, fname=os.path.join(tmp, 'f-HOPs.mp4'))
         hdr.f_hops(samples=data, fname=os.path.join(tmp, 'f-HOPs.mp4'))
@@ -233,6 +234,34 @@ class TestKiviat:
                            fname=os.path.join(tmp, 'kiviat_fill.mp4'))
         kiviat_data.f_hops(fname=os.path.join(tmp, 'kiviat.mp4'), fill=False)
 
+    @patch("matplotlib.pyplot.show")
+    @pytest.mark.skipif(not have_ffmpeg, reason='ffmpeg not available')
+    def test_tree(self, mock_show, tmp):
+        sample = [[30, 4000], [15, 5000], [20, 4500]]
+        functional_data = [[12, 300], [15, 347], [14, 320]]
+        tree = Tree(sample, functional_data,
+                    bounds=[[10.0, 2500.0], [60.0, 6000.0]])
+        tree.plot(fname=os.path.join(tmp, 'tree.pdf'),
+                  flabel='Water level (m)')
+        tree.f_hops(fname=os.path.join(tmp, 'tree.mp4'))
+
+    def test_connectivity(self):
+        connectivity = Kiviat3D.mesh_connectivity(6, 3)
+        connectivity_t = np.array([[4, 0, 1, 3, 4],
+                                   [4, 1, 2, 4, 5],
+                                   [4, 2, 0, 5, 3]], dtype=int)
+        npt.assert_equal(connectivity, connectivity_t)
+
+        with pytest.raises(ValueError):
+            Kiviat3D.mesh_connectivity(6, 4)
+
+        connectivity = Kiviat3D.mesh_connectivity(8, 4)
+        connectivity_t = np.array([[4, 0, 1, 4, 5],
+                                   [4, 1, 2, 5, 6],
+                                   [4, 2, 3, 6, 7],
+                                   [4, 3, 0, 7, 4]], dtype=int)
+        npt.assert_equal(connectivity, connectivity_t)
+
 
 class TestPdf:
 
@@ -255,10 +284,12 @@ class TestPdf:
     @patch("matplotlib.pyplot.show")
     def test_pdf_nD(self, mock_show, tmp):
         fig_pdf = pdf(data, xdata=np.linspace(1, 12, 12),
-                      fname=os.path.join(tmp, 'pdf_nd.pdf'))
+                      range_cbar=[0, 0.5], ticks_nbr=6,
+                      fname=os.path.join('.', 'pdf_nd.pdf'))
         reshow(fig_pdf)
         plt.plot([0, 10], [25, 25])
         plt.show()
+        plt.close()
 
     def test_pdf_nD_moments(self, tmp):
         pdf(data, xlabel='s', flabel='Y', moments=True,

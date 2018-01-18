@@ -7,7 +7,6 @@ import numpy.testing as npt
 from sklearn.gaussian_process.kernels import Matern
 from batman.space import Doe
 from batman.surrogate import (PC, Kriging, RBFnet, Evofusion, SurrogateModel)
-from batman.tasks import Snapshot
 from batman.tests.conftest import sklearn_q2
 
 
@@ -45,7 +44,7 @@ def test_GP_1d(ishigami_data):
 
     # Test one point evaluation
     pred, _ = np.array(surrogate.evaluate(ishigami_data.point))
-    assert pred == pytest.approx(ishigami_data.target_point, 0.1)
+    assert pred == pytest.approx(ishigami_data.target_point, 0.2)
 
     # Test space evaluation
     pred, _ = np.array(surrogate.evaluate(ishigami_data.space))
@@ -58,8 +57,18 @@ def test_GP_1d(ishigami_data):
     q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, wrap_surrogate)
     assert q2 == pytest.approx(1, 0.1)
 
+    # Kernel and noise
     surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
                         kernel=Matern(), noise=0.8)
+
+    surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
+                        kernel=Matern(), noise=True)
+
+    # Optimizer
+    surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
+                        global_optimizer=False)
+    pred, _ = np.array(surrogate.evaluate(ishigami_data.point))
+    assert pred == pytest.approx(ishigami_data.target_point, 0.2)
 
 
 def test_RBFnet_1d(ishigami_data):
@@ -126,7 +135,6 @@ def test_GP_nd(mascaret_data):
 
 
 def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
-    Snapshot.initialize(settings_ishigami['snapshot']['io'])
 
     space_ = copy.deepcopy(ishigami_data.space)
     space_.max_points_nb = 500
@@ -143,15 +151,13 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     assert sigma is None
     assert pred[0] == pytest.approx(ishigami_data.target_point, 0.5)
     surrogate.write(tmp)
-    if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
-        assert False
+    assert os.path.isfile(os.path.join(tmp, 'surrogate.dat'))
 
     # Kriging
     surrogate = SurrogateModel('kriging', ishigami_data.space.corners)
     surrogate.fit(ishigami_data.space, ishigami_data.target_space)
     surrogate.write(tmp)
-    if not os.path.isfile(os.path.join(tmp, 'surrogate.dat')):
-        assert False
+    assert os.path.isfile(os.path.join(tmp, 'surrogate.dat'))
 
     surrogate = SurrogateModel('kriging', ishigami_data.space.corners)
     surrogate.read(tmp)
@@ -159,12 +165,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     assert surrogate.space == ishigami_data.space
 
     pred, _ = surrogate(ishigami_data.point)
-    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.1)
-
-    pred, _ = surrogate(ishigami_data.point, path=tmp)
-    assert pred[0].data == pytest.approx(ishigami_data.target_point, 0.1)
-    if not os.path.isdir(os.path.join(tmp, 'Newsnap0')):
-        assert False
+    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
 
     # Compute predictivity coefficient Q2
     def wrap_surrogate(x):

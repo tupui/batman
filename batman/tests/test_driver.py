@@ -13,14 +13,12 @@ def test_driver_init(driver_init):
 def test_driver_chain(driver_init, tmp, ishigami_data):
     driver = driver_init
     driver.write()
-    if not os.path.isdir(os.path.join(tmp, 'surrogate')):
-        assert False
+    assert os.path.isdir(os.path.join(tmp, 'surrogate'))
 
     driver.read()
     pred, _ = driver.prediction(points=ishigami_data.point, write=True)
-    if not os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0')):
-        assert False
-    assert pred[0].data == pytest.approx(ishigami_data.target_point, 0.1)
+    assert os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0'))
+    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
 
 
 def test_no_pod(ishigami_data, tmp, settings_ishigami):
@@ -30,9 +28,8 @@ def test_no_pod(ishigami_data, tmp, settings_ishigami):
     driver.sampling()
 
     pred, _ = driver.prediction(write=True, points=ishigami_data.point)
-    assert pred[0].data == pytest.approx(ishigami_data.target_point, 0.1)
-    if not os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0')):
-        assert False
+    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
+    assert os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0'))
 
     def wrap_surrogate(x):
         evaluation, _ = driver.prediction(points=x)
@@ -47,16 +44,20 @@ def test_provider_dict(tmp, settings_ishigami):
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings['space']['sampling']['init_size'] = 4
     test_settings['snapshot']['provider'] = {
-        "command": "bash", "timeout": 30, "context": "data",
-        "script": "data/script.sh", "clean": False, "private-directory": "batman-data",
-        "data-directory": "cfd-output-data", "restart": "False"}
+        "type": "file",
+        "command": "bash script.sh",
+        "context_directory": "data",
+        "coupling_directory": "batman-coupling",
+        "timeout": 30,
+        "clean": False,
+        "restart": "False"
+    }
     driver = Driver(test_settings, tmp)
     driver.sampling()
     driver.write()
 
     pred, _ = driver.prediction([2, -3, 1], write=True)
-    if not os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0')):
-        assert False
+    assert os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0'))
 
 
 def test_resampling(tmp, settings_ishigami):
@@ -73,20 +74,9 @@ def test_uq(driver_init, tmp):
 
     tmp = os.path.join(tmp, 'uq')
 
-    if not os.path.isdir(tmp):
-        assert False
-
-    if not os.path.isfile(os.path.join(tmp, 'sensitivity.dat')):
-        assert False
-
-    if not os.path.isfile(os.path.join(tmp, 'sensitivity.pdf')):
-        assert False
-
-    if not os.path.isfile(os.path.join(tmp, 'pdf.dat')):
-        assert False
-
-    if not os.path.isfile(os.path.join(tmp, 'pdf.pdf')):
-        assert False
-
-    if not os.path.isfile(os.path.join(tmp, 'sensitivity_aggregated.dat')):
-        assert False
+    assert os.path.isdir(tmp)
+    assert os.path.isfile(os.path.join(tmp, 'sensitivity.dat'))
+    assert os.path.isfile(os.path.join(tmp, 'sensitivity.pdf'))
+    assert os.path.isfile(os.path.join(tmp, 'pdf.dat'))
+    assert os.path.isfile(os.path.join(tmp, 'pdf.pdf'))
+    assert os.path.isfile(os.path.join(tmp, 'sensitivity_aggregated.dat'))
