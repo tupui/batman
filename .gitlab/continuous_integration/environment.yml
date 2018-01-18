@@ -45,6 +45,7 @@ dependencies:
 - markupsafe
 - matplotlib
 - mccabe
+- mock
 - multiprocess
 - muparser
 - ncurses

@@ -44,6 +44,19 @@ intersphinx_mapping = {'openturns': ('http://doc.openturns.org/openturns-latest/
 }
 
 
+# Mock fortran
+if os.environ.get("READTHEDOCS") == "True":
+    from mock import Mock as MagicMock
+
+    class Mock(MagicMock):
+        @classmethod
+        def __getattr__(cls, name):
+                return MagicMock()
+
+    MOCK_MODULES = ['batman.input_output._tecplot']
+    sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+
 def skip(app, what, name, obj, skip, options):
     if name == "__init__":
         return False
