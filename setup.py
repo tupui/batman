@@ -132,7 +132,8 @@ def find_version(*file_paths):
 
 setup(
     name='batman',
-    keywords='surrogate model, uncertainty quantification, statistical analysis',
+    keywords=("surrogate model, uncertainty quantification,statistical analysis,"
+              "design of experiments, uncertainty visualization"),
     version=find_version("batman", "__init__.py"),
     packages=find_packages(exclude=['test_cases', 'doc']),
     entry_points={'console_scripts': ['batman=batman.ui:main']},
@@ -146,7 +147,7 @@ setup(
     # metadata
     maintainer="Pamphile ROY",
     maintainer_email="roy@cerfacs.fr",
-    description="BATMAN creates a surrogate model and perform UQ.",
+    description="BATMAN: Statistical analysis for expensive computer codes made easy",
     long_description=open('./README.rst').read(),
     classifiers=['Development Status :: 5 - Production/Stable',
                  'Environment :: Console',
@@ -169,6 +170,7 @@ setup(
     zip_safe=False,
     license="CECILL-B",
     url=["https://gitlab.com/cerfacs/batman",
-         "https://cerfacs.gitlab.io/batman",
-         ""],
+         "http://batman.readthedocs.io",
+         "https://batman-cerfacs.zulipchat.com",
+         "https://cerfacs.fr"],
 )

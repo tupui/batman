@@ -44,7 +44,7 @@ Main features are:
 
 Full documentation is available at: 
 
-    https://cerfacs.gitlab.io/batman
+    http://batman.readthedocs.io
 
 .. inclusion-marker-do-not-remove
 
@@ -52,19 +52,19 @@ Getting started
 ===============
 
 A detailled example can be found in 
-`tutorial <https://cerfacs.gitlab.io/batman/tutorial.html>`_. The folder ``test_cases``
+`tutorial <http://batman.readthedocs.io/tutorial.html>`_. The folder ``test_cases``
 contains examples that you can adapt to you needs. You can find more information
 about the cases within the respectives ``README.rst`` file. 
 
 Shoud you be interested by batman's implementation, consider
-reading `introduction <https://cerfacs.gitlab.io/batman/introduction.html>`_.
+reading `introduction <http://batman.readthedocs.io/introduction.html>`_.
 
 If you encounter a bug (or have a feature request), please report it via
 `GitLab <https://gitlab.com/cerfacs/batman/issues>`_. Or it might be you
 falling but "Why do we fall sir? So we can learn to pick ourselves up".
 
 Last but not least, if you consider contributing check-out
-`contributing <https://cerfacs.gitlab.io/batman/contributing_link.html>`_.
+`contributing <http://batman.readthedocs.io/contributing_link.html>`_.
 
 Happy batman.
 
@@ -155,7 +155,7 @@ Help and Support
 About us
 ........
 
-See authors and project history at: `about us <https://cerfacs.gitlab.io/batman/about.html>`_.
+See authors and project history at: `about us <http://batman.readthedocs.io/about.html>`_.
 
 Community
 .........
@@ -166,4 +166,4 @@ Or send us an email. We would really appreciate that as we keep record of the us
 Citation
 ........
 
-If you use batman in a scientific publication, we would appreciate `citations <https://cerfacs.gitlab.io/batman/about.html#citing-batman>`_.
+If you use batman in a scientific publication, we would appreciate `citations <http://batman.readthedocs.io/about.html#citing-batman>`_.
