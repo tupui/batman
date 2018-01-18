@@ -83,7 +83,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'BATMAN'
-copyright = '2017, CERFACS'
+copyright = '2018, CERFACS - CECILL-B Licensed'
 author = 'Pamphile ROY'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -186,7 +186,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
 #
-# html_title = 'BATMAN v1.3'
+# html_title = 'BATMAN'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #
