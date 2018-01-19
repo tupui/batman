@@ -60,14 +60,14 @@ python_2:
     - cd doc
     - make html
 
-pages_feature_branch:
+documentation_feature_branch:
   <<: *template_doc
   when: manual
   except:
     - master
     - develop
 
-pages:
+documentation:
   <<: *template_doc
   only:
     - master
