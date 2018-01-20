@@ -254,29 +254,29 @@ class Driver(object):
         """
         self.logger.info("\n----- Resampling parameter space -----")
         method = self.settings['space']['resampling']['method']
+        extremum = self.settings['space']['resampling'].get('extremum')
         hybrid = self.settings['space']['resampling'].get('hybrid')
         discrete = self.settings['space']['sampling'].get('discrete')
         delta_space = self.settings['space']['resampling']['delta_space']
-        q2_limit = self.settings['space']['resampling']['q2_criteria']
+        q2_criteria = self.settings['space']['resampling'].get('q2_criteria')
         pdf = self.settings.get('uq', {}).get('pdf')
 
         while len(self.space) < self.space.max_points_nb:
             self.logger.info("-> New iteration")
 
-            if method not in ['discrepancy', 'extrema', 'optimization']:
+            if (method != 'optimization') and (q2_criteria is not None):
                 quality, point_loo = self.surrogate.estimate_quality()
+                if quality >= q2_criteria:
+                    break
             else:
-                quality = 0.
                 point_loo = None
-
-            if (quality >= q2_limit) and (q2_limit is not None):
-                break
 
             new_point = self.space.refine(self.surrogate,
                                           method,
                                           point_loo=point_loo,
                                           delta_space=delta_space, dists=pdf,
-                                          hybrid=hybrid, discrete=discrete)
+                                          hybrid=hybrid, discrete=discrete,
+                                          extremum=extremum)
 
             try:
                 self.sampling(new_point, update=True)

@@ -88,8 +88,9 @@ First of all, we define the parameter space using an hypercube. Taking the minim
     * ``resamp_size``: number of point to add in the parameter space.
     * ``method``: to be choosen from ``sigma``, ``loo_sigma``, ``loo_sobol``, ``hybrid``, ``discrepancy``, ``optimization``, ``extrema``.
     * [``hybrid``]: if method is ``hybrid``. You have to define a generator which is a list
-      ``[["method", n_snapshot]]``
-    * ``q2_criteria``: stopping criterion based on the quality estimation of the model.
+      ``[["method", n_snapshot]]``.
+    * [``extrema``]: to be used with ``optimization``, will find the global maximum if set to ``max``.
+    * [``q2_criteria``]: stopping criterion based on the quality estimation of the model.
 
 The method used to create the DoE is paramount. It ensures that that the physics
 will be captured correclty all over the domain of interest, see :ref:`Space <space>`.

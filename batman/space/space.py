@@ -202,7 +202,7 @@ class Space(list):
         return self
 
     def refine(self, surrogate, method, point_loo=None, delta_space=0.08,
-               dists=None, hybrid=None, discrete=None):
+               dists=None, hybrid=None, discrete=None, extremum='min'):
         """Refine the sample, update space points and return the new point(s).
 
         :param surrogate: Surrogate.
@@ -212,9 +212,11 @@ class Space(list):
         :param float delta_space: Shrinking factor for the parameter space.
         :param lst(str) dists: List of valid openturns distributions as string.
         :param lst(lst(str, int)) hybrid: Navigator as list of [Method, n].
-        :param int discrete: index of the discrete variable.
+        :param int discrete: Index of the discrete variable.
+        :param str extremum: Minimization or maximization objective
+          ['min', 'max'].
         :return: List of points to add.
-        :rtype: element or list of :class:`batman.space.Point`.
+        :rtype: Element or list of :class:`batman.space.Point`.
         """
         # Refinement strategy
         if (self.refiner is None) and (method == 'hybrid'):
@@ -239,7 +241,7 @@ class Space(list):
                                                                      next(self.hybrid),
                                                                      dists)
         elif method == 'optimization':
-            new_point = self.refiner.optimization()
+            new_point = self.refiner.optimization(extremum=extremum)
         elif method == 'sigma_discrepancy':
             new_point = self.refiner.sigma_discrepancy()
 

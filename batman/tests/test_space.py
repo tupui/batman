@@ -227,6 +227,9 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     optim_EI = refiner.optimization(method='EI')
     npt.assert_almost_equal(optim_EI, [-2.1, 9.0], decimal=1)
 
+    optim_EI = refiner.optimization(extremum='max')
+    npt.assert_almost_equal(optim_EI, [-5.3,  1.9], decimal=1)
+
     optim_PI = refiner.optimization(method='PI')
     npt.assert_almost_equal(optim_PI, [-2.2, 9.2], decimal=1)
 

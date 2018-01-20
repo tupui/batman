@@ -511,10 +511,12 @@ class Refiner(object):
 
         return new_point, refined_pod_points
 
-    def optimization(self, method='EI'):
+    def optimization(self, method='EI', extremum='min'):
         """Maximization of the Probability/Expected Improvement.
 
         :param str method: Flag ['EI', 'PI'].
+        :param str extremum: minimization or maximization objective
+          ['min', 'max'].
         :return: The coordinate of the point to add.
         :rtype: lst(float).
         """
@@ -525,23 +527,27 @@ class Refiner(object):
         self.logger.info('Current minimal value is: f(x)={} for x={}'
                          .format(min_value, min_x))
 
+        # Do not check point is close on the discrete parameter
         if self.discrete is not None:
-            discrete = [[i for i in range(self.points.shape[1])]]
-            discrete[0].pop(self.discrete)
+            no_discrete = [list(range(self.points.shape[1]))]
+            no_discrete[0].pop(self.discrete)
         else:
-            discrete = None
+            no_discrete = None
+
+        sign = 1 if extremum == 'min' else -1
 
         @optimization(self.corners, self.discrete)
         def probability_improvement(x):
             """Do probability of improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
             too_close = np.array([True if np.linalg.norm(
-                x_scaled[0][discrete] - p[discrete], -1) < 0.02
+                x_scaled[0][no_discrete] - p[no_discrete], -1) < 0.02
                                   else False for p in self.points]).any()
             if too_close:
                 return np.inf
 
             pred, sigma = self.pred_sigma(x)
+            pred = sign * pred
             std_dev = np.sqrt(sigma)
             pi = norm.cdf((target - pred) / std_dev)
 
@@ -552,12 +558,13 @@ class Refiner(object):
             """Do expected improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
             too_close = np.array([True if np.linalg.norm(
-                x_scaled[0][discrete] - p[discrete], -1) < 0.02
+                x_scaled[0][no_discrete] - p[no_discrete], -1) < 0.02
                                   else False for p in self.points]).any()
             if too_close:
                 return np.inf
 
             pred, sigma = self.pred_sigma(x)
+            pred = sign * pred
             std_dev = np.sqrt(sigma)
             diff = min_value - pred
             ei = diff * norm.cdf(diff / std_dev)\
