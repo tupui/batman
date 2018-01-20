@@ -54,7 +54,7 @@ class Refiner(object):
           :class:`batman.space.Space`.
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
         :param float delta_space: Shrinking factor for the parameter space.
-        :param bool discrete: whether one parameter is discrete.
+        :param int discrete: index of the discrete variable.
         """
         if isinstance(data, bat.surrogate.SurrogateModel):
             self.surrogate = data
@@ -77,8 +77,13 @@ class Refiner(object):
         self.corners = np.array(corners).T
         self.dim = len(self.corners)
 
+        # Prevent delta space contraction on discrete
+        _dim = list(range(self.dim))
+        if self.discrete is not None:
+            _dim.pop(self.discrete)
+
         # Inner delta space contraction: delta_space * 2 factor
-        for i in range(self.dim):
+        for i in _dim:
             self.corners[i, 0] = self.corners[i, 0] + delta_space\
                 * (self.corners[i, 1]-self.corners[i, 0])
             self.corners[i, 1] = self.corners[i, 1] - delta_space\
