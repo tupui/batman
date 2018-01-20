@@ -42,9 +42,9 @@
             },
             "resamp_size": {"type": "integer", "default": 2, "minimum": 0},
             "delta_space": {"type": "number", "default": 0.08, "minimum": 0},
-            "q2_criteria": {"type": "number", "default": 0.9, "minimum": 0,
-                            "exclusiveMinimum": true, "maximum": 1,
-                            "exclusiveMaximum": true},
+            "q2_criteria": {"type": ["number", "boolean"], "default": 0.9,
+                            "minimum": 0, "exclusiveMinimum": true,
+                            "maximum": 1, "exclusiveMaximum": true},
             "hybrid": {"type": "array", "items": {}}
           },
           "required": ["method", "resamp_size", "q2_criteria", "delta_space"]

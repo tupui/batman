@@ -253,22 +253,24 @@ class Driver(object):
 
         """
         self.logger.info("\n----- Resampling parameter space -----")
+        method = self.settings['space']['resampling']['method']
+        hybrid = self.settings['space']['resampling'].get('hybrid')
+        discrete = self.settings['space']['sampling'].get('discrete')
+        delta_space = self.settings['space']['resampling']['delta_space']
+        q2_limit = self.settings['space']['resampling']['q2_criteria']
+        pdf = self.settings.get('uq', {}).get('pdf')
+
         while len(self.space) < self.space.max_points_nb:
             self.logger.info("-> New iteration")
-            quality, point_loo = self.surrogate.estimate_quality()
-            # quality = 0.5
-            # point_loo = [-1.1780625, -0.8144629629629629]
-            if quality >= self.settings['space']['resampling']['q2_criteria']:
+
+            if method not in ['discrepancy', 'extrema', 'optimization']:
+                quality, point_loo = self.surrogate.estimate_quality()
+            else:
+                quality = 0.
+                point_loo = None
+
+            if (quality >= q2_limit) and (q2_limit is not None):
                 break
-
-            pdf = self.settings['uq']['pdf'] if 'uq' in self.settings else None
-            hybrid = self.settings['space']['resampling']['hybrid']\
-                if 'hybrid' in self.settings['space']['resampling'] else None
-
-            discrete = self.settings['space']['sampling']['discrete']\
-                if 'discrete' in self.settings['space']['sampling'] else None
-            delta_space = self.settings['space']['resampling']['delta_space']
-            method = self.settings['space']['resampling']['method']
 
             new_point = self.space.refine(self.surrogate,
                                           method,
@@ -281,7 +283,7 @@ class Driver(object):
             except ValueError:
                 break
 
-            if self.settings['space']['resampling']['method'] == 'optimization':
+            if method == 'optimization':
                 self.space.optimization_results()
 
     def write(self):
