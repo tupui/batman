@@ -59,7 +59,9 @@ First of all, we define the parameter space using an hypercube. Taking the minim
         ],
         "sampling": {
             "init_size": 4,
-            "method": "halton"
+            "method": "halton",
+            "distributions": ["Uniform(15., 60.)", "BetaMuSigma(4035, 400, 2500, 6000).getDistribution()"],
+            "discrete": 0
         },
         "resampling":{
             "delta_space": 0.08,
@@ -79,14 +81,15 @@ First of all, we define the parameter space using an hypercube. Taking the minim
     * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*,
       *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *lhsopt* (optimized LHS), *saltelli*,
     * [``distributions``]: A list of distributions. Ex for two input variables:
-      ``["Uniform(15., 60.)", "Normal(4035., 400.)"]``.
+      ``["Uniform(15., 60.)", "Normal(4035., 400.)"]``,
+    * [``discrete``]: index of the parameter which is discrete.
 
 + [``resampling``]: to do resampling, fill this dictionary
 
-    * ``delta_space``: the percentage of space to shrink to not resample close to boundaries. For ``0.08``,
-      the available space for resampling will be shrinked by 8%.
     * ``resamp_size``: number of point to add in the parameter space.
     * ``method``: to be choosen from ``sigma``, ``loo_sigma``, ``loo_sobol``, ``hybrid``, ``discrepancy``, ``optimization``, ``extrema``.
+    * [``delta_space``]: the percentage of space to shrink to not resample close to boundaries. For ``0.08``,
+      the available space for resampling will be shrinked by 8%.
     * [``hybrid``]: if method is ``hybrid``. You have to define a generator which is a list
       ``[["method", n_snapshot]]``.
     * [``extrema``]: to be used with ``optimization``, will find the global maximum if set to ``max``.

@@ -35,7 +35,7 @@
           "properties": {
             "method": {
               "type": "string",
-              "enum": ["None", "discrepancy", "ego_discrepancy",
+              "enum": ["discrepancy", "ego_discrepancy",
                        "sigma_discrepancy", "sigma", "loo_sigma", "loo_sobol",
                        "extrema", "hybrid", "optimization"],
               "default": "sigma"
@@ -49,7 +49,7 @@
                             "maximum": 1, "exclusiveMaximum": true},
             "hybrid": {"type": "array", "items": {}}
           },
-          "required": ["method", "resamp_size", "q2_criteria", "delta_space"]
+          "required": ["method", "resamp_size"]
         }
       },
       "required": ["corners", "sampling"]

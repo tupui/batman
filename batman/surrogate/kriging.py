@@ -29,7 +29,6 @@ import numpy as np
 from scipy.optimize import differential_evolution
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import (WhiteKernel, Matern, ConstantKernel)
-import sklearn.gaussian_process.kernels as kernels
 from ..misc import (NestedPool, cpu_system)
 from ..functions.utils import multi_eval
 
@@ -98,7 +97,7 @@ class Kriging(object):
             if isinstance(noise, bool):
                 noise = WhiteKernel()
             else:
-                noise = kernels.WhiteKernel(noise_level=noise)
+                noise = WhiteKernel(noise_level=noise)
             self.kernel += noise
 
         # Global optimization

@@ -257,7 +257,7 @@ class Driver(object):
         extremum = self.settings['space']['resampling'].get('extremum')
         hybrid = self.settings['space']['resampling'].get('hybrid')
         discrete = self.settings['space']['sampling'].get('discrete')
-        delta_space = self.settings['space']['resampling']['delta_space']
+        delta_space = self.settings['space']['resampling'].get('delta_space', 0.08)
         q2_criteria = self.settings['space']['resampling'].get('q2_criteria')
         pdf = self.settings.get('uq', {}).get('pdf')
 
@@ -284,7 +284,7 @@ class Driver(object):
                 break
 
             if method == 'optimization':
-                self.space.optimization_results()
+                self.space.optimization_results(extremum=extremum)
 
     def write(self):
         """Write Surrogate [and POD] to disk."""
