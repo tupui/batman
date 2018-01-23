@@ -202,7 +202,7 @@ class Space(list):
         return self
 
     def refine(self, surrogate, method, point_loo=None, delta_space=0.08,
-               dists=None, hybrid=None, discrete=None):
+               dists=None, hybrid=None, discrete=None, extremum='min'):
         """Refine the sample, update space points and return the new point(s).
 
         :param surrogate: Surrogate.
@@ -212,9 +212,11 @@ class Space(list):
         :param float delta_space: Shrinking factor for the parameter space.
         :param lst(str) dists: List of valid openturns distributions as string.
         :param lst(lst(str, int)) hybrid: Navigator as list of [Method, n].
-        :param int discrete: index of the discrete variable.
+        :param int discrete: Index of the discrete variable.
+        :param str extremum: Minimization or maximization objective
+          ['min', 'max'].
         :return: List of points to add.
-        :rtype: element or list of :class:`batman.space.Point`.
+        :rtype: Element or list of :class:`batman.space.Point`.
         """
         # Refinement strategy
         if (self.refiner is None) and (method == 'hybrid'):
@@ -239,7 +241,7 @@ class Space(list):
                                                                      next(self.hybrid),
                                                                      dists)
         elif method == 'optimization':
-            new_point = self.refiner.optimization()
+            new_point = self.refiner.optimization(extremum=extremum)
         elif method == 'sigma_discrepancy':
             new_point = self.refiner.sigma_discrepancy()
 
@@ -290,21 +292,26 @@ class Space(list):
         self.max_points_nb = n + doe_cheap
         return doe_cheap
 
-    def optimization_results(self):
-        """Compute the optimal value."""
-        gen = [self.refiner.func(x) for x in self]
-        arg_min = np.argmin(gen)
-        min_value = gen[arg_min]
-        min_x = self[arg_min]
-        self.logger.info('New minimal value is: f(x)={} for x={}'
-                         .format(min_value, min_x))
+    def optimization_results(self, extremum):
+        """Compute the optimal value.
+
+        :param str extremum: minimization or maximization objective
+          ['min', 'max'].
+        """
+        sign = 1 if extremum == 'min' else -1
+        gen = [self.refiner.func(x, sign=sign) for x in self]
+        arg_extremum = np.argmin(gen)
+        _extremum = sign * gen[arg_extremum]
+        _x = self[arg_extremum]
+        self.logger.info('New extremum value is: f(x)={} for x={}'
+                         .format(_extremum, _x))
 
         bounds = np.array(self.corners).T
-        results = differential_evolution(self.refiner.func, bounds)
-        min_value = results.fun
-        min_x = results.x
+        results = differential_evolution(self.refiner.func, bounds, args=(sign,))
+        _extremum = sign * results.fun
+        _x = results.x
         self.logger.info('Optimization with surrogate: f(x)={} for x={}'
-                         .format(min_value, min_x))
+                         .format(_extremum, _x))
 
     def discrepancy(self, sample=None):
         """Compute the centered discrepancy.

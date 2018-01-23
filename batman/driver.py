@@ -253,36 +253,38 @@ class Driver(object):
 
         """
         self.logger.info("\n----- Resampling parameter space -----")
+        method = self.settings['space']['resampling']['method']
+        extremum = self.settings['space']['resampling'].get('extremum')
+        hybrid = self.settings['space']['resampling'].get('hybrid')
+        discrete = self.settings['space']['sampling'].get('discrete')
+        delta_space = self.settings['space']['resampling'].get('delta_space', 0.08)
+        q2_criteria = self.settings['space']['resampling'].get('q2_criteria')
+        pdf = self.settings.get('uq', {}).get('pdf')
+
         while len(self.space) < self.space.max_points_nb:
             self.logger.info("-> New iteration")
-            quality, point_loo = self.surrogate.estimate_quality()
-            # quality = 0.5
-            # point_loo = [-1.1780625, -0.8144629629629629]
-            if quality >= self.settings['space']['resampling']['q2_criteria']:
-                break
 
-            pdf = self.settings['uq']['pdf'] if 'uq' in self.settings else None
-            hybrid = self.settings['space']['resampling']['hybrid']\
-                if 'hybrid' in self.settings['space']['resampling'] else None
-
-            discrete = self.settings['space']['sampling']['discrete']\
-                if 'discrete' in self.settings['space']['sampling'] else None
-            delta_space = self.settings['space']['resampling']['delta_space']
-            method = self.settings['space']['resampling']['method']
+            if (method != 'optimization') and (q2_criteria is not None):
+                quality, point_loo = self.surrogate.estimate_quality()
+                if quality >= q2_criteria:
+                    break
+            else:
+                point_loo = None
 
             new_point = self.space.refine(self.surrogate,
                                           method,
                                           point_loo=point_loo,
                                           delta_space=delta_space, dists=pdf,
-                                          hybrid=hybrid, discrete=discrete)
+                                          hybrid=hybrid, discrete=discrete,
+                                          extremum=extremum)
 
             try:
                 self.sampling(new_point, update=True)
             except ValueError:
                 break
 
-            if self.settings['space']['resampling']['method'] == 'optimization':
-                self.space.optimization_results()
+            if method == 'optimization':
+                self.space.optimization_results(extremum=extremum)
 
     def write(self):
         """Write Surrogate [and POD] to disk."""
