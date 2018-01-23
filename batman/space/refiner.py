@@ -525,12 +525,14 @@ class Refiner(object):
         :return: The coordinate of the point to add.
         :rtype: lst(float).
         """
-        gen = [self.func(x) for x in self.scaler.inverse_transform(self.points)]
+        sign = 1 if extremum == 'min' else -1
+        gen = [self.func(x, sign=sign)
+               for x in self.scaler.inverse_transform(self.points)]
         arg_min = np.argmin(gen)
         min_value = gen[arg_min]
         min_x = self.points[arg_min]
-        self.logger.info('Current minimal value is: f(x)={} for x={}'
-                         .format(min_value, min_x))
+        self.logger.info('Current extrema value is: f(x)={} for x={}'
+                         .format(sign * min_value, min_x))
 
         # Do not check point is close on the discrete parameter
         if self.discrete is not None:
@@ -538,8 +540,6 @@ class Refiner(object):
             no_discrete[0].pop(self.discrete)
         else:
             no_discrete = None
-
-        sign = 1 if extremum == 'min' else -1
 
         @optimization(self.corners, self.discrete)
         def probability_improvement(x):

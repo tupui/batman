@@ -292,21 +292,26 @@ class Space(list):
         self.max_points_nb = n + doe_cheap
         return doe_cheap
 
-    def optimization_results(self):
-        """Compute the optimal value."""
-        gen = [self.refiner.func(x) for x in self]
-        arg_min = np.argmin(gen)
-        min_value = gen[arg_min]
-        min_x = self[arg_min]
-        self.logger.info('New minimal value is: f(x)={} for x={}'
-                         .format(min_value, min_x))
+    def optimization_results(self, extremum):
+        """Compute the optimal value.
+
+        :param str extremum: minimization or maximization objective
+          ['min', 'max'].
+        """
+        sign = 1 if extremum == 'min' else -1
+        gen = [self.refiner.func(x, sign=sign) for x in self]
+        arg_extremum = np.argmin(gen)
+        _extremum = sign * gen[arg_extremum]
+        _x = self[arg_extremum]
+        self.logger.info('New extremum value is: f(x)={} for x={}'
+                         .format(_extremum, _x))
 
         bounds = np.array(self.corners).T
-        results = differential_evolution(self.refiner.func, bounds)
-        min_value = results.fun
-        min_x = results.x
+        results = differential_evolution(self.refiner.func, bounds, args=(sign,))
+        _extremum = sign * results.fun
+        _x = results.x
         self.logger.info('Optimization with surrogate: f(x)={} for x={}'
-                         .format(min_value, min_x))
+                         .format(_extremum, _x))
 
     def discrepancy(self, sample=None):
         """Compute the centered discrepancy.
