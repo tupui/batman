@@ -9,7 +9,7 @@ Interpolation using Gaussian Process method.
 
 ::
 
-    >> from kriging import Kriging
+    >> from batman.surrogate import Kriging
     >> import numpy as np
     >> sample = np.array([[2, 4], [3, 5], [6, 9]])
     >> data = np.array([[12, 1], [10, 2], [9, 4]])

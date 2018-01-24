@@ -1,27 +1,24 @@
 # coding: utf8
 """
-Kriging Class
-=============
+SklearnRegressor Class
+======================
 
-Interpolation using Gaussian Process method.
+Interpolation using regressors from Scikit-Learn.
 
 :Example:
 
 ::
 
-    >> from kriging import Kriging
+    >> from batman.surrogate import SklearnRegressor
     >> import numpy as np
     >> sample = np.array([[2, 4], [3, 5], [6, 9]])
     >> data = np.array([[12, 1], [10, 2], [9, 4]])
-    >> predictor = Kriging(sample, data)
+    >> regressor = 'RandomForestRegressor()'
+    >> predictor = SklearnRegressor(sample, data, regressor)
     >> point = (5.0, 8.0)
     >> predictor.evaluate(point)
-    (array([ 8.4526528 ,  3.57976035]), array([ 0.40982369,  0.05522197]))
+    array([9.7, 2.9])
 
-Reference
----------
-F. Pedregosa et al.: Scikit-learn: Machine Learning in Python. Journal of
-Machine Learning Research. 2011. ArXiv ID: 1201.0490
 """
 import logging
 import warnings

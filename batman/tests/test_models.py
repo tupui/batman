@@ -189,13 +189,6 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     pred, _ = surrogate(ishigami_data.point)
     assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
 
-    # Compute predictivity coefficient Q2
-    def wrap_surrogate(x):
-        evaluation, _ = surrogate(x)
-        return evaluation
-    q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, wrap_surrogate)
-    assert q2 == pytest.approx(1, 0.1)
-
 
 def test_quality(mufi_data):
     surrogate = SurrogateModel('rbf', mufi_data.space.corners)
