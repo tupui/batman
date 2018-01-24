@@ -56,7 +56,6 @@ class SklearnRegressor(object):
         else:
             sample = np.array(sample).reshape(len(sample), -1)
 
-        dim = sample.shape[1]
         self.model_len = data.shape[1]
         if self.model_len == 1:
             data = data.ravel()
@@ -69,16 +68,16 @@ class SklearnRegressor(object):
 
         try:
             # Regressor is already a sklearn object
-            self.logger.debug('Regressor info: {}'.format(regressor.get_params))
+            self.logger.debug('Regressor info:\n{}'.format(regressor.get_params))
         except AttributeError:
             # Instanciate regressor from str
             try:
                 regressor = eval('ske.' + regressor, {'__builtins__': None},
-                                 {'ske': __import__('sklearn.ensemble')})
+                                 {'ske': __import__('sklearn').ensemble})
             except (TypeError, AttributeError):
                 raise AttributeError('Regressor unknown from sklearn.')
 
-            self.logger.debug('Regressor info: {}'.format(regressor.get_params))
+            self.logger.debug('Regressor info:\n{}'.format(regressor.get_params))
 
         def model_fitting(column):
             """Fit an instance of :class:`sklearn.ensemble`.Regressor."""
