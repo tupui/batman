@@ -10,6 +10,7 @@ import os
 import shutil
 import logging
 import subprocess as sp
+import numpy as np
 from .snapshot import Snapshot
 from ..space import Point
 
@@ -60,10 +61,10 @@ class ProviderFile(object):
         discover = job_settings.get('discover_from')
         if discover is not None:
             for root, _, files in os.walk(discover):
-                if (self._io.point_filename in files) and (self._io.data_filename in files):
+                if (self._io.coord_filename in files) and (self._io.data_filename in files):
                     # found a point
                     try:
-                        point = self._io.read_point(root)
+                        point = Point(self._io.read_parameters(root).flat)
                     except KeyError:
                         self.logger.debug('Ignored bad formatted point in {}'.format(root))
                     else:
@@ -111,7 +112,7 @@ class ProviderFile(object):
             # point is not known
 
             data_filepath = os.path.join(snapshot_dir, self._io.data_filename)
-            point_filepath = os.path.join(snapshot_dir, self._io.point_filename)
+            point_filepath = os.path.join(snapshot_dir, self._io.coord_filename)
 
             if not (os.path.isfile(data_filepath) and os.path.isfile(point_filepath)):
                 # snapshot files must be created
@@ -130,7 +131,7 @@ class ProviderFile(object):
             self._known_points[point] = snapshot_dir
 
         # read data file
-        data = self._io.read_data(snapshot_dir)
+        data = self._io.read_features(snapshot_dir)
         self.logger.debug('Read data for point {} from directory {}'.format(point, snapshot_dir))
         return data
 
@@ -158,7 +159,7 @@ class ProviderFile(object):
                 os.makedirs(os.path.join(local, d))
             for f in files:
                 os.symlink(os.path.join(root, f), os.path.join(local, f))
-        self._io.write_point(coupling_dir, point)
+        self._io.write_parameters(coupling_dir, point)
         self.logger.debug('Point {} :: Prepared workdir in {}'.format(point, work_dir))
         self.logger.debug('Point {} :: Coupling directory is {}'.format(point, coupling_dir))
 
@@ -191,8 +192,8 @@ class ProviderFile(object):
         coupling_dir = os.path.join(work_dir, self._job['coupling_directory'])
 
         # move data to snapshot directory
-        os.rename(os.path.join(coupling_dir, self._io.point_filename),
-                  os.path.join(snapshot_dir, self._io.point_filename))
+        os.rename(os.path.join(coupling_dir, self._io.coord_filename),
+                  os.path.join(snapshot_dir, self._io.coord_filename))
         os.rename(os.path.join(coupling_dir, self._io.data_filename),
                   os.path.join(snapshot_dir, self._io.data_filename))
         self.logger.debug('Point {} :: Moved snapshot from {} to {}'
@@ -204,8 +205,8 @@ class ProviderFile(object):
             self.logger.debug('Point {} :: Removed workdir {}'.format(point, work_dir))
         else:
             # keep a symlink to snapshot data in coupling directory
-            os.symlink(os.path.join(snapshot_dir, self._io.point_filename),
-                       os.path.join(coupling_dir, self._io.point_filename))
+            os.symlink(os.path.join(snapshot_dir, self._io.coord_filename),
+                       os.path.join(coupling_dir, self._io.coord_filename))
             os.symlink(os.path.join(snapshot_dir, self._io.data_filename),
                        os.path.join(coupling_dir, self._io.data_filename))
             self.logger.debug('Point {} :: Set symlinks from {} to {}'

@@ -31,9 +31,10 @@
             "restart": "False"
         },
         "io": {
-            "point_filename": "point.json",
-            "data_filename": "point.dat",
-            "data_format": "fmt_tp_fortran"
+            "coord_filename": "sample-coord.csv",
+            "data_filename": "sample-data.csv",
+            "coord_format": "csv",
+            "data_format": "csv"
         }
     },
     "surrogate": {

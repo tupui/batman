@@ -2,57 +2,18 @@
 IO module
 *********
 
-Input output management entry point.
-An input-output (io) is used to deal with the permanent storage of a dataset.
+Provides Formater objects to deal with I/Os.
+
+Each formater exposes a reader and a writer method.
+Datasets must be numpy structured arrays with named fields.
 """
-import logging
-import os
-from .base import FormatError
-from .dataset import Dataset
-from .tecplot import TecplotAscii
-from .npz import Npz
-
-__all__ = ['Dataset', 'IOFormatSelector']
+from copy import copy
+from .formater import FORMATER as DEFAULT_FORMATER
+from .antares_wrappers import ANTARES_FORMATER
 
 
-class IOFormatSelector(object):
-    """Return an instance of io manager corresponding to a file `format`."""
+__all__ = ['FORMATER']
 
-    logger = logging.getLogger(__name__)
+FORMATER = copy(ANTARES_FORMATER)
+FORMATER.update(DEFAULT_FORMATER)  # highest priority to built-in formaters
 
-    # list of all supported io classes
-    io_types = [TecplotAscii, Npz]
-    try:
-        os.environ["ANTARES_VERBOSE"] = "0"
-        from .antares_wrapper import AntaresWrapper
-        io_types.append(AntaresWrapper)
-        check_antares = True
-    except ImportError:
-        check_antares = False
-        logger.debug("Antares not installed")
-
-    def __init__(self, io_format):
-        """Select the io class to use."""
-        self.format = io_format
-
-        if self.check_antares is True:
-            self.io_types[-1].format = self.format
-
-        check_format_init = False
-
-        for io in self.io_types:
-            if self.format == io.format:
-                try:
-                    io = io()
-                    check_format_init = True
-                    self.read = io.read
-                    self.write = io.write
-                    self.meta_data = io.meta_data
-                    self.info = io.info
-                    return
-                except KeyError as bt:
-                    self.logger.error("Not available in Antares: {}".format(bt))
-
-        if check_format_init is False:
-            raise FormatError("File format {} doesn't exist"
-                              .format(self.format))

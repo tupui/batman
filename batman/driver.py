@@ -99,7 +99,7 @@ class Driver(object):
         # Snapshot Management
         args = settings['snapshot'].get('io', {})
         self.snapshot_io = SnapshotIO(parameter_names=settings['snapshot']['plabels'],
-                                      variable_names=settings['snapshot']['flabels'],
+                                      feature_names=settings['snapshot']['flabels'],
                                       **args)
         provider_type = settings['snapshot']['provider']['type']
         self.logger.info('Select data provider type "{}"'.format(provider_type))
@@ -374,8 +374,8 @@ class Driver(object):
                     os.makedirs(path)
                 except OSError:
                     pass
-                self.snapshot_io.write_point(path, point)
-                self.snapshot_io.write_data(path, data)
+                self.snapshot_io.write_parameters(path, point)
+                self.snapshot_io.write_features(path, data)
         return results, sigma
 
     def uq(self):

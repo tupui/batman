@@ -102,11 +102,12 @@
         "io": {
           "type": "object",
           "properties": {
-            "point_filename": {"type": "string", "default": "point.json"},
-            "data_filename": {"type": "string", "default": "point.dat"},
-            "data_format": {"type": "string", "default": "fmt_tp_fortran"}
+            "coord_filename": {"type": "string", "default": "sample-coord.json"},
+            "data_filename": {"type": "string", "default": "sample-data.json"},
+            "coord_format": {"type": "string", "default": "json"},
+            "data_format": {"type": "string", "default": "json"}
           },
-          "required": ["point_filename", "data_filename", "data_format"]
+          "required": ["coord_filename", "data_filename", "coord_format", "data_format"]
         }
       },
       "required": ["plabels", "flabels", "max_workers", "provider"]

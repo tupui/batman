@@ -31,9 +31,10 @@
             "function": "f"
         },
         "io": {
-            "point_filename": "point.json",
-            "data_filename": "point.npz",
-            "data_format": "numpy"
+            "coord_filename": "sample-coord.json",
+            "data_filename": "sample-data.npz",
+            "coord_format": "json",
+            "data_format": "npz"
         }
     },
     "surrogate": {

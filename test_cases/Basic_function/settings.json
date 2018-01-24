@@ -30,9 +30,10 @@
             "restart": "False"
         },
         "io": {
-            "point_filename": "point.json",
-            "data_filename": "point.npz",
-            "data_format": "numpy"
+            "coord_filename": "sample-coord.csv",
+            "data_filename": "sample-data.json",
+            "coord_format": "csv",
+            "data_format": "json"
         }
     },
     "surrogate": {

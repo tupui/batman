@@ -35,9 +35,10 @@
             "restart": "False"
         },
         "io": {
-            "point_filename": "point.json",
-            "data_filename": "point.dat",
-            "data_format": "fmt_tp_fortran"
+            "coord_filename": "sample-coord.npy",
+            "data_filename": "sample-data.npz",
+            "coord_format": "npy",
+            "data_format": "npz"
         }
     },
     "surrogate": {
