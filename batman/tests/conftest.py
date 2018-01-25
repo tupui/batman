@@ -63,9 +63,9 @@ def settings_ishigami():
                 "function": "f_ishigami"
             },
             "io": {
-                "coord_filename": "sample-coord.json",
+                "point_filename": "sample-space.json",
                 "data_filename": "sample-data.json",
-                "coord_format": "json",
+                "point_format": "json",
                 "data_format": "json",
             }
         },

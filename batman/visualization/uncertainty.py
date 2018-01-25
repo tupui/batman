@@ -19,7 +19,7 @@ from scipy.optimize import differential_evolution
 from matplotlib import cm
 import matplotlib.pyplot as plt
 import batman as bat
-from ..input_output import FORMATER  #(IOFormatSelector, Dataset)
+from ..input_output import formater
 
 
 def kernel_smoothing(data, optimize=False):
@@ -184,8 +184,7 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
         else:
             data = np.array([xdata_flattened, pdf])
 
-        io = FORMATER['json']  # IOFormatSelector('fmt_tp_fortran')
-#        dataset = Dataset(names=names, data=data)
+        io = formater('json')
         filename, _ = os.path.splitext(fname)
         io.write(filename + '.json', data, names)
 
@@ -197,7 +196,6 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
                 names = ['x'] + names
                 data = np.append(xdata[0], data)
 
-#            dataset = Dataset(names=names, shape=[output_len, 1, 1], data=data)
             io.write(filename + '-moment.json', data, names)
 
     bat.visualization.save_show(fname, [fig])
@@ -351,17 +349,11 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
 
     if fname is not None:
         data = np.append(x_2d_yy, [y_2d_yy, corr_yy, cov_yy])
-#        dataset = Dataset(names=['x', 'y', 'Correlation-YY', 'Covariance'],
-#                          shape=[data_len, data_len, 1],
-#                          data=data)
         names = ['x', 'y', 'Correlation-YY', 'Covariance']
-        io = FORMATER['json']  # IOFormatSelector('fmt_tp_fortran')
+        io = formater('json')
         io.write(fname.split('.')[0] + '-correlation_covariance.json', data, names)
 
         data = np.append(x_2d_xy, [y_2d_xy, cov_matrix_xy])
-#        dataset = Dataset(names=['x', 'y', 'Correlation-XY'],
-#                          shape=[p_len, data_len, 1],
-#                          data=data)
         names = ['x', 'y', 'Correlation-XY']
         io.write(fname.split('.')[0] + '-correlation_XY.dat', data, names)
 

@@ -1,5 +1,6 @@
 """
-Wrappers to Antares I/O classes.
+Wrappers to Antares I/O classes
+*******************************
 
 This module exposes Antares Readers and Writers as additionnal Batman formaters.
 """
@@ -17,18 +18,18 @@ class AntaresFormater(object):
         """
         self._format = format_name
 
-    def read(self, filepath, varnames):
+    def read(self, fname, varnames):
         """Read a dataset from a file using an antares Reader.
 
-        :param str filepath: file to read.
-        :param list varnames: names of variables to read.
-        :returns: a numpy structured array with variables names as field names.
+        :param str fname: file to read.
+        :param list(str) varnames: names of variables to read.
+        :return: a 2D array with shape (n_entry, n_variable).
         :rtype: numpy.ndarray
         """
         # read file as an antares base
         import antares
         reader = antares.Reader(self._format)
-        reader['filename'] = filepath
+        reader['filename'] = fname
         base = reader.read()
 
         # extract content:
@@ -44,12 +45,12 @@ class AntaresFormater(object):
         data = zip(*[data[var] for var in varnames])
         return np.array(data)
 
-    def write(self, filepath, dataset, varnames):
+    def write(self, fname, dataset, varnames):
         """Write a dataset to a file using an antares Writer.
 
-        :param str filepath: file to write.
-        :param dataset: a numpy structured array with named fields.
-        :param list varnames: column names in dataset.
+        :param str fname: file to write.
+        :param array-like dataset: a 2D array of shape (n_entry, n_variable).
+        :param list(str) varnames: column names in dataset.
         """
         # build a mono-zone/mono-instant base
         import antares
@@ -61,7 +62,7 @@ class AntaresFormater(object):
         # use antares writer
         writer = antares.Writer(self._format)
         writer['base'] = base
-        writer['filename'] = filepath
+        writer['filename'] = fname
         writer.dump()
 
 

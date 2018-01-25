@@ -3,12 +3,12 @@
 
 import json
 from batman.functions import Michalewicz
-from batman.input_output import FORMATER
+from batman.input_output import formater
 
-io = FORMATER['npy']
+io = formater('npy')
 
-# Input from sample-coord.npy
-params = io.read('./batman-coupling/sample-coord.npy', ['x1', 'x2'])
+# Input from sample-space.npy
+params = io.read('./batman-coupling/sample-space.npy', ['x1', 'x2'])
 X1, X2 = params[0, :]
 
 # Function
@@ -16,5 +16,5 @@ f = Michalewicz()
 data = f([X1, X2])
 
 # Output
-io = FORMATER['npz']
+io = formater('npz')
 io.write('./batman-coupling/sample-data.npy', data, ['F'])

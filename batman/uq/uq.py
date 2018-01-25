@@ -65,7 +65,7 @@ import openturns as ot
 from openturns.viewer import View
 from sklearn.metrics import (r2_score, mean_squared_error)
 from ..functions.utils import multi_eval
-from ..input_output import FORMATER  #(IOFormatSelector, Dataset)
+from ..input_output import formater
 from .. import functions as func_ref
 from .. import visualization
 
@@ -117,7 +117,7 @@ class UQ:
             except OSError:
                 self.logger.debug("Output folder already exists.")
             finally:
-                self.io = FORMATER['json']  # IOFormatSelector('fmt_tp_fortran')
+                self.io = formater('json')  # IOFormatSelector('fmt_tp_fortran')
         else:
             self.logger.debug("Not using output folder.")
 
@@ -368,8 +368,6 @@ class UQ:
         if self.fname is not None:
             i1 = np.reshape(indices[1], (sobol_len, self.p_len))
             i2 = np.reshape(indices[2], (sobol_len, self.p_len))
-#            i1 = np.array(indices[1]).flatten('F')
-#            i2 = np.array(indices[2]).flatten('F')
             data = np.append(i1, i2, axis=1)
             names = []
             for p in self.plabels:
@@ -382,8 +380,6 @@ class UQ:
             else:
                 full_names = names
 
-#            dataset = Dataset(names=full_names, shape=[sobol_len, 1, 1],
-#                              data=data)
             self.io.write(os.path.join(self.fname, 'sensitivity.json'), data, full_names)
         else:
             self.logger.debug("No output folder to write indices in")
@@ -440,16 +436,15 @@ class UQ:
 
                     # layout: [S_min_P1, S_min_P2, ..., S_P1, S_p2, ...]
                     data = np.array([i1_min, i1, i1_max, i2_min, i2, i2_max]).flatten()
-#                    data = np.append([i1_min], [i1, i1_max, i2_min, i2, i2_max])
 
                     names = [i + str(p) for i, p in
                              itertools.product(['S_min_', 'S_', 'S_max_',
                                                 'S_T_min_', 'S_T_', 'S_T_max_'],
                                                self.plabels)]
 
-                    conf1 = np.vstack((i1_min, i2_min))  #.flatten('F')
+                    conf1 = np.vstack((i1_min, i2_min))
                     conf1 = np.ravel(ind_total_first - conf1, order='F')
-                    conf2 = np.vstack((i1_max, i2_max))  #.flatten('F')
+                    conf2 = np.vstack((i1_max, i2_max))
                     conf2 = np.ravel(conf2 - ind_total_first, order='F')
                     conf = np.vstack((conf1, conf2))
                 else:
@@ -457,7 +452,6 @@ class UQ:
                     names = [i + str(p) for i, p in 
                              itertools.product(['S_', 'S_T_'], self.plabels)]
                     data = np.append(i1, i2)
-#                dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
                 self.io.write(os.path.join(self.fname, 'sensitivity_aggregated.json'), data, names)
             else:
                 self.logger.debug(

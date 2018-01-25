@@ -374,8 +374,8 @@ class Driver(object):
                     os.makedirs(path)
                 except OSError:
                     pass
-                self.snapshot_io.write_parameters(path, point)
-                self.snapshot_io.write_features(path, data)
+                self.snapshot_io.write_point(path, point)
+                self.snapshot_io.write_data(path, data)
         return results, sigma
 
     def uq(self):

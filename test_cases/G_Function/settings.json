@@ -31,9 +31,9 @@
             "restart": "False"
         },
         "io": {
-            "coord_filename": "sample-coord.csv",
+            "point_filename": "sample-space.csv",
             "data_filename": "sample-data.csv",
-            "coord_format": "csv",
+            "point_format": "csv",
             "data_format": "csv"
         }
     },

@@ -3,12 +3,12 @@
 
 import json
 from batman.functions import G_Function
-from batman.input_output import FORMATER
+from batman.input_output import formater
 
-io = FORMATER['csv']
+io = formater('csv')
 
-# Input from sample-coord.csv
-params = io.read('./batman-coupling/sample-coord.csv', ['x1', 'x2', 'x3', 'x4'])
+# Input from sample-space.csv
+params = io.read('./batman-coupling/sample-space.csv', ['x1', 'x2', 'x3', 'x4'])
 # X1, X2, X3, X4 = params[0, :]
 # X = [X1, X2, X3, X4]
 X = list(params.flat)

@@ -102,12 +102,12 @@
         "io": {
           "type": "object",
           "properties": {
-            "coord_filename": {"type": "string", "default": "sample-coord.json"},
+            "point_filename": {"type": "string", "default": "sample-space.json"},
             "data_filename": {"type": "string", "default": "sample-data.json"},
-            "coord_format": {"type": "string", "default": "json"},
+            "point_format": {"type": "string", "default": "json"},
             "data_format": {"type": "string", "default": "json"}
           },
-          "required": ["coord_filename", "data_filename", "coord_format", "data_format"]
+          "required": ["point_filename", "data_filename", "point_format", "data_format"]
         }
       },
       "required": ["plabels", "flabels", "max_workers", "provider"]

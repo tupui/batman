@@ -3,11 +3,11 @@ import re
 import json
 import numpy as np
 from batman.functions import Ishigami
-from batman.input_output import FORMATER  # IOFormatSelector, Dataset
+from batman.input_output import formater
 
-# Input from sample-coord.json
-io = FORMATER['json']
-params = io.read('./batman-coupling/sample-coord.json', ['x1', 'x2', 'x3'])
+# Input from sample-space.json
+io = formater('json')
+params = io.read('./batman-coupling/sample-space.json', ['x1', 'x2', 'x3'])
 X1, X2, X3 = params[0, :]
 
 # Function
@@ -18,6 +18,5 @@ F = f([X1, X2, X3])
 data = np.array(F)
 names = ["F"]
 
-# dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
 io.write('./batman-coupling/sample-data.json', data, ['F'])
 

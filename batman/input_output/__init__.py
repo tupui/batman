@@ -4,16 +4,39 @@ IO module
 
 Provides Formater objects to deal with I/Os.
 
-Each formater exposes a reader and a writer method.
-Datasets must be numpy structured arrays with named fields.
+Every formaters have the same interface, exposing the two methods **read** and **write**.
+
+:Example: Using **json** formater
+
+::
+
+    >> from input_output import formater
+    >> varnames = ['x1', 'x2', 'x3']
+    >> data = [[1, 2, 3], [87, 74, 42]]
+    >> fmt = formater('json')
+    >> fmt.write('file.json', data, varnames)
+    {'x1': [1, 87], 'x2': [2, 74], 'x3': [3, 42]}
+    >> fmt.read('file.json', ['x2', 'x1'])  # load a subset of variables, in a different order
+    array([[2, 1], [74, 87]])
+
 """
 from copy import copy
-from .formater import FORMATER as DEFAULT_FORMATER
+from .formater import FORMATER as BUILTIN_FORMATER
 from .antares_wrappers import ANTARES_FORMATER
 
 
-__all__ = ['FORMATER']
+__all__ = ['formater', 'available_formats']
+
 
 FORMATER = copy(ANTARES_FORMATER)
-FORMATER.update(DEFAULT_FORMATER)  # highest priority to built-in formaters
+FORMATER.update(BUILTIN_FORMATER)  # highest priority to built-in formaters
 
+
+def available_formats():
+    """Returns the list of available format names."""
+    return copy(FORMATER.keys())
+
+
+def formater(format_name):
+    """Returns a Formater"""
+    return FORMATER[format_name]

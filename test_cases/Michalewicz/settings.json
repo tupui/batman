@@ -35,9 +35,9 @@
             "restart": "False"
         },
         "io": {
-            "coord_filename": "sample-coord.npy",
+            "point_filename": "sample-space.npy",
             "data_filename": "sample-data.npz",
-            "coord_format": "npy",
+            "point_format": "npy",
             "data_format": "npz"
         }
     },

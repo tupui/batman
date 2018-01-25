@@ -1,8 +1,12 @@
 """
-Simple Inputs / Outputs.
+Built-in Inputs / Outputs
+*************************
 
 This module provides several formater objects 
 for reading and writing dataset with named fields.
+
+File formats store variable names whenever it is possible.
+
 The formaters are available from the :ref:`FORMATER` 
 dictionary whose keys are format names.
 """
@@ -13,140 +17,140 @@ import numpy as np
 
 
 # Formater interface:
-# - np.ndarray read(filepath, varnames)
-# - write(filepath, np.ndarray, varnames)
+# - np.ndarray read(fname, varnames)
+# - write(fname, np.ndarray, varnames)
 Formater = namedtuple('Formater', ['read', 'write'])
 
 
 # JSON
 
-def json_read(filepath, varnames):
+def json_read(fname, varnames):
     """Reader method for json file.
     
-    :param str filepath: file to read.
-    :param list varnames: names of variables to read.
-    :return: a 2D numpy array.
+    :param str fname: file to read.
+    :param list(str) varnames: names of variables to read.
+    :return: a 2D array with shape (n_entry, n_variable).
     :rtype: numpy.ndarray
     """
-    with open(filepath, 'r') as fd:
+    with open(fname, 'r') as fd:
         data = json.load(fd)
     data = list(zip(*[np.ravel(data[var]) for var in varnames]))
     return np.array(data)
     
 
-def json_write(filepath, dataset, varnames):
+def json_write(fname, dataset, varnames):
     """Write method for json file.
     
-    :param str filepath: file to write.
-    :param dataset: a 2D numpy array (n_sample, n_feature).
-    :param list varnames: column names in dataset.
+    :param str fname: file to write.
+    :param array-like dataset: a 2D array of shape (n_entry, n_variable).
+    :param list(str) varnames: column names in dataset.
     """
     data = dict(zip(varnames, np.reshape(dataset, (-1, len(varnames))).T.tolist()))
-    with open(filepath, 'w') as fd:
+    with open(fname, 'w') as fd:
         json.dump(data, fd)
 
 
 # CSV
 
-def csv_read(filepath, varnames):
+def csv_read(fname, varnames):
     """Reader method for csv file.
     
-    :param str filepath: file to read.
-    :param list varnames: names of variables to read.
-    :return: a 2D numpy array.
+    :param str fname: file to read.
+    :param list(str) varnames: names of variables to read.
+    :return: a 2D array with shape (n_entry, n_variable).
     :rtype: numpy.ndarray
     """
     # 1st line of file is column names, can be a comment line
-    data = np.genfromtxt(filepath, delimiter=',', names=True)[varnames]
+    data = np.genfromtxt(fname, delimiter=',', names=True)[varnames]
     return np.array([list(d) for d in np.atleast_1d(data)])
 
 
-def csv_write(filepath, dataset, varnames):
+def csv_write(fname, dataset, varnames):
     """Write method for csv file.
     
-    :param str filepath: file to write.
-    :param dataset: a 2D numpy array (n_sample, n_feature).
-    :param list varnames: column names in dataset.
+    :param str fname: file to write.
+    :param array-like dataset: a 2D array of shape (n_entry, n_variable).
+    :param list(str) varnames: column names in dataset.
     """
     data = np.reshape(dataset, (-1, len(varnames)))
-    np.savetxt(filepath, data, delimiter=',', header=','.join(varnames))
+    np.savetxt(fname, data, delimiter=',', header=','.join(varnames))
 
 
 # NUMPY BINARY (uncompressed)
 
-def npy_read(filepath, varnames):
+def npy_read(fname, varnames):
     """Reader method for numpy npy file.
     The uncompressed file contains exactly one dataset.
     
-    :param str filepath: file to read.
-    :param list varnames: names of variables to read.
-    :return: a 2D numpy array.
+    :param str fname: file to read.
+    :param list(str) varnames: names of variables to read.
+    :return: a 2D array with shape (n_entry, n_variable).
     :rtype: numpy.ndarray
     """
     # enforce .npy extension
-    filepath, _ = os.path.splitext(filepath)
-    filepath += '.npy'
-    data = np.load(filepath)
+    fname, _ = os.path.splitext(fname)
+    fname += '.npy'
+    data = np.load(fname)
     return data.reshape(-1, len(varnames))
 
 
-def npy_write(filepath, dataset, varnames):
+def npy_write(fname, dataset, varnames):
     """Write method for numpy npy file.
     The uncompressed file contains exactly one dataset.
     
-    :param str filepath: file to write.
-    :param dataset: a 2D numpy array (n_sample, n_feature).
-    :param list varnames: ignored.
+    :param str fname: file to write.
+    :param array-like dataset: a 2D array of shape (n_entry, n_variable).
+    :param list(str) varnames: column names in dataset.
     """
     # enforce .npy extension
-    filepath, _ = os.path.splitext(filepath)
-    filepath += '.npy'
+    fname, _ = os.path.splitext(fname)
+    fname += '.npy'
     data = np.reshape(dataset, (-1, len(varnames)))
-    np.save(filepath, data)
+    np.save(fname, data)
 
 
 # NUMPY BINARY (compressed)
 
-def npz_read(filepath, varnames):
+def npz_read(fname, varnames):
     """Reader method for numpy npz file.
     The file may be compressed or not.
     file members are:
     - 'data': values to read as a 2D array
     - 'labels': names of data columns
     
-    :param str filepath: file to read.
-    :param list varnames: names of variables to read.
-    :return: a 2D numpy array.
+    :param str fname: file to read.
+    :param list(str) varnames: names of variables to read.
+    :return: a 2D array with shape (n_entry, n_variable).
     :rtype: numpy.ndarray
     """
     # enforce .npy extension
-    filepath, _ = os.path.splitext(filepath)
-    filepath += '.npz'
-    with np.load(filepath) as fd:
+    fname, _ = os.path.splitext(fname)
+    fname += '.npz'
+    with np.load(fname) as fd:
         label = fd['labels'].tolist()
         order = [label.index(v) for v in varnames]
         return fd['data'].reshape(-1, len(varnames))[:, order]
 
-def npz_write(filepath, dataset, varnames):
+def npz_write(fname, dataset, varnames):
     """Write method for numpy npz file.
     The file is compressed.
     
-    :param str filepath: file to write.
-    :param dataset: a 2D numpy array (n_sample, n_feature).
-    :param list varnames: column names in dataset.
+    :param str fname: file to write.
+    :param array-like dataset: a 2D array of shape (n_entry, n_variable).
+    :param list(str) varnames: column names in dataset.
     """
     # enforce .npy extension
-    filepath, _ = os.path.splitext(filepath)
-    filepath += '.npz'
+    fname, _ = os.path.splitext(fname)
+    fname += '.npz'
     data = np.reshape(dataset, (-1, len(varnames)))
-    np.savez_compressed(filepath, data=data, labels=varnames)
+    np.savez_compressed(fname, data=data, labels=varnames)
 
 
 # Available formater instances
 
 FORMATER = {
-    'json': Formater(read=json_read, write=json_write),  # file_extension='.json'),
-    'csv': Formater(read=csv_read, write=csv_write),  # file_extension='.csv'),
-    'npy': Formater(read=npy_read, write=npy_write),  # file_extension='.npy'),
-    'npz': Formater(read=npz_read, write=npz_write),  # file_extension='.npz'),
+    'json': Formater(read=json_read, write=json_write),
+    'csv': Formater(read=csv_read, write=csv_write),
+    'npy': Formater(read=npy_read, write=npy_write),
+    'npz': Formater(read=npz_read, write=npz_write),
 }

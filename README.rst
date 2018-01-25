@@ -129,7 +129,6 @@ Using the latest python version is prefered! Then to install::
 
     git clone git@gitlab.com:cerfacs/batman.git
     cd batman
-    python setup.py build_fortran
     python setup.py install
     python setup.py test
     python setup.py build_sphinx
