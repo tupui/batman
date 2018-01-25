@@ -4,6 +4,7 @@ import copy
 import pytest
 import numpy as np
 import numpy.testing as npt
+from sklearn import preprocessing
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import (Matern, ConstantKernel)
 from batman.space import Doe
@@ -138,11 +139,16 @@ class TestNd:
         assert q2 == pytest.approx(1, 0.1)
 
     def test_GP_nd(self, mascaret_data):
-        surrogate = Kriging(mascaret_data.space, mascaret_data.target_space)
+        # Scaling as class SurrogateModel does it
+        scaler = preprocessing.MinMaxScaler()
+        scaler.fit(np.array(mascaret_data.space.corners))
+        space_scaled = scaler.transform(mascaret_data.space)
+        surrogate = Kriging(space_scaled, mascaret_data.target_space)
 
         # Compute predictivity coefficient Q2
         def wrap_surrogate(x):
-            evaluation, _ = surrogate.evaluate(x)
+            x_scaled = scaler.transform(x)
+            evaluation, _ = surrogate.evaluate(x_scaled)
             return evaluation
         q2 = sklearn_q2(mascaret_data.dists, mascaret_data.func, wrap_surrogate)
         assert q2 == pytest.approx(1, 0.1)

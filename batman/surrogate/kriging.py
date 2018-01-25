@@ -88,7 +88,7 @@ class Kriging(object):
         else:
             # Define the model settings
             l_scale = (1.0,) * dim
-            scale_bounds = [(1e-3, 1e3)] * dim
+            scale_bounds = [(0.01, 100)] * dim
             self.kernel = ConstantKernel() * Matern(length_scale=l_scale,
                                                     length_scale_bounds=scale_bounds)
 
@@ -139,8 +139,7 @@ class Kriging(object):
 
         # Gather results
         self.data, self.hyperparameter = zip(*results)
-
-        self.logger.debug("Hyperparameters: {}".format(self.hyperparameter))
+        self.logger.debug("Kernels:\n{}".format([gp.kernel_ for gp in self.data]))
 
     def _optim_evolution(self, obj_func, initial_theta, bounds):
         """Genetic optimization of the hyperparameters.
