@@ -129,7 +129,7 @@ def npz_read(fname, varnames):
     with np.load(fname) as fd:
         label = fd['labels'].tolist()
         order = [label.index(v) for v in varnames]
-        return fd['data'].reshape(-1, len(varnames))[:, order]
+        return fd['data'].reshape(-1, len(label))[:, order]
 
 def npz_write(fname, dataset, varnames):
     """Write method for numpy npz file.
