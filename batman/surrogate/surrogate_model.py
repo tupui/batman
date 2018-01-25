@@ -29,11 +29,12 @@ from sklearn import preprocessing
 from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import r2_score
 from .kriging import Kriging
+from .sk_interface import SklearnRegressor
 from .polynomial_chaos import PC
 from .RBFnet import RBFnet
 from .multifidelity import Evofusion
 from ..space import Space
-from ..misc import ProgressBar, NestedPool, cpu_system
+from ..misc import (ProgressBar, NestedPool, cpu_system)
 
 
 class SurrogateModel(object):
@@ -110,6 +111,8 @@ class SurrogateModel(object):
             self.predictor.fit(sample, data)
         elif self.kind == 'evofusion':
             self.predictor = Evofusion(sample_scaled, data)
+        else:
+            self.predictor = SklearnRegressor(sample_scaled, data, self.kind)
 
         self.pod = pod
         self.space.empty()

@@ -201,6 +201,7 @@ Set up the surrogate model strategy to use. See :ref:`Surrogate <surrogate>`.
     }
 
 + ``method``: method used to generate a snapshot one of *rbf* (Radial Basic Function), *kriging*, *pc* (polynomial chaos expension) or *evofusion* method.
+  Otherwise it can be a string that define a model from Scikit-Learn regressors. Ex ``"RandomForestRegressor()"``
 + [``predictions``]: set of points to predict.
 
 For *kriging* the following extra attributes **can** be set: 

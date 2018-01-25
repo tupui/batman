@@ -115,8 +115,11 @@
       "type": "object",
       "properties": {
         "predictions": {"type": "array", "items": {}},
-        "method": {"type": "string", "default": "kriging",
-                   "enum": ["rbf", "kriging", "pc", "evofusion"]},
+        "method": {"anyOf": [{
+                    "properties": {
+                     "type": "string", "default": "kriging",
+                     "enum": ["rbf", "kriging", "pc", "evofusion"]}},
+                    {"properties": {"type": "string"}}]},
         "cost_ratio": {"type": "number", "default": 2.0, "minimum": 1,
                        "exclusiveMinimum": true},
         "grand_cost": {"type": "integer", "default": 30, "minimum": 4},

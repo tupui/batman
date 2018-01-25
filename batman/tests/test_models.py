@@ -4,134 +4,162 @@ import copy
 import pytest
 import numpy as np
 import numpy.testing as npt
-from sklearn.gaussian_process.kernels import Matern
+from sklearn import preprocessing
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import (Matern, ConstantKernel)
 from batman.space import Doe
-from batman.surrogate import (PC, Kriging, RBFnet, Evofusion, SurrogateModel)
+from batman.surrogate import (PC, Kriging, SklearnRegressor, RBFnet, Evofusion,
+                              SurrogateModel)
 from batman.tests.conftest import sklearn_q2
 
 
-def test_PC_1d(ishigami_data):
-    space_ = copy.deepcopy(ishigami_data.space)
-    space_.max_points_nb = 2000
-    sample = space_.sampling(2000, 'halton')
-    surrogate = PC(distributions=ishigami_data.dists, sample=sample, degree=10,
-                   strategy='LS', stieltjes=False)
-    input_ = surrogate.sample
-    assert len(input_) == 2000
-    output = ishigami_data.func(input_)
-    surrogate.fit(input_, output)
-    pred = np.array(surrogate.evaluate(ishigami_data.point))
-    assert pred == pytest.approx(ishigami_data.target_point, 0.1)
+class Test1d:
 
-    # Compute predictivity coefficient Q2
-    q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, surrogate.evaluate)
-    assert q2 == pytest.approx(1, 0.1)
+    def test_PC_1d(self, ishigami_data):
+        space_ = copy.deepcopy(ishigami_data.space)
+        space_.max_points_nb = 2000
+        sample = space_.sampling(2000, 'halton')
+        surrogate = PC(distributions=ishigami_data.dists, sample=sample, degree=10,
+                       strategy='LS', stieltjes=False)
+        input_ = surrogate.sample
+        assert len(input_) == 2000
+        output = ishigami_data.func(input_)
+        surrogate.fit(input_, output)
+        pred = np.array(surrogate.evaluate(ishigami_data.point))
+        assert pred == pytest.approx(ishigami_data.target_point, 0.1)
 
-    surrogate = PC(distributions=ishigami_data.dists, degree=10,
-                   strategy='Quad')
-    input_ = surrogate.sample
-    assert len(input_) == 1331
-    output = ishigami_data.func(input_)
-    surrogate.fit(input_, output)
+        # Compute predictivity coefficient Q2
+        q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, surrogate.evaluate)
+        assert q2 == pytest.approx(1, 0.1)
 
-    # Compute predictivity coefficient Q2
-    q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, surrogate.evaluate)
-    assert q2 == pytest.approx(1, 0.2)
+        surrogate = PC(distributions=ishigami_data.dists, degree=10,
+                       strategy='Quad')
+        input_ = surrogate.sample
+        assert len(input_) == 1331
+        output = ishigami_data.func(input_)
+        surrogate.fit(input_, output)
 
+        # Compute predictivity coefficient Q2
+        q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, surrogate.evaluate)
+        assert q2 == pytest.approx(1, 0.2)
 
-def test_GP_1d(ishigami_data):
-    surrogate = Kriging(ishigami_data.space, ishigami_data.target_space)
+    def test_GP_1d(self, ishigami_data):
+        surrogate = Kriging(ishigami_data.space, ishigami_data.target_space)
 
-    # Test one point evaluation
-    pred, _ = np.array(surrogate.evaluate(ishigami_data.point))
-    assert pred == pytest.approx(ishigami_data.target_point, 0.2)
+        # Test one point evaluation
+        pred, _ = np.array(surrogate.evaluate(ishigami_data.point))
+        assert pred == pytest.approx(ishigami_data.target_point, 0.2)
 
-    # Test space evaluation
-    pred, _ = np.array(surrogate.evaluate(ishigami_data.space))
-    npt.assert_almost_equal(ishigami_data.target_space, pred, decimal=1)
+        # Compute predictivity coefficient Q2
+        def wrap_surrogate(x):
+            evaluation, _ = surrogate.evaluate(x)
+            return evaluation
+        q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, wrap_surrogate)
+        assert q2 == pytest.approx(1, 0.1)
 
-    # Compute predictivity coefficient Q2
-    def wrap_surrogate(x):
-        evaluation, _ = surrogate.evaluate(x)
-        return evaluation
-    q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, wrap_surrogate)
-    assert q2 == pytest.approx(1, 0.1)
+        # Kernel and noise
+        surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
+                            kernel=Matern(), noise=0.8)
 
-    # Kernel and noise
-    surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
-                        kernel=Matern(), noise=0.8)
+        surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
+                            kernel=Matern(), noise=True)
 
-    surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
-                        kernel=Matern(), noise=True)
+        # Optimizer
+        surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
+                            global_optimizer=False)
+        pred, _ = np.array(surrogate.evaluate(ishigami_data.point))
+        assert pred == pytest.approx(ishigami_data.target_point, 0.2)
 
-    # Optimizer
-    surrogate = Kriging(ishigami_data.space, ishigami_data.target_space,
-                        global_optimizer=False)
-    pred, _ = np.array(surrogate.evaluate(ishigami_data.point))
-    assert pred == pytest.approx(ishigami_data.target_point, 0.2)
+    def test_sk_regressors_1d(self, ishigami_data):
+        # From an object
+        l_scale = (1.0,) * 3
+        scale_bounds = [(0.01, 100)] * 3
+        kernel = ConstantKernel() * Matern(length_scale=l_scale,
+                                           length_scale_bounds=scale_bounds)
 
+        regressor = GaussianProcessRegressor(kernel=kernel, normalize_y=True)
+        surrogate = SklearnRegressor(ishigami_data.space, ishigami_data.target_space,
+                                     regressor)
 
-def test_RBFnet_1d(ishigami_data):
-    surrogate = RBFnet(ishigami_data.space, ishigami_data.target_space)
+        # Test space evaluation
+        pred = np.array(surrogate.evaluate(ishigami_data.space))
+        npt.assert_almost_equal(ishigami_data.target_space, pred, decimal=1)
 
-    # Test one point evaluation
-    pred = np.array(surrogate.evaluate(ishigami_data.point))
-    assert pred == pytest.approx(ishigami_data.target_point, 0.3)
+        # From a str
+        regressor = 'RandomForestRegressor()'
+        surrogate = SklearnRegressor(ishigami_data.space, ishigami_data.target_space,
+                                     regressor)
 
-    # Test space evaluation
-    pred = np.array(surrogate.evaluate(ishigami_data.space))
-    npt.assert_almost_equal(ishigami_data.target_space, pred, decimal=1)
+        q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, surrogate.evaluate)
+        assert q2 == pytest.approx(0.77, 0.2)
 
-    # Compute predictivity coefficient Q2
-    def wrap_surrogate(x):
-        evaluation = surrogate.evaluate(x)
-        return evaluation
-    q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, wrap_surrogate)
-    assert q2 == pytest.approx(0.86, 0.1)
+    def test_RBFnet_1d(self, ishigami_data):
+        surrogate = RBFnet(ishigami_data.space, ishigami_data.target_space)
 
-    surrogate = RBFnet(ishigami_data.space, ishigami_data.target_space, regtree=1)
+        # Test one point evaluation
+        pred = np.array(surrogate.evaluate(ishigami_data.point))
+        assert pred == pytest.approx(ishigami_data.target_point, 0.3)
 
+        # Test space evaluation
+        pred = np.array(surrogate.evaluate(ishigami_data.space))
+        npt.assert_almost_equal(ishigami_data.target_space, pred, decimal=1)
 
-def test_PC_nd(mascaret_data):
-    space_ = copy.deepcopy(mascaret_data.space)
-    space_.max_points_nb = 1000
-    sample = space_.sampling(1000, 'halton')
-    surrogate = PC(distributions=mascaret_data.dists, sample=sample, degree=10,
-                   strategy='LS')
-    input_ = surrogate.sample
-    output = mascaret_data.func(input_)
-    surrogate.fit(input_, output)
-    pred = np.array(surrogate.evaluate(mascaret_data.point)).reshape(-1)
-    npt.assert_almost_equal(mascaret_data.target_point, pred, decimal=1)
+        # Compute predictivity coefficient Q2
+        def wrap_surrogate(x):
+            evaluation = surrogate.evaluate(x)
+            return evaluation
+        q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, wrap_surrogate)
+        assert q2 == pytest.approx(0.86, 0.1)
 
-    surrogate = PC(distributions=mascaret_data.dists, degree=5,
-                   strategy='Quad')
-    input_ = surrogate.sample
-    output = mascaret_data.func(input_)
-    surrogate.fit(input_, output)
-
-    # Compute predictivity coefficient Q2
-    q2 = sklearn_q2(mascaret_data.dists, mascaret_data.func, surrogate.evaluate)
-    assert q2 == pytest.approx(1, 0.1)
+        surrogate = RBFnet(ishigami_data.space, ishigami_data.target_space, regtree=1)
 
 
-def test_GP_nd(mascaret_data):
-    surrogate = Kriging(mascaret_data.space, mascaret_data.target_space)
+class TestNd:
 
-    # Test point evaluation
-    pred, _ = np.array(surrogate.evaluate(mascaret_data.point))
-    npt.assert_almost_equal(mascaret_data.target_point, pred, decimal=1)
+    def test_PC_nd(self, mascaret_data):
+        space_ = copy.deepcopy(mascaret_data.space)
+        space_.max_points_nb = 1000
+        sample = space_.sampling(1000, 'halton')
+        surrogate = PC(distributions=mascaret_data.dists, sample=sample, degree=10,
+                       strategy='LS')
+        input_ = surrogate.sample
+        output = mascaret_data.func(input_)
+        surrogate.fit(input_, output)
+        pred = np.array(surrogate.evaluate(mascaret_data.point)).reshape(-1)
+        npt.assert_almost_equal(mascaret_data.target_point, pred, decimal=1)
 
-    # Test space evaluation
-    pred, _ = np.array(surrogate.evaluate(mascaret_data.space))
-    npt.assert_almost_equal(mascaret_data.target_space, pred, decimal=1)
+        surrogate = PC(distributions=mascaret_data.dists, degree=5,
+                       strategy='Quad')
+        input_ = surrogate.sample
+        output = mascaret_data.func(input_)
+        surrogate.fit(input_, output)
 
-    # Compute predictivity coefficient Q2
-    def wrap_surrogate(x):
-        evaluation, _ = surrogate.evaluate(x)
-        return evaluation
-    q2 = sklearn_q2(mascaret_data.dists, mascaret_data.func, wrap_surrogate)
-    assert q2 == pytest.approx(1, 0.1)
+        # Compute predictivity coefficient Q2
+        q2 = sklearn_q2(mascaret_data.dists, mascaret_data.func, surrogate.evaluate)
+        assert q2 == pytest.approx(1, 0.1)
+
+    def test_GP_nd(self, mascaret_data):
+        # Scaling as class SurrogateModel does it
+        scaler = preprocessing.MinMaxScaler()
+        scaler.fit(np.array(mascaret_data.space.corners))
+        space_scaled = scaler.transform(mascaret_data.space)
+        surrogate = Kriging(space_scaled, mascaret_data.target_space)
+
+        # Compute predictivity coefficient Q2
+        def wrap_surrogate(x):
+            x_scaled = scaler.transform(x)
+            evaluation, _ = surrogate.evaluate(x_scaled)
+            return evaluation
+        q2 = sklearn_q2(mascaret_data.dists, mascaret_data.func, wrap_surrogate)
+        assert q2 == pytest.approx(1, 0.1)
+
+    def test_sk_regressors_nd(self, mascaret_data):
+        regressor = 'RandomForestRegressor()'
+        surrogate = SklearnRegressor(mascaret_data.space, mascaret_data.target_space,
+                                     regressor)
+
+        q2 = sklearn_q2(mascaret_data.dists, mascaret_data.func, surrogate.evaluate)
+        assert q2 == pytest.approx(0.77, 0.2)
 
 
 def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
@@ -166,13 +194,6 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
 
     pred, _ = surrogate(ishigami_data.point)
     assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
-
-    # Compute predictivity coefficient Q2
-    def wrap_surrogate(x):
-        evaluation, _ = surrogate(x)
-        return evaluation
-    q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, wrap_surrogate)
-    assert q2 == pytest.approx(1, 0.1)
 
 
 def test_quality(mufi_data):
