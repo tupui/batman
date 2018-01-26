@@ -2,12 +2,12 @@
 Built-in Inputs / Outputs
 *************************
 
-This module provides several formater objects 
+This module provides several formater objects
 for reading and writing dataset with named fields.
 
 File formats store variable names whenever it is possible.
 
-The formaters are available from the :ref:`FORMATER` 
+The formaters are available from the :ref:`FORMATER`
 dictionary whose keys are format names.
 """
 from collections import namedtuple
@@ -26,7 +26,7 @@ Formater = namedtuple('Formater', ['read', 'write'])
 
 def json_read(fname, varnames):
     """Reader method for json file.
-    
+
     :param str fname: file to read.
     :param list(str) varnames: names of variables to read.
     :return: a 2D array with shape (n_entry, n_variable).
@@ -36,11 +36,11 @@ def json_read(fname, varnames):
         data = json.load(fd)
     data = list(zip(*[np.ravel(data[var]) for var in varnames]))
     return np.array(data)
-    
+
 
 def json_write(fname, dataset, varnames):
     """Write method for json file.
-    
+
     :param str fname: file to write.
     :param array-like dataset: a 2D array of shape (n_entry, n_variable).
     :param list(str) varnames: column names in dataset.
@@ -54,7 +54,7 @@ def json_write(fname, dataset, varnames):
 
 def csv_read(fname, varnames):
     """Reader method for csv file.
-    
+
     :param str fname: file to read.
     :param list(str) varnames: names of variables to read.
     :return: a 2D array with shape (n_entry, n_variable).
@@ -67,7 +67,7 @@ def csv_read(fname, varnames):
 
 def csv_write(fname, dataset, varnames):
     """Write method for csv file.
-    
+
     :param str fname: file to write.
     :param array-like dataset: a 2D array of shape (n_entry, n_variable).
     :param list(str) varnames: column names in dataset.
@@ -81,7 +81,7 @@ def csv_write(fname, dataset, varnames):
 def npy_read(fname, varnames):
     """Reader method for numpy npy file.
     The uncompressed file contains exactly one dataset.
-    
+
     :param str fname: file to read.
     :param list(str) varnames: names of variables to read.
     :return: a 2D array with shape (n_entry, n_variable).
@@ -97,7 +97,7 @@ def npy_read(fname, varnames):
 def npy_write(fname, dataset, varnames):
     """Write method for numpy npy file.
     The uncompressed file contains exactly one dataset.
-    
+
     :param str fname: file to write.
     :param array-like dataset: a 2D array of shape (n_entry, n_variable).
     :param list(str) varnames: column names in dataset.
@@ -117,7 +117,7 @@ def npz_read(fname, varnames):
     file members are:
     - 'data': values to read as a 2D array
     - 'labels': names of data columns
-    
+
     :param str fname: file to read.
     :param list(str) varnames: names of variables to read.
     :return: a 2D array with shape (n_entry, n_variable).
@@ -131,10 +131,11 @@ def npz_read(fname, varnames):
         order = [label.index(v) for v in varnames]
         return fd['data'].reshape(-1, len(label))[:, order]
 
+
 def npz_write(fname, dataset, varnames):
     """Write method for numpy npz file.
     The file is compressed.
-    
+
     :param str fname: file to write.
     :param array-like dataset: a 2D array of shape (n_entry, n_variable).
     :param list(str) varnames: column names in dataset.

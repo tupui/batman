@@ -425,14 +425,14 @@ class UQ:
 
             # Write aggregated indices to file
             if self.fname is not None:
-                ind_total_first = np.array(aggregated[1:])  #.flatten('F')
-                i1 = np.array(aggregated[1])  #.flatten('F')
-                i2 = np.array(aggregated[2])  #.flatten('F')
+                ind_total_first = np.array(aggregated[1:])  # .flatten('F')
+                i1 = np.array(aggregated[1])  # .flatten('F')
+                i2 = np.array(aggregated[2])  # .flatten('F')
                 if self.method_sobol != 'FAST':
-                    i1_min = np.array(indices_conf[0].getLowerBound())  #.flatten('F')
-                    i1_max = np.array(indices_conf[0].getUpperBound())  #.flatten('F')
-                    i2_min = np.array(indices_conf[1].getLowerBound())  #.flatten('F')
-                    i2_max = np.array(indices_conf[1].getUpperBound())  #.flatten('F')
+                    i1_min = np.array(indices_conf[0].getLowerBound())  # .flatten('F')
+                    i1_max = np.array(indices_conf[0].getUpperBound())  # .flatten('F')
+                    i2_min = np.array(indices_conf[1].getLowerBound())  # .flatten('F')
+                    i2_max = np.array(indices_conf[1].getUpperBound())  # .flatten('F')
 
                     # layout: [S_min_P1, S_min_P2, ..., S_P1, S_p2, ...]
                     data = np.array([i1_min, i1, i1_max, i2_min, i2, i2_max]).flatten()
@@ -449,7 +449,7 @@ class UQ:
                     conf = np.vstack((conf1, conf2))
                 else:
                     conf = None
-                    names = [i + str(p) for i, p in 
+                    names = [i + str(p) for i, p in
                              itertools.product(['S_', 'S_T_'], self.plabels)]
                     data = np.append(i1, i2)
                 self.io.write(os.path.join(self.fname, 'sensitivity_aggregated.json'), data, names)

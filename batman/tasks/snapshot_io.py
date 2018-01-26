@@ -8,7 +8,6 @@ Defines methods to interact with snapshots:
     - perform read/write operations on snaphsots
 """
 import os
-import json
 import numpy as np
 
 from ..space import Point

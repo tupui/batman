@@ -1,3 +1,4 @@
+# coding: utf8
 import os
 import pytest
 import numpy.testing as npt
@@ -15,16 +16,10 @@ def dataset(request):
     return {'data': np.random.rand(*shape[request.param]),
             'labels': ['x{}'.format(i) for i in range(shape[request.param][-1])]}
 
-@pytest.fixture(scope="module", params=["json", "csv", "npz"])
-def fmt_documented(request):
-    return request.param
 
-@pytest.fixture(scope="module", params=["npy"])
-def fmt_undocumented(request):
-    return request.param
-
-def test_documented_format(tmp, fmt_documented, dataset):
-    fmt = formater(fmt_documented)
+@pytest.mark.parametrize('fmt_name', ['json', 'csv', 'npz'])
+def test_documented_format(tmp, fmt_name, dataset):
+    fmt = formater(fmt_name)
     indata = dataset['data']
     labels = dataset['labels']
 
@@ -48,8 +43,9 @@ def test_documented_format(tmp, fmt_documented, dataset):
     npt.assert_array_equal(outdata, indata[:, start:start+ncol])
 
 
-def test_undocumented_format(tmp, fmt_undocumented, dataset):
-    fmt = formater(fmt_undocumented)
+@pytest.mark.parametrize('fmt_name', ['npy'])
+def test_undocumented_format(tmp, fmt_name, dataset):
+    fmt = formater(fmt_name)
     indata = dataset['data']
     labels = dataset['labels']
 

@@ -16,7 +16,8 @@ Every formaters have the same interface, exposing the two methods **read** and *
     >> fmt = formater('json')
     >> fmt.write('file.json', data, varnames)
     {'x1': [1, 87], 'x2': [2, 74], 'x3': [3, 42]}
-    >> fmt.read('file.json', ['x2', 'x1'])  # load a subset of variables, in a different order
+    >> # can load a subset of variables, in a different order (unavailable for format 'npy')
+    >> fmt.read('file.json', ['x2', 'x1'])
     array([[2, 1], [74, 87]])
 
 """

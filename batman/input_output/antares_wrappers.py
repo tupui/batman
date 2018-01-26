@@ -5,6 +5,7 @@ Wrappers to Antares I/O classes
 This module exposes Antares Readers and Writers as additionnal Batman formaters.
 """
 from collections import defaultdict
+import logging
 import numpy as np
 
 
@@ -13,7 +14,7 @@ class AntaresFormater(object):
 
     def __init__(self, format_name):
         """Initialize a wrapper.
-        
+
         :param str format_name: name of an antares format.
         """
         self._format = format_name
@@ -35,7 +36,7 @@ class AntaresFormater(object):
         # extract content:
         # - 1 named field per variable
         # - 1 sample per point in time/space
-        data = defaultdict(lambda : np.empty(0, dtype=float))
+        data = defaultdict(lambda: np.empty(0, dtype=float))
         for zkey in base:
             for ikey in base[zkey]:
                 for var, loc in base[zkey][ikey]:
@@ -56,7 +57,7 @@ class AntaresFormater(object):
         import antares
         base = antares.Base()
         base.init()
-        for i, var in  enumerate(varnames):
+        for i, var in enumerate(varnames):
             base[0][0][var] = dataset[:, i]
 
         # use antares writer
@@ -73,5 +74,7 @@ try:
 except ImportError:
     ANTARES_FORMATER = {}
 else:
-    all_fmt = set(antares.reader_pool.format2reader) | set(antares.writer_pool.format2reader)
-    ANTARES_FORMATER = dict([('antares_' + fmt, AntaresFormater(fmt)) for fmt in all_fmt])
+    logging.info("Antares formaters are available. Format names are prefixed by 'antares_'.")
+    logging.warning("Dependency to Antares is deprecated and will be removed in the future.")
+    _all_fmt = set(antares.reader_pool.format2reader) | set(antares.writer_pool.format2reader)
+    ANTARES_FORMATER = dict([('antares_' + fmt, AntaresFormater(fmt)) for fmt in _all_fmt])
