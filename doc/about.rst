@@ -15,7 +15,23 @@ Citing batman
 -------------
 
 If you use batman in a scientific publication, we would appreciate
-citations to one of the following paper:
+citations to the following paper:
+
+  `BATMAN: Statistical analysis for expensive computer codes made easy <https://github.com/openjournals/joss-papers/blob/joss.00493/joss.00493/10.21105.joss.00493.pdf>`_, Roy, P.T.
+  *et al.*, JOSS, 2018.
+
+  Bibtex entry::
+
+    @article{batman_paper,
+     title={BATMAN: Statistical analysis for expensive computer codes made easy},
+     author={Roy, P.T. and Ricci, S. and Dupuis, R. and Campet, R., and
+     Jouhaud, J.-C. and Fournier, C.},
+     journal={The Journal of Open Source Software},
+     doi={10.21105/joss.00493},
+     year={2018}
+    }
+
+If you want to cite batman for an application, you may also want to consider:
 
   `Comparison of Polynomial Chaos and Gaussian Process surrogates for
   uncertainty quantification and correlation estimation of spatially
@@ -24,7 +40,7 @@ citations to one of the following paper:
 
   Bibtex entry::
 
-    @article{batman,
+    @article{batman_appli,
      title={Comparison of Polynomial Chaos and Gaussian Process surrogates for
      uncertainty quantification and correlation estimation of spatially
      distributed open-channel steady flows},

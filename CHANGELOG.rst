@@ -6,6 +6,34 @@
 Release history
 ===============
 
+Version 1.7.3 - Lucius
+======================
+
+.. note:: This version includes all comments from JOSS' reviewers. See the 
+   `review <https://github.com/openjournals/joss-reviews/issues/493#issuecomment-360492888>`_.
+
+New features
+------------
+
+    - Refactor :mod:`input_output`. Remove fortran and greatly simplify IO
+      handling. *by Cyril Fournier*,
+    - Add ``extremum`` option in settings for resampling, *by Pamphile Roy*,
+    - Add :class:`surrogate.SklearnRegressor` as an interface to all Scikit-Learn
+      regressors. Available through ``method`` in surrogate's settings.
+      *by Pamphile Roy*.
+
+Enhancements
+------------
+
+    - Do not compute quality for optimization and discrepancy, *by Pamphile Roy*,
+    - Reduce bounds amplitude and add warning for convergence, *by Pamphile Roy*.
+
+Bug fixes
+---------
+
+    - Remove documentation from gitlab pages, *by Pamphile Roy*.
+
+
 Version 1.7.2 - Lucius
 ======================
 
