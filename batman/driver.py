@@ -99,7 +99,7 @@ class Driver(object):
         # Snapshot Management
         args = settings['snapshot'].get('io', {})
         self.snapshot_io = SnapshotIO(parameter_names=settings['snapshot']['plabels'],
-                                      variable_names=settings['snapshot']['flabels'],
+                                      feature_names=settings['snapshot']['flabels'],
                                       **args)
         provider_type = settings['snapshot']['provider']['type']
         self.logger.info('Select data provider type "{}"'.format(provider_type))

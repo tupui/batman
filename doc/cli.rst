@@ -122,9 +122,10 @@ A snapshot defines a simulation.
         "plabels": ["x1", "x2"],
         "flabels": ["X", "F"],
         "io": {
-            "point_filename": "point.json",
-            "data_filename": "point.dat",
-            "data_format": "fmt_tp_fortran"
+            "point_filename": "sample-space.json",
+            "data_filename": "sample-data.csv",
+            "point_format": "json",
+            "data_format": "csv"
         },
         "provider": ...  # comes in 2 flavors
     }
@@ -132,9 +133,9 @@ A snapshot defines a simulation.
 + ``max_workers``: maximum number of simultaneous running snapshots.
 + ``plabels``: names of the parameters that serve as coordinates of a snapshot point.
 + ``flabels``: names of the variables to treat that are contained in a snapshot.
-+ ``point_filename``: name of the json file that contains the values associated to ``plabels``.
++ ``point_filename``: name of the json file that contains the values associated with ``plabels``.
 + ``data_filename``: name of the file that contains the output ``flabels`` of a snapshot.
-+ ``data_format``: ``npz``, ``fmt_tp_fortran`` (BATMAN) or all Antares formats if installed.
++ ``point_format``, ``data_format``: ``json``, ``csv``, ``npy``, ``npz``.
 
 The ``provider`` block defines what a simulation is. It comes in two flavors.
 A simulation can either be the result of a user-provided python function,

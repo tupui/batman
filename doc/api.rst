@@ -177,8 +177,8 @@ specifications may not be enough to give full guidelines on their uses.
 
 .. autosummary::
 
-   input_output.Dataset
-   input_output.IOFormatSelector
+   input_output.available_formats
+   input_output.formater
 
 .. py:module:: input_output
 .. automodule:: batman.input_output

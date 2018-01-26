@@ -7,7 +7,6 @@ python_linter:
   stage: linter
   image: "registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3"
   script:
-    - python setup.py build_fortran
     - python setup.py install
     - pycodestyle --max-line-length=120 --exclude=gp_1d_sampler.py,function*,TreeCut*,RBFnet*,tecplot* batman > pycodestyle.log || echo 0
     - cat pycodestyle.log
@@ -55,7 +54,6 @@ python_2:
   image: "registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3"
   script:
     - export MPLBACKEND="Agg"
-    - python setup.py build_fortran
     - python setup.py install
     - cd doc
     - make html

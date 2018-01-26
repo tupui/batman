@@ -9,7 +9,6 @@ Usage
 -----
 ::
 
-    python setup.py build_fortran
     python setup.py install
     python setup.py build_sphinx
 
@@ -43,25 +42,7 @@ class BuildSphinx(Command):
             ['setup.py', '-b', 'html', './doc', './doc/_build/html'])
 
 
-class CompileSources(Command):
-    """Compile fortran sources."""
-
-    description = 'Compile fortran sources'
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        os.system('make')
-        os.system('make clean')
-
-
 cmdclasses['build_sphinx'] = BuildSphinx
-cmdclasses['build_fortran'] = CompileSources
 
 # Check some import before starting build process.
 OPENTURNS_MIN_VERSION = LooseVersion('1.9')

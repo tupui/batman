@@ -9,6 +9,7 @@ It regoups various functions for graph visualizations.
 * :func:`sobol`,
 * :func:`corr_cov`.
 """
+import os
 import numpy as np
 import openturns as ot
 from sklearn.model_selection import cross_val_score
@@ -18,7 +19,7 @@ from scipy.optimize import differential_evolution
 from matplotlib import cm
 import matplotlib.pyplot as plt
 import batman as bat
-from ..input_output import (IOFormatSelector, Dataset)
+from ..input_output import formater
 
 
 def kernel_smoothing(data, optimize=False):
@@ -183,20 +184,19 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
         else:
             data = np.array([xdata_flattened, pdf])
 
-        io = IOFormatSelector('fmt_tp_fortran')
-        dataset = Dataset(names=names, data=data)
-        io.write(fname.split('.')[0] + '.dat', dataset)
+        io = formater('json')
+        filename, _ = os.path.splitext(fname)
+        io.write(filename + '.json', data, names)
 
         # Write moments to file
         if moments:
-            data = np.append([min_], [sd_min, mean, sd_max, max_])
+            data = np.array([min_, sd_min, mean, sd_max, max_])
             names = ['Min', 'SD_min', 'Mean', 'SD_max', 'Max']
             if output_len != 1:
                 names = ['x'] + names
                 data = np.append(xdata[0], data)
 
-            dataset = Dataset(names=names, shape=[output_len, 1, 1], data=data)
-            io.write(fname.split('.')[0] + '-moment.dat', dataset)
+            io.write(filename + '-moment.json', data, names)
 
     bat.visualization.save_show(fname, [fig])
 
@@ -349,17 +349,13 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
 
     if fname is not None:
         data = np.append(x_2d_yy, [y_2d_yy, corr_yy, cov_yy])
-        dataset = Dataset(names=['x', 'y', 'Correlation-YY', 'Covariance'],
-                          shape=[data_len, data_len, 1],
-                          data=data)
-        io = IOFormatSelector('fmt_tp_fortran')
-        io.write(fname.split('.')[0] + '-correlation_covariance.dat', dataset)
+        names = ['x', 'y', 'Correlation-YY', 'Covariance']
+        io = formater('json')
+        io.write(fname.split('.')[0] + '-correlation_covariance.json', data, names)
 
         data = np.append(x_2d_xy, [y_2d_xy, cov_matrix_xy])
-        dataset = Dataset(names=['x', 'y', 'Correlation-XY'],
-                          shape=[p_len, data_len, 1],
-                          data=data)
-        io.write(fname.split('.')[0] + '-correlation_XY.dat', dataset)
+        names = ['x', 'y', 'Correlation-XY']
+        io.write(fname.split('.')[0] + '-correlation_XY.dat', data, names)
 
     bat.visualization.save_show(fname, figures)
 

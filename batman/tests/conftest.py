@@ -63,9 +63,10 @@ def settings_ishigami():
                 "function": "f_ishigami"
             },
             "io": {
-                "point_filename": "point.json",
-                "data_filename": "point.dat",
-                "data_format": "fmt_tp_fortran",
+                "point_filename": "sample-space.json",
+                "data_filename": "sample-data.json",
+                "point_format": "json",
+                "data_format": "json",
             }
         },
         "surrogate": {

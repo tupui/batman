@@ -2,57 +2,42 @@
 IO module
 *********
 
-Input output management entry point.
-An input-output (io) is used to deal with the permanent storage of a dataset.
+Provides Formater objects to deal with I/Os.
+
+Every formaters have the same interface, exposing the two methods **read** and **write**.
+
+:Example: Using **json** formater
+
+::
+
+    >> from input_output import formater
+    >> varnames = ['x1', 'x2', 'x3']
+    >> data = [[1, 2, 3], [87, 74, 42]]
+    >> fmt = formater('json')
+    >> fmt.write('file.json', data, varnames)
+    {'x1': [1, 87], 'x2': [2, 74], 'x3': [3, 42]}
+    >> # can load a subset of variables, in a different order (unavailable for format 'npy')
+    >> fmt.read('file.json', ['x2', 'x1'])
+    array([[2, 1], [74, 87]])
+
 """
-import logging
-import os
-from .base import FormatError
-from .dataset import Dataset
-from .tecplot import TecplotAscii
-from .npz import Npz
-
-__all__ = ['Dataset', 'IOFormatSelector']
+from copy import copy
+from .formater import FORMATER as BUILTIN_FORMATER
+from .antares_wrappers import ANTARES_FORMATER
 
 
-class IOFormatSelector(object):
-    """Return an instance of io manager corresponding to a file `format`."""
+__all__ = ['formater', 'available_formats']
 
-    logger = logging.getLogger(__name__)
 
-    # list of all supported io classes
-    io_types = [TecplotAscii, Npz]
-    try:
-        os.environ["ANTARES_VERBOSE"] = "0"
-        from .antares_wrapper import AntaresWrapper
-        io_types.append(AntaresWrapper)
-        check_antares = True
-    except ImportError:
-        check_antares = False
-        logger.debug("Antares not installed")
+FORMATER = copy(ANTARES_FORMATER)
+FORMATER.update(BUILTIN_FORMATER)  # highest priority to built-in formaters
 
-    def __init__(self, io_format):
-        """Select the io class to use."""
-        self.format = io_format
 
-        if self.check_antares is True:
-            self.io_types[-1].format = self.format
+def available_formats():
+    """Returns the list of available format names."""
+    return copy(FORMATER.keys())
 
-        check_format_init = False
 
-        for io in self.io_types:
-            if self.format == io.format:
-                try:
-                    io = io()
-                    check_format_init = True
-                    self.read = io.read
-                    self.write = io.write
-                    self.meta_data = io.meta_data
-                    self.info = io.info
-                    return
-                except KeyError as bt:
-                    self.logger.error("Not available in Antares: {}".format(bt))
-
-        if check_format_init is False:
-            raise FormatError("File format {} doesn't exist"
-                              .format(self.format))
+def formater(format_name):
+    """Returns a Formater"""
+    return FORMATER[format_name]

@@ -3,24 +3,19 @@
 
 import json
 from batman.functions import G_Function
-from batman.input_output import (IOFormatSelector, Dataset)
+from batman.input_output import formater
 
-# Input from point.json
-with open('./batman-coupling/point.json', 'r') as fd:
-    params = json.load(fd)
+io = formater('csv')
 
-X1 = params['x1']
-X2 = params['x2']
-X3 = params['x3']
-X4 = params['x4']
-
-X = [X1, X2, X3, X4]
+# Input from sample-space.csv
+params = io.read('./batman-coupling/sample-space.csv', ['x1', 'x2', 'x3', 'x4'])
+# X1, X2, X3, X4 = params[0, :]
+# X = [X1, X2, X3, X4]
+X = list(params.flat)
 
 # Function
 f = G_Function(d=4)
 data = f(X)
 
 # Output
-io = IOFormatSelector('fmt_tp_fortran')
-dataset = Dataset(names=["F"], shape=[1, 1, 1], data=data)
-io.write('./batman-coupling/point.dat', dataset)
+io.write('./batman-coupling/sample-data.csv', data, ['F'])
