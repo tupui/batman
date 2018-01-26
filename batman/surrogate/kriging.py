@@ -126,6 +126,17 @@ class Kriging(object):
                 data = gp.fit(sample, column)
             hyperparameter = np.exp(gp.kernel_.theta)
 
+            # Convergence check with bounds only when kernel not user defined
+            if kernel is None:
+                hyper_bounds = all([i[0] < j < i[1]
+                                    for i, j in zip(scale_bounds,
+                                                    hyperparameter[1:dim+1])])
+
+                if not hyper_bounds:
+                    self.logger.warning("Hyperparameters optimization not "
+                                        "converged: {}"
+                                        .format(gp.kernel_))
+
             return data, hyperparameter
 
         # Create a predictor per data, parallelize if several data
