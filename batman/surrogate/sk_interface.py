@@ -44,7 +44,7 @@ class SklearnRegressor(object):
         :param array_like data: Observed data (n_samples, n_features).
         :param regressor: Scikit-Learn regressor.
         :type regressor: Either regressor object or
-          str(:module:`sklearn.ensemble`.Regressor)
+          str(:mod:`sklearn.ensemble`.Regressor)
         """
         try:
             sample[0][0]
