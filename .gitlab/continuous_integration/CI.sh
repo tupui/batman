@@ -3,7 +3,6 @@ python --version
 
 export MPLBACKEND="Agg"
 
-python setup.py build_fortran
 python setup.py install
 which batman
 

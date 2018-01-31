@@ -10,6 +10,7 @@ import os
 import shutil
 import logging
 import subprocess as sp
+import numpy as np
 from .snapshot import Snapshot
 from ..space import Point
 

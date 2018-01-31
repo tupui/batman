@@ -112,15 +112,19 @@ Extra testing flavours:
 Latest release
 ..............
 
-batman is distributed through ``conda``. To create a new environment which
-contains batman simply::
+batman is distributed through ``conda``, on the ``conda-forge`` channel.
+
+To install conda::
 
     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
     bash Miniconda3-latest-Linux-x86_64.sh
-    conda create -n bat_env -c conda-forge batman
 
-You can access the newly created environment with ``source activate bat_env``.
-All dependencies are automatically handled by ``conda``.
+To install batman through ``conda``::
+
+    conda install -c conda-forge batman
+
+All the above dependencies are automatically handled by ``conda``, 
+except `Antares <http://www.cerfacs.fr/antares>`_.
 
 From sources
 ............
@@ -129,7 +133,6 @@ Using the latest python version is prefered! Then to install::
 
     git clone git@gitlab.com:cerfacs/batman.git
     cd batman
-    python setup.py build_fortran
     python setup.py install
     python setup.py test
     python setup.py build_sphinx

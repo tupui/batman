@@ -75,8 +75,8 @@ def test_uq(driver_init, tmp):
     tmp = os.path.join(tmp, 'uq')
 
     assert os.path.isdir(tmp)
-    assert os.path.isfile(os.path.join(tmp, 'sensitivity.dat'))
+    assert os.path.isfile(os.path.join(tmp, 'sensitivity.json'))
     assert os.path.isfile(os.path.join(tmp, 'sensitivity.pdf'))
-    assert os.path.isfile(os.path.join(tmp, 'pdf.dat'))
+    assert os.path.isfile(os.path.join(tmp, 'pdf.json'))
     assert os.path.isfile(os.path.join(tmp, 'pdf.pdf'))
-    assert os.path.isfile(os.path.join(tmp, 'sensitivity_aggregated.dat'))
+    assert os.path.isfile(os.path.join(tmp, 'sensitivity_aggregated.json'))

@@ -35,19 +35,21 @@
           "properties": {
             "method": {
               "type": "string",
-              "enum": ["None", "discrepancy", "ego_discrepancy",
+              "enum": ["discrepancy", "ego_discrepancy",
                        "sigma_discrepancy", "sigma", "loo_sigma", "loo_sobol",
                        "extrema", "hybrid", "optimization"],
               "default": "sigma"
             },
             "resamp_size": {"type": "integer", "default": 2, "minimum": 0},
+            "extremum": {"type": "string", "enum": ["min", "max"],
+                         "default": "min"},
             "delta_space": {"type": "number", "default": 0.08, "minimum": 0},
-            "q2_criteria": {"type": "number", "default": 0.9, "minimum": 0,
-                            "exclusiveMinimum": true, "maximum": 1,
-                            "exclusiveMaximum": true},
+            "q2_criteria": {"type": "number", "default": 0.9,
+                            "minimum": 0, "exclusiveMinimum": true,
+                            "maximum": 1, "exclusiveMaximum": true},
             "hybrid": {"type": "array", "items": {}}
           },
-          "required": ["method", "resamp_size", "q2_criteria", "delta_space"]
+          "required": ["method", "resamp_size"]
         }
       },
       "required": ["corners", "sampling"]
@@ -100,11 +102,12 @@
         "io": {
           "type": "object",
           "properties": {
-            "point_filename": {"type": "string", "default": "point.json"},
-            "data_filename": {"type": "string", "default": "point.dat"},
-            "data_format": {"type": "string", "default": "fmt_tp_fortran"}
+            "point_filename": {"type": "string", "default": "sample-space.json"},
+            "data_filename": {"type": "string", "default": "sample-data.json"},
+            "point_format": {"type": "string", "default": "json"},
+            "data_format": {"type": "string", "default": "json"}
           },
-          "required": ["point_filename", "data_filename", "data_format"]
+          "required": ["point_filename", "data_filename", "point_format", "data_format"]
         }
       },
       "required": ["plabels", "flabels", "max_workers", "provider"]
@@ -113,8 +116,11 @@
       "type": "object",
       "properties": {
         "predictions": {"type": "array", "items": {}},
-        "method": {"type": "string", "default": "kriging",
-                   "enum": ["rbf", "kriging", "pc", "evofusion"]},
+        "method": {"anyOf": [{
+                    "properties": {
+                     "type": "string", "default": "kriging",
+                     "enum": ["rbf", "kriging", "pc", "evofusion"]}},
+                    {"properties": {"type": "string"}}]},
         "cost_ratio": {"type": "number", "default": 2.0, "minimum": 1,
                        "exclusiveMinimum": true},
         "grand_cost": {"type": "integer", "default": 30, "minimum": 4},

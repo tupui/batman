@@ -9,7 +9,7 @@ Interpolation using Gaussian Process method.
 
 ::
 
-    >> from kriging import Kriging
+    >> from batman.surrogate import Kriging
     >> import numpy as np
     >> sample = np.array([[2, 4], [3, 5], [6, 9]])
     >> data = np.array([[12, 1], [10, 2], [9, 4]])
@@ -29,7 +29,6 @@ import numpy as np
 from scipy.optimize import differential_evolution
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import (WhiteKernel, Matern, ConstantKernel)
-import sklearn.gaussian_process.kernels as kernels
 from ..misc import (NestedPool, cpu_system)
 from ..functions.utils import multi_eval
 
@@ -89,7 +88,7 @@ class Kriging(object):
         else:
             # Define the model settings
             l_scale = (1.0,) * dim
-            scale_bounds = [(1e-3, 1e3)] * dim
+            scale_bounds = [(0.01, 100)] * dim
             self.kernel = ConstantKernel() * Matern(length_scale=l_scale,
                                                     length_scale_bounds=scale_bounds)
 
@@ -98,7 +97,7 @@ class Kriging(object):
             if isinstance(noise, bool):
                 noise = WhiteKernel()
             else:
-                noise = kernels.WhiteKernel(noise_level=noise)
+                noise = WhiteKernel(noise_level=noise)
             self.kernel += noise
 
         # Global optimization
@@ -127,6 +126,17 @@ class Kriging(object):
                 data = gp.fit(sample, column)
             hyperparameter = np.exp(gp.kernel_.theta)
 
+            # Convergence check with bounds only when kernel not user defined
+            if kernel is None:
+                hyper_bounds = all([i[0] < j < i[1]
+                                    for i, j in zip(scale_bounds,
+                                                    hyperparameter[1:dim+1])])
+
+                if not hyper_bounds:
+                    self.logger.warning("Hyperparameters optimization not "
+                                        "converged: {}"
+                                        .format(gp.kernel_))
+
             return data, hyperparameter
 
         # Create a predictor per data, parallelize if several data
@@ -140,8 +150,7 @@ class Kriging(object):
 
         # Gather results
         self.data, self.hyperparameter = zip(*results)
-
-        self.logger.debug("Hyperparameters: {}".format(self.hyperparameter))
+        self.logger.debug("Kernels:\n{}".format([gp.kernel_ for gp in self.data]))
 
     def _optim_evolution(self, obj_func, initial_theta, bounds):
         """Genetic optimization of the hyperparameters.

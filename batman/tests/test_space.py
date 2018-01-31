@@ -227,11 +227,14 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     optim_EI = refiner.optimization(method='EI')
     npt.assert_almost_equal(optim_EI, [-2.1, 9.0], decimal=1)
 
+    optim_EI = refiner.optimization(extremum='max')
+    npt.assert_almost_equal(optim_EI, [-5.3,  1.9], decimal=1)
+
     optim_PI = refiner.optimization(method='PI')
     npt.assert_almost_equal(optim_PI, [-2.2, 9.2], decimal=1)
 
     disc = refiner.discrepancy()
-    npt.assert_almost_equal(disc, [8.47, 9.1], decimal=1)
+    npt.assert_almost_equal(disc, [8.47, 12.4], decimal=1)
 
     extrema = np.array(refiner.extrema([])[0])
     npt.assert_almost_equal(extrema, [[-2.694, 2.331], [2.576, 2.242]], decimal=1)

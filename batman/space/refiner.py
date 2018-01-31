@@ -54,7 +54,7 @@ class Refiner(object):
           :class:`batman.space.Space`.
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
         :param float delta_space: Shrinking factor for the parameter space.
-        :param bool discrete: whether one parameter is discrete.
+        :param int discrete: index of the discrete variable.
         """
         if isinstance(data, bat.surrogate.SurrogateModel):
             self.surrogate = data
@@ -77,8 +77,13 @@ class Refiner(object):
         self.corners = np.array(corners).T
         self.dim = len(self.corners)
 
+        # Prevent delta space contraction on discrete
+        _dim = list(range(self.dim))
+        if self.discrete is not None:
+            _dim.pop(self.discrete)
+
         # Inner delta space contraction: delta_space * 2 factor
-        for i in range(self.dim):
+        for i in _dim:
             self.corners[i, 0] = self.corners[i, 0] + delta_space\
                 * (self.corners[i, 1]-self.corners[i, 0])
             self.corners[i, 1] = self.corners[i, 1] - delta_space\
@@ -511,37 +516,43 @@ class Refiner(object):
 
         return new_point, refined_pod_points
 
-    def optimization(self, method='EI'):
+    def optimization(self, method='EI', extremum='min'):
         """Maximization of the Probability/Expected Improvement.
 
         :param str method: Flag ['EI', 'PI'].
+        :param str extremum: minimization or maximization objective
+          ['min', 'max'].
         :return: The coordinate of the point to add.
         :rtype: lst(float).
         """
-        gen = [self.func(x) for x in self.scaler.inverse_transform(self.points)]
+        sign = 1 if extremum == 'min' else -1
+        gen = [self.func(x, sign=sign)
+               for x in self.scaler.inverse_transform(self.points)]
         arg_min = np.argmin(gen)
         min_value = gen[arg_min]
         min_x = self.points[arg_min]
-        self.logger.info('Current minimal value is: f(x)={} for x={}'
-                         .format(min_value, min_x))
+        self.logger.info('Current extrema value is: f(x)={} for x={}'
+                         .format(sign * min_value, min_x))
 
+        # Do not check point is close on the discrete parameter
         if self.discrete is not None:
-            discrete = [[i for i in range(self.points.shape[1])]]
-            discrete[0].pop(self.discrete)
+            no_discrete = [list(range(self.points.shape[1]))]
+            no_discrete[0].pop(self.discrete)
         else:
-            discrete = None
+            no_discrete = None
 
         @optimization(self.corners, self.discrete)
         def probability_improvement(x):
             """Do probability of improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
             too_close = np.array([True if np.linalg.norm(
-                x_scaled[0][discrete] - p[discrete], -1) < 0.02
+                x_scaled[0][no_discrete] - p[no_discrete], -1) < 0.02
                                   else False for p in self.points]).any()
             if too_close:
                 return np.inf
 
             pred, sigma = self.pred_sigma(x)
+            pred = sign * pred
             std_dev = np.sqrt(sigma)
             pi = norm.cdf((target - pred) / std_dev)
 
@@ -552,12 +563,13 @@ class Refiner(object):
             """Do expected improvement."""
             x_scaled = self.scaler.transform(x.reshape(1, -1))
             too_close = np.array([True if np.linalg.norm(
-                x_scaled[0][discrete] - p[discrete], -1) < 0.02
+                x_scaled[0][no_discrete] - p[no_discrete], -1) < 0.02
                                   else False for p in self.points]).any()
             if too_close:
                 return np.inf
 
             pred, sigma = self.pred_sigma(x)
+            pred = sign * pred
             std_dev = np.sqrt(sigma)
             diff = min_value - pred
             ei = diff * norm.cdf(diff / std_dev)\

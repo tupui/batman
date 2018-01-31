@@ -3,21 +3,15 @@
 
 import json
 import numpy as np
-from batman.input_output import (IOFormatSelector, Dataset)
+from batman.input_output import formater
 
-# Input from point.json
-with open('./batman-coupling/point.json', 'r') as fd:
-    params = json.load(fd)
-
-X1 = params['x1']
+io = formater('csv')
+params = io.read('./batman-coupling/sample-space.csv', ['x1'])
+X1 = params[0, 0]
 
 # Function
 F = 5 + X1 + np.cos(X1)
 
 # Output
-data = np.array(F)
-names = ["F"]
-
-io = IOFormatSelector('numpy')
-dataset = Dataset(names=names, shape=[1, 1, 1], data=data)
-io.write('./batman-coupling/point.npz', dataset)
+io = formater('json')
+io.write('./batman-coupling/sample-data.json', F, ['F'])
