@@ -67,7 +67,7 @@ def doe(sample, plabels=None, resampling=0, multifidelity=False, fname=None):
                 pdf = np.exp(_ks.score_samples(x_plot))
                 ax.plot(x_plot, pdf)
                 ax.hist(sample_, 30, fc='gray', histtype='stepfilled',
-                        alpha=0.2, density=True)
+                        alpha=0.2)
                 ax.set_ylim(ymin=0)
             elif i < j:  # lower corners
                 ax.scatter(sample[0:len_sampling, i],

@@ -76,5 +76,5 @@ except ImportError:
 else:
     logging.info("Antares formaters are available. Format names are prefixed by 'antares_'.")
     logging.warning("Dependency to Antares is deprecated and will be removed in the future.")
-    _all_fmt = set(antares.reader_pool.format2reader) | set(antares.writer_pool.format2reader)
+    _all_fmt = set(antares.reader_pool.format2reader) | set(antares.writer_pool.format2writer)
     ANTARES_FORMATER = dict([('antares_' + fmt, AntaresFormater(fmt)) for fmt in _all_fmt])
