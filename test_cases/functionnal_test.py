@@ -21,9 +21,9 @@ else:
 
 
 def check_output(tmp):
-    assert os.path.isfile(os.path.join(tmp, 'surrogate/DOE.pdf'))
+    assert os.path.isfile(os.path.join(tmp, 'space/DOE.pdf'))
+    assert os.path.isfile(os.path.join(tmp, 'space/space.dat'))
     assert os.path.isfile(os.path.join(tmp, 'surrogate/surrogate.dat'))
-    assert os.path.isfile(os.path.join(tmp, 'surrogate/space.dat'))
     assert os.path.isfile(os.path.join(tmp, 'surrogate/data.dat'))
 
 
