@@ -88,7 +88,7 @@ class Kriging(object):
         else:
             # Define the model settings
             l_scale = (1.0,) * dim
-            scale_bounds = [(0.01, 0.5)] * dim
+            scale_bounds = [(0.01, 100)] * dim
             self.kernel = ConstantKernel() * Matern(length_scale=l_scale,
                                                     length_scale_bounds=scale_bounds)
 
