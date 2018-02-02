@@ -136,7 +136,6 @@ class Pod(object):
         """
         self.logger.info('Estimating POD quality...')
 
-        print ("in estimate quality")
         # Get rid of predictor creation messages
         level_init = copy.copy(self.logger.getEffectiveLevel())
         logging.getLogger().setLevel(logging.WARNING)

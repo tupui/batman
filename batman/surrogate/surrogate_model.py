@@ -253,7 +253,7 @@ class SurrogateModel(object):
         self.logger.info('Model and data wrote.')
 
     def read(self, fname):
-        """Load model and data from disk.
+        """Load model, data and space from disk.
 
         :param str fname: path to a directory.
         """
@@ -263,10 +263,13 @@ class SurrogateModel(object):
             self.predictor = unpickler.load()
         self.logger.debug('Model read from {}'.format(path))
 
+        path = os.path.join(fname, self.dir['space'])
+        self.space.read(path)
+
         path = os.path.join(fname, self.dir['data'])
         with open(path, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             self.data = unpickler.load()
         self.logger.debug('Data read from {}'.format(path))
 
-        self.logger.info('Model and data loaded.')
+        self.logger.info('Model, data and space loaded.')
