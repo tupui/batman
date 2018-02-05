@@ -42,7 +42,7 @@ class SurrogateModel(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, kind, corners, **kwargs):
+    def __init__(self, kind, corners, max_point_nb, **kwargs):
         r"""Init Surrogate model.
 
         :param str kind: name of prediction method, rbf or kriging.
@@ -67,7 +67,7 @@ class SurrogateModel(object):
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
-        self.space = Space(corners)
+        self.space = Space(corners, max_point_nb)
         self.data = None
         self.pod = None
         self.update = False  # switch: update model if POD update
@@ -269,7 +269,7 @@ class SurrogateModel(object):
         path = os.path.join(fname, self.dir['data'])
         with open(path, 'rb') as f:
             unpickler = pickle.Unpickler(f)
-            self.data = unpickler.load()
+            self.data = unpickler.load()[:len(self.space)]
         self.logger.debug('Data read from {}'.format(path))
 
         self.logger.info('Model, data and space loaded.')

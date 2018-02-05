@@ -184,13 +184,15 @@ class Driver(object):
 
             self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
                                             self.settings['space']['corners'],
-                                            **settings_)
+                                            init_size, **settings_)
             if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
                 sample = self.surrogate.predictor.sample
                 self.space += sample
                 if not self.provider.known_points:
                     self.to_compute_points = sample[:len(self.space)]
+                else:
+                    self.to_compute_points = list(self.space)
         else:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')
@@ -217,6 +219,7 @@ class Driver(object):
                                for i, point in enumerate(points)]
         snapshots = [self.provider.snapshot(p, d) for p, d in snapshot_points]
         self.snapshot_counter += len(snapshots)
+        self.logger.debug(len(points))
 
         # Fit the Surrogate [and POD]
         if self.pod is not None:
@@ -240,6 +243,9 @@ class Driver(object):
                             snapdata = np.vstack([snapdata, snapshot.data])
                 self.data = snapdata
             points = self.space
+            self.logger.debug('Pas dans If pod, mais else')
+            self.logger.debug(len(snapshots))
+            self.logger.debug(len(points))
 
         try:  # if surrogate
             self.surrogate.fit(points, self.data, pod=self.pod)

@@ -167,6 +167,17 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     space_ = copy.deepcopy(ishigami_data.space)
     space_.max_points_nb = 500
     sample = space_.sampling(500, 'halton')
+    path = os.path.join(tmp, 'surrogate')
+    path_space = os.path.join(tmp, 'space')
+
+    try:
+        os.makedirs(path)
+    except OSError:
+        pass
+    try:
+        os.makedirs(path_space)
+    except OSError:
+        pass
 
     # PC
     pc_settings = {'strategy': 'LS', 'degree': 10,
@@ -178,19 +189,20 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     pred, sigma = surrogate(ishigami_data.point)
     assert sigma is None
     assert pred[0] == pytest.approx(ishigami_data.target_point, 0.5)
-    surrogate.write(tmp)
-    assert os.path.isfile(os.path.join(tmp, 'surrogate.dat'))
+    surrogate.write(path)
+    assert os.path.isfile(os.path.join(path, 'surrogate.dat'))
 
     # Kriging
     surrogate = SurrogateModel('kriging', ishigami_data.space.corners)
     surrogate.fit(ishigami_data.space, ishigami_data.target_space)
-    surrogate.write(tmp)
-    assert os.path.isfile(os.path.join(tmp, 'surrogate.dat'))
+    ishigami_data.space.write(path_space)
+    surrogate.write(path)
+    assert os.path.isfile(os.path.join(path, 'surrogate.dat'))
 
     surrogate = SurrogateModel('kriging', ishigami_data.space.corners)
-    surrogate.read(tmp)
+    surrogate.read(path)
     assert surrogate.predictor is not None
-    assert surrogate.space == ishigami_data.space
+    npt.assert_array_equal(surrogate.space, ishigami_data.space)
 
     pred, _ = surrogate(ishigami_data.point)
     assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
