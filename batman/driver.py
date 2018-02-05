@@ -115,14 +115,15 @@ class Driver(object):
             # use points that were automatically discovered by the provider
             for point in self.to_compute_points:
                 self.space += point
+            self.to_compute_points = list(self.space)
         else:
             # generate points according to settings
             space_provider = self.settings['space']['sampling']
             if isinstance(space_provider, list):
                 # a list of points is provided
                 self.logger.info('Reading list of points from the settings.')
-                self.to_compute_points = space_provider
                 self.space += space_provider
+                self.to_compute_points = list(self.space)
             elif isinstance(space_provider, dict):
                 # use sampling method
                 distributions = space_provider.get('distributions')
