@@ -256,6 +256,7 @@ def _dotplot(data, pdf, ax, n_dots=20, n_bins=7):
     ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x / y_scale))
     ax2.yaxis.set_major_formatter(ticks_y)
     ax2.set_yticklabels([])
+    ax2.set_ylim([- radius, (max_y + radius)])
     ax2.autoscale_view()
     ax2.set_aspect('equal')
 

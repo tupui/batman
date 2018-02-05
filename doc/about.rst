@@ -17,7 +17,7 @@ Citing batman
 If you use batman in a scientific publication, we would appreciate
 citations to the following paper:
 
-  `BATMAN: Statistical analysis for expensive computer codes made easy <https://github.com/openjournals/joss-papers/blob/joss.00493/joss.00493/10.21105.joss.00493.pdf>`_, Roy, P.T.
+  `BATMAN: Statistical analysis for expensive computer codes made easy <https://joss.theoj.org/papers/a1c4bddc33a1d8ab55fce1a3596196d8>`_, Roy, P.T.
   *et al.*, JOSS, 2018.
 
   Bibtex entry::
