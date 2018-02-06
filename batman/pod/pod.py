@@ -367,7 +367,7 @@ class Pod(object):
         error_matrix = np.empty((points_nb, data_len))
         var_matrix = np.empty((points_nb, data_len))
         surrogate = SurrogateModel(self.leave_one_out_predictor,
-                                   self.corners)
+                                   self.corners, points_nb)
 
         def quality(i):
             """Error at a point.

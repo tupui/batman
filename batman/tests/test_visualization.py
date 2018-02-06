@@ -271,7 +271,9 @@ class TestPdf:
     @patch("matplotlib.pyplot.show")
     def test_pdf_surrogate(self, mock_show, ishigami_data):
         dist = ot.ComposedDistribution(ishigami_data.dists)
-        surrogate = SurrogateModel('rbf', ishigami_data.space.corners)
+        space = np.array(ishigami_data.space)
+        max_points_nb = space.shape[0]
+        surrogate = SurrogateModel('rbf', ishigami_data.space.corners, max_points_nb)
         surrogate.fit(ishigami_data.space, ishigami_data.target_space)
         settings = {
             "dist": dist,

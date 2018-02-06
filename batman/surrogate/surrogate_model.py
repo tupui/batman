@@ -12,7 +12,7 @@ It allows the creation of a surrogate model and making predictions.
 
     >> from surrogate_model import SurrogateModel
     >> method = "kriging"
-    >> predictor = SurrogateModel(method, space.corners)
+    >> predictor = SurrogateModel(method, space.corners, points_nb)
     >> predictor.fit(space, target_space)
     >> predictor.save('.')
     >> points = [(12.5, 56.8), (2.2, 5.3)]
@@ -47,6 +47,7 @@ class SurrogateModel(object):
 
         :param str kind: name of prediction method, rbf or kriging.
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
+        :param integer max_point_nb: number of sample points
         :param \**kwargs: See below
 
         :Keyword Arguments: For Polynomial Chaos the following keywords are

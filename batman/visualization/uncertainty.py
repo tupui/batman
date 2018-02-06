@@ -99,7 +99,8 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
     dx = 100
     if isinstance(data, dict):
         try:
-            f = bat.surrogate.SurrogateModel(data['method'], data['bounds'])
+            max_points_nb = data.shape[0]
+            f = bat.surrogate.SurrogateModel(data['method'], data['bounds'], max_points_nb)
             f.read(data['model'])
         except (AttributeError, TypeError):
             f = data['model']
@@ -348,7 +349,6 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """
     p_len = np.asarray(sample).shape[1]
-    data_len = np.asarray(data).shape[1]
     data = ot.Sample(data)
 
     corr_yy = np.array(data.computePearsonCorrelation())

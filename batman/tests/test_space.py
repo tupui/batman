@@ -196,10 +196,11 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings['snapshot']['plabels'] = ['x1', 'x2']
     space.empty()
-    space.sampling(5, 'halton')
+    max_points_nb = 5
+    space.sampling(max_points_nb, 'halton')
     space.max_points_nb = 100
 
-    surrogate = SurrogateModel('kriging', space.corners)
+    surrogate = SurrogateModel('kriging', space.corners, max_points_nb)
     surrogate.fit(space, f_2d(space))
 
     # LOO tests on small set
@@ -211,8 +212,9 @@ def test_resampling(tmp, branin_data, settings_ishigami):
 
     # Larger dataset to ensure stable results
     space.empty()
-    space.sampling(11, 'halton')
-    surrogate = SurrogateModel('kriging', space.corners)
+    max_points_nb = 11
+    space.sampling(max_points_nb, 'halton')
+    surrogate = SurrogateModel('kriging', space.corners, max_points_nb)
     surrogate.fit(space, f_2d(space))
     for _ in range(2):
         space.refine(surrogate, 'sigma')

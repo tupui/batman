@@ -59,7 +59,8 @@ class Refiner(object):
         if isinstance(data, bat.surrogate.SurrogateModel):
             self.surrogate = data
         else:
-            self.surrogate = bat.surrogate.SurrogateModel('kriging', data.corners)
+            max_points_nb = data.shape[0]
+            self.surrogate = bat.surrogate.SurrogateModel('kriging', data.corners, max_points_nb)
             self.surrogate.space = data
             self.logger.debug("Using Space instance instead of SurrogateModel "
                               "-> restricted to discrepancy refiner")

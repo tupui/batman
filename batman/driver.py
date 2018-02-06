@@ -219,7 +219,6 @@ class Driver(object):
                                for i, point in enumerate(points)]
         snapshots = [self.provider.snapshot(p, d) for p, d in snapshot_points]
         self.snapshot_counter += len(snapshots)
-        self.logger.debug(len(points))
 
         # Fit the Surrogate [and POD]
         if self.pod is not None:
@@ -243,9 +242,6 @@ class Driver(object):
                             snapdata = np.vstack([snapdata, snapshot.data])
                 self.data = snapdata
             points = self.space
-            self.logger.debug('Pas dans If pod, mais else')
-            self.logger.debug(len(snapshots))
-            self.logger.debug(len(points))
 
         try:  # if surrogate
             self.surrogate.fit(points, self.data, pod=self.pod)
