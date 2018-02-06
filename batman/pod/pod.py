@@ -160,9 +160,6 @@ class Pod(object):
         except OSError:
             pass
 
-        # points
-        self.space.write(os.path.join(path, self.points_file_name))
-
         # mean snapshot
         path_snapshot = os.path.join(path, self.directories['mean_snapshot'])
         np.savetxt(path_snapshot, self.mean_snapshot)
@@ -182,9 +179,6 @@ class Pod(object):
 
         :param str path: path to a directory.
         """
-        # points
-        self.space.read(os.path.join(path, self.points_file_name))
-
         # mean snapshot
         path_snapshot = os.path.join(path, self.directories['mean_snapshot'])
         self.mean_snapshot = np.atleast_1d(np.loadtxt(path_snapshot))
@@ -373,7 +367,7 @@ class Pod(object):
         error_matrix = np.empty((points_nb, data_len))
         var_matrix = np.empty((points_nb, data_len))
         surrogate = SurrogateModel(self.leave_one_out_predictor,
-                                   self.corners)
+                                   self.corners, points_nb)
 
         def quality(i):
             """Error at a point.

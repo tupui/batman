@@ -358,9 +358,9 @@ class Space(list):
 
         :param str path: folder to save the points in.
         """
-        np.savetxt(path, self)
+        np.savetxt(os.path.join(path, 'space.dat'), self)
         resampling = len(self) - self.doe_init
-        path = os.path.join(os.path.dirname(os.path.abspath(path)), 'DOE.pdf')
+        path = os.path.join(path, 'DOE.pdf')
         visualization.doe(self, plabels=self.plabels, resampling=resampling,
                           multifidelity=self.multifidelity, fname=path)
         self.logger.debug('Space wrote to {}'.format(path))

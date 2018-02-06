@@ -12,7 +12,7 @@ It allows the creation of a surrogate model and making predictions.
 
     >> from surrogate_model import SurrogateModel
     >> method = "kriging"
-    >> predictor = SurrogateModel(method, space.corners)
+    >> predictor = SurrogateModel(method, space.corners, points_nb)
     >> predictor.fit(space, target_space)
     >> predictor.save('.')
     >> points = [(12.5, 56.8), (2.2, 5.3)]
@@ -42,11 +42,12 @@ class SurrogateModel(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, kind, corners, **kwargs):
+    def __init__(self, kind, corners, max_point_nb, **kwargs):
         r"""Init Surrogate model.
 
         :param str kind: name of prediction method, rbf or kriging.
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
+        :param integer max_point_nb: number of sample points
         :param \**kwargs: See below
 
         :Keyword Arguments: For Polynomial Chaos the following keywords are
@@ -67,13 +68,13 @@ class SurrogateModel(object):
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
-        self.space = Space(corners)
+        self.space = Space(corners, max_point_nb)
         self.data = None
         self.pod = None
         self.update = False  # switch: update model if POD update
         self.dir = {
             'surrogate': 'surrogate.dat',
-            'space': 'space.dat',
+            'space': '../space/space.dat',
             'data': 'data.dat',
         }
 
@@ -234,7 +235,7 @@ class SurrogateModel(object):
         return q2_loo, point
 
     def write(self, fname):
-        """Save model, data and space to disk.
+        """Save model and data to disk.
 
         :param str fname: path to a directory.
         """
@@ -244,16 +245,13 @@ class SurrogateModel(object):
             pickler.dump(self.predictor)
         self.logger.debug('Model wrote to {}'.format(path))
 
-        path = os.path.join(fname, self.dir['space'])
-        self.space.write(path)
-
         path = os.path.join(fname, self.dir['data'])
         with open(path, 'wb') as f:
             pickler = pickle.Pickler(f)
             pickler.dump(self.data)
         self.logger.debug('Data wrote to {}'.format(path))
 
-        self.logger.info('Model, data and space wrote.')
+        self.logger.info('Model and data wrote.')
 
     def read(self, fname):
         """Load model, data and space from disk.
@@ -272,7 +270,7 @@ class SurrogateModel(object):
         path = os.path.join(fname, self.dir['data'])
         with open(path, 'rb') as f:
             unpickler = pickle.Unpickler(f)
-            self.data = unpickler.load()
+            self.data = unpickler.load()[:len(self.space)]
         self.logger.debug('Data read from {}'.format(path))
 
         self.logger.info('Model, data and space loaded.')

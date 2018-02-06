@@ -42,7 +42,7 @@ class Driver(object):
     # Structure of the output directory
     fname_tree = {
         'snapshots': 'snapshots',
-        'space': 'space.dat',
+        'space': 'space',
         'data': 'data.dat',
         'pod': 'surrogate/pod',
         'surrogate': 'surrogate',
@@ -115,14 +115,15 @@ class Driver(object):
             # use points that were automatically discovered by the provider
             for point in self.to_compute_points:
                 self.space += point
+            self.to_compute_points = list(self.space)
         else:
             # generate points according to settings
             space_provider = self.settings['space']['sampling']
             if isinstance(space_provider, list):
                 # a list of points is provided
                 self.logger.info('Reading list of points from the settings.')
-                self.to_compute_points = space_provider
                 self.space += space_provider
+                self.to_compute_points = list(self.space)
             elif isinstance(space_provider, dict):
                 # use sampling method
                 distributions = space_provider.get('distributions')
@@ -183,13 +184,15 @@ class Driver(object):
 
             self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
                                             self.settings['space']['corners'],
-                                            **settings_)
+                                            init_size, **settings_)
             if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
                 sample = self.surrogate.predictor.sample
                 self.space += sample
                 if not self.provider.known_points:
                     self.to_compute_points = sample[:len(self.space)]
+                else:
+                    self.to_compute_points = list(self.space)
         else:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')
@@ -287,7 +290,13 @@ class Driver(object):
                 self.space.optimization_results(extremum=extremum)
 
     def write(self):
-        """Write Surrogate [and POD] to disk."""
+        """Write DOE, Surrogate [and POD] to disk."""
+        path = os.path.join(self.fname, self.fname_tree['space'])
+        try:
+            os.makedirs(path)
+        except OSError:
+            pass
+        self.space.write(path)
         if self.surrogate is not None:
             path = os.path.join(self.fname, self.fname_tree['surrogate'])
             try:
@@ -295,9 +304,6 @@ class Driver(object):
             except OSError:
                 pass
             self.surrogate.write(path)
-        else:
-            path = os.path.join(self.fname, self.fname_tree['space'])
-            self.space.write(path)
         if self.pod is not None:
             path = os.path.join(self.fname, self.fname_tree['pod'])
             try:
@@ -314,16 +320,15 @@ class Driver(object):
 
     def read(self):
         """Read Surrogate [and POD] from disk."""
+        path = os.path.join(self.fname, self.fname_tree['space'])
+        self.space.read(os.path.join(path, 'space.dat'))
         if self.surrogate is not None:
             self.surrogate.read(os.path.join(self.fname,
                                              self.fname_tree['surrogate']))
-            self.space[:] = self.surrogate.space[:]
             self.data = self.surrogate.data
-        else:
-            path = os.path.join(self.fname, self.fname_tree['space'])
-            self.space.read(path)
         if self.pod is not None:
             self.pod.read(os.path.join(self.fname, self.fname_tree['pod']))
+            self.pod.space = self.space
             self.surrogate.pod = self.pod
         elif (self.pod is None) and (self.surrogate is None):
             path = os.path.join(self.fname, self.fname_tree['data'])
