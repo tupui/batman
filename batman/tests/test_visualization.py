@@ -273,7 +273,8 @@ class TestPdf:
         dist = ot.ComposedDistribution(ishigami_data.dists)
         space = np.array(ishigami_data.space)
         max_points_nb = space.shape[0]
-        surrogate = SurrogateModel('rbf', ishigami_data.space.corners, max_points_nb)
+        surrogate = SurrogateModel('rbf', ishigami_data.space.corners,
+                                   max_points_nb, ishigami_data.space.plabels)
         surrogate.fit(ishigami_data.space, ishigami_data.target_space)
         settings = {
             "dist": dist,

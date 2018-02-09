@@ -22,8 +22,7 @@ Z = f([Ks, Q])
 # plt.show()
 
 # Output
-nb_value = np.size(X)
-
 names = ['X', 'F']
-data = np.append(np.reshape(X, (-1, 1)), np.reshape(Z, (-1, 1)), axis=1)
-io.write('./batman-coupling/sample-data.json', data, names)
+sizes = [np.size(X), np.size(Z)]
+data = np.append(X, Z)
+io.write('./batman-coupling/sample-data.json', data, names, sizes)

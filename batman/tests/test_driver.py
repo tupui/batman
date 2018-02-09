@@ -17,7 +17,7 @@ def test_driver_chain(driver_init, tmp, ishigami_data):
 
     driver.read()
     pred, _ = driver.prediction(points=ishigami_data.point, write=True)
-    assert os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0'))
+    assert os.path.isdir(os.path.join(tmp, 'predictions'))
     assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
 
 
@@ -29,7 +29,7 @@ def test_no_pod(ishigami_data, tmp, settings_ishigami):
 
     pred, _ = driver.prediction(write=True, points=ishigami_data.point)
     assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
-    assert os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0'))
+    assert os.path.isdir(os.path.join(tmp, 'predictions'))
 
     def wrap_surrogate(x):
         evaluation, _ = driver.prediction(points=x)
@@ -44,20 +44,18 @@ def test_provider_dict(tmp, settings_ishigami):
     test_settings = copy.deepcopy(settings_ishigami)
     test_settings['space']['sampling']['init_size'] = 4
     test_settings['snapshot']['provider'] = {
-        "type": "file",
+        "type": "job",
         "command": "bash script.sh",
         "context_directory": "data",
         "coupling_directory": "batman-coupling",
-        "timeout": 30,
         "clean": False,
-        "restart": "False"
     }
     driver = Driver(test_settings, tmp)
     driver.sampling()
     driver.write()
 
     pred, _ = driver.prediction([2, -3, 1], write=True)
-    assert os.path.isdir(os.path.join(tmp, 'predictions/Newsnap0'))
+    assert os.path.isdir(os.path.join(tmp, 'predictions'))
 
 
 def test_resampling(tmp, settings_ishigami):

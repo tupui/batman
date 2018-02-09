@@ -6,30 +6,26 @@
       "type": "object",
       "properties": {
         "corners": {"type": "array", "items": {}},
-
         "sampling": {
-          "oneOf":[
-          {
-            "type": "object",
-            "properties": {
-              "method": {
-                    "type": "string",
-                    "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc",
-                             "lhsopt", "faure", "uniform", "saltelli"],
-                    "default": "halton"
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "method": {
+                      "type": "string",
+                      "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc",
+                               "lhsopt", "faure", "uniform", "saltelli"],
+                      "default": "halton"
+                },
+                "distributions": {"type": "array", "items": {}},
+                "init_size": {"type": "integer", "default": 20, "minimum": 4},
+                "discrete": {"type": "integer", "minimum": 0}
               },
-              "distributions": {
-                    "type": "array", "items": {}
-              },
-              "init_size": {"type": "integer", "default": 20, "minimum": 4},
-              "discrete": {"type": "integer", "minimum": 0}
+              "required": ["method", "init_size"]
             },
-            "required": ["method", "init_size"]
-          },
-          {"type": "array", "items": {}}
+            {"type": "array", "items": {}}
           ]
         },
-
         "resampling": {
           "type": "object",
           "properties": {
@@ -72,42 +68,54 @@
         "max_workers": {"type": "integer", "default": 2, "minimum": 1},
         "plabels": {"type": "array", "items": {"type": "string"}},
         "flabels": {"type": "array", "items": {"type": "string"}},
+        "psizes": {"type": "array", "items": {"type": "integer"}},
+        "fsizes": {"type": "array", "items": {"type": "integer"}},
         "provider": {
           "oneOf": [
             {
               "type": "object",
               "properties": {
-                "type": {"type": "string", "enum": ["plugin"]},
+                "type": {"type": "string", "enum": ["function"]},
                 "module": {"type": "string"},
-                "function": {"type": "string"}
+                "function": {"type": "string"},
+                "discover": {"type": "string"}
               },
               "required": ["type", "module", "function"]
             },
             {
               "type": "object",
               "properties": {
-                "type": {"type": "string", "enum": ["file"]},
-                "discover_from": {"type": "string"},
+                "type": {"type": "string", "enum": ["job"]},
+                "command": {"type": "string", "default": "bash script.sh"},
                 "context_directory": {"type": "string", "default": "data"},
                 "coupling_directory": {"type": "string", "default": "batman-coupling"},
-                "command": {"type": "string", "default": "bash script.sh"},
-                "timeout": {"type": "integer", "default": 3600, "minimum": 0},
                 "clean": {"type": "boolean", "default": false},
-                "restart": {"type": "string", "default": "false"}
+                "discover": {"type": "string"}
               },
-              "required": ["type"]
+              "required": ["type", "command", "context_directory"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {"type": "string", "enum": ["file"]},
+                "file_pairs": {
+                  "type": "array",
+                  "items": {"type": "array", "items": [{"type": "string"}, {"type": "string"}]}
+                },
+                "discover": {"type": "string"}
+              },
+              "required": ["type", "file_pairs"]
             }
           ]
         },
         "io": {
           "type": "object",
           "properties": {
-            "point_filename": {"type": "string", "default": "sample-space.json"},
+            "space_filename": {"type": "string", "default": "sample-space.json"},
+            "space_format": {"type": "string", "default": "json"},
             "data_filename": {"type": "string", "default": "sample-data.json"},
-            "point_format": {"type": "string", "default": "json"},
             "data_format": {"type": "string", "default": "json"}
-          },
-          "required": ["point_filename", "data_filename", "point_format", "data_format"]
+          }
         }
       },
       "required": ["plabels", "flabels", "max_workers", "provider"]

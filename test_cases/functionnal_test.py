@@ -131,7 +131,7 @@ def test_restart_pod(tmp, case='Michalewicz'):
     assert os.path.isdir(os.path.join(tmp, 'snapshots/4'))
 
     init_case(tmp, case, force=True)
-    # Restart from snapshots and read a template directory
+    # Restart from snapshots
     batman.ui.run(settings, options)
 
     init_case(tmp, case, force=True)

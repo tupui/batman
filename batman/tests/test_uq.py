@@ -7,7 +7,8 @@ from batman.surrogate import SurrogateModel
 
 def test_indices(tmp, ishigami_data, settings_ishigami):
     max_points_nb = settings_ishigami['space']['sampling']['init_size']
-    surrogate = SurrogateModel('kriging', ishigami_data.space.corners, max_points_nb)
+    surrogate = SurrogateModel('kriging', ishigami_data.space.corners, max_points_nb,
+                               ishigami_data.space.plabels)
     surrogate.fit(ishigami_data.space, ishigami_data.target_space)
 
     analyse = UQ(surrogate, nsample=settings_ishigami['uq']['sample'],
@@ -35,8 +36,8 @@ def test_block(mascaret_data, settings_ishigami):
     test_settings['snapshot']['plabels'] = ['Ks', 'Q']
 
     max_points_nb = settings_ishigami['space']['sampling']['init_size']
-
-    surrogate = SurrogateModel('rbf', mascaret_data.space.corners, max_points_nb)
+    surrogate = SurrogateModel('rbf', mascaret_data.space.corners, max_points_nb,
+                               mascaret_data.space.plabels)
     surrogate.fit(mascaret_data.space, mascaret_data.target_space)
 
     analyse = UQ(surrogate, nsample=test_settings['uq']['sample'],

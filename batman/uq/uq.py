@@ -369,18 +369,16 @@ class UQ:
             i1 = np.reshape(indices[1], (sobol_len, self.p_len))
             i2 = np.reshape(indices[2], (sobol_len, self.p_len))
             data = np.append(i1, i2, axis=1)
-            names = []
-            for p in self.plabels:
-                names += ['S_' + str(p)]
-            for p in self.plabels:
-                names += ['S_T_' + str(p)]
-            if (self.output_len > 1) and (self.type_indices != 'block'):
-                full_names = ['x'] + names
-                data = np.append(self.xdata, data)
-            else:
-                full_names = names
 
-            self.io.write(os.path.join(self.fname, 'sensitivity.json'), data, full_names)
+            names = ['S_{}'.format(p) for p in self.plabels]
+            names += ['S_T_{}'.format(p) for p in self.plabels]
+
+            if (self.output_len > 1) and (self.type_indices != 'block'):
+                names = ['x'] + names
+                data = np.append(np.reshape(self.xdata, (sobol_len, 1)), data, axis=1)
+            sizes = [1] * len(names)
+
+            self.io.write(os.path.join(self.fname, 'sensitivity.json'), data, names, sizes)
         else:
             self.logger.debug("No output folder to write indices in")
 
@@ -452,10 +450,10 @@ class UQ:
                     names = [i + str(p) for i, p in
                              itertools.product(['S_', 'S_T_'], self.plabels)]
                     data = np.append(i1, i2)
+                
                 self.io.write(os.path.join(self.fname, 'sensitivity_aggregated.json'), data, names)
             else:
-                self.logger.debug(
-                    "No output folder to write aggregated indices in")
+                self.logger.debug("No output folder to write aggregated indices in")
 
             full_indices = [aggregated[1], aggregated[2], indices[1], indices[2]]
         else:

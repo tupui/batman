@@ -66,12 +66,9 @@ def run(settings, options):
                     raise SystemExit
 
                 # auto-discovery of existing snapshots
-                if settings['snapshot']['provider']['type'] == 'file':
-                    root = os.path.join(options.output, 'snapshots')
-                    if not os.path.isdir(root):
-                        logger.warning('No folder snapshots in output folder')
-                        raise SystemExit
-                    settings['snapshot']['provider']['discover_from'] = root
+                root = os.path.join(options.output, 'snapshots')
+                if os.path.isdir(root):
+                    settings['snapshot']['provider']['discover'] = root
 
         if delete:
             try:
@@ -80,6 +77,12 @@ def run(settings, options):
                 pass
             os.makedirs(options.output)
             logger.debug('cleaning : {}'.format(options.output))
+
+    elif options.restart:
+        # auto-discovery of existing snapshots
+        root = os.path.join(options.output, 'snapshots')
+        if os.path.isdir(root):
+            settings['snapshot']['provider']['discover'] = root
 
     driver = Driver(settings, options.output)
 

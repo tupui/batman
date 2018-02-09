@@ -194,17 +194,20 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
 
         io = formater('json')
         filename, _ = os.path.splitext(fname)
-        io.write(filename + '.json', data, names)
+        sizes = [data.shape[1]] * data.shape[0]
+        io.write(filename + '.json', data.flatten(), names, sizes)
 
         # Write moments to file
         if moments:
             data = np.array([min_, sd_min, mean, sd_max, max_])
+            sizes = 5 * [data.shape[1]]
             names = ['Min', 'SD_min', 'Mean', 'SD_max', 'Max']
             if output_len != 1:
                 names = ['x'] + names
                 data = np.append(xdata[0], data)
+                sizes = [np.size(xdata[0])] + sizes
 
-            io.write(filename + '-moment.json', data, names)
+            io.write(filename + '-moment.json', data.flatten(), names, sizes)
 
     bat.visualization.save_show(fname, [fig])
 
@@ -408,14 +411,18 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
     ax.tick_params(axis='y', labelsize=23)
 
     if fname is not None:
+        io = formater('json')
+        filename, _ = os.path.splitext(fname)
+
         data = np.append(x_2d_yy, [y_2d_yy, corr_yy, cov_yy])
         names = ['x', 'y', 'Correlation-YY', 'Covariance']
-        io = formater('json')
-        io.write(fname.split('.')[0] + '-correlation_covariance.json', data, names)
+        sizes = [np.size(x_2d_yy), np.size(y_2d_yy), np.size(corr_yy), np.size(cov_yy)]
+        io.write(filename + '-correlation_covariance.json', data, names, sizes)
 
         data = np.append(x_2d_xy, [y_2d_xy, cov_matrix_xy])
         names = ['x', 'y', 'Correlation-XY']
-        io.write(fname.split('.')[0] + '-correlation_XY.dat', data, names)
+        sizes = [np.size(x_2d_xy), np.size(y_2d_xy), np.size(cov_matrix_xy)]
+        io.write(filename + '-correlation_XY.dat', data, names, sizes)
 
     bat.visualization.save_show(fname, figures)
 

@@ -6,7 +6,7 @@ from sklearn.metrics import r2_score
 import openturns as ot
 from batman.functions import (Ishigami, Branin, G_Function,
                               Mascaret, Forrester)
-from batman.space import (Space, Point)
+from batman.space import Space
 from batman.driver import Driver
 
 
@@ -58,14 +58,14 @@ def settings_ishigami():
             "plabels": ["x1", "x2", "x3"],
             "flabels": ["F"],
             "provider": {
-                "type": "plugin",
+                "type": "function",
                 "module": "batman.tests.plugins",
                 "function": "f_ishigami"
             },
             "io": {
-                "point_filename": "sample-space.json",
+                "space_filename": "sample-space.json",
+                "space_format": "json",
                 "data_filename": "sample-data.json",
-                "point_format": "json",
                 "data_format": "json",
             }
         },
@@ -99,7 +99,7 @@ def ishigami_data(settings_ishigami):
     data['func'] = Ishigami()
     x1 = ot.Uniform(-3.1415, 3.1415)
     data['dists'] = [x1] * 3
-    data['point'] = Point([2.20, 1.57, 3])
+    data['point'] = [2.20, 1.57, 3]
     data['target_point'] = data['func'](data['point'])
     data['space'] = Space(settings_ishigami['space']['corners'],
                           settings_ishigami['space']['sampling']['init_size'],
@@ -115,7 +115,7 @@ def branin_data(settings_ishigami):
     data = {}
     data['func'] = Branin()
     data['dists'] = [ot.Uniform(-5, 10), ot.Uniform(0, 15)]
-    data['point'] = Point([2., 2.])
+    data['point'] = [2., 2.]
     data['target_point'] = data['func'](data['point'])
     data['space'] = Space([[-7, 0], [10, 15]],
                           settings_ishigami['space']['sampling']['init_size'],
@@ -131,7 +131,7 @@ def g_function_data(settings_ishigami):
     data = {}
     data['func'] = G_Function()
     data['dists'] = [ot.Uniform(0, 1)] * 4
-    data['point'] = Point([0.5, 0.2, 0.7, 0.1])
+    data['point'] = [0.5, 0.2, 0.7, 0.1]
     data['target_point'] = data['func'](data['point'])
     data['space'] = Space([[0, 0, 0, 0], [1, 1, 1, 1]],
                           settings_ishigami['space']['sampling']['init_size'],
