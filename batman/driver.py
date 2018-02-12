@@ -184,7 +184,8 @@ class Driver(object):
 
             self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
                                             self.settings['space']['corners'],
-                                            init_size, **settings_)
+                                            max_points_nb=init_size + resamp_size,
+                                            **settings_)
             if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
                 sample = self.surrogate.predictor.sample
@@ -271,6 +272,8 @@ class Driver(object):
                 quality, point_loo = self.surrogate.estimate_quality()
                 if quality >= q2_criteria:
                     break
+            elif 'loo' in method:
+                _, point_loo = self.surrogate.estimate_quality()
             else:
                 point_loo = None
 

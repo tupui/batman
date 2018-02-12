@@ -42,12 +42,12 @@ class SurrogateModel(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, kind, corners, max_point_nb, **kwargs):
+    def __init__(self, kind, corners, max_points_nb, **kwargs):
         r"""Init Surrogate model.
 
         :param str kind: name of prediction method, rbf or kriging.
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
-        :param integer max_point_nb: number of sample points
+        :param integer max_points_nb: number of sample points
         :param \**kwargs: See below
 
         :Keyword Arguments: For Polynomial Chaos the following keywords are
@@ -68,7 +68,7 @@ class SurrogateModel(object):
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
-        self.space = Space(corners, max_point_nb)
+        self.space = Space(corners, max_points_nb)
         self.data = None
         self.pod = None
         self.update = False  # switch: update model if POD update
