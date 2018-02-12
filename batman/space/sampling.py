@@ -107,8 +107,8 @@ class Doe():
         elif self.kind == 'saltelli':
             # Only relevant for computation of Sobol' indices
             size = self.n_samples // (2 * self.dim + 2)  # N(2*dim + 2)
-            self.sequence_type = ot.SobolIndicesAlgorithmImplementation.Generate(
-                distribution, size, True)
+            self.sequence_type = ot.SobolIndicesExperiment(distribution,
+                size, True).generate()
 
     def generate(self):
         """Generate the DOE.
