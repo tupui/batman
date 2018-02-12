@@ -297,7 +297,6 @@ class TestPdf:
         pdf(data, xlabel='s', flabel='Y', moments=True,
             fname=os.path.join(tmp, 'pdf_nd_moments.pdf'))
 
-
     def test_pdf_dotplot(self, tmp):
         pdf(data[:10, 5].reshape(-1, 1), dotplot=True,
             fname=os.path.join(tmp, 'pdf_dotplot.pdf'))

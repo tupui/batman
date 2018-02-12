@@ -107,19 +107,20 @@ class PC(object):
         :param array_like data: The observed data (n_samples, [n_features]).
         """
         if self.strategy == 'LS':  # least-squares method
-            self.proj_strategy = ot.LeastSquaresStrategy(sample, data)
-            _, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
-
-        sample_ = np.zeros_like(self.sample)
-        sample_[:len(sample)] = sample
-        sample_arg = np.all(np.isin(sample_, self.sample), axis=1)
-        weights = np.array(self.weights)[sample_arg]
+            proj_strategy = ot.LeastSquaresStrategy(sample, data)
+            _, weights = proj_strategy.getExperiment().generateWithWeights()
+        else:
+            proj_strategy = self.proj_strategy
+            sample_ = np.zeros_like(self.sample)
+            sample_[:len(sample)] = sample
+            sample_arg = np.all(np.isin(sample_, self.sample), axis=1)
+            weights = np.array(self.weights)[sample_arg]
 
         trunc_strategy = ot.FixedStrategy(self.basis, self.n_basis)
 
         pc_algo = ot.FunctionalChaosAlgorithm(sample, weights, data,
                                               self.dist, trunc_strategy)
-        pc_algo.setProjectionStrategy(self.proj_strategy)
+        pc_algo.setProjectionStrategy(proj_strategy)
 
         ot.Log.Show(ot.Log.ERROR)
         pc_algo.run()
