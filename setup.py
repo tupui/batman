@@ -45,7 +45,7 @@ class BuildSphinx(Command):
 cmdclasses['build_sphinx'] = BuildSphinx
 
 # Check some import before starting build process.
-OPENTURNS_MIN_VERSION = LooseVersion('1.9')
+OPENTURNS_MIN_VERSION = LooseVersion('1.10')
 try:
     import openturns
     if LooseVersion(openturns.__version__) < OPENTURNS_MIN_VERSION:
