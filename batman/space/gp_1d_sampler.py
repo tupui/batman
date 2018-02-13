@@ -101,12 +101,14 @@ class Gp1dSampler:
         elif self.covariance == "Spherical":
             model = ot.SphericalModel(1, [self.sigma], [self.theta])
 
-        # Karhunen-Loeve decomposition factory using P1 approximation
-        factory = ot.KarhunenLoeveP1Factory(mesh, self.threshold)
+        # Karhunen-Loeve decomposition algorithm using P1 approximation
+        algo = ot.KarhunenLoeveP1Algorithm(mesh, model, self.threshold)
 
         # Computation of the eigenvalues and eigen function values at nodes
-        ev = ot.NumericalPoint()
-        modes = factory.buildAsProcessSample(model, ev)
+        algo.run()
+        result = algo.getResult()
+        ev = result.getEigenValues() 
+        modes = result.getModesAsProcessSample()
         n_modes = modes.getSize()
 
         # Evaluation of the eigen functions
@@ -263,12 +265,14 @@ class Gp2dSampler:
         elif covariance == "Spherical":
             model = ot.SphericalModel(1, [self.sigma], self.theta)
 
-        # Karhunen-Loeve decomposition factory using P1 approximation.
-        factory = ot.KarhunenLoeveP1Factory(mesh, self.threshold)
+        # Karhunen-Loeve decomposition algorithm using P1 approximation.
+        factory = ot.KarhunenLoeveP1Algorithm(mesh, model, self.threshold)
 
         # Computation of the eigenvalues and eigen function values at nodes.
-        ev = ot.NumericalPoint()
-        modes = factory.buildAsProcessSample(model, ev)
+        algo.run()
+        result = algo.getResult()
+        ev = result.getEigenValues()
+        modes = result.getModesAsProcessSample()
         n_modes = modes.getSize()
 
         # Evaluation of the eigen functions
@@ -405,12 +409,14 @@ class Gp3dSampler:
         elif covariance == "Spherical":
             model = ot.SphericalModel(1, [self.sigma], self.theta)
 
-        # Karhunen-Loeve decomposition factory using P1 approximation.
-        factory = ot.KarhunenLoeveP1Factory(mesh, self.threshold)
+        # Karhunen-Loeve decomposition algorithm using P1 approximation.
+        factory = ot.KarhunenLoeveP1Algorithm(mesh, model, self.threshold)
 
         # Computation of the eigenvalues and eigen function values at nodes.
-        ev = ot.NumericalPoint()
-        modes = factory.buildAsProcessSample(model, ev)
+        algo.run()
+        result = algo.getResult()
+        ev = result.getEigenValues()
+        modes = result.getModesAsProcessSample()
         n_modes = modes.getSize()
 
         # Evaluation of the eigen functions
