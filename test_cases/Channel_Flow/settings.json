@@ -12,8 +12,7 @@
         "resampling":{
             "delta_space": 0.08,
             "resamp_size": 0,
-            "method": "sigma",
-            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
+            "method": "discrepancy",
             "q2_criteria": 0.9
         }
     },

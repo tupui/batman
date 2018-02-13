@@ -198,7 +198,7 @@
                       {"sampling": {"properties":
                         {"distributions": {"type": "array", "items": {}}}},
                        "resampling": {"properties":
-                        {"resamp_size": {"type": "integer", "maximum": 0}}}
+                        {"method": {"enum":["discrepancy", "extrema"]}}}
                       }
                     }}
     },
