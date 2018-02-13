@@ -141,7 +141,7 @@ class Sample(object):
                 return np.empty(df_space.shape)
             return df_space.values
         except KeyError:
-            return np.empty((0, 0))
+            return np.empty((len(self), 0))
 
     @property
     def data(self):
@@ -152,7 +152,7 @@ class Sample(object):
                 return np.empty(df_data.shape)
             return df_data.values
         except KeyError:
-            return np.empty((0, 0))
+            return np.empty((len(self), 0))
 
     # -----------------------------------------------------------
     # Container methods
@@ -170,7 +170,7 @@ class Sample(object):
             df_other = other.dataframe
         elif isinstance(other, pd.DataFrame) or isinstance(other, pd.Series):
             idx = other.columns if isinstance(other, pd.DataFrame) else other.index
-            assert idx.nlevels == 3
+            assert idx.nlevels == 3 or idx.size == 0
             assert ('space' in other) == ('space' in self._dataframe)
             assert ('data' in other) == ('data' in self._dataframe)
             for label in self.plabels:
@@ -185,7 +185,11 @@ class Sample(object):
                 raise ValueError(msg)
             if isinstance(other, Number):
                 other = np.broadcast_to(other, (1, self._dataframe.shape[-1]))
-            assert other.shape[-1] == self._dataframe.shape[-1]
+            other = np.asarray(other)
+            if len(other.shape) < 2:
+                other = other.reshape(1, other.size)
+            if len(other.shape) > 2:
+                other = other.reshape(other.shape[0], np.prod(other.shape[1:]))
             df_other = pd.DataFrame(other, columns=self._dataframe.columns)
 
         # append
@@ -208,26 +212,35 @@ class Sample(object):
     # Inputs / Outputs
     # -----------------------------------------------------------
 
-    def read(self, space_fname=None, data_fname=None, plabels=None, flabels=None):
+    def read(self, space_fname='sample-space.json', data_fname='sample-data.json',
+             plabels=None, flabels=None):
         """[TODO]
         
         :param str space_fname: path to space file.
         :param str data_fname: path to data file.
         """
         np_sample = []
-        if (space_fname is not None) and (len(self.plabels) > 0):
+        if len(self.plabels) > 0:
             if plabels is None:
                 plabels = self.plabels
-            np_space = self._pformater.read(space_fname, plabels)
-            np_sample.append(np_space)
+            try:
+                np_space = self._pformater.read(space_fname, plabels)
+            except OSError:
+                pass  # file not found.
+            else:
+                np_sample.append(np_space)
 
-        if (data_fname is not None) and (len(self.plabels) > 0):
+        if len(self.flabels) > 0:
             if flabels is None:
                 flabels = self.flabels
-            np_data = self._fformater.read(data_fname, flabels)
-            np_sample.append(np_data)
+            try:
+                np_data = self._fformater.read(data_fname, flabels)
+            except OSError:
+                pass  # file not found.
+            else:
+                np_sample.append(np_data)
 
-        if (np_space is not None) or (np_data is not None):
+        if len(np_sample) > 0:
             np_sample = np.concatenate(np_sample, axis=1)
             self.append(np_sample)
 
@@ -329,21 +342,14 @@ def create_dataframe(dataset, clabel='space', flabels=None, fsizes=None):
         nsample, n_features, n_components = dataset.shape
         length = n_features * n_components
         
-        if (((flabels is None) or (len(flabels) == 0))
-                and ((fsizes is None) or (len(fsizes) == 0))):
+        if (flabels is not None) and (len(flabels) > 0):
+            n_features = len(flabels)
+            n_components = length // n_features
+        if (fsizes is None) or (len(fsizes) == 0):
             fsizes = [n_components] * n_features
-        index = create_index(clabel, flabels, fsizes)
 
-#        if flabels is None:
-#            char = 'p' if clabel == 'space' else 'f'
-#            flabels = ['{}{}'.format(char, i) for i in range(n_features)]
-#        if len(flabels) != n_features:
-#            msg = ("Detected {} features in '{}', but found {} labels"
-#                   .format(n_features, clabel, len(flabels)))
-#            logging.error(msg)
-#            raise ValueError(msg)
-#        index = pd.MultiIndex.from_product([[clabel], flabels, range(n_components)])
-        dataframe = pd.DataFrame(dataset.reshape(nsample, length), columns=index)
+        idx = create_index(clabel, flabels, fsizes)
+        dataframe = pd.DataFrame(dataset.reshape(nsample, length), columns=idx)
 
     return dataframe
 
