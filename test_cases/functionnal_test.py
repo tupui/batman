@@ -1,4 +1,6 @@
 """Functionnal testing suite."""
+import matplotlib
+matplotlib.use('Agg')
 import os
 import shutil
 import sys
