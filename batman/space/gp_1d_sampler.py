@@ -27,13 +27,10 @@ steps:
 
 """
 import logging
-import time
 import os
 import matplotlib.pyplot as plt
 import openturns as ot
 import numpy as np
-
-ot.RandomGenerator.SetSeed(int(time.time() * 1e10))
 
 
 class Gp1dSampler:
@@ -43,7 +40,7 @@ class Gp1dSampler:
 
     def __init__(self, t_ini=0, t_end=1, Nt=100, sigma=1.0, theta=0.5,
                  threshold=0.01, cov="AbsoluteExponential", x=None):
-        """Computes the Karhunen Loeve decomposition and initializes GP1D.
+        """Compute the Karhunen Loeve decomposition and initializes GP1D.
 
         :param int t_ini: initial point of the mesh
         :param int t_end: final point of the mesh
@@ -216,7 +213,6 @@ class Gp2dSampler:
         2) Sample the weights of the KLD according to the standard normal distribution.
            OR set the weights to fixed values.
         3) Build the corresponding GP2D realization(s).
-
     Attributes of a Gp_2d_sampler object:
         - t0: the initial point of the mesh (default = [0,0]).
         - T: the final point of the mesh (default = [1,1]).
@@ -266,7 +262,7 @@ class Gp2dSampler:
             model = ot.SphericalModel(1, [self.sigma], self.theta)
 
         # Karhunen-Loeve decomposition algorithm using P1 approximation.
-        factory = ot.KarhunenLoeveP1Algorithm(mesh, model, self.threshold)
+        algo = ot.KarhunenLoeveP1Algorithm(mesh, model, self.threshold)
 
         # Computation of the eigenvalues and eigen function values at nodes.
         algo.run()
@@ -410,7 +406,7 @@ class Gp3dSampler:
             model = ot.SphericalModel(1, [self.sigma], self.theta)
 
         # Karhunen-Loeve decomposition algorithm using P1 approximation.
-        factory = ot.KarhunenLoeveP1Algorithm(mesh, model, self.threshold)
+        algo = ot.KarhunenLoeveP1Algorithm(mesh, model, self.threshold)
 
         # Computation of the eigenvalues and eigen function values at nodes.
         algo.run()
