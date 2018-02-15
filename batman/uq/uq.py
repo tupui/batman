@@ -315,7 +315,7 @@ class UQ:
             if self.surrogate is not None:
                 size = self.points_sample
                 input_design = ot.SobolIndicesExperiment(self.distribution,
-                    size, True).generate()
+                                                         size, True).generate()
                 output_design = sobol_model(input_design)
                 self.logger.info("Created {} samples for Sobol'"
                                  .format(len(output_design)))

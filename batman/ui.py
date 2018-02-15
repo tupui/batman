@@ -140,7 +140,8 @@ def parse_options():
                                      description=description_message)
     parser.add_argument('--version',
                         action='version',
-                        version="%(prog)s {}".format(__version__))
+                        version="%(prog)s {} - {}".format(__version__,
+                                                          __commit__))
 
     # Positionnal arguments
     parser.add_argument(
