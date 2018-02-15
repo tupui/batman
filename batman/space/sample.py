@@ -64,6 +64,8 @@ class Sample(object):
         # I/O formaters
         self._pformater = formater(pformat)
         self._fformater = formater(fformat)
+        
+        self.desc = ''
 
     # -----------------------------------------------------------
     # Field Accessors
@@ -265,7 +267,10 @@ class Sample(object):
 
     def __str__(self):
         """[TODO]"""
-        return self._dataframe.__str__()
+        msg = str(self._dataframe)
+        if self.desc:
+            msg = self.desc + os.linesep + msg
+        return msg
 
     def __iadd__(self, other):
         """[TODO]"""

@@ -20,12 +20,10 @@ except (RuntimeError, KeyError):
     have_ffmpeg = False
 
 dataset = el_nino()
-dataset.toarray()
-labels, data = dataset.sample, dataset.data
+labels, data = dataset.space, dataset.data
 
 # dataset_tahiti = tahiti()
-# dataset_tahiti.toarray()
-# labels_tahiti, data_tahiti = dataset_tahiti.sample, dataset_tahiti.data
+# labels_tahiti, data_tahiti = dataset_tahiti.space, dataset_tahiti.data
 
 
 class TestHdr:
@@ -116,14 +114,14 @@ class TestHdr:
         hdr = HdrBoxplot(data, alpha=[0.8], threshold=0.93)
         labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)
         outliers = labels[labels_pos]
-        npt.assert_equal([1982, 1983, 1997, 1998], outliers)
+        npt.assert_equal([[1982], [1983], [1997], [1998]], outliers)
 
     @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
     def test_hdr_outliers_method(self, ):
         hdr = HdrBoxplot(data, threshold=0.93, outliers_method='forest')
         labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)
         outliers = labels[labels_pos]
-        npt.assert_equal([1982, 1983, 1997, 1998], outliers)
+        npt.assert_equal([[1982], [1983], [1997], [1998]], outliers)
 
     def test_hdr_optimize_bw(self, ):
         hdr = HdrBoxplot(data, optimize=True)

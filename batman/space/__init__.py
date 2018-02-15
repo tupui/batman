@@ -7,9 +7,8 @@ from .space import Space
 from .sampling import Doe
 from .sample import Sample
 from .refiner import Refiner
-from .point import Point
 
-__all__ = ["Space", "Doe", "Sample", "Refiner", "dists_to_ot", "Point"]
+__all__ = ["Space", "Doe", "Sample", "Refiner", "dists_to_ot"]
 
 
 def dists_to_ot(dists):

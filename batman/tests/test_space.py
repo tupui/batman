@@ -3,39 +3,16 @@ import copy
 import pytest
 import numpy as np
 import numpy.testing as npt
-from batman.space import (Point, Space, Doe, dists_to_ot)
+import openturns as ot
+from batman.space import (Space, Doe, dists_to_ot)
 from batman.functions import Ishigami
 from batman.surrogate import SurrogateModel
 from batman.space.refiner import Refiner
-import openturns as ot
-
-
-def test_point():
-    point_a = Point([2, 3, 9])
-    point_b = Point([1, 2, 8])
-    point_c = Point([2, 3, 9])
-    assert point_a != point_b
-    assert point_a == point_c
-
-    Point.set_threshold(2)
-    point_a = Point([2, 3, 9])
-    point_b = Point([1, 2, 8])
-    point_c = Point([2, 3, 9])
-    assert point_a == point_b
-    assert point_a == point_c
-
-    with pytest.raises(ValueError):
-        Point.set_threshold(-0.1)
-
-    with pytest.raises(ValueError):
-        Point([2, 's', 9])
-
-    Point.set_threshold(0)
 
 
 def test_point_evaluation():
     f_3d = Ishigami()
-    point = Point([2.20, 1.57, 3])
+    point = [2.20, 1.57, 3]
     target_point = f_3d(point)
     assert target_point == pytest.approx(14.357312835804658, 0.05)
 

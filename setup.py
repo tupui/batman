@@ -67,6 +67,7 @@ setup_requires = ['pytest-runner']
 tests_require = ['pytest', 'mock', 'coverage', 'pylint']
 install_requires = ['scipy>=0.15',
                     'numpy>=1.13',
+                    'pandas>=0.22.0',
                     'jsonschema',
                     'pathos>=0.2',
                     'matplotlib>=2.1',
