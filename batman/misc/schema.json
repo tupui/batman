@@ -125,8 +125,10 @@
                        "exclusiveMinimum": true},
         "grand_cost": {"type": "integer", "default": 30, "minimum": 4},
         "strategy": {"type": "string", "default": "Quad",
-                   "enum": ["Quad", "LS"]},
+                   "enum": ["Quad", "LS", "SparseLS"]},
         "degree": {"type": "integer", "default": 10, "minimum": 1},
+        "sparse_param": {"type": "array",
+                         "items": {"type": "number", "minItems": 3, "maxItems": 3}},
         "kernel": {"type": "string"},
         "noise": {"type": ["number", "boolean"], "default": false},
         "global_optimizer": {"type": "boolean", "default": true}
@@ -198,7 +200,7 @@
                       {"sampling": {"properties":
                         {"distributions": {"type": "array", "items": {}}}},
                        "resampling": {"properties":
-                        {"method": {"enum":["discrepancy", "extrema"]}}}
+                        {"method": {"enum": ["discrepancy", "extrema"]}}}
                       }
                     }}
     },
