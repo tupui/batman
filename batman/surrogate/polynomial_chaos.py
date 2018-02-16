@@ -50,15 +50,23 @@ class PC(object):
         :type distributions: lst(:class:`openturns.Distribution`)
         :param int sample: Samples for least square.
         :param bool stieltjes: Wether to use Stieltjes algorithm for the basis.
-        :param array_like sparse_param: ((int) Maximum Considered Terms,
-          (int) Most Siginificant number, (float) Significance Factor):
-          parameters for the sparse Cleaning Truncation Strategy.
+        :param dictionary sparse_param: ((int) 'max_considered_terms': Maximum Considered Terms,
+          (int) 'most_significant', Most Siginificant number to retain, (float) 'significance_factor', Significance Factor,
+          (float) 'hyper_factor', factor for hyperbolic truncation strategy):
+          parameters for the Sparse Cleaning Truncation Strategy and/or hyperbolic truncation of the initial basis.
         """
         # distributions
         in_dim = len(distributions)
         self.dist = ot.ComposedDistribution(distributions)
+        self.sparse_param = sparse_param
 
-        enumerateFunction = ot.EnumerateFunction(in_dim)
+        if self.sparse_param is not None:
+            if 'hyper_factor' in self.sparse_param:
+                enumerateFunction = ot.EnumerateFunction(in_dim, self.sparse_param['hyper_factor'])
+            else:
+                enumerateFunction = ot.EnumerateFunction(in_dim)
+        else:
+            enumerateFunction = ot.EnumerateFunction(in_dim)
 
         if stieltjes:
             # Tend to result in performance issue
@@ -98,7 +106,6 @@ class PC(object):
 
         self.pc = None
         self.pc_result = None
-        self.sparse_param = sparse_param
 
     def fit(self, sample, data):
         """Create the predictor.
@@ -122,9 +129,18 @@ class PC(object):
             _, weights = proj_strategy.getExperiment().generateWithWeights()
 
             if self.sparse_param is not None:
-                max_considered_terms = int(self.sparse_param[0])
-                most_significant = int(self.sparse_param[1])
-                significance_factor = self.sparse_param[2]
+                if 'max_considered_terms' in self.sparse_param:
+                    max_considered_terms = self.sparse_param['max_considered_terms']
+                else:
+                    max_considered_terms = 120
+                if 'most_significant' in self.sparse_param:
+                    most_significant = self.sparse_param['most_significant']
+                else:
+                    most_significant = 30
+                if 'significance_factor' in self.sparse_param:
+                    significance_factor = self.sparse_param['significance_factor']
+                else:
+                    significance_factor = 10e-4
             else:
                 max_considered_terms = 120
                 most_significant = 30

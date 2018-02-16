@@ -213,8 +213,26 @@ For *kriging* the following extra attributes **can** be set:
 
 For *pc* the following extra attributes **must** be set: 
 
-+ ``strategy``: either using quadrature or least square one of *Quad* or *LS*.
-+ ``degree``: the polynomial degree.
++ ``strategy``: either using quadrature, standard least square, or Sparse Cleaning Strategy:  *Quad* , *LS*, *SparseLS*.
++ ``degree``: the polynomial degree. If *SparseLS* is selected as ``strategy``, this is not used actually.
+
+For *pc* the following extra attributes **can** be set: 
+
++ ``sparse_param``: a dictionary containing either parameters useful to Sparse Cleaning Strategy (if *SparseLS* is chosen),  or the parameter for truncating the basis in an hyperbolic fashion. 
+
+.. code-block:: python
+
+    "sparse_param": {
+                    "max_considered_terms": 400 },
+                    "most_significant":  30 },
+                    "significance_factor": 1e-4 },
+                    "hyper_factor": 0.5 }
+                    },
+
++ ``max_considered_terms``: The maximun number of terms used for the trials by the Sparse Cleaning Technique before giving the best solution
++ ``most_significant``: The maximum dimension of the basis that the Sparse Cleaning Techniques gives as an output
++ ``significance_factor``: The threshold value below which the basis member is discarded
++ ``hyper_factor``: the value for hyperbolic truncation. Value to be in range (0,1]. 1.0 = Linear Truncation, the lower the value, the sparser the base.
 
 .. note:: When using *pc*, the ``sampling`` must be set to a list of distributions.
 

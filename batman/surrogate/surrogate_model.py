@@ -58,8 +58,9 @@ class SurrogateModel(object):
             - **distributions** (lst(:class:`openturns.Distribution`)) --
               Distributions of each input parameter.
             - **n_samples** (int) -- Number of samples for least square.
-            - **sparse_param**(array) -- ((int) Maximum Considered Terms,
-              (int) Most Siginificant number, (float) Significance Factor)
+            - **sparse_param**(dictionary) -- ((int) 'max_considered_terms': Maximum Considered Terms,
+                (int) 'most_significant', Most Siginificant number to retain, (float) 'significance_factor', Significance Factor,
+                (float) 'hyper_factor', factor for hyperbolic truncation strategy)
 
           For Kriging the following keywords are available
 

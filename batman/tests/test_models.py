@@ -44,7 +44,7 @@ class Test1d:
         assert q2 == pytest.approx(1, 0.2)
 
         surrogate = PC(distributions=ishigami_data.dists, degree=10, sample=sample,
-                       sparse_param=(120, 30, 10e-4),
+                       sparse_param={"max_considered_terms": 130,  "most_significant": 30, "significance_factor": 5e-5},
                        strategy='SparseLS')
         input_ = surrogate.sample
         assert len(input_) == 2000
@@ -151,7 +151,7 @@ class TestNd:
         assert q2 == pytest.approx(1, 0.1)
 
         surrogate = PC(distributions=mascaret_data.dists, degree=10, sample=sample,
-                       sparse_param=(120, 30, 10e-4),
+                       sparse_param={"max_considered_terms": 200,  "most_significant": 30, "hyper_factor": 0.9},
                        strategy='SparseLS')
         input_ = surrogate.sample
         output = mascaret_data.func(input_)
