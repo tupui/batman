@@ -1,6 +1,18 @@
 # coding: utf8
 """
-[TODO]
+Sample class
+============
+
+Wrapper around a :class:`pandas.DataFrame` for storing point samples.
+A sample is given by the data associated to a point,
+and the point coordinates in the space of parameters.
+
+The main benefit of this class is to carry feature labels
+and to handle I/Os.
+
+The internal dataframe is publicly available.
+Class attributes are configured to return array-like objects
+(:class:`numpy.ndarray` or :py:class:`list`)
 """
 from copy import copy
 from numbers import Number
@@ -12,21 +24,16 @@ from ..input_output import formater
 
 
 class Sample(object):
-    """[TODO]
-    """
+    """Container class for samples"""
 
     logger = logging.getLogger(__name__)
 
     def __init__(self, space=None, data=None, plabels=None, flabels=None,
                  psizes=None, fsizes=None, pformat='json', fformat='json'):
-        """[TODO]
-
-        dataset shapes:  ruled by numpy.atleast_3d
-        - (n_features,)                         -->  (1, n_features, 1)
-        - (n_sample, n_features)                -->  (n_sample, n_features, 1)
-        - (n_sample, n_features, n_components)  -->  (n_sample, n_features, n_components)
-
-        if features have different number of components, please pass a pandas dataframe
+        """Initialize the container and build the column index.
+        This index carries feature names. Features can be scalars or vectors.
+        Vector features do not need to be of the same size.
+        Samples are stored as a 2D row-major array: 1 sample per row.
 
         :param array-like space: parameter space (1 point per sample)
         :param array-like data: data associated to points
@@ -73,12 +80,16 @@ class Sample(object):
 
     @property
     def shape(self):
-        """[TODO]"""
+        """Shape of the internal array"""
         return self._dataframe.shape
 
     @property
     def plabels(self):
-        """[TODO]"""
+        """List of space feature labels.
+
+        :returns: a list of column labels, ordered the same as the underlying array.
+        :rtype: list(str)
+        """
         try:
             index = self._dataframe['space'].columns
         except KeyError:
@@ -90,7 +101,11 @@ class Sample(object):
 
     @property
     def flabels(self):
-        """[TODO]"""
+        """List of data feature labels.
+
+        :returns: a list of column labels, ordered the same as the underlying array.
+        :rtype: list(str)
+        """
         try:
             index = self._dataframe['data'].columns
         except KeyError:
@@ -102,7 +117,11 @@ class Sample(object):
 
     @property
     def psizes(self):
-        """[TODO]"""
+        """Sizes of space features.
+
+        :returns: the number of components of each feature.
+        :rtype: list(int)
+        """
         try:
             index = self._dataframe['space'].columns
         except KeyError:
@@ -113,7 +132,11 @@ class Sample(object):
 
     @property
     def fsizes(self):
-        """[TODO]"""
+        """Sizes of data features.
+
+        :returns: the number of components of each feature.
+        :rtype: list(int)
+        """
         try:
             index = self._dataframe['data'].columns
         except KeyError:
@@ -124,19 +147,24 @@ class Sample(object):
 
     @property
     def dataframe(self):
-        """[TODO]"""
+        """The underlying dataframe"""
         return self._dataframe
 
     @property
     def values(self):
-        """[TODO]"""
+        """The underlying :class:`numpy.ndarray`.
+
+        Shape is `(n_sample, n_columns)`.
+        There may be multiple columns per feature.
+        See :ref:`Sample.psizes` and :ref:`Sample.fsizes`.
+        """
         if len(self) == 0:
             return np.empty(self.shape)
         return self._dataframe.values
 
     @property
     def space(self):
-        """[TODO]"""
+        """The space :class:`numpy.ndarray` (point coordinates)"""
         try:
             df_space = self._dataframe['space']
             if len(df_space) == 0:
@@ -147,7 +175,7 @@ class Sample(object):
 
     @property
     def data(self):
-        """[TODO]"""
+        """The data :class:`numpy.ndarray`"""
         try:
             df_data = self._dataframe['data']
             if len(df_data) == 0:
@@ -161,9 +189,12 @@ class Sample(object):
     # -----------------------------------------------------------
 
     def append(self, other, axis=0):
-        """[TODO]
+        """Append samples to the container.
 
-        :type other: array-like or :class:`pandas.DataFrame`
+        :param other: samples to append (1 sample per row)
+        :param axis: how to append (add new samples or new features).
+        :type other: array-like or :class:`pandas.DataFrame` or :class:`Sample`
+        :type axis: 0 or 1
         """
         # get dataframe
         if other is None:
@@ -201,13 +232,13 @@ class Sample(object):
                                     ignore_index=ignore_index)
 
     def pop(self, sid=-1):
-        """[TODO]"""
+        """Return and remove a sample (default: last one)"""
         item = self[sid]
         del self[sid]
         return item
 
     def empty(self):
-        """[TODO]"""
+        """Remove every stored samples"""
         del self[:]
 
     # -----------------------------------------------------------
@@ -216,10 +247,14 @@ class Sample(object):
 
     def read(self, space_fname='sample-space.json', data_fname='sample-data.json',
              plabels=None, flabels=None):
-        """[TODO]
+        """Read and append samples from files.
+
+        Samples are stored in 2 files: space and data.
         
         :param str space_fname: path to space file.
         :param str data_fname: path to data file.
+        :param list(str) plabels: labels in space file (if different from :ref:`self.plabels`)
+        :param list(str) flabels: labels in data file (if different from :ref:`self.flabels`)
         """
         np_sample = []
         if len(self.plabels) > 0:
@@ -247,7 +282,10 @@ class Sample(object):
             self.append(np_sample)
 
     def write(self, space_fname='sample-space.json', data_fname='sample-data.json'):
-        """[TODO]
+        """Write samples to files.
+
+        Samples are stored in 2 files: space and data.
+        Override if files exist.
         
         :param str space_fname: path to space file.
         :param str data_fname: path to data file.
@@ -262,29 +300,34 @@ class Sample(object):
     # -----------------------------------------------------------
 
     def __len__(self):
-        """[TODO]"""
+        """Python Data Model. `len` function. Return the number of samples."""
         return len(self._dataframe)
 
     def __str__(self):
-        """[TODO]"""
+        """Python Data Model. `str` function. Underlying dataframe representation."""
         msg = str(self._dataframe)
         if self.desc:
             msg = self.desc + os.linesep + msg
         return msg
 
     def __iadd__(self, other):
-        """[TODO]"""
+        """Python Data Model. `+=` operator. Append samples."""
         self.append(other)
         return self
 
     def __add__(self, other):
-        """[TODO]"""
+        """Python Data Model. `+` operator. 
+        :returns: :class:`Sample` with samples from both operands.
+        """
         new = copy(self)
         new.append(other)
         return new
 
     def __getitem__(self, sid):
-        """[TODO]"""
+        """Python Data Model. `[]` operator. Return requested samples.
+
+        :returns: 1D :class:`numpy.ndarray` if requested 1 item, :class:`Sample` otherwise.
+        """
         item = self._dataframe.iloc[sid]
         if item.ndim > 1:
             new = copy(self)
@@ -293,31 +336,42 @@ class Sample(object):
         return item.values
 
     def __setitem__(self, sid, value):
-        """[TODO]"""
+        """Python Data Model. `[]` operator. Replace specified samples.
+        
+        :param array-like value: 1D array if setting 1 sample, 2D array otherwise.
+        """
         self._dataframe.iloc[sid] = value
 
     def __delitem__(self, sid):
-        """[TODO]"""
+        """Python Data Model. `del []` statement. Remove specified samples."""
         sid = self._dataframe.index[sid]
         self._dataframe = self._dataframe.drop(sid)
 
     def __contains__(self, item):
-        """[TODO]"""
+        """Python Data Model. `is in` statement. Test if item is one of the stored samples."""
         try:
             return item.values in self._dataframe.values
         except AttributeError:
             return item in self._dataframe.values
 
     def __iter__(self):
-        """[TODO]"""
+        """Python Data Model. `for in` statement. Iterate other samples as 1D arrays."""
         generator = (row.values for i, row in self._dataframe.iterrows())
         return generator
 
 
+# ----------------------------------------------------------------------------
+# Helper functions
+
 def create_dataframe(dataset, clabel='space', flabels=None, fsizes=None):
     """Create a DataFrame with a 3-level column index.
+    
+    Columns are feature components, rows are dataset entries (samples).
 
-    [TODO]
+    :param dataset: array-like or :class:`pandas.DataFrame`.
+    :param str clabel: class of features (1st level in index). Typically 'space' or 'data.'
+    :param list(str) flabels: labels of features.
+    :param list(int) fsizes: number of components of features.
     :rtype: :class:`pandas.DataFrame`
     """
     # enforce a 3-level index for columns
@@ -360,7 +414,15 @@ def create_dataframe(dataset, clabel='space', flabels=None, fsizes=None):
 
 
 def create_index(clabel, flabels=None, fsizes=None):
-    """[TODO]
+    """Build a 3-level index.
+    - 1st level: feature class ('space', 'data', ...)
+    - 2nd level: feature names
+    - 3rd level: component indices: `[0, N]` where `N` is the number of components of 1 feature.
+
+    :param str clabel: class of features.
+    :param list(str) flabels: labels of features.
+    :param list(int) fsizes: number of components of features.
+    :rtype: :class:`pandas.MultiIndex`
     """
     if (((flabels is None) or (len(flabels) == 0))
             and ((fsizes is None) or (len(fsizes) == 0))):

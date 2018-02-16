@@ -98,18 +98,23 @@ class ProviderJob(object):
         # locate results in cache
         idx = self._cache.locate(points)
 
-        # build missing results
         new_points = points[idx >= len(self._cache)]
         if len(new_points) > 0:
+            # build new samples
             new_idx = idx[idx >= len(self._cache)]
             try:
                 mapper = self._executor.map
             except AttributeError:
                 self._cache += self.build_data(new_points, new_idx)
             else:
-                self._cache = sum(self._executor.map(self.build_data, new_points, new_idx),
-                                  self._cache)
+                self._cache = sum(mapper(self.build_data, new_points, new_idx), self._cache)
             self._cache.save()
+                
+            # check for failed jobs
+            failed_points = [points for points in new_points if points not in self._cache.space]
+            if len(failed_points) > 0:
+                self.logger.error('Jobs failed for points {}'.format(failed_points))
+                raise sp.CalledProcessError()
 
         return self._cache[idx]
 
@@ -127,7 +132,10 @@ class ProviderJob(object):
             # start job
             work_dir = os.path.join(self._workdir, str(i))
             self._job_initialize(point, work_dir)
-            self._job_execute(point, work_dir)
+            try:
+                self._job_execute(point, work_dir)
+            except sp.CalledProcessError:
+                continue
             # get result
             sample_dir = os.path.join(work_dir, self._job['coupling_directory'])
             space_fname = os.path.join(sample_dir, self._job['input_file'])
