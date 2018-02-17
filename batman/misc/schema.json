@@ -128,13 +128,10 @@
                    "enum": ["Quad", "LS", "SparseLS"]},
         "degree": {"type": "integer", "default": 10, "minimum": 1},
         "sparse_param": {"type": "object",
-                        "properties": {
-                                        "max_considered_terms": { "type": "integer" },
-                                        "most_significant":     { "type": "integer" },
-                                        "significance_factor":  { "type": "number" },
-                                        "hyper_factor":         { "type": "number" }
-                                        }
-                        },
+                         "properties": {"max_considered_terms": {"type": "integer"},
+                                        "most_significant": {"type": "integer"},
+                                        "significance_factor": {"type": "number"},
+                                        "hyper_factor": {"type": "number"}}},
         "kernel": {"type": "string"},
         "noise": {"type": ["number", "boolean"], "default": false},
         "global_optimizer": {"type": "boolean", "default": true}

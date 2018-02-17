@@ -53,14 +53,21 @@ class SurrogateModel(object):
         :Keyword Arguments: For Polynomial Chaos the following keywords are
           available
 
-            - **strategy** (str) -- Least square or Quadrature ['LS', 'Quad', 'SparseLS'].
+            - **strategy** (str) -- Least square or Quadrature ['LS', 'Quad',
+              'SparseLS'].
             - **degree** (int) -- Polynomial degree.
             - **distributions** (lst(:class:`openturns.Distribution`)) --
               Distributions of each input parameter.
             - **n_samples** (int) -- Number of samples for least square.
-            - **sparse_param**(dictionary) -- ((int) 'max_considered_terms': Maximum Considered Terms,
-                (int) 'most_significant', Most Siginificant number to retain, (float) 'significance_factor', Significance Factor,
-                (float) 'hyper_factor', factor for hyperbolic truncation strategy)
+            - **sparse_param** (dict) -- Parameters for the Sparse Cleaning
+              Truncation Strategy and/or hyperbolic truncation of the initial
+              basis.
+
+                - **max_considered_terms** (int) -- Maximum Considered Terms,
+                - **most_significant** (int), Most Siginificant number to retain,
+                - **significance_factor** (float), Significance Factor,
+                - **hyper_factor** (float), factor for hyperbolic truncation
+                  strategy.
 
           For Kriging the following keywords are available
 
