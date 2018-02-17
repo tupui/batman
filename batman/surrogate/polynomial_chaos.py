@@ -38,7 +38,7 @@ class PC(object):
     logger = logging.getLogger(__name__)
 
     def __init__(self, strategy, degree, distributions, sample=None,
-                 stieltjes=True, sparse_param=None,):
+                 stieltjes=True, sparse_param={}):
         """Generate truncature and projection strategies.
 
         Allong with the strategies the sample is storred as an attribute.
@@ -50,15 +50,24 @@ class PC(object):
         :type distributions: lst(:class:`openturns.Distribution`)
         :param int sample: Samples for least square.
         :param bool stieltjes: Wether to use Stieltjes algorithm for the basis.
-        :param array_like sparse_param: ((int) Maximum Considered Terms,
-          (int) Most Siginificant number, (float) Significance Factor):
-          parameters for the sparse Cleaning Truncation Strategy.
+        :param dict sparse_param: Parameters for the Sparse Cleaning Truncation
+          Strategy and/or hyperbolic truncation of the initial basis.
+
+            - **max_considered_terms** (int) -- Maximum Considered Terms,
+            - **most_significant** (int), Most Siginificant number to retain,
+            - **significance_factor** (float), Significance Factor,
+            - **hyper_factor** (float), factor for hyperbolic truncation
+              strategy.
         """
         # distributions
         in_dim = len(distributions)
         self.dist = ot.ComposedDistribution(distributions)
+        self.sparse_param = sparse_param
 
-        enumerateFunction = ot.EnumerateFunction(in_dim)
+        if 'hyper_factor' in self.sparse_param:
+            enumerateFunction = ot.EnumerateFunction(in_dim, self.sparse_param['hyper_factor'])
+        else:
+            enumerateFunction = ot.EnumerateFunction(in_dim)
 
         if stieltjes:
             # Tend to result in performance issue
@@ -98,7 +107,6 @@ class PC(object):
 
         self.pc = None
         self.pc_result = None
-        self.sparse_param = sparse_param
 
     def fit(self, sample, data):
         """Create the predictor.
@@ -121,14 +129,9 @@ class PC(object):
             proj_strategy = ot.LeastSquaresStrategy(sample, data, app)
             _, weights = proj_strategy.getExperiment().generateWithWeights()
 
-            if self.sparse_param is not None:
-                max_considered_terms = int(self.sparse_param[0])
-                most_significant = int(self.sparse_param[1])
-                significance_factor = self.sparse_param[2]
-            else:
-                max_considered_terms = 120
-                most_significant = 30
-                significance_factor = 10e-4
+            max_considered_terms = self.sparse_param.get('max_considered_terms', 120)
+            most_significant = self.sparse_param.get('most_significant', 30)
+            significance_factor = self.sparse_param.get('significance_factor', 1e-3)
 
             trunc_strategy = ot.CleaningStrategy(ot.OrthogonalBasis(self.basis),
                                                  max_considered_terms,
