@@ -331,15 +331,15 @@ class Space(Sample):
         super(Space, self).read(space_fname=path)
         self.logger.debug('Space read from {}'.format(path))
 
-    def write(self, path='.'):
+    def write(self, path='.', fname='space.dat'):
         """Write space to file `path`, then plot it."""
-        super().write(space_fname=os.path.join(path, 'space.dat'))
+        space_file = os.path.join(path, fname)
+        super().write(space_fname=space_file)
         resampling = len(self) - self.doe_init
-        path = os.path.join(path, 'DOE.pdf')
         visualization.doe(self, plabels=self.plabels, resampling=resampling,
                           multifidelity=self.multifidelity,
                           fname=os.path.join(path, 'DOE.pdf'))
-        self.logger.debug('Space wrote to {}'.format(os.path.join(path, 'space.dat')))
+        self.logger.debug('Space wrote to {}'.format(space_file))
 
     def __str__(self):
         """Python Data Model. `str` function. Space string representation."""

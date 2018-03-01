@@ -223,7 +223,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     surrogate = SurrogateModel('kriging', ishigami_data.space.corners,
                                space_.max_points_nb, ishigami_data.space.plabels)
     surrogate.fit(ishigami_data.space, ishigami_data.target_space)
-    ishigami_data.space.write(os.path.join(path_space, 'space.dat'))
+    ishigami_data.space.write(path_space, 'space.dat')
     surrogate.write(path)
     assert os.path.isfile(os.path.join(path, 'surrogate.dat'))
 

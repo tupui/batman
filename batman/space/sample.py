@@ -48,8 +48,8 @@ class Sample(object):
         df_space = None
         if space is not None:
             df_space = create_dataframe(space, clabel='space', flabels=plabels, fsizes=psizes)
-        elif (((plabels is not None) and (len(plabels) > 0))
-                or ((psizes is not None) and (len(psizes) > 0))):
+        elif ((plabels is not None and list(plabels))
+              or (psizes is not None and list(psizes))):
             index = create_index(clabel='space', flabels=plabels, fsizes=psizes)
             df_space = pd.DataFrame(columns=index)
 
@@ -57,8 +57,8 @@ class Sample(object):
         df_data = None
         if data is not None:
             df_data = create_dataframe(data, clabel='data', flabels=flabels, fsizes=fsizes)
-        elif (((flabels is not None) and (len(flabels) > 0))
-                or ((fsizes is not None) and (len(fsizes) > 0))):
+        elif ((flabels is not None and list(flabels))
+              or (fsizes is not None and list(fsizes))):
             index = create_index(clabel='data', flabels=flabels, fsizes=fsizes)
             df_data = pd.DataFrame(columns=index)
 
@@ -158,7 +158,7 @@ class Sample(object):
         There may be multiple columns per feature.
         See `Sample.psizes` and `Sample.fsizes`.
         """
-        if len(self) == 0:
+        if not self:
             return np.empty(self.shape)
         return self._dataframe.values
 
@@ -166,10 +166,7 @@ class Sample(object):
     def space(self):
         """The space :class:`numpy.ndarray` (point coordinates)"""
         try:
-            df_space = self._dataframe['space']
-            if len(df_space) == 0:
-                return np.empty(df_space.shape)
-            return df_space.values
+            return self._dataframe['space'].values
         except KeyError:
             return np.empty((len(self), 0))
 
@@ -177,10 +174,7 @@ class Sample(object):
     def data(self):
         """The data :class:`numpy.ndarray`"""
         try:
-            df_data = self._dataframe['data']
-            if len(df_data) == 0:
-                return np.empty(df_data.shape)
-            return df_data.values
+            return self._dataframe['data'].values
         except KeyError:
             return np.empty((len(self), 0))
 
@@ -258,7 +252,7 @@ class Sample(object):
         :param list(str) flabels: labels in data file (if different from `self.flabels`)
         """
         np_sample = []
-        if len(self.plabels) > 0:
+        if self.plabels:
             if plabels is None:
                 plabels = self.plabels
             try:
@@ -268,7 +262,7 @@ class Sample(object):
             else:
                 np_sample.append(np_space)
 
-        if len(self.flabels) > 0:
+        if self.flabels:
             if flabels is None:
                 flabels = self.flabels
             try:
@@ -278,7 +272,7 @@ class Sample(object):
             else:
                 np_sample.append(np_data)
 
-        if len(np_sample) > 0:
+        if np_sample:
             np_sample = np.concatenate(np_sample, axis=1)
             self.append(np_sample)
 
@@ -402,10 +396,10 @@ def create_dataframe(dataset, clabel='space', flabels=None, fsizes=None):
         nsample, n_features, n_components = dataset.shape
         length = n_features * n_components
 
-        if (flabels is not None) and (len(flabels) > 0):
+        if (flabels is not None) and list(flabels):
             n_features = len(flabels)
             n_components = length // n_features
-        if (fsizes is None) or (len(fsizes) == 0):
+        if (fsizes is None) or not list(fsizes):
             fsizes = [n_components] * n_features
 
         idx = create_index(clabel, flabels, fsizes)
@@ -425,14 +419,14 @@ def create_index(clabel, flabels=None, fsizes=None):
     :param list(int) fsizes: number of components of features.
     :rtype: :class:`pandas.MultiIndex`
     """
-    if (((flabels is None) or (len(flabels) == 0))
-            and ((fsizes is None) or (len(fsizes) == 0))):
+    if ((flabels is None or not list(flabels))
+            and (fsizes is None or not list(fsizes))):
         msg = 'Unable to build an index: number of labels is unknown'
         raise ValueError(msg)
-    if (flabels is None) or (len(flabels) == 0):
+    if (flabels is None) or not list(flabels):
         char = 'p' if clabel == 'space' else 'f'
         flabels = ['{}{}'.format(char, i) for i in range(len(fsizes))]
-    if (fsizes is None) or (len(fsizes) == 0):
+    if (fsizes is None) or not list(fsizes):
         fsizes = [1] * len(flabels)
     tuples = [(clabel, label, i) for label, size in zip(flabels, fsizes) for i in range(size)]
     return pd.MultiIndex.from_tuples(tuples)

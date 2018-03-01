@@ -185,7 +185,7 @@ class Driver(object):
             self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
                                             self.settings['space']['corners'],
                                             max_points_nb=init_size + resamp_size,
-                                            self.settings['snapshot']['plabels'],
+                                            plabels=self.settings['snapshot']['plabels'],
                                             **settings_)
             if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
@@ -286,7 +286,7 @@ class Driver(object):
             os.makedirs(path)
         except OSError:
             pass
-        self.space.write(os.path.join(path, 'space.dat'))
+        self.space.write(path, 'space.dat')
         if self.surrogate is not None:
             path = os.path.join(self.fname, self.fname_tree['surrogate'])
             try:

@@ -46,8 +46,8 @@ class ProviderFile(object):
                                   data_fname, data_format)
 
         # load provided files
-        for space_fname, data_fname in file_pairs:
-            self._cache.read(space_fname, data_fname, plabels, flabels)
+        for space_file, data_file in file_pairs:
+            self._cache.read(space_file, data_file, plabels, flabels)
         # discover additionnal files
         if discover_pattern:
             self._cache.discover(discover_pattern)
