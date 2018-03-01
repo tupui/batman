@@ -102,7 +102,7 @@ class Driver(object):
             ProviderClass = ProviderJob
             args['save_dir'] = os.path.join(self.fname, self.fname_tree['snapshots'])
             args['executor'] = futures.ThreadPoolExecutor(
-                    max_workers=settings['snapshot']['max_workers'])
+                max_workers=settings['snapshot']['max_workers'])
             args.update(setting_provider)
         else:
             self.logger.error("Unknown provider type: {}".format(provider_type))
@@ -207,7 +207,7 @@ class Driver(object):
             points = self.to_compute_points
 
         # Generate snapshots
-        samples = self.provider.get_data(points)
+        samples = self.provider.require_data(points)
         self.snapshot_counter += len(samples)  # still useless
 
         # Fit the Surrogate [and POD]

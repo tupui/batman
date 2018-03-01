@@ -52,7 +52,7 @@ class Sample(object):
                 or ((psizes is not None) and (len(psizes) > 0))):
             index = create_index(clabel='space', flabels=plabels, fsizes=psizes)
             df_space = pd.DataFrame(columns=index)
-            
+
         # data dataframe
         df_data = None
         if data is not None:
@@ -61,17 +61,17 @@ class Sample(object):
                 or ((fsizes is not None) and (len(fsizes) > 0))):
             index = create_index(clabel='data', flabels=flabels, fsizes=fsizes)
             df_data = pd.DataFrame(columns=index)
-            
+
         # concatenate
         try:
             self._dataframe = pd.concat([df_space, df_data], axis=1)
         except ValueError:
             self._dataframe = pd.DataFrame()
-        
+
         # I/O formaters
         self._pformater = formater(pformat)
         self._fformater = formater(fformat)
-        
+
         self.desc = ''
 
     # -----------------------------------------------------------
@@ -156,7 +156,7 @@ class Sample(object):
 
         Shape is `(n_sample, n_columns)`.
         There may be multiple columns per feature.
-        See :ref:`Sample.psizes` and :ref:`Sample.fsizes`.
+        See `Sample.psizes` and `Sample.fsizes`.
         """
         if len(self) == 0:
             return np.empty(self.shape)
@@ -201,15 +201,16 @@ class Sample(object):
             return
         elif isinstance(other, Sample):
             df_other = other.dataframe
-        elif isinstance(other, pd.DataFrame) or isinstance(other, pd.Series):
+        elif isinstance(other, (pd.DataFrame, pd.Series)):
             idx = other.columns if isinstance(other, pd.DataFrame) else other.index
             assert idx.nlevels == 3 or idx.size == 0
-            assert ('space' in other) == ('space' in self._dataframe)
-            assert ('data' in other) == ('data' in self._dataframe)
-            for label in self.plabels:
-                assert label in other['space']
-            for label in self.flabels:
-                assert label in other['data']
+            if axis == 0:
+                assert ('space' in other) == ('space' in self._dataframe)
+                assert ('data' in other) == ('data' in self._dataframe)
+                for label in self.plabels:
+                    assert label in other['space']
+                for label in self.flabels:
+                    assert label in other['data']
             df_other = other
         else:
             if axis == 1:
@@ -227,8 +228,8 @@ class Sample(object):
 
         # append
         ignore_index = (axis == 0)
-        self._dataframe = pd.concat([self._dataframe, df_other], 
-                                    axis=axis, 
+        self._dataframe = pd.concat([self._dataframe, df_other],
+                                    axis=axis,
                                     ignore_index=ignore_index)
 
     def pop(self, sid=-1):
@@ -250,11 +251,11 @@ class Sample(object):
         """Read and append samples from files.
 
         Samples are stored in 2 files: space and data.
-        
+
         :param str space_fname: path to space file.
         :param str data_fname: path to data file.
-        :param list(str) plabels: labels in space file (if different from :ref:`self.plabels`)
-        :param list(str) flabels: labels in data file (if different from :ref:`self.flabels`)
+        :param list(str) plabels: labels in space file (if different from `self.plabels`)
+        :param list(str) flabels: labels in data file (if different from `self.flabels`)
         """
         np_sample = []
         if len(self.plabels) > 0:
@@ -286,7 +287,7 @@ class Sample(object):
 
         Samples are stored in 2 files: space and data.
         Override if files exist.
-        
+
         :param str space_fname: path to space file.
         :param str data_fname: path to data file.
         """
@@ -316,7 +317,7 @@ class Sample(object):
         return self
 
     def __add__(self, other):
-        """Python Data Model. `+` operator. 
+        """Python Data Model. `+` operator.
         :returns: :class:`Sample` with samples from both operands.
         """
         new = copy(self)
@@ -337,7 +338,7 @@ class Sample(object):
 
     def __setitem__(self, sid, value):
         """Python Data Model. `[]` operator. Replace specified samples.
-        
+
         :param array-like value: 1D array if setting 1 sample, 2D array otherwise.
         """
         self._dataframe.iloc[sid] = value
@@ -365,7 +366,7 @@ class Sample(object):
 
 def create_dataframe(dataset, clabel='space', flabels=None, fsizes=None):
     """Create a DataFrame with a 3-level column index.
-    
+
     Columns are feature components, rows are dataset entries (samples).
 
     :param dataset: array-like or :class:`pandas.DataFrame`.
@@ -400,7 +401,7 @@ def create_dataframe(dataset, clabel='space', flabels=None, fsizes=None):
         dataset = np.atleast_3d(dataset)
         nsample, n_features, n_components = dataset.shape
         length = n_features * n_components
-        
+
         if (flabels is not None) and (len(flabels) > 0):
             n_features = len(flabels)
             n_components = length // n_features
@@ -435,4 +436,3 @@ def create_index(clabel, flabels=None, fsizes=None):
         fsizes = [1] * len(flabels)
     tuples = [(clabel, label, i) for label, size in zip(flabels, fsizes) for i in range(size)]
     return pd.MultiIndex.from_tuples(tuples)
-

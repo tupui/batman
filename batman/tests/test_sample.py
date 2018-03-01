@@ -86,16 +86,17 @@ def sample_case(request):
         space = space.reshape(0, space.shape[1])
         data = data.reshape(0, data.shape[1])
 
-    expected = {}
-    expected['len'] = nsample
-    expected['shape'] = values.shape
-    expected['values'] = values
-    expected['space'] = space
-    expected['plabels'] = plabels
-    expected['psizes'] = psizes
-    expected['data'] = data
-    expected['flabels'] = flabels
-    expected['fsizes'] = fsizes
+    expected = {
+        'len': nsample,
+        'shape': values.shape,
+        'values': values,
+        'space': space,
+        'plabels': plabels,
+        'psizes': psizes,
+        'data': data,
+        'flabels': flabels,
+        'fsizes': fsizes,
+    }
 
     return sample, expected
 
@@ -124,9 +125,10 @@ def test_api(tmp, sample_case):
 
     sample_work.read(fname_space, fname_data)
     npt.assert_array_equal(sample_work.values, sample.values)
+    # test read append entries to existing samples
     sample_work.read(fname_space, fname_data)
-    npt.assert_array_equal(sample_work[:len(sample)].values, sample.values)
-    npt.assert_array_equal(sample_work[len(sample):].values, sample.values)
+    npt.assert_array_equal(sample_work.values[:len(sample)], sample.values)
+    npt.assert_array_equal(sample_work.values[len(sample):], sample.values)
 
 
 def test_container(sample_case):
@@ -207,18 +209,29 @@ def test_container(sample_case):
         assert len(sample_work) == len(sample) + 1
         assert len(sample_other) == 2 * len(sample)
 
+    if sample.space.shape[1] == 0:
+        with pytest.raises(ValueError):
+            sample_space = Sample(space=sample.space, plabels=sample.plabels, psizes=sample.psizes)
+    if sample.data.shape[1] == 0:
+        with pytest.raises(ValueError):
+            sample_data = Sample(data=sample.data, flabels=sample.flabels, fsizes=sample.fsizes)
 
-# def test_io(tmp, sample_case):
-#     sample, _ = sample_case
-#     sample_work = deepcopy(sample)
-#     sample_work.empty()
-# 
-#     fname_space = os.path.join(tmp, 'sample-space.json')
-#     fname_data = os.path.join(tmp, 'sample-data.json')
-#     sample.write(fname_space, fname_data)
-# 
-#     sample_work.read(fname_space, fname_data)
-#     npt.assert_array_equal(sample_work.values, sample.values)
-#     sample_work.read(fname_space, fname_data)
-#     npt.assert_array_equal(sample_work[:len(sample)].values, sample.values)
-#     npt.assert_array_equal(sample_work[len(sample):].values, sample.values)
+    if (sample.data.shape[1] > 0) and (sample.space.shape[1] > 0):
+        sample_space = Sample(space=sample.space, plabels=sample.plabels, psizes=sample.psizes)
+        sample_data = Sample(data=sample.data, flabels=sample.flabels, fsizes=sample.fsizes)
+        # append new features from sample
+        sample_work = deepcopy(sample_space)
+        sample_work.append(sample_data, axis=1)
+        npt.assert_array_equal(sample_work.values, sample.values)
+        # append new features from dataframe
+        sample_work = deepcopy(sample_space)
+        sample_work.append(sample_data.dataframe, axis=1)
+        npt.assert_array_equal(sample_work.values, sample.values)
+        # append new features from dataframe with a bad formated index
+        sample_work = deepcopy(sample_space)
+        with pytest.raises(AssertionError):
+            sample_work.append(sample_data.dataframe['data'], axis=1)
+        # append new features from numpy array
+        sample_work = deepcopy(sample_space)
+        with pytest.raises(ValueError):
+            sample_work.append(sample_data.values, axis=1)

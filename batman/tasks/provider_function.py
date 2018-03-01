@@ -1,8 +1,10 @@
 # coding: utf-8
 """
-[TODO]
+Data Provider: Build snapshots through a python function
+========================================================
+
+This provider builds its data using an external python function.
 """
-from copy import copy
 import os
 import sys
 import logging
@@ -13,8 +15,7 @@ from ..space import Sample
 
 
 class ProviderFunction(object):
-    """[TODO]
-    """
+    """Provides Snapshots built through an external python function"""
 
     logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ class ProviderFunction(object):
                  data_fname='sample-data.json',
                  data_format='json'):
         """Initialize the provider.
+        Load a python function to be called for computing new snpahots.
 
         :param list(str) plabels: input parameter names.
         :param list(str) flabels: output feature names.
@@ -35,7 +37,7 @@ class ProviderFunction(object):
         :param list(int) fsizes: number of components of output features.
         :param str discover_pattern: UNIX-style patterns for directories with pairs
             of sample files to import.
-        :param str save_dir: path to a directory for saving computed results.
+        :param str save_dir: path to a directory for saving known snapshots.
         :param str space_fname: name of space file to write.
         :param str data_fname: name of data file to write.
         :param str space_format: space file format.
@@ -48,7 +50,7 @@ class ProviderFunction(object):
 
         # discover existing snapshots
         self._cache = SampleCache(plabels, flabels, psizes, fsizes, save_dir,
-                                  space_fname, space_format, 
+                                  space_fname, space_format,
                                   data_fname, data_format)
         if discover_pattern:
             self._cache.discover(discover_pattern)
@@ -56,31 +58,37 @@ class ProviderFunction(object):
 
     @property
     def plabels(self):
-        """[TODO]"""
+        """Names of space parameters"""
         return self._cache.plabels
 
     @property
     def flabels(self):
-        """[TODO]"""
+        """Names of data features"""
         return self._cache.flabels
 
     @property
     def psizes(self):
-        """[TODO]"""
+        """Shape of space parameters"""
         return self._cache.psizes
 
     @property
     def fsizes(self):
-        """[TODO]"""
+        """Shape of data features"""
         return self._cache.fsizes
 
     @property
     def known_points(self):
-        """[TODO]"""
+        """List of points whose associated data is already known"""
         return self._cache.space
 
-    def get_data(self, points):
-        """[TODO]"""
+    def require_data(self, points):
+        """Return samples for requested points.
+
+        Data for unknown points is generated through a python function.
+
+        :return: samples for requested points (carry both space and data)
+        :rtype: :class:`Sample`
+        """
 
         # locate results in cache
         idx = self._cache.locate(points)
@@ -94,10 +102,14 @@ class ProviderFunction(object):
         return self._cache[idx]
 
     def build_data(self, points):
-        """[TODO]"""
-        self.logger.debug('Build Snapshot for points {}'.format(points))
+        """Compute data for requested points.
+
+        :return: samples for requested points (carry both space and data)
+        :rtype: :class:`Sample`
+        """
+        self.logger.debug("Build Snapshot for points {}".format(points))
         points = np.atleast_2d(points)
         result = [self._function(point) for point in points]
         sample = Sample(space=points, data=result, plabels=self.plabels, flabels=self.flabels,
-                        psizes=self.psizes, fsizes=self.fsizes) 
+                        psizes=self.psizes, fsizes=self.fsizes)
         return sample

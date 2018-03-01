@@ -76,7 +76,7 @@ def csv_read(fname, varnames):
     """
     with open(fname, 'r') as fd:
         lines = fd.readlines()
-    names = lines[0].strip('#\n').split(',')
+    names = lines[0].strip('# \n').split(',')
     sizes = list(map(int, lines[-1].lstrip('#').split(',')))
     offsets = np.append(0, np.cumsum(sizes)[:-1])
     nsample = len(lines) - 2

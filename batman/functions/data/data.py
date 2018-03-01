@@ -10,9 +10,7 @@ is returned to have a consistant representation.
 * :func:`mascaret`,
 * :func:`marthe`.
 """
-import collections
 import os
-import logging
 import numpy as np
 from batman.space import Sample
 

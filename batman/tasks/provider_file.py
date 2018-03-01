@@ -1,17 +1,20 @@
 # coding: utf-8
 """
-[TODO]
+Data Provider: Read snapshots from files
+========================================
+
+This provider gets its data from a list of files.
+
+It is unable to generate data and
+will raise an error if it is requested an unknown point.
 """
-from copy import copy
 import logging
 import numpy as np
 from .sample_cache import SampleCache
-from ..input_output import formater
 
 
 class ProviderFile(object):
-    """[TODO]
-    """
+    """Provides Snapshots loaded from a list of files"""
 
     logger = logging.getLogger(__name__)
 
@@ -22,10 +25,24 @@ class ProviderFile(object):
                  space_format='json',
                  data_fname='sample-data.json',
                  data_format='json'):
-        """[TODO]
+        """Initialize the provider.
+        Load known samples from a list of files.
+
+        :param list(str) plabels: input parameter names (for space)
+        :param list(str) flabels: output feature names (for data)
+        :param list(tuple(str)) file_pairs: list of paires `(space_file, data_file)`
+        :param list(int) psizes: number of components of parameters.
+        :param list(int) fsizes: number of components of output features.
+        :param str discover_pattern: UNIX-style patterns for directories with pairs
+            of sample files to import.
+        :param str save_dir: path to a directory for saving known snapshots.
+        :param str space_fname: name of space file to write.
+        :param str data_fname: name of data file to write.
+        :param str space_format: space file format.
+        :param str data_format: data file format.
         """
-        self._cache = SampleCache(plabels, flabels, psizes, fsizes, save_dir, 
-                                  space_fname, space_format, 
+        self._cache = SampleCache(plabels, flabels, psizes, fsizes, save_dir,
+                                  space_fname, space_format,
                                   data_fname, data_format)
 
         # load provided files
@@ -34,46 +51,56 @@ class ProviderFile(object):
         # discover additionnal files
         if discover_pattern:
             self._cache.discover(discover_pattern)
-        
+
         self._cache.save()
 
     @property
     def plabels(self):
-        """[TODO]"""
+        """Names of space parameters"""
         return self._cache.plabels
 
     @property
     def flabels(self):
-        """[TODO]"""
+        """Names of data features"""
         return self._cache.flabels
 
     @property
     def psizes(self):
-        """[TODO]"""
+        """Shape of space parameters"""
         return self._cache.psizes
 
     @property
     def fsizes(self):
-        """[TODO]"""
+        """Shape of data features"""
         return self._cache.fsizes
 
     @property
     def known_points(self):
-        """[TODO]"""
+        """List of points whose associated data is already known"""
         return self._cache.space
 
-    def get_data(self, points):
-        """[TODO]"""
+    def require_data(self, points):
+        """Return samples for requested points.
 
+        This provider is not able to generate missing data.
+        Will raise if a point is not known.
+
+        :return: samples for requested points (carry both space and data)
+        :rtype: :class:`Sample`
+        """
         # locate results in cache
         idx = self._cache.locate(points)
         if np.any(idx >= len(self._cache)):
-            logger.error("Data cannot be provided for requested points: {}"
-                         .format(points[idx >= len(self._cache)]))
+            self.logger.error("Data cannot be provided for requested points: {}"
+                              .format(points[idx >= len(self._cache)]))
             raise ValueError()
 
         return self._cache[idx]
 
     def build_data(self, points):
-        """[TODO]"""
+        """Compute data for requested points.
+        This provider cannot compute any data and will raise if called.
+
+        :return: `NotImplemented`
+        """
         return NotImplemented

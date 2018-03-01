@@ -1,8 +1,15 @@
 # coding: utf-8
 """
-[TODO]
+Data Provider: Build snapshots through a 3rd-party program
+==========================================================
+
+This provider builds its data using a shell command.
+
+The command executes a 3rd-party program.
+It can be anything from a small exotic perl command
+to a heavy CFD simulation.
+Coupling is done through files.
 """
-from copy import copy
 import os
 import shutil
 import logging
@@ -15,8 +22,7 @@ from ..input_output import formater
 
 
 class ProviderJob(object):
-    """[TODO]
-    """
+    """Provides Snapshots built through a 3rd-party program"""
 
     logger = logging.getLogger(__name__)
 
@@ -29,7 +35,26 @@ class ProviderJob(object):
                  space_format='json',
                  data_fname='sample-data.json',
                  data_format='json'):
-        """[TODO]
+        """Initialize the provider.
+
+        :param list(str) plabels: input parameter names.
+        :param list(str) flabels: output feature names.
+        :param str command: command to be executed for computing new snapshots.
+        :param str context_directory: store every ressource required for executing a job.
+        :param str coupling_directory: subdirectory in which input/output files are placed.
+        :param list(int) psizes: number of components of parameters.
+        :param list(int) fsizes: number of components of output features.
+        :param executor: Pool executor for asynchronous jobs.
+        :param bool clean: whether to remove working directories.
+        :param str discover_pattern: UNIX-style patterns for directories with pairs
+            of sample files to import.
+        :param str save_dir: path to a directory for saving known snapshots.
+        :param str space_fname: name of space file to write.
+        :param str data_fname: name of data file to write.
+        :param str space_format: space file format.
+        :param str data_format: data file format.
+
+        :type executor: :py:class:`concurrent.futures.Executor`
         """
         if executor is not None:
             self._executor = executor
@@ -46,50 +71,56 @@ class ProviderJob(object):
             'clean': clean,
         }
         self.logger.debug('Job specification: {}'.format(self._job))
-        
+
         # discover existing snapshots
         self._cache = SampleCache(plabels, flabels, psizes, fsizes, save_dir,
-                                  space_fname, space_format, 
+                                  space_fname, space_format,
                                   data_fname, data_format)
         if discover_pattern:
             self._cache.discover(discover_pattern)
             self._cache.save()
-        
+
         # choose a workdir
-        if os.path.isdir(save_dir):
+        if save_dir is not None:
             self._workdir = save_dir
         else:
             self._tmp = tempfile.TemporaryDirectory()
             self._workdir = self._tmp.name
-            self.job['clean'] = True
+            self._job['clean'] = True
 
     @property
     def plabels(self):
-        """[TODO]"""
+        """Names of space parameters"""
         return self._cache.plabels
 
     @property
     def flabels(self):
-        """[TODO]"""
+        """Names of data features"""
         return self._cache.flabels
 
     @property
     def psizes(self):
-        """[TODO]"""
+        """Shape of space parameters"""
         return self._cache.psizes
 
     @property
     def fsizes(self):
-        """[TODO]"""
+        """Shape of data features"""
         return self._cache.fsizes
 
     @property
     def known_points(self):
-        """[TODO]"""
+        """List of points whose associated data is already known"""
         return self._cache.space
 
-    def get_data(self, points):
-        """[TODO]"""
+    def require_data(self, points):
+        """Return samples for requested points.
+
+        Data for unknown points if generated through an external job.
+
+        :return: samples for requested points (carry both space and data)
+        :rtype: :class:`Sample`
+        """
         if np.size(points) == 0:
             return self._cache[:0]
         points = np.atleast_2d(points)
@@ -105,36 +136,52 @@ class ProviderJob(object):
             try:
                 mapper = self._executor.map
             except AttributeError:
-                self._cache += self.build_data(new_points, new_idx)
+                samples, failed = self.build_data(new_points, new_idx)
+                self._cache += samples
             else:
-                self._cache = sum(mapper(self.build_data, new_points, new_idx), self._cache)
+                ret_list = list(mapper(self.build_data, new_points, new_idx))
+                self._cache = sum([ret for ret, err in ret_list], self._cache)
+                failed = sum([err for ret, err in ret_list], [])
             self._cache.save()
-                
+
             # check for failed jobs
-            failed_points = [points for points in new_points if points not in self._cache.space]
-            if len(failed_points) > 0:
+            if len(failed) > 0:
+                failed_points = [tuple(point) for point, err in failed]
                 self.logger.error('Jobs failed for points {}'.format(failed_points))
-                raise sp.CalledProcessError()
+                err = failed[0][1]
+                raise sp.CalledProcessError(err.returncode, err.cmd)
 
         return self._cache[idx]
 
     def build_data(self, points, sample_id=None):
-        """[TODO]"""
+        """Compute data for requested points.
+
+        Ressources for executing a job are copied from
+        the context directory to a work directory.
+        The shell command is executed from this directory.
+        The command shall find its inputs and place its outputs
+        in the coupling sub-directory, inside the work directory.
+
+        :return: samples for requested points (carry both space and data)
+        :rtype: :class:`Sample`
+        """
         self.logger.debug('Build new Snapshots for points {}'.format(points))
-        sample = Sample(plabels=self.plabels, flabels=self.flabels, 
+        sample = Sample(plabels=self.plabels, flabels=self.flabels,
                         psizes=self.psizes, fsizes=self.fsizes,
-                        pformat=self._job['input_format'], 
+                        pformat=self._job['input_format'],
                         fformat=self._job['output_format'])
 
         points = np.atleast_2d(points)
         sample_id = np.atleast_1d(sample_id) if sample_id is not None else range(points)
+        failed = []
         for i, point in zip(sample_id, points):
             # start job
             work_dir = os.path.join(self._workdir, str(i))
             self._job_initialize(point, work_dir)
             try:
                 self._job_execute(point, work_dir)
-            except sp.CalledProcessError:
+            except sp.CalledProcessError as err:
+                failed.append((point, err))
                 continue
             # get result
             sample_dir = os.path.join(work_dir, self._job['coupling_directory'])
@@ -142,8 +189,8 @@ class ProviderJob(object):
             data_fname = os.path.join(sample_dir, self._job['output_file'])
             sample.read(space_fname, data_fname)
             if self._job['clean']:
-                rmtree(work_dir)
-        return sample
+                shutil.rmtree(work_dir)
+        return sample, failed
 
     def _job_initialize(self, point, work_dir):
         """Setup job execution.
@@ -179,7 +226,7 @@ class ProviderJob(object):
     def _job_execute(self, point, work_dir):
         """Execute job.
 
-        :param arra-like point: point in parameter space.
+        :param array-like point: point in parameter space.
         :param str work_dir: directory from which to launch the job.
         :raises :exc:`subprocess.CalledProcessError`
         """

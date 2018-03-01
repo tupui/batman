@@ -450,7 +450,7 @@ class UQ:
                     names = [i + str(p) for i, p in
                              itertools.product(['S_', 'S_T_'], self.plabels)]
                     data = np.append(i1, i2)
-                
+
                 self.io.write(os.path.join(self.fname, 'sensitivity_aggregated.json'), data, names)
             else:
                 self.logger.debug("No output folder to write aggregated indices in")
