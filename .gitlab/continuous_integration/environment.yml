@@ -9,6 +9,7 @@ dependencies:
 - babel
 - backports
 - backports.functools_lru_cache
+- backports.tempfile
 - blas
 - bzip2
 - ca-certificates
@@ -54,6 +55,7 @@ dependencies:
 - openblas
 - openssl
 - openturns
+- pandas
 - pathos
 - pbr
 - pcre

@@ -26,14 +26,14 @@
         "plabels": ["x1", "x2", "x3"],
         "flabels": ["F"],
         "provider": {
-            "type": "plugin",
+            "type": "function",
             "module": "function",
             "function": "f"
         },
         "io": {
-            "point_filename": "sample-space.json",
+            "space_filename": "sample-space.json",
+            "space_format": "json",
             "data_filename": "sample-data.npz",
-            "point_format": "json",
             "data_format": "npz"
         }
     },

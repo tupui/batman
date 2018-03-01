@@ -2,6 +2,6 @@
 Data module
 ***********
 """
-from .data import (Data, el_nino, tahiti, mascaret, marthe)
+from .data import (el_nino, tahiti, mascaret, marthe)
 
-__all__ = ['Data', 'el_nino', 'tahiti', 'mascaret', 'marthe']
+__all__ = ['el_nino', 'tahiti', 'mascaret', 'marthe']

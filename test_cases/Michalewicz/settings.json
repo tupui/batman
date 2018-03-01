@@ -25,18 +25,16 @@
         "plabels": ["x1", "x2"],
         "flabels": ["F"],
         "provider": {
-            "type": "file",
+            "type": "job",
             "command": "bash script.sh",
             "context_directory": "data",
             "coupling_directory": "batman-coupling",
-            "timeout": 10,
-            "clean": false,
-            "restart": "False"
+            "clean": false
         },
         "io": {
-            "point_filename": "sample-space.npy",
+            "space_filename": "sample-space.npy",
+            "space_format": "npy",
             "data_filename": "sample-data.npz",
-            "point_format": "npy",
             "data_format": "npz"
         }
     },

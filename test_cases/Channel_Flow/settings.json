@@ -25,19 +25,18 @@
         "max_workers": 5,
         "plabels": ["x1", "x2"],
         "flabels": ["F"],
+        "fsizes": [5],
         "provider": {
-            "type": "file",
+            "type": "job",
             "command": "bash script.sh",
             "context_directory": "data",
             "coupling_directory": "batman-coupling",
-            "timeout": 10,
-            "clean": false,
-            "restart": "False"
+            "clean": false
         },
         "io": {
-            "point_filename": "sample-space.json",
+            "space_filename": "sample-space.json",
+            "space_format": "json",
             "data_filename": "sample-data.json",
-            "point_format": "json",
             "data_format": "json"
         }
     },

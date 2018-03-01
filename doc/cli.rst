@@ -121,72 +121,101 @@ A snapshot defines a simulation.
         "max_workers": 5,
         "plabels": ["x1", "x2"],
         "flabels": ["X", "F"],
+        "psizes": [1, 1],
+        "fsizes": [2, 5],
         "io": {
-            "point_filename": "sample-space.json",
-            "data_filename": "sample-data.csv",
-            "point_format": "json",
-            "data_format": "csv"
+            "space_filename": "sample-space.json",
+            "space_format": "json",
+            "data_filename": "sample-data.json",
+            "data_format": "json"
         },
-        "provider": ...  # comes in 2 flavors
+        "provider": ...  # comes in 3 flavors
     }
 
 + ``max_workers``: maximum number of simultaneous running snapshots.
 + ``plabels``: names of the parameters that serve as coordinates of a snapshot point.
 + ``flabels``: names of the variables to treat that are contained in a snapshot.
-+ ``point_filename``: name of the json file that contains the values associated with ``plabels``.
-+ ``data_filename``: name of the file that contains the output ``flabels`` of a snapshot.
-+ ``point_format``, ``data_format``: ``json``, ``csv``, ``npy``, ``npz``.
++ [``psizes``]: number of components of each parameter.
++ [``fsizes``]: number of components of each variable.
++ [``io``]: change default values for snapshot inputs/outputs
+    * [``space_filename``]: basename for files storing the point coordinates ``plabels``. 
+    * [``space_format``]: ``json`` (default), ``csv``, ``npy``, ``npz``.
+    * [``data_filename``]: basename for files storing values associated to ``flabels``.
+    * [``data_format``]: ``json`` (default), ``csv``, ``npy``, ``npz``.
 
 The ``provider`` block defines what a simulation is. It comes in two flavors.
 A simulation can either be the result of a user-provided python function,
 or it can be an external program that produces a data file.
 
-Provider Plugin - User-provided python function
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Provider Function - User-provided python function
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Snapshot data is produced by calling a python function.
-No I/O is performed, it is the provider that shall bring the better performance.
+No I/O is performed by default, it is the provider that shall bring the best performance.
 
 .. code-block:: python
 
     "provider": {
-        "type": "plugin",
+        "type": "function",
         "module": "my.python.module",
-        "function": "f"
+        "function": "f",
+        "discover": "some/*/snapshot/directories"
     }
 
-+ ``type``: type of provider. Must be set to ``plugin``.
++ ``type``: type of provider. Must be set to ``function``.
 + ``module``: name of the python module to load.
 + ``function``: name of the function in ``module``. Called whenever a snapshot is required.
++ [``discover``]: UNIX-style pattern matching path to directories carrying snapshot files.
+  File names and formats are the ones set in ``io`` block.
 
-Provider File - Read data from files. 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Provider File - Read data from files 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Snapshot data is read from files.
-If a file for a particular snapshot doesn't exist, it is produce by executing  
-a user-specified external program. Snapshots existing in standard directories
-are automatically discovered by this provider.
+An erro is raised if a snpashot is request for a point not covered by user's files.
 
 .. code-block:: python
 
     "provider": {
         "type": "file",
-        "discover_from": "my/existing/snapshot/directory",
-        "context_directory": "data",
-        "coupling_directory": "batman-coupling",
-        "command": "bash script.sh",
-        "clean": false
+        "file_pairs": [['path-to/space-file.json', 'path-to/data-file.csv'],
+                       ['toto/space.json', 'tata/data.csv']],
+        "discover": "some/*/snapshot/directories"
     }
 
 + ``type``: type of provider. Must be set to ``file``.
-+ ``discover_from``: path to a directory containing user-provided snapshots. (optional)
-+ ``context_directory``: directory containing input data and script for building snapshot data files.
-+ ``coupling_directory``: directory in ``context_directory`` that will contain input parameters and output file. Its creation and deletion is handled by BATMAN.
-+ ``command``: command to run the external program. Launched from ``context_directory``. The program shall read its input parameters from ``coupling_directory/point_filename`` and write its outputs to ``coupling_directory/data_filename``.
-+ ``clean``: delete after run all but snapshot files in execution directory. Content in ``context_directory`` is always preserved.
++ ``file_pairs``: list of couples of files. 1st file contains space, 2nd one contains data.
+  File name are absolute or relative paths to the file.
+  File formats are the ones set in ``io`` block.
++ [``discover``]: UNIX-style pattern matching path to directories carrying snapshot files.
+  File names and formats are the ones set in ``io`` block.
 
-.. note:: Not specifying ``context_directory`` or ``command`` means no job were specified. It can make sens for those who want to provide their own snapshot data through the ``discover_from`` directory.
-.. warning:: BATMAN will crash if it needs a snapshot point that were not provided and no job were specified !
+Provider Job - Coupling with 3rd-party program
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Snapshot data is produced by running a 3rd-party program.
+The program is given as a shell command line to be executed in a context directory.
+Coupling between BATMAN and external program is done through files.
+
+.. code-block:: python
+
+    "provider": {
+        "type": "job",
+        "command": "bash script.sh",
+        "context_directory": "data",
+        "coupling_directory": "batman-coupling",
+        "clean": false,
+        "discover": "some/*/snapshot/directories"
+    }
+
++ ``type``: type of provider. Must be set to ``job``.
++ ``command``: command to run the external program. Launched from ``context_directory``. The program shall read its input parameters from ``coupling_directory/point_filename`` and write its outputs to ``coupling_directory/data_filename``. File names and formats are the one set in ``io`` block.
++ ``context_directory``: directory containing input data and script for building snapshot data files.
++ [``coupling_directory``]: directory in ``context_directory`` that will contain input parameters and output file. Its creation and deletion is handled by BATMAN.
++ [``clean``]: delete after run working directories.
++ [``discover``]: UNIX-style pattern matching path to directories carrying snapshot files.
+
+.. note:: BATMAN always keeps ``context_directory`` untouched. Actual workdirs are copies with symlinks to directory content.
 
 
 Optionnal Block 3 - Surrogate
