@@ -351,7 +351,7 @@ class Space(list):
             self += p.flatten().tolist()
         self.logger.debug('Space read from {}'.format(path))
 
-    def write(self, path):
+    def write(self, path='.'):
         """Write space in file.
 
         After writting points, it plots them.
