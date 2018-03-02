@@ -42,7 +42,7 @@ class SampleCache(Sample):
                                           pformat=space_format, fformat=data_format)
         try:
             os.makedirs(savedir)
-        except (OSError, TypeError):
+        except (OSError, TypeError, AttributeError):
             pass
 
     def discover(self, directory_pattern):

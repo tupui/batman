@@ -334,7 +334,7 @@ class Space(Sample):
     def write(self, path='.', fname='space.dat'):
         """Write space to file `path`, then plot it."""
         space_file = os.path.join(path, fname)
-        super().write(space_fname=space_file)
+        super(Space, self).write(space_fname=space_file)
         resampling = len(self) - self.doe_init
         visualization.doe(self, plabels=self.plabels, resampling=resampling,
                           multifidelity=self.multifidelity,
