@@ -257,7 +257,7 @@ class Sample(object):
                 plabels = self.plabels
             try:
                 np_space = self._pformater.read(space_fname, plabels)
-            except OSError:
+            except (OSError, IOError):
                 pass  # file not found.
             else:
                 np_sample.append(np_space)
@@ -267,7 +267,7 @@ class Sample(object):
                 flabels = self.flabels
             try:
                 np_data = self._fformater.read(data_fname, flabels)
-            except OSError:
+            except (OSError, IOError):
                 pass  # file not found.
             else:
                 np_sample.append(np_data)

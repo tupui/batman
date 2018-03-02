@@ -45,7 +45,7 @@ def sample_case(request):
     args = {}
 
     # space
-    space, plabels, psizes = build_dataset(nsample, 
+    space, plabels, psizes = build_dataset(nsample,
                                            space_spec['nfeature'],
                                            space_spec['ncomponent'],
                                            'p')
@@ -65,7 +65,7 @@ def sample_case(request):
     # case
     sample = Sample(**args)
 
-    if args['space'] is None: 
+    if args['space'] is None:
         if (args['plabels'] is None) and (args['psizes'] is None):
             plabels = []
             psizes = []

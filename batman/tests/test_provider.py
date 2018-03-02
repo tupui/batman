@@ -61,7 +61,7 @@ def test_samplecache(tmp, sample_spec):
     result_data = data_fmt.read(os.path.join(savedir, data_file), flabels)
     npt.assert_array_equal(cache.space, result_space)
     npt.assert_array_equal(cache.data, result_data)
-    
+
     # test locate --> return proper location for existing and new points
     points = cache.space[:4] * np.reshape([1, -1, -1, 1], (-1, 1))
     index = cache.locate(points)
@@ -90,7 +90,7 @@ def test_provider_function(tmp, sample_spec):
 
     # test return new
     points *= -1
-    data = np.tile([42, 87, 74, 74], (len(points), 1)) 
+    data = np.tile([42, 87, 74, 74], (len(points), 1))
     sample = provider.require_data(points)
     npt.assert_array_equal(points, sample.space)
     npt.assert_array_equal(data, sample.data)
@@ -134,7 +134,7 @@ def test_provider_job(sample_spec):
     data_file = sample_spec['data_fname']
     flabels = sample_spec['flabels']
     datadir = os.path.join(os.path.dirname(__file__), 'data', 'snapshots')
-    
+
     pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
     provider = ProviderJob(command='python script.py',
                            context_directory=os.path.join(datadir, 'job'),
@@ -152,7 +152,7 @@ def test_provider_job(sample_spec):
 
     # test return new
     points *= -1
-    data = np.tile([42, 87, 74, 74], (len(points), 1)) 
+    data = np.tile([42, 87, 74, 74], (len(points), 1))
     sample = provider.require_data(points)
     npt.assert_array_equal(points, sample.space)
     npt.assert_array_equal(data, sample.data)
