@@ -47,7 +47,7 @@ def test_provider_dict(tmp, settings_ishigami):
         "type": "job",
         "command": "bash script.sh",
         "context_directory": "data",
-        "coupling_directory": "batman-coupling",
+        "coupling": {"coupling_directory": "batman-coupling"},
         "clean": False,
     }
     driver = Driver(test_settings, tmp)

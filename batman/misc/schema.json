@@ -89,6 +89,26 @@
                 "command": {"type": "string", "default": "bash script.sh"},
                 "context_directory": {"type": "string", "default": "data"},
                 "coupling_directory": {"type": "string", "default": "batman-coupling"},
+                "coupling": {
+                    "type": "object",
+                    "properties": {
+                        "coupling_directory": {"type": "string", "default": "batman-coupling"},
+                        "input_filename": {"type": "string", "default": "sample-space.json"},
+                        "input_format": {"type": "string", "default": "json"},
+                        "output_filename": {"type": "string", "default": "sample-data.json"},
+                        "output_format": {"type": "string", "default": "json"}
+                    }
+                },
+                "host": {
+                    "type": "object",
+                    "properties": {
+                        "hostname": {"type": "string"},
+                        "remote_root": {"type": "string"},
+                        "username": {"type": "string"},
+                        "password": {"type": "string"}
+                    },
+                    "required": ["hostname", "root"]
+                },
                 "clean": {"type": "boolean", "default": false},
                 "discover": {"type": "string"}
               },

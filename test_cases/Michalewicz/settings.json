@@ -28,7 +28,13 @@
             "type": "job",
             "command": "bash script.sh",
             "context_directory": "data",
-            "coupling_directory": "batman-coupling",
+            "coupling": {
+                "coupling_directory": "batman-coupling",
+                "input_filename": "sample-space.npy",
+                "input_format": "npy",
+                "output_filename": "sample-data.npz",
+                "output_format": "npz"
+            },
             "clean": false
         },
         "io": {

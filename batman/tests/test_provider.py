@@ -138,9 +138,9 @@ def test_provider_job(sample_spec):
     pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
     provider = ProviderJob(command='python script.py',
                            context_directory=os.path.join(datadir, 'job'),
-                           coupling_directory='coupling-dir',
-                           executor=pool,
+                           coupling={'coupling_directory': 'coupling-dir'},
                            discover_pattern=os.path.join(datadir, '*'),
+                           pool=pool,
                            **sample_spec)
 
     # test return existing
@@ -155,4 +155,41 @@ def test_provider_job(sample_spec):
     data = np.tile([42, 87, 74, 74], (len(points), 1))
     sample = provider.require_data(points)
     npt.assert_array_equal(points, sample.space)
+
+
+@pytest.mark.skip
+def test_remote_job(tmp, sample_spec):
+    space_fmt = formater(sample_spec['space_format'])
+    data_fmt = formater(sample_spec['data_format'])
+    space_file = sample_spec['space_fname']
+    plabels = sample_spec['plabels']
+    data_file = sample_spec['data_fname']
+    flabels = sample_spec['flabels']
+    datadir = os.path.join(os.path.dirname(__file__), 'data', 'snapshots')
+    
+    host = {
+        'hostname': 'localhost',
+        'remote_root': tmp,
+    }
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+    provider = ProviderJob(command='bash remote_script.sh',
+                           context_directory=os.path.join(datadir, 'job'),
+                           coupling={'coupling_directory': 'coupling-dir'},
+                           discover_pattern=os.path.join(datadir, '*'),
+                           pool=pool, host=host,
+                           **sample_spec)
+
+    # test return existing
+    points = space_fmt.read(os.path.join(datadir, '3', space_file), plabels)
+    data = data_fmt.read(os.path.join(datadir, '3', data_file), flabels)
+    sample = provider.require_data(points)
+    npt.assert_array_equal(points, sample.space)
+    npt.assert_array_equal(data, sample.data)
+
+    # test return new
+    points *= -1
+    data = np.tile([42, 87, 74, 74], (len(points), 1)) 
+    sample = provider.require_data(points)
+    npt.assert_array_equal(points, sample.space)
+    npt.assert_array_equal(data, sample.data)
     npt.assert_array_equal(data, sample.data)

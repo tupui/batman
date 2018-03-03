@@ -11,7 +11,7 @@ to a heavy CFD simulation.
 Coupling is done through files.
 """
 import os
-import shutil
+# import shutil
 import logging
 try:
     from backports import tempfile
@@ -19,9 +19,11 @@ except ImportError:
     import tempfile
 import subprocess as sp
 import numpy as np
+from .local_executor import LocalExecutor
+from .remote_executor import RemoteExecutor
 from .sample_cache import SampleCache
 from ..space import Sample
-from ..input_output import formater
+# from ..input_output import formater
 
 
 class ProviderJob(object):
@@ -30,9 +32,9 @@ class ProviderJob(object):
     logger = logging.getLogger(__name__)
 
     def __init__(self, plabels, flabels, command, context_directory,
-                 coupling_directory='batman-coupling',
                  psizes=None, fsizes=None,
-                 executor=None, clean=False,
+                 coupling=None, host=None,
+                 pool=None, clean=False,
                  discover_pattern=None, save_dir=None,
                  space_fname='sample-space.json',
                  space_format='json',
@@ -44,10 +46,10 @@ class ProviderJob(object):
         :param list(str) flabels: output feature names.
         :param str command: command to be executed for computing new snapshots.
         :param str context_directory: store every ressource required for executing a job.
-        :param str coupling_directory: subdirectory in which input/output files are placed.
+#        :param str coupling_directory: subdirectory in which input/output files are placed.
         :param list(int) psizes: number of components of parameters.
         :param list(int) fsizes: number of components of output features.
-        :param executor: Pool executor for asynchronous jobs.
+#        :param executor: Pool executor for asynchronous jobs.
         :param bool clean: whether to remove working directories.
         :param str discover_pattern: UNIX-style patterns for directories with pairs
             of sample files to import.
@@ -57,24 +59,8 @@ class ProviderJob(object):
         :param str space_format: space file format.
         :param str data_format: data file format.
 
-        :type executor: :py:class:`concurrent.futures.Executor`
+#        :type executor: :py:class:`concurrent.futures.Executor`
         """
-        if executor is not None:
-            self._executor = executor
-
-        # job specification
-        self._job = {
-            'command': command,
-            'context_directory': context_directory,
-            'coupling_directory': coupling_directory,
-            'input_file': space_fname,
-            'input_format': space_format,
-            'output_file': data_fname,
-            'output_format': data_format,
-            'clean': clean,
-        }
-        self.logger.debug('Job specification: {}'.format(self._job))
-
         # discover existing snapshots
         self._cache = SampleCache(plabels, flabels, psizes, fsizes, save_dir,
                                   space_fname, space_format,
@@ -83,13 +69,38 @@ class ProviderJob(object):
             self._cache.discover(discover_pattern)
             self._cache.save()
 
-        # choose a workdir
+        # job specification
+        self._job = {
+            'command': command,
+            'context_directory': context_directory,
+            'coupling_directory': 'batman-coupling',
+            'input_filename': space_fname,
+            'input_sizes': self.psizes,
+            'input_labels': self.plabels,
+            'input_format': space_format,
+            'output_filename': data_fname,
+            'output_sizes': self.fsizes,
+            'output_labels': self.flabels,
+            'output_format': data_format,
+            'clean': clean,
+        }
+        if coupling is not None:
+            self._job.update(coupling)
+        self.logger.debug('Job specification: {}'.format(self._job))
+
+        # execution
         if save_dir is not None:
-            self._workdir = save_dir
+            workdir = save_dir
         else:
             self._tmp = tempfile.TemporaryDirectory()
-            self._workdir = self._tmp.name
             self._job['clean'] = True
+            workdir = self._tmp.name
+        if pool is not None:
+            self._pool = pool
+        if host is not None:
+            self._executor = RemoteExecutor(local_root=workdir, **host, **self._job)
+        else:
+            self._executor = LocalExecutor(local_root=workdir, **self._job)
 
     @property
     def plabels(self):
@@ -125,7 +136,7 @@ class ProviderJob(object):
         :rtype: :class:`Sample`
         """
         if np.size(points) == 0:
-            return self._cache[:0]
+            return self._cache[:0]  # return empty container
         points = np.atleast_2d(points)
         self.logger.debug('Requested Snapshots for points {}'.format(points))
 
@@ -137,7 +148,7 @@ class ProviderJob(object):
             # build new samples
             new_idx = idx[idx >= len(self._cache)]
             try:
-                mapper = self._executor.map
+                mapper = self._pool.map
             except AttributeError:
                 samples, failed = self.build_data(new_points, new_idx)
                 self._cache += samples
@@ -148,11 +159,13 @@ class ProviderJob(object):
             self._cache.save()
 
             # check for failed jobs
-            if len(failed) > 0:
+            if failed:
                 failed_points = [tuple(point) for point, err in failed]
                 self.logger.error('Jobs failed for points {}'.format(failed_points))
                 err = failed[0][1]
-                raise sp.CalledProcessError(err.returncode, err.cmd)
+                self.logger.error(err.stderr)
+                raise sp.CalledProcessError(err.returncode, err.cmd, output=err.stdout,
+                                            stderr=err.stderr)
 
         return self._cache[idx]
 
@@ -178,64 +191,10 @@ class ProviderJob(object):
         sample_id = np.atleast_1d(sample_id) if sample_id is not None else range(points)
         failed = []
         for i, point in zip(sample_id, points):
-            # start job
-            work_dir = os.path.join(self._workdir, str(i))
-            self._job_initialize(point, work_dir)
             try:
-                self._job_execute(point, work_dir)
+                snapshot = self._executor.snapshot(point, i)
             except sp.CalledProcessError as err:
                 failed.append((point, err))
                 continue
-            # get result
-            sample_dir = os.path.join(work_dir, self._job['coupling_directory'])
-            space_fname = os.path.join(sample_dir, self._job['input_file'])
-            data_fname = os.path.join(sample_dir, self._job['output_file'])
-            sample.read(space_fname, data_fname)
-            if self._job['clean']:
-                shutil.rmtree(work_dir)
+            sample += snapshot
         return sample, failed
-
-    def _job_initialize(self, point, work_dir):
-        """Setup job execution.
-
-        Create and populate:
-        - work-directory from context-directory (use symbolic links)
-        - coupling subdirectory
-
-        :param array-like point: point in parameter space.
-        :param str work_dir: directory to populate with job script and resource files.
-        """
-        coupling_dir = os.path.join(work_dir, self._job['coupling_directory'])
-
-        # copy-link the content of 'context_dir' to 'snapshot_dir'
-        # wkdir shall not exist at all
-        os.makedirs(coupling_dir)
-        context_dir = os.path.abspath(self._job['context_directory'])
-        for root, dirs, files in os.walk(context_dir):
-            local = root.replace(context_dir, work_dir)
-            for d in dirs:
-                os.makedirs(os.path.join(local, d))
-            for f in files:
-                os.symlink(os.path.join(root, f), os.path.join(local, f))
-
-        # create input_file
-        point_file = os.path.join(coupling_dir, self._job['input_file'])
-        point_formater = formater(self._job['input_format'])
-        point_formater.write(point_file, point, self.plabels)
-
-        self.logger.debug('Point {} - Prepared workdir in {}'.format(point, work_dir))
-        self.logger.debug('Point {} - Coupling directory is {}'.format(point, coupling_dir))
-
-    def _job_execute(self, point, work_dir):
-        """Execute job.
-
-        :param array-like point: point in parameter space.
-        :param str work_dir: directory from which to launch the job.
-        :raises :exc:`subprocess.CalledProcessError`
-        """
-        cmd = self._job['command'].split()
-        job = sp.Popen(cmd, cwd=work_dir)
-        self.logger.debug('Point {} - Starting job in {}'.format(point, work_dir))
-        ret = job.wait()
-        if ret != 0:
-            raise sp.CalledProcessError(ret, self._job['command'])

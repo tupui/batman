@@ -24,7 +24,6 @@
             "type": "job",
             "command": "bash script.sh",
             "context_directory": "data",
-            "coupling_directory": "batman-coupling",
             "clean": false
         },
         "io": {

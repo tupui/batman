@@ -101,7 +101,7 @@ class Driver(object):
         elif provider_type == 'job':
             ProviderClass = ProviderJob
             args['save_dir'] = os.path.join(self.fname, self.fname_tree['snapshots'])
-            args['executor'] = futures.ThreadPoolExecutor(
+            args['pool'] = futures.ThreadPoolExecutor(
                 max_workers=settings['snapshot']['max_workers'])
             args.update(setting_provider)
         else:
