@@ -77,6 +77,7 @@ extras_require = {'doc': ['sphinx_rtd_theme', 'sphinx>=1.4'],
 
 if sys.version_info <= (3, 4):
     install_requires.append('futures')
+    install_requires.append('backports.tempfile')
 
 
 def find_version(*file_paths):

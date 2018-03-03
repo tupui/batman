@@ -13,7 +13,10 @@ Coupling is done through files.
 import os
 import shutil
 import logging
-import tempfile
+try:
+    from backports import tempfile
+except ImportError:
+    import tempfile
 import subprocess as sp
 import numpy as np
 from .sample_cache import SampleCache

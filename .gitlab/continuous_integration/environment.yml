@@ -8,8 +8,6 @@ dependencies:
 - astroid
 - babel
 - backports
-- backports.functools_lru_cache
-- backports.tempfile
 - blas
 - bzip2
 - ca-certificates
@@ -102,4 +100,5 @@ dependencies:
 - libgfortran
 - pip:
   - backports.functools-lru-cache
+  - backports.tempfile
   - sphinx-rtd-theme
