@@ -88,9 +88,9 @@ class Kriging(object):
         else:
             # Define the model settings
             l_scale = (1.0,) * dim
-            scale_bounds = [(0.01, 100)] * dim
+            self.scale_bounds = [(0.01, 100)] * dim
             self.kernel = ConstantKernel() * Matern(length_scale=l_scale,
-                                                    length_scale_bounds=scale_bounds)
+                                                    length_scale_bounds=self.scale_bounds)
 
         # Add a noise on the kernel using WhiteKernel
         if noise:
@@ -129,7 +129,7 @@ class Kriging(object):
             # Convergence check with bounds only when kernel not user defined
             if kernel is None:
                 hyper_bounds = all([i[0] < j < i[1]
-                                    for i, j in zip(scale_bounds,
+                                    for i, j in zip(self.scale_bounds,
                                                     hyperparameter[1:dim+1])])
 
                 if not hyper_bounds:

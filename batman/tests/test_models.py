@@ -168,6 +168,10 @@ class TestNd:
         scaler = preprocessing.MinMaxScaler()
         scaler.fit(np.array(mascaret_data.space.corners))
         space_scaled = scaler.transform(mascaret_data.space)
+
+        surrogate = Kriging(space_scaled, mascaret_data.target_space,
+                            kernel=Matern())
+
         surrogate = Kriging(space_scaled, mascaret_data.target_space)
 
         # Compute predictivity coefficient Q2
