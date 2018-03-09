@@ -26,7 +26,7 @@
         "flabels": ["F"],
         "provider": {
             "type": "job",
-            "command": "bash script.sh",
+            "command": "python function.py",
             "context_directory": "data",
             "coupling": {
                 "coupling_directory": "batman-coupling",

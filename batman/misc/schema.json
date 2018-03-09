@@ -107,7 +107,7 @@
                         "username": {"type": "string"},
                         "password": {"type": "string"}
                     },
-                    "required": ["hostname", "root"]
+                    "required": ["hostname", "remote_root"]
                 },
                 "clean": {"type": "boolean", "default": false},
                 "discover": {"type": "string"}

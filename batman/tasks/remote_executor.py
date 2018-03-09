@@ -22,7 +22,7 @@ class RemoteExecutor:
     def __init__(self, hostname, remote_root, local_root, command, context_directory,
                  coupling_directory, input_filename, input_format, input_labels, input_sizes,
                  output_filename, output_format, output_labels, output_sizes,
-                 username=None, password=None, clean=True):
+                 username=None, password=None, clean=False):
         """[TODO]
         """
         # config
@@ -33,7 +33,11 @@ class RemoteExecutor:
         except (IOError, OSError):
             pass
         user_config = ssh_config.lookup(hostname)
-        args = user_config.copy()
+        args = {}
+        for key in ['hostname', 'username', 'password', 'port']:
+            if key in user_config:
+                args[key] = user_config[key]
+
         if username is not None:
             args['username'] = username
         if password is not None:
@@ -44,17 +48,19 @@ class RemoteExecutor:
         hostname = args['hostname']
         username = username or getpass.getuser()
 
+        args['key_filename'] = user_config.get('identityfile')
+
         # connection
         self.ssh = paramiko.SSHClient()
         self.ssh.load_system_host_keys()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
             self.ssh.connect(**args)
-        except PasswordRequiredException:
+        except (PasswordRequiredException, SSHException):
             prompt = "{}@{}'s password: ".format(username, hostname)
             args['allow_agent'] = False
             args['timeout'] = 3
-            for i in range(2):
+            for i in range(3):
                 args['password'] = getpass.getpass(prompt=prompt)
                 try:
                     self.ssh.connect(**args)
@@ -67,8 +73,7 @@ class RemoteExecutor:
                 try:
                     self.ssh.connect(**args)
                 except (AuthenticationException, SSHException):
-                    print('Permission denied. You sucks !')
-                    raise SystemExit
+                    raise SystemExit('Permission denied.')
         self.sftp = self.ssh.open_sftp()
 
         # work directories
