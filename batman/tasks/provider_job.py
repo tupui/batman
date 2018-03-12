@@ -46,10 +46,8 @@ class ProviderJob(object):
         :param list(str) flabels: output feature names.
         :param str command: command to be executed for computing new snapshots.
         :param str context_directory: store every ressource required for executing a job.
-#        :param str coupling_directory: subdirectory in which input/output files are placed.
         :param list(int) psizes: number of components of parameters.
         :param list(int) fsizes: number of components of output features.
-#        :param executor: Pool executor for asynchronous jobs.
         :param bool clean: whether to remove working directories.
         :param str discover_pattern: UNIX-style patterns for directories with pairs
             of sample files to import.
@@ -58,8 +56,6 @@ class ProviderJob(object):
         :param str data_fname: name of data file to write.
         :param str space_format: space file format.
         :param str data_format: data file format.
-
-#        :type executor: :py:class:`concurrent.futures.Executor`
         """
         # discover existing snapshots
         self._cache = SampleCache(plabels, flabels, psizes, fsizes, save_dir,
@@ -74,11 +70,11 @@ class ProviderJob(object):
             'command': command,
             'context_directory': context_directory,
             'coupling_directory': 'batman-coupling',
-            'input_filename': space_fname,
+            'input_fname': space_fname,
             'input_sizes': self.psizes,
             'input_labels': self.plabels,
             'input_format': space_format,
-            'output_filename': data_fname,
+            'output_fname': data_fname,
             'output_sizes': self.fsizes,
             'output_labels': self.flabels,
             'output_format': data_format,

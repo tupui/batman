@@ -63,9 +63,9 @@ def settings_ishigami():
                 "function": "f_ishigami"
             },
             "io": {
-                "space_filename": "sample-space.json",
+                "space_fname": "sample-space.json",
                 "space_format": "json",
-                "data_filename": "sample-data.json",
+                "data_fname": "sample-data.json",
                 "data_format": "json",
             }
         },

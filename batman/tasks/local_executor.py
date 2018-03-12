@@ -7,12 +7,13 @@ import numpy as np
 import subprocess as sp
 from batman.input_output import formater
 
+
 class LocalExecutor:
-    """[TODO]"""
+    """Local exectuor."""
 
     def __init__(self, local_root, command, context_directory,
-                 coupling_directory, input_filename, input_format, input_labels, input_sizes,
-                 output_filename, output_format, output_labels, output_sizes, clean=True):
+                 coupling_directory, input_fname, input_format, input_labels, input_sizes,
+                 output_fname, output_format, output_labels, output_sizes, clean=True):
         """[TODO]
         """
         # work directories
@@ -28,11 +29,11 @@ class LocalExecutor:
         # job
         self._cmd = command.split()
         self._coupling = coupling_directory
-        self._input_file = input_filename
+        self._input_file = input_fname
         self._input_sizes = input_sizes
         self._input_labels = input_labels
         self._input_formater = formater(input_format)
-        self._output_file = output_filename
+        self._output_file = output_fname
         self._output_sizes = output_sizes
         self._output_labels = output_labels
         self._output_formater = formater(output_format)
@@ -49,7 +50,7 @@ class LocalExecutor:
         os.makedirs(cpldir)
         infile = os.path.join(cpldir, self._input_file)
         self._input_formater.write(infile, point, self._input_labels, self._input_sizes)
-        
+
         # link context
         for root, dirs, files in os.walk(self._context):
             local = root.replace(self._context, snapdir)

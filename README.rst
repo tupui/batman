@@ -90,6 +90,7 @@ The required dependencies are:
 - `scipy <http://scipy.org>`_ >= 0.15
 - `pathos <https://github.com/uqfoundation/pathos>`_ >= 0.2
 - `matplotlib <http://matplotlib.org>`_ >= 2.1
+- `Paramiko <http://www.paramiko.org>`_ >= 2.4
 - `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_
 
 Appart from OpenTURNS, required dependencies are satisfied by the installer.

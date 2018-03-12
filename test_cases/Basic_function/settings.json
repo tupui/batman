@@ -27,9 +27,9 @@
             "clean": false
         },
         "io": {
-            "space_filename": "sample-space.csv",
+            "space_fname": "sample-space.csv",
             "space_format": "csv",
-            "data_filename": "sample-data.json",
+            "data_fname": "sample-data.json",
             "data_format": "json"
         }
     },

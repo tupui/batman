@@ -17,11 +17,11 @@ from batman.input_output import formater
 
 
 class RemoteExecutor:
-    """[TODO]"""
+    """Remote executor."""
 
     def __init__(self, hostname, remote_root, local_root, command, context_directory,
-                 coupling_directory, input_filename, input_format, input_labels, input_sizes,
-                 output_filename, output_format, output_labels, output_sizes,
+                 coupling_directory, input_fname, input_format, input_labels, input_sizes,
+                 output_fname, output_format, output_labels, output_sizes,
                  username=None, password=None, clean=False):
         """[TODO]
         """
@@ -77,10 +77,8 @@ class RemoteExecutor:
         self.sftp = self.ssh.open_sftp()
 
         # work directories
-        out = self.exec('mkdir -p {}; mktemp -d --tmpdir="{}" bat.XXXXXXXX'
-                        .format(remote_root, remote_root))
-        wkroot = out.readlines()[-1].strip()
-        self._wkroot = self.sftp.normalize(wkroot)
+        self.exec('mkdir -p {}'.format(remote_root))
+        self._wkroot = self.sftp.normalize(remote_root)
         self._lwkroot = os.path.abspath(local_root)
 
         # context directories
@@ -95,11 +93,11 @@ class RemoteExecutor:
         # job
         self._cmd = command
         self._coupling = coupling_directory
-        self._input_file = input_filename
+        self._input_file = input_fname
         self._input_sizes = input_sizes
         self._input_labels = input_labels
         self._input_formater = formater(input_format)
-        self._output_file = output_filename
+        self._output_file = output_fname
         self._output_sizes = output_sizes
         self._output_labels = output_labels
         self._output_formater = formater(output_format)
@@ -171,4 +169,3 @@ class RemoteExecutor:
             self.exec('rm -r {}'.format(snapdir))
 
         return np.append(point, data)
-

@@ -31,9 +31,9 @@
             "function": "f"
         },
         "io": {
-            "space_filename": "point.json",
+            "space_fname": "point.json",
             "space_format": "json",
-            "data_filename": "point.npz",
+            "data_fname": "point.npz",
             "data_format": "npz"
         }
     },

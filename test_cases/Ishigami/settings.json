@@ -31,9 +31,9 @@
             "function": "f"
         },
         "io": {
-            "space_filename": "sample-space.json",
+            "space_fname": "sample-space.json",
             "space_format": "json",
-            "data_filename": "sample-data.npz",
+            "data_fname": "sample-data.npz",
             "data_format": "npz"
         }
     },

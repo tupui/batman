@@ -30,17 +30,17 @@
             "context_directory": "data",
             "coupling": {
                 "coupling_directory": "batman-coupling",
-                "input_filename": "sample-space.npy",
+                "input_fname": "sample-space.npy",
                 "input_format": "npy",
-                "output_filename": "sample-data.npz",
+                "output_fname": "sample-data.npz",
                 "output_format": "npz"
             },
             "clean": false
         },
         "io": {
-            "space_filename": "sample-space.npy",
+            "space_fname": "sample-space.npy",
             "space_format": "npy",
-            "data_filename": "sample-data.npz",
+            "data_fname": "sample-data.npy",
             "data_format": "npz"
         }
     },

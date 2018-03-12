@@ -108,9 +108,7 @@ class Driver(object):
             self.logger.error("Unknown provider type: {}".format(provider_type))
             raise ValueError("Unknown provider type '{}'. Must be one of {}"
                              .format(provider_type, ['function', 'file', 'job']))
-        setting_io = settings['snapshot'].get('io', {})
-        for key in setting_io:
-            args[key.replace('filename', 'fname')] = setting_io[key]
+        args.update(settings['snapshot'].get('io', {}))
 
         self.provider = ProviderClass(plabels=settings['snapshot']['plabels'],
                                       flabels=settings['snapshot']['flabels'],

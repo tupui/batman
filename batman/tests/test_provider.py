@@ -166,7 +166,7 @@ def test_remote_job(tmp, sample_spec):
     data_file = sample_spec['data_fname']
     flabels = sample_spec['flabels']
     datadir = os.path.join(os.path.dirname(__file__), 'data', 'snapshots')
-    
+
     host = {
         'hostname': 'localhost',
         'remote_root': tmp,
@@ -188,7 +188,7 @@ def test_remote_job(tmp, sample_spec):
 
     # test return new
     points *= -1
-    data = np.tile([42, 87, 74, 74], (len(points), 1)) 
+    data = np.tile([42, 87, 74, 74], (len(points), 1))
     sample = provider.require_data(points)
     npt.assert_array_equal(points, sample.space)
     npt.assert_array_equal(data, sample.data)

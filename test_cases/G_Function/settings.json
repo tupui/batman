@@ -29,9 +29,9 @@
             "clean": false
         },
         "io": {
-            "space_filename": "sample-space.csv",
+            "space_fname": "sample-space.csv",
             "space_format": "csv",
-            "data_filename": "sample-data.csv",
+            "data_fname": "sample-data.csv",
             "data_format": "csv"
         }
     },
