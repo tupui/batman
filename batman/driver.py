@@ -104,10 +104,7 @@ class Driver(object):
             args['pool'] = futures.ThreadPoolExecutor(
                 max_workers=settings['snapshot']['max_workers'])
             args.update(setting_provider)
-        else:
-            self.logger.error("Unknown provider type: {}".format(provider_type))
-            raise ValueError("Unknown provider type '{}'. Must be one of {}"
-                             .format(provider_type, ['function', 'file', 'job']))
+
         args.update(settings['snapshot'].get('io', {}))
 
         self.provider = ProviderClass(plabels=settings['snapshot']['plabels'],

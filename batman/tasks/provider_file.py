@@ -5,8 +5,8 @@ Data Provider: Read snapshots from files
 
 This provider gets its data from a list of files.
 
-It is unable to generate data and
-will raise an error if it is requested an unknown point.
+It is unable to generate data and it will raise an error if an unknown
+point is requested.
 """
 import logging
 import numpy as np
@@ -14,7 +14,7 @@ from .sample_cache import SampleCache
 
 
 class ProviderFile(object):
-    """Provides Snapshots loaded from a list of files"""
+    """Provides Snapshots loaded from a list of files."""
 
     logger = logging.getLogger(__name__)
 
@@ -26,11 +26,13 @@ class ProviderFile(object):
                  data_fname='sample-data.json',
                  data_format='json'):
         """Initialize the provider.
-        Load known samples from a list of files.
 
-        :param list(str) plabels: input parameter names (for space)
-        :param list(str) flabels: output feature names (for data)
-        :param list(tuple(str)) file_pairs: list of paires `(space_file, data_file)`
+        Load known samples from a list of files. If :attr:`discover_pattern` is
+        specified, it will also try to locate and import samples from there.
+
+        :param list(str) plabels: input parameter names (for space).
+        :param list(str) flabels: output feature names (for data).
+        :param list(tuple(str)) file_pairs: list of paires `(space_file, data_file)`.
         :param list(int) psizes: number of components of parameters.
         :param list(int) fsizes: number of components of output features.
         :param str discover_pattern: UNIX-style patterns for directories with pairs
@@ -56,27 +58,27 @@ class ProviderFile(object):
 
     @property
     def plabels(self):
-        """Names of space parameters"""
+        """Names of space parameters."""
         return self._cache.plabels
 
     @property
     def flabels(self):
-        """Names of data features"""
+        """Names of data features."""
         return self._cache.flabels
 
     @property
     def psizes(self):
-        """Shape of space parameters"""
+        """Shape of space parameters."""
         return self._cache.psizes
 
     @property
     def fsizes(self):
-        """Shape of data features"""
+        """Shape of data features."""
         return self._cache.fsizes
 
     @property
     def known_points(self):
-        """List of points whose associated data is already known"""
+        """List of points whose associated data is already known."""
         return self._cache.space
 
     def require_data(self, points):
@@ -93,12 +95,13 @@ class ProviderFile(object):
         if np.any(idx >= len(self._cache)):
             self.logger.error("Data cannot be provided for requested points: {}"
                               .format(points[idx >= len(self._cache)]))
-            raise ValueError()
+            raise ValueError
 
         return self._cache[idx]
 
     def build_data(self, points):
         """Compute data for requested points.
+
         This provider cannot compute any data and will raise if called.
 
         :return: `NotImplemented`

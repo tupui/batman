@@ -10,24 +10,24 @@ It can be anything from a small exotic perl command
 to a heavy CFD simulation.
 Coupling is done through files.
 """
-import os
-# import shutil
 import logging
 try:
     from backports import tempfile
 except ImportError:
     import tempfile
+import os
+import copy
+import shutil
 import subprocess as sp
 import numpy as np
 from .local_executor import LocalExecutor
 from .remote_executor import RemoteExecutor
 from .sample_cache import SampleCache
 from ..space import Sample
-# from ..input_output import formater
 
 
 class ProviderJob(object):
-    """Provides Snapshots built through a 3rd-party program"""
+    """Provides Snapshots built through a 3rd-party program."""
 
     logger = logging.getLogger(__name__)
 
@@ -45,12 +45,36 @@ class ProviderJob(object):
         :param list(str) plabels: input parameter names.
         :param list(str) flabels: output feature names.
         :param str command: command to be executed for computing new snapshots.
-        :param str context_directory: store every ressource required for executing a job.
+        :param str context_directory: store every ressource required for
+          executing a job.
         :param list(int) psizes: number of components of parameters.
         :param list(int) fsizes: number of components of output features.
+        :param dict coupling: Definition of the snapshots IO files:
+
+            - **coupling_directory** (str) -- sub-directory in
+              ``context_directory`` that will contain input parameters and
+              output file.
+            - **input_fname** (str) -- basename for files storing the point
+              coordinates ``plabels``.
+            - **input_format** (str) -- ``json`` (default), ``csv``, ``npy``,
+              ``npz``.
+            - **output_fname** (str) -- basename for files storing values
+              associated to ``flabels``.
+            - **output_format** (str) -- ``json`` (default), ``csv``, ``npy``,
+              ``npz``.
+
+        :param dict host: Definition of the remote HOST if any:
+
+            - **hostname** (str) -- Remote host to connect to.
+            - **remote_root** (str) -- Remote folder to create and store data.
+            - **username** (str) -- username.
+            - **password** (str) -- password.
+
+        :param pool: pool executor.
+        :type pool: :class:`concurrent.futures`.xxx.xxx.Executor.
         :param bool clean: whether to remove working directories.
-        :param str discover_pattern: UNIX-style patterns for directories with pairs
-            of sample files to import.
+        :param str discover_pattern: UNIX-style patterns for directories with
+          pairs of sample files to import.
         :param str save_dir: path to a directory for saving known snapshots.
         :param str space_fname: name of space file to write.
         :param str data_fname: name of data file to write.
@@ -88,9 +112,18 @@ class ProviderJob(object):
         if save_dir is not None:
             workdir = save_dir
         else:
-            self._tmp = tempfile.TemporaryDirectory()
+            _tmp = tempfile.TemporaryDirectory()
             self._job['clean'] = True
-            workdir = self._tmp.name
+            workdir = _tmp.name
+
+        self.backupdir = os.path.join(workdir, '.backup')
+        try:
+            os.makedirs(self.backupdir)
+        except OSError:
+            self.logger.warning('Was not able to create backup directory')
+        finally:
+            self._cache_backup = copy.deepcopy(self._cache)
+
         if pool is not None:
             self._pool = pool
         if host is not None:
@@ -100,27 +133,27 @@ class ProviderJob(object):
 
     @property
     def plabels(self):
-        """Names of space parameters"""
+        """Names of space parameters."""
         return self._cache.plabels
 
     @property
     def flabels(self):
-        """Names of data features"""
+        """Names of data features."""
         return self._cache.flabels
 
     @property
     def psizes(self):
-        """Shape of space parameters"""
+        """Shape of space parameters."""
         return self._cache.psizes
 
     @property
     def fsizes(self):
-        """Shape of data features"""
+        """Shape of data features."""
         return self._cache.fsizes
 
     @property
     def known_points(self):
-        """List of points whose associated data is already known"""
+        """List of points whose associated data is already known."""
         return self._cache.space
 
     def require_data(self, points):
@@ -128,6 +161,7 @@ class ProviderJob(object):
 
         Data for unknown points if generated through an external job.
 
+        :param array_like points: points to compute (n_points, n_features).
         :return: samples for requested points (carry both space and data)
         :rtype: :class:`Sample`
         """
@@ -145,14 +179,20 @@ class ProviderJob(object):
             new_idx = idx[idx >= len(self._cache)]
             try:
                 mapper = self._pool.map
-            except AttributeError:
+            except AttributeError:  # no pool
                 samples, failed = self.build_data(new_points, new_idx)
                 self._cache += samples
             else:
                 ret_list = list(mapper(self.build_data, new_points, new_idx))
                 self._cache = sum([ret for ret, err in ret_list], self._cache)
                 failed = sum([err for ret, err in ret_list], [])
-            self._cache.save()
+
+            # safelly save sample space and data
+            try:
+                self._cache.save()
+            except OSError:
+                self.logger.error('Failed to save sample')
+                raise SystemExit
 
             # check for failed jobs
             if failed:
@@ -160,8 +200,8 @@ class ProviderJob(object):
                 self.logger.error('Jobs failed for points {}'.format(failed_points))
                 err = failed[0][1]
                 self.logger.error(err.stderr)
-                raise sp.CalledProcessError(err.returncode, err.cmd, output=err.stdout,
-                                            stderr=err.stderr)
+                raise sp.CalledProcessError(err.returncode, err.cmd,
+                                            output=err.stdout, stderr=err.stderr)
 
         return self._cache[idx]
 
@@ -174,8 +214,11 @@ class ProviderJob(object):
         The command shall find its inputs and place its outputs
         in the coupling sub-directory, inside the work directory.
 
+        :param array_like points: points to compute (n_points, n_features).
+        :param list sample_id: points indices in the points list.
         :return: samples for requested points (carry both space and data)
-        :rtype: :class:`Sample`
+          and failed if any.
+        :rtype: :class:`Sample`, list([point, err])
         """
         self.logger.debug('Build new Snapshots for points {}'.format(points))
         sample = Sample(plabels=self.plabels, flabels=self.flabels,
@@ -192,5 +235,14 @@ class ProviderJob(object):
             except sp.CalledProcessError as err:
                 failed.append((point, err))
                 continue
+
             sample += snapshot
+
+            # backup sample space and data
+            self._cache_backup = sum(sample, self._cache_backup)
+            self._cache_backup.save(self.backupdir)
         return sample, failed
+
+    def __dell_(self):
+        """Remove backup directory."""
+        shutil.rmtree(self.backupdir)

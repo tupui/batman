@@ -16,7 +16,7 @@ Interpolation using Gaussian Process method.
     >> predictor = Kriging(sample, data)
     >> point = (5.0, 8.0)
     >> predictor.evaluate(point)
-    (array([ 8.4526528 ,  3.57976035]), array([ 0.40982369,  0.05522197]))
+    (array([10.333,  3.591]), array([1.247, 0.694]))
 
 Reference
 ---------
@@ -72,12 +72,7 @@ class Kriging(object):
         :param bool global_optimizer: Whether to do global optimization or
           gradient based optimization to estimate hyperparameters.
         """
-        try:
-            sample[0][0]
-        except (TypeError, IndexError):
-            pass
-        else:
-            sample = np.array(sample).reshape(len(sample), -1)
+        sample = np.atleast_2d(sample)
 
         dim = sample.shape[1]
         self.model_len = data.shape[1]
@@ -203,7 +198,7 @@ class Kriging(object):
         :return: The predictions.
         :rtype: array_like (n_features,).
         """
-        point_array = np.asarray(point).reshape(1, -1)
+        point_array = np.atleast_2d(point)
         prediction = np.empty((self.model_len))
         sigma = np.empty((self.model_len))
 

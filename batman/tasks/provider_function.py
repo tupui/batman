@@ -15,7 +15,7 @@ from ..space import Sample
 
 
 class ProviderFunction(object):
-    """Provides Snapshots built through an external python function"""
+    """Provides Snapshots built through an external python function."""
 
     logger = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ class ProviderFunction(object):
                  data_fname='sample-data.json',
                  data_format='json'):
         """Initialize the provider.
+
         Load a python function to be called for computing new snpahots.
 
         :param list(str) plabels: input parameter names.
@@ -35,8 +36,8 @@ class ProviderFunction(object):
         :param str function: function in `module` to execute for generating data.
         :param list(int) psizes: number of components of parameters.
         :param list(int) fsizes: number of components of output features.
-        :param str discover_pattern: UNIX-style patterns for directories with pairs
-            of sample files to import.
+        :param str discover_pattern: UNIX-style patterns for directories
+          with pairs of sample files to import.
         :param str save_dir: path to a directory for saving known snapshots.
         :param str space_fname: name of space file to write.
         :param str data_fname: name of data file to write.
@@ -58,27 +59,27 @@ class ProviderFunction(object):
 
     @property
     def plabels(self):
-        """Names of space parameters"""
+        """Names of space parameters."""
         return self._cache.plabels
 
     @property
     def flabels(self):
-        """Names of data features"""
+        """Names of data features."""
         return self._cache.flabels
 
     @property
     def psizes(self):
-        """Shape of space parameters"""
+        """Shape of space parameters."""
         return self._cache.psizes
 
     @property
     def fsizes(self):
-        """Shape of data features"""
+        """Shape of data features."""
         return self._cache.fsizes
 
     @property
     def known_points(self):
-        """List of points whose associated data is already known"""
+        """List of points whose associated data is already known."""
         return self._cache.space
 
     def require_data(self, points):
@@ -86,10 +87,11 @@ class ProviderFunction(object):
 
         Data for unknown points is generated through a python function.
 
+        :param array_like points: points to build data from,
+          (n_points, n_features).
         :return: samples for requested points (carry both space and data)
         :rtype: :class:`Sample`
         """
-
         # locate results in cache
         idx = self._cache.locate(points)
 
@@ -104,12 +106,14 @@ class ProviderFunction(object):
     def build_data(self, points):
         """Compute data for requested points.
 
-        :return: samples for requested points (carry both space and data)
+        :param array_like points: points to build data from,
+          (n_points, n_features).
+        :return: samples for requested points (carry both space and data).
         :rtype: :class:`Sample`
         """
         self.logger.debug("Build Snapshot for points {}".format(points))
         points = np.atleast_2d(points)
         result = [self._function(point) for point in points]
-        sample = Sample(space=points, data=result, plabels=self.plabels, flabels=self.flabels,
-                        psizes=self.psizes, fsizes=self.fsizes)
+        sample = Sample(space=points, data=result, plabels=self.plabels,
+                        flabels=self.flabels, psizes=self.psizes, fsizes=self.fsizes)
         return sample

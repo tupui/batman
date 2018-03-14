@@ -24,13 +24,14 @@ from ..input_output import formater
 
 
 class Sample(object):
-    """Container class for samples"""
+    """Container class for samples."""
 
     logger = logging.getLogger(__name__)
 
     def __init__(self, space=None, data=None, plabels=None, flabels=None,
                  psizes=None, fsizes=None, pformat='json', fformat='json'):
         """Initialize the container and build the column index.
+
         This index carries feature names. Features can be scalars or vectors.
         Vector features do not need to be of the same size.
         Samples are stored as a 2D row-major array: 1 sample per row.
@@ -47,7 +48,8 @@ class Sample(object):
         # space dataframe
         df_space = None
         if space is not None:
-            df_space = create_dataframe(space, clabel='space', flabels=plabels, fsizes=psizes)
+            df_space = create_dataframe(space, clabel='space', flabels=plabels,
+                                        fsizes=psizes)
         elif ((plabels is not None and list(plabels))
               or (psizes is not None and list(psizes))):
             index = create_index(clabel='space', flabels=plabels, fsizes=psizes)
@@ -56,7 +58,8 @@ class Sample(object):
         # data dataframe
         df_data = None
         if data is not None:
-            df_data = create_dataframe(data, clabel='data', flabels=flabels, fsizes=fsizes)
+            df_data = create_dataframe(data, clabel='data', flabels=flabels,
+                                       fsizes=fsizes)
         elif ((flabels is not None and list(flabels))
               or (fsizes is not None and list(fsizes))):
             index = create_index(clabel='data', flabels=flabels, fsizes=fsizes)
@@ -74,13 +77,13 @@ class Sample(object):
 
         self.desc = ''
 
-    # -----------------------------------------------------------
+    # ----------------
     # Field Accessors
-    # -----------------------------------------------------------
+    # ----------------
 
     @property
     def shape(self):
-        """Shape of the internal array"""
+        """Shape of the internal array."""
         return self._dataframe.shape
 
     @property
@@ -147,12 +150,12 @@ class Sample(object):
 
     @property
     def dataframe(self):
-        """The underlying dataframe"""
+        """Underlying dataframe."""
         return self._dataframe
 
     @property
     def values(self):
-        """The underlying :class:`numpy.ndarray`.
+        """Underlying :class:`numpy.ndarray`.
 
         Shape is `(n_sample, n_columns)`.
         There may be multiple columns per feature.
@@ -164,7 +167,7 @@ class Sample(object):
 
     @property
     def space(self):
-        """The space :class:`numpy.ndarray` (point coordinates)"""
+        """Space :class:`numpy.ndarray` (point coordinates)."""
         try:
             return self._dataframe['space'].values
         except KeyError:
@@ -172,15 +175,15 @@ class Sample(object):
 
     @property
     def data(self):
-        """The data :class:`numpy.ndarray`"""
+        """Core of the data :class:`numpy.ndarray`."""
         try:
             return self._dataframe['data'].values
         except KeyError:
             return np.empty((len(self), 0))
 
-    # -----------------------------------------------------------
+    # ------------------
     # Container methods
-    # -----------------------------------------------------------
+    # ------------------
 
     def append(self, other, axis=0):
         """Append samples to the container.
@@ -227,18 +230,18 @@ class Sample(object):
                                     ignore_index=ignore_index)
 
     def pop(self, sid=-1):
-        """Return and remove a sample (default: last one)"""
+        """Return and remove a sample (default: last one)."""
         item = self[sid]
         del self[sid]
         return item
 
     def empty(self):
-        """Remove every stored samples"""
+        """Remove every stored samples."""
         del self[:]
 
-    # -----------------------------------------------------------
+    # -----------------
     # Inputs / Outputs
-    # -----------------------------------------------------------
+    # -----------------
 
     def read(self, space_fname='sample-space.json', data_fname='sample-data.json',
              plabels=None, flabels=None):
@@ -248,8 +251,10 @@ class Sample(object):
 
         :param str space_fname: path to space file.
         :param str data_fname: path to data file.
-        :param list(str) plabels: labels in space file (if different from `self.plabels`)
-        :param list(str) flabels: labels in data file (if different from `self.flabels`)
+        :param list(str) plabels: labels in space file
+          (if different from `self.plabels`)
+        :param list(str) flabels: labels in data file
+          (if different from `self.flabels`)
         """
         np_sample = []
         if self.plabels:
@@ -290,16 +295,20 @@ class Sample(object):
         if self.data.size:
             self._fformater.write(data_fname, self.data, self.flabels, self.fsizes)
 
-    # -----------------------------------------------------------
+    # -----------
     # Data Model
-    # -----------------------------------------------------------
+    # -----------
 
     def __len__(self):
-        """Python Data Model. `len` function. Return the number of samples."""
+        """Python Data Model.
+
+        `len` function. Return the number of samples."""
         return len(self._dataframe)
 
     def __str__(self):
-        """Python Data Model. `str` function. Underlying dataframe representation."""
+        """Python Data Model.
+
+        `str` function. Underlying dataframe representation."""
         msg = str(self._dataframe)
         if self.desc:
             msg = self.desc + os.linesep + msg
@@ -311,7 +320,9 @@ class Sample(object):
         return self
 
     def __add__(self, other):
-        """Python Data Model. `+` operator.
+        """Python Data Model.
+
+        `+` operator.
         :returns: :class:`Sample` with samples from both operands.
         """
         new = copy(self)
@@ -321,7 +332,8 @@ class Sample(object):
     def __getitem__(self, sid):
         """Python Data Model. `[]` operator. Return requested samples.
 
-        :returns: 1D :class:`numpy.ndarray` if requested 1 item, :class:`Sample` otherwise.
+        :returns: 1D :class:`numpy.ndarray` if requested 1 item,
+          :class:`Sample` otherwise.
         """
         item = self._dataframe.iloc[sid]
         if item.ndim > 1:
@@ -343,7 +355,10 @@ class Sample(object):
         self._dataframe = self._dataframe.drop(sid)
 
     def __contains__(self, item):
-        """Python Data Model. `is in` statement. Test if item is one of the stored samples."""
+        """Python Data Model.
+
+        `is in` statement. Test if item is one of the stored samples.
+        """
         try:
             return item.values in self._dataframe.values
         except AttributeError:
@@ -355,8 +370,9 @@ class Sample(object):
         return generator
 
 
-# ----------------------------------------------------------------------------
+# -----------------
 # Helper functions
+# -----------------
 
 def create_dataframe(dataset, clabel='space', flabels=None, fsizes=None):
     """Create a DataFrame with a 3-level column index.
@@ -364,7 +380,8 @@ def create_dataframe(dataset, clabel='space', flabels=None, fsizes=None):
     Columns are feature components, rows are dataset entries (samples).
 
     :param dataset: array-like or :class:`pandas.DataFrame`.
-    :param str clabel: class of features (1st level in index). Typically 'space' or 'data.'
+    :param str clabel: class of features (1st level in index).
+      Typically 'space' or 'data.'
     :param list(str) flabels: labels of features.
     :param list(int) fsizes: number of components of features.
     :rtype: :class:`pandas.DataFrame`
@@ -410,9 +427,11 @@ def create_dataframe(dataset, clabel='space', flabels=None, fsizes=None):
 
 def create_index(clabel, flabels=None, fsizes=None):
     """Build a 3-level index.
+
     - 1st level: feature class ('space', 'data', ...)
     - 2nd level: feature names
-    - 3rd level: component indices: `[0, N]` where `N` is the number of components of 1 feature.
+    - 3rd level: component indices: `[0, N]` where `N` is the number of
+      components of 1 feature.
 
     :param str clabel: class of features.
     :param list(str) flabels: labels of features.

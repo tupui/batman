@@ -22,7 +22,7 @@ class Datatest(object):
         self.__dict__.update(kwds)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def tmp(tmpdir_factory):
     """Create a common temp directory."""
     return str(tmpdir_factory.mktemp('tmp_test'))
@@ -85,7 +85,7 @@ def settings_ishigami():
     }
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='module')
 def driver_init(tmp, settings_ishigami):
     """Initialize driver with settings from Ishigami."""
     driver = Driver(settings_ishigami, tmp)

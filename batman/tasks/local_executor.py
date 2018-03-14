@@ -1,10 +1,14 @@
+# coding: utf-8
 """
-[TODO]
+Executor: Local computations
+============================
+
+This executor perform locally the generation of the sample.
 """
 import os
 import shutil
-import numpy as np
 import subprocess as sp
+import numpy as np
 from batman.input_output import formater
 
 
@@ -13,8 +17,29 @@ class LocalExecutor:
 
     def __init__(self, local_root, command, context_directory,
                  coupling_directory, input_fname, input_format, input_labels, input_sizes,
-                 output_fname, output_format, output_labels, output_sizes, clean=True):
-        """[TODO]
+                 output_fname, output_format, output_labels, output_sizes, clean=False):
+        """Initialize local executor.
+
+        :param str local_root: Local folder to create and store data.
+        :param str command: command to be executed for computing new snapshots.
+        :param str context_directory: store every ressource required for
+          executing a job.
+        :param str coupling_directory: sub-directory in
+          ``context_directory`` that will contain input parameters and
+          output file.
+        :param str input_fname: basename for files storing the point
+          coordinates ``plabels``.
+        :param str input_format: ``json`` (default), ``csv``, ``npy``,
+          ``npz``.
+        :param list(str) input_labels: input parameter names.
+        :param list(int) input_sizes: number of components of parameters.
+        :param str output_fname: basename for files storing values
+          associated to ``flabels``.
+        :param str output_format: ``json`` (default), ``csv``, ``npy``,
+          ``npz``.
+        :param list(str) output_labels: output feature names.
+        :param list(int) output_sizes: number of components of output features.
+        :param bool clean: whether to remove working directories.
         """
         # work directories
         try:
@@ -39,11 +64,14 @@ class LocalExecutor:
         self._output_formater = formater(output_format)
         self._clean = clean
 
-    def close(self):
-        pass
-
     def snapshot(self, point, sample_id):
-        """[TODO]"""
+        """Compute a snapshot locally.
+
+        :param array_like point: point to compute (n_features,).
+        :param list sample_id: points indices in the points list.
+        :return: concatenation of point and data for requested point
+        :rtype: array_like
+        """
         # build input file
         snapdir = os.path.join(self._wkroot, str(sample_id))
         cpldir = os.path.join(snapdir, self._coupling)

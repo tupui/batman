@@ -1,14 +1,19 @@
+# coding: utf8
 """
-[TODO] ssh
+Executor: remote computations
+=============================
+
+This executor perform remotelly the generation of the sample.
 """
+import logging
 import os
 import stat
 import shutil
 import tarfile
 import getpass
 import threading
-import numpy as np
 import subprocess as sp
+import numpy as np
 import paramiko
 from paramiko.ssh_exception import (PasswordRequiredException,
                                     AuthenticationException,
@@ -19,11 +24,42 @@ from batman.input_output import formater
 class RemoteExecutor:
     """Remote executor."""
 
+    logger = logging.getLogger(__name__)
+
     def __init__(self, hostname, remote_root, local_root, command, context_directory,
                  coupling_directory, input_fname, input_format, input_labels, input_sizes,
                  output_fname, output_format, output_labels, output_sizes,
                  username=None, password=None, clean=False):
-        """[TODO]
+        """Initialize remote executor.
+
+        It connects to the *host* and opens *ssh* and *sftp* connections.
+        A working directory is created and it contains everything from setup
+        to outputs.
+
+        :param str hostname: Remote host to connect to.
+        :param str remote_root: Remote folder to create and store data.
+        :param str local_root: Local folder to create and store data.
+        :param str command: command to be executed for computing new snapshots.
+        :param str context_directory: store every ressource required for
+          executing a job.
+        :param str coupling_directory: sub-directory in
+          ``context_directory`` that will contain input parameters and
+          output file.
+        :param str input_fname: basename for files storing the point
+          coordinates ``plabels``.
+        :param str input_format: ``json`` (default), ``csv``, ``npy``,
+          ``npz``.
+        :param list(str) input_labels: input parameter names.
+        :param list(int) input_sizes: number of components of parameters.
+        :param str output_fname: basename for files storing values
+          associated to ``flabels``.
+        :param str output_format: ``json`` (default), ``csv``, ``npy``,
+          ``npz``.
+        :param list(str) output_labels: output feature names.
+        :param list(int) output_sizes: number of components of output features.
+        :param str username: username.
+        :param str password: password.
+        :param bool clean: whether to remove working directories.
         """
         # config
         ssh_config = paramiko.SSHConfig()
@@ -76,19 +112,24 @@ class RemoteExecutor:
                     raise SystemExit('Permission denied.')
         self.sftp = self.ssh.open_sftp()
 
-        # work directories
+        # working directories
         self.exec('mkdir -p {}'.format(remote_root))
         self._wkroot = self.sftp.normalize(remote_root)
         self._lwkroot = os.path.abspath(local_root)
 
         # context directories
+        self.logger.info('Compressing and sending context directory...')
         self._lcontext = context_directory
         self._context = os.path.join(self._wkroot, 'context')
         tarname = os.path.join(self._lwkroot, 'context.tar.gz')
         with tarfile.open(tarname, 'w:gz') as tar:
             tar.add(self._lcontext, arcname='context')
         self.sftp.put(tarname, os.path.join(self._wkroot, 'context.tar.gz'))
-        self.exec('cd {} && tar xaf context.tar.gz && rm context.tar.gz'.format(self._wkroot))
+        self.logger.debug('Context directory sent')
+
+        self.logger.debug('Uncompressing context directory...')
+        self.exec('cd {} && tar xzf context.tar.gz && rm context.tar.gz'.format(self._wkroot))
+        self.logger.info('Context directory on remote host')
 
         # job
         self._cmd = command
@@ -106,15 +147,15 @@ class RemoteExecutor:
         # threadsafety: SFTP session seems not to be threadsafe
         self._lock = threading.Lock()
 
-    def close(self):
-        """[TODO]"""
+    def __dell__(self):
+        """Close both ssh and sftp connections."""
         if self._clean:
             self.exec('rm -r {}'.format(self._wkroot))
         self.sftp.close()
         self.ssh.close()
 
     def exec(self, cmd):
-        """[TODO]"""
+        """Execute a command on the HOST and check its completion."""
         _, cmd_out, cmd_err = self.ssh.exec_command(cmd)
         ret = cmd_err.channel.recv_exit_status()
         if ret != 0:
@@ -124,7 +165,12 @@ class RemoteExecutor:
         return cmd_out
 
     def walk(self, directory):
-        """[TODO] generator"""
+        """Directory and file generator.
+
+        :param str directory: dir to list from.
+        :return: directory, its sub-directories and files.
+        :rtype: tuple(str)
+        """
         content = self.sftp.listdir_attr(directory)
         files = [attr.filename for attr in content if not stat.S_ISDIR(attr.st_mode)]
         dirs = [attr.filename for attr in content if stat.S_ISDIR(attr.st_mode)]
@@ -133,7 +179,13 @@ class RemoteExecutor:
             self.walk(os.path.join(directory, d))
 
     def snapshot(self, point, sample_id):
-        """[TODO]"""
+        """Compute a snapshot remotelly.
+
+        :param array_like point: point to compute (n_features,).
+        :param list sample_id: points indices in the points list.
+        :return: concatenation of point and data for requested point
+        :rtype: array_like
+        """
         # build input file
         lsnapdir = os.path.join(self._lwkroot, str(sample_id))
         os.makedirs(lsnapdir)

@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y libgomp1
 
 WORKDIR /app
 
-RUN conda create -n bat_ci -c conda-forge python=2 openturns=1.9 matplotlib numpy pandas scipy scikit-learn pathos jsonschema sphinx sphinx_rtd_theme pytest pytest-runner mock ffmpeg pycodestyle pylint coverage && rm -rf /opt/conda/pkgs/*
+RUN conda create -n bat_ci -c conda-forge python=2 openturns=1.10 matplotlib numpy pandas scipy scikit-learn pathos jsonschema paramiko sphinx sphinx_rtd_theme pytest pytest-runner mock ffmpeg pycodestyle pylint coverage && rm -rf /opt/conda/pkgs/*
 
 COPY Dockerfile_python_2 /app/
 
