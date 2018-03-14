@@ -55,6 +55,7 @@ dependencies:
 - openssl
 - openturns
 - pandas
+- paramiko
 - pathos
 - pbr
 - pcre

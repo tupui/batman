@@ -26,15 +26,21 @@
         "flabels": ["F"],
         "provider": {
             "type": "job",
-            "command": "bash script.sh",
+            "command": "python function.py",
             "context_directory": "data",
-            "coupling_directory": "batman-coupling",
+            "coupling": {
+                "coupling_directory": "batman-coupling",
+                "input_fname": "sample-space.npy",
+                "input_format": "npy",
+                "output_fname": "sample-data.npz",
+                "output_format": "npz"
+            },
             "clean": false
         },
         "io": {
-            "space_filename": "sample-space.npy",
+            "space_fname": "sample-space.npy",
             "space_format": "npy",
-            "data_filename": "sample-data.npz",
+            "data_fname": "sample-data.npy",
             "data_format": "npz"
         }
     },

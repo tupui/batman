@@ -101,16 +101,11 @@ class Driver(object):
         elif provider_type == 'job':
             ProviderClass = ProviderJob
             args['save_dir'] = os.path.join(self.fname, self.fname_tree['snapshots'])
-            args['executor'] = futures.ThreadPoolExecutor(
+            args['pool'] = futures.ThreadPoolExecutor(
                 max_workers=settings['snapshot']['max_workers'])
             args.update(setting_provider)
-        else:
-            self.logger.error("Unknown provider type: {}".format(provider_type))
-            raise ValueError("Unknown provider type '{}'. Must be one of {}"
-                             .format(provider_type, ['function', 'file', 'job']))
-        setting_io = settings['snapshot'].get('io', {})
-        for key in setting_io:
-            args[key.replace('filename', 'fname')] = setting_io[key]
+
+        args.update(settings['snapshot'].get('io', {}))
 
         self.provider = ProviderClass(plabels=settings['snapshot']['plabels'],
                                       flabels=settings['snapshot']['flabels'],

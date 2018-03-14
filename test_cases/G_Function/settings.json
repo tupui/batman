@@ -25,13 +25,13 @@
             "type": "job",
             "command": "bash script.sh",
             "context_directory": "data",
-            "coupling_directory": "batman-coupling",
+            "coupling": {"coupling_directory": "batman-coupling"},
             "clean": false
         },
         "io": {
-            "space_filename": "sample-space.csv",
+            "space_fname": "sample-space.csv",
             "space_format": "csv",
-            "data_filename": "sample-data.csv",
+            "data_fname": "sample-data.csv",
             "data_format": "csv"
         }
     },

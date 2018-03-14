@@ -89,6 +89,26 @@
                 "command": {"type": "string", "default": "bash script.sh"},
                 "context_directory": {"type": "string", "default": "data"},
                 "coupling_directory": {"type": "string", "default": "batman-coupling"},
+                "coupling": {
+                    "type": "object",
+                    "properties": {
+                        "coupling_directory": {"type": "string", "default": "batman-coupling"},
+                        "input_fname": {"type": "string", "default": "sample-space.json"},
+                        "input_format": {"type": "string", "default": "json"},
+                        "output_fname": {"type": "string", "default": "sample-data.json"},
+                        "output_format": {"type": "string", "default": "json"}
+                    }
+                },
+                "host": {
+                    "type": "object",
+                    "properties": {
+                        "hostname": {"type": "string"},
+                        "remote_root": {"type": "string"},
+                        "username": {"type": "string"},
+                        "password": {"type": "string"}
+                    },
+                    "required": ["hostname", "remote_root"]
+                },
                 "clean": {"type": "boolean", "default": false},
                 "discover": {"type": "string"}
               },
@@ -111,9 +131,9 @@
         "io": {
           "type": "object",
           "properties": {
-            "space_filename": {"type": "string", "default": "sample-space.json"},
+            "space_fname": {"type": "string", "default": "sample-space.json"},
             "space_format": {"type": "string", "default": "json"},
-            "data_filename": {"type": "string", "default": "sample-data.json"},
+            "data_fname": {"type": "string", "default": "sample-data.json"},
             "data_format": {"type": "string", "default": "json"}
           }
         }

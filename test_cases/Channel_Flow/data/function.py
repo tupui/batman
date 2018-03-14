@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding:utf-8
 
-import json
 import numpy as np
 from batman.input_output import formater
 from batman.functions import Channel_Flow

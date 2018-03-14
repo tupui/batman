@@ -14,7 +14,7 @@ from ..space import Sample
 
 
 class SampleCache(Sample):
-    """Container with helper methods for handling computed snapshots"""
+    """Container with helper methods for handling computed snapshots."""
 
     def __init__(self, plabels, flabels,
                  psizes=None, fsizes=None, savedir=None,
@@ -24,15 +24,15 @@ class SampleCache(Sample):
                  data_format='json'):
         """Initialize an empty cache.
 
-        :param list(str) plabels: parameter names (for space)
-        :param list(str) flabels: feature names (for data)
-        :param list(int) psizes: lengths of parameters (for space)
-        :param list(int) fsizes: lengths of features (for data)
-        :param str savedir: directory to save cache content
-        :param str space_fname: file name for space
-        :param str space_format: file format for space
-        :param str data_fname: file name for data
-        :param str data_format: file format for data
+        :param list(str) plabels: parameter names (for space).
+        :param list(str) flabels: feature names (for data).
+        :param list(int) psizes: lengths of parameters (for space).
+        :param list(int) fsizes: lengths of features (for data).
+        :param str savedir: directory to save cache content.
+        :param str space_fname: file name for space.
+        :param str space_format: file format for space.
+        :param str data_fname: file name for data.
+        :param str data_format: file format for data.
         """
         self.savedir = savedir
         self.space_file = space_fname
@@ -60,11 +60,17 @@ class SampleCache(Sample):
             except OSError:
                 pass  # missing at least 1 of the 2 sample files
 
-    def save(self):
-        """Write samples to `self.savedir` directory"""
+    def save(self, savedir=None):
+        """Write samples to `self.savedir` directory.
+
+        :param str savedir: directory to save sample and data.
+        """
         if len(self) > 0 and self.savedir is not None:
-            pname = os.path.join(self.savedir, self.space_file)
-            fname = os.path.join(self.savedir, self.data_file)
+            if savedir is None:
+                savedir = self.savedir
+
+            pname = os.path.join(savedir, self.space_file)
+            fname = os.path.join(savedir, self.data_file)
             self.write(space_fname=pname, data_fname=fname)
 
     def locate(self, points):
@@ -74,13 +80,13 @@ class SampleCache(Sample):
         If a point is not known, return the position where it would be inserted.
         New points will always be appended after existing ones.
 
-        :return: list of point position in cache.
+        :param array_like points: points to locate (n_points, n_features).
+        :return: list of points positions in cache.
+        :rtype: list(n_points)
         """
         idx = []
         new_idx = itertools.count(len(self))
         points = np.atleast_2d(points)
-        nsample = len(points)
-        points = points.reshape(nsample, -1)
         for point in points:
             found = np.flatnonzero(np.all(point == self.space, axis=1))
             idx.append(found[0] if len(found) > 0 else next(new_idx))

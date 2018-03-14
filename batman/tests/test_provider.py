@@ -1,8 +1,9 @@
 import os
 import pytest
-import concurrent
+from concurrent import futures
 import numpy as np
 import numpy.testing as npt
+from paramiko.ssh_exception import NoValidConnectionsError
 from batman.tasks.sample_cache import SampleCache
 from batman.tasks import (ProviderFunction, ProviderFile, ProviderJob)
 from batman.input_output import formater
@@ -62,6 +63,10 @@ def test_samplecache(tmp, sample_spec):
     npt.assert_array_equal(cache.space, result_space)
     npt.assert_array_equal(cache.data, result_data)
 
+    cache.save(tmp)
+    assert os.path.isfile(os.path.join(tmp, space_file))
+    assert os.path.isfile(os.path.join(tmp, data_file))
+
     # test locate --> return proper location for existing and new points
     points = cache.space[:4] * np.reshape([1, -1, -1, 1], (-1, 1))
     index = cache.locate(points)
@@ -112,6 +117,10 @@ def test_provider_file(sample_spec):
                             discover_pattern=os.path.join(datadir, '?'),
                             **sample_spec)
 
+    # test 9 from discover_patter (1, 3, 5) and 3 from file_pairs
+    assert len(provider._cache.space) == 12
+    assert len(provider._cache.data) == 12
+
     # test return existing
     points = np.vstack((space_fmt.read(os.path.join(datadir, '3', space_file), plabels),
                         space_fmt.read(files[0][0], plabels)))
@@ -135,12 +144,51 @@ def test_provider_job(sample_spec):
     flabels = sample_spec['flabels']
     datadir = os.path.join(os.path.dirname(__file__), 'data', 'snapshots')
 
-    pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+    pool = futures.ThreadPoolExecutor(max_workers=2)
     provider = ProviderJob(command='python script.py',
                            context_directory=os.path.join(datadir, 'job'),
-                           coupling_directory='coupling-dir',
-                           executor=pool,
+                           coupling={'coupling_directory': 'coupling-dir'},
                            discover_pattern=os.path.join(datadir, '*'),
+                           pool=pool,
+                           **sample_spec)
+
+    # test loading existing
+    assert len(provider._cache) == 9
+
+    # test return existing
+    points = space_fmt.read(os.path.join(datadir, '3', space_file), plabels)
+    data = data_fmt.read(os.path.join(datadir, '3', data_file), flabels)
+    sample = provider.require_data(points)
+    npt.assert_array_equal(points, sample.space)
+    npt.assert_array_equal(data, sample.data)
+
+    # test return new
+    points *= -1
+    data = np.tile([42, 87, 74, 74], (len(points), 1))
+    sample = provider.require_data(points)
+    npt.assert_array_equal(points, sample.space)
+
+
+@pytest.mark.xfail(raises=NoValidConnectionsError, reason='Cannot connect to localhost')
+def test_remote_job(tmp, sample_spec):
+    space_fmt = formater(sample_spec['space_format'])
+    data_fmt = formater(sample_spec['data_format'])
+    space_file = sample_spec['space_fname']
+    plabels = sample_spec['plabels']
+    data_file = sample_spec['data_fname']
+    flabels = sample_spec['flabels']
+    datadir = os.path.join(os.path.dirname(__file__), 'data', 'snapshots')
+
+    host = {
+        'hostname': 'localhost',
+        'remote_root': 'TETE'
+    }
+    pool = futures.ThreadPoolExecutor(max_workers=3)
+    provider = ProviderJob(command='bash remote_script.sh',
+                           context_directory=os.path.join(datadir, 'job'),
+                           coupling={'coupling_directory': 'coupling-dir'},
+                           discover_pattern=os.path.join(datadir, '*'),
+                           pool=pool, host=host, save_dir=tmp,
                            **sample_spec)
 
     # test return existing
@@ -155,4 +203,5 @@ def test_provider_job(sample_spec):
     data = np.tile([42, 87, 74, 74], (len(points), 1))
     sample = provider.require_data(points)
     npt.assert_array_equal(points, sample.space)
+    npt.assert_array_equal(data, sample.data)
     npt.assert_array_equal(data, sample.data)

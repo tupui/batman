@@ -46,12 +46,7 @@ class SklearnRegressor(object):
         :type regressor: Either regressor object or
           str(:mod:`sklearn.ensemble`.Regressor)
         """
-        try:
-            sample[0][0]
-        except (TypeError, IndexError):
-            pass
-        else:
-            sample = np.array(sample).reshape(len(sample), -1)
+        sample = np.atleast_2d(sample)
 
         self.model_len = data.shape[1]
         if self.model_len == 1:
@@ -103,7 +98,7 @@ class SklearnRegressor(object):
         :return: The predictions.
         :rtype: array_like (n_features,).
         """
-        point_array = np.asarray(point).reshape(1, -1)
+        point_array = np.atleast_2d(point)
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")

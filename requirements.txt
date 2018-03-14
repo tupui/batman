@@ -33,6 +33,7 @@ mock==2.0.0
 multiprocess==0.70.5
 numpy==1.13.3
 pandas==0.22.0
+paramiko==2.3.1
 pathos==0.2.1
 pbr==3.1.1
 pexpect==4.3.1

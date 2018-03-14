@@ -16,7 +16,6 @@ F = f([X1, X2, X3])
 
 # Output
 data = np.array(F)
-names = ["F"]
 
 io.write('./batman-coupling/sample-data.json', data, ['F'])
 

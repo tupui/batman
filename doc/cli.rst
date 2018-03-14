@@ -124,9 +124,9 @@ A snapshot defines a simulation.
         "psizes": [1, 1],
         "fsizes": [2, 5],
         "io": {
-            "space_filename": "sample-space.json",
+            "space_fname": "sample-space.json",
             "space_format": "json",
-            "data_filename": "sample-data.json",
+            "data_fname": "sample-data.json",
             "data_format": "json"
         },
         "provider": ...  # comes in 3 flavors
@@ -137,10 +137,10 @@ A snapshot defines a simulation.
 + ``flabels``: names of the variables to treat that are contained in a snapshot.
 + [``psizes``]: number of components of each parameter.
 + [``fsizes``]: number of components of each variable.
-+ [``io``]: change default values for snapshot inputs/outputs
-    * [``space_filename``]: basename for files storing the point coordinates ``plabels``. 
++ [``io``]: change default values for the global input/output files.
+    * [``space_fname``]: basename for files storing the point coordinates ``plabels``. 
     * [``space_format``]: ``json`` (default), ``csv``, ``npy``, ``npz``.
-    * [``data_filename``]: basename for files storing values associated to ``flabels``.
+    * [``data_fname``]: basename for files storing values associated to ``flabels``.
     * [``data_format``]: ``json`` (default), ``csv``, ``npy``, ``npz``.
 
 The ``provider`` block defines what a simulation is. It comes in two flavors.
@@ -168,7 +168,7 @@ No I/O is performed by default, it is the provider that shall bring the best per
 + [``discover``]: UNIX-style pattern matching path to directories carrying snapshot files.
   File names and formats are the ones set in ``io`` block.
 
-Provider File - Read data from files 
+Provider File - Read data from files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Snapshot data is read from files.
@@ -197,26 +197,51 @@ Snapshot data is produced by running a 3rd-party program.
 The program is given as a shell command line to be executed in a context directory.
 Coupling between BATMAN and external program is done through files.
 
+In case of expensive program, the snapshots can be send to an external host.
+
 .. code-block:: python
 
     "provider": {
         "type": "job",
         "command": "bash script.sh",
         "context_directory": "data",
-        "coupling_directory": "batman-coupling",
+        "coupling": {
+            "coupling_directory": "batman-coupling",
+            "input_fname": "sample-space.npy",
+            "input_format": "npy",
+            "output_fname": "sample-data.npz",
+            "output_format": "npz"
         "clean": false,
-        "discover": "some/*/snapshot/directories"
+        "discover": "some/*/snapshot/directories",
+        "host": {
+                "hostname": "nemo",
+                "remote_root": "TOTO",
+                "username": "batman"
+                "password": "Iron man sucks!"
+            }
     }
 
 + ``type``: type of provider. Must be set to ``job``.
 + ``command``: command to run the external program. Launched from ``context_directory``. The program shall read its input parameters from ``coupling_directory/point_filename`` and write its outputs to ``coupling_directory/data_filename``. File names and formats are the one set in ``io`` block.
 + ``context_directory``: directory containing input data and script for building snapshot data files.
-+ [``coupling_directory``]: directory in ``context_directory`` that will contain input parameters and output file. Its creation and deletion is handled by BATMAN.
+  .. note:: BATMAN always keeps ``context_directory`` untouched. Actual workdirs are copies with symlinks to directory content.
++ [``coupling``]:
+    * [``coupling_directory``]: directory in ``context_directory`` that will contain input parameters and output file. Its creation and deletion is handled by BATMAN.
+    * [``input_fname``]: basename for files storing the point coordinates ``plabels``.
+    * [``input_format``]: ``json`` (default), ``csv``, ``npy``, ``npz``.
+    * [``output_fname``]: basename for files storing values associated to ``flabels``.
+    * [``output_format``]: ``json`` (default), ``csv``, ``npy``, ``npz``.
+
 + [``clean``]: delete after run working directories.
 + [``discover``]: UNIX-style pattern matching path to directories carrying snapshot files.
++ [``host``]:
+    * ``hostname``: Remote host to connect to.
+    * ``remote_root``: Remote folder to create and store data in.
+    * [``username``]: username.
+    * [``password``]: password.
 
-.. note:: BATMAN always keeps ``context_directory`` untouched. Actual workdirs are copies with symlinks to directory content.
-
+  This functionality is based on *ssh* and *sftp*. So user configuration in ``~/.ssh/config`` is used by default.
+  Also, private keys are used if located in default folder.
 
 Optionnal Block 3 - Surrogate
 -----------------------------
