@@ -113,7 +113,7 @@ class RemoteExecutor:
         self.sftp = self.ssh.open_sftp()
 
         # working directories
-        self.exec('mkdir -p {}'.format(remote_root))
+        self.exec_remote('mkdir -p {}'.format(remote_root))
         self._wkroot = self.sftp.normalize(remote_root)
         self._lwkroot = os.path.abspath(local_root)
 
@@ -128,7 +128,8 @@ class RemoteExecutor:
         self.logger.debug('Context directory sent')
 
         self.logger.debug('Uncompressing context directory...')
-        self.exec('cd {} && tar xzf context.tar.gz && rm context.tar.gz'.format(self._wkroot))
+        self.exec_remote('cd {} && tar xzf context.tar.gz'
+                         ' && rm context.tar.gz'.format(self._wkroot))
         self.logger.info('Context directory on remote host')
 
         # job
@@ -150,11 +151,11 @@ class RemoteExecutor:
     def __dell__(self):
         """Close both ssh and sftp connections."""
         if self._clean:
-            self.exec('rm -r {}'.format(self._wkroot))
+            self.exec_remote('rm -r {}'.format(self._wkroot))
         self.sftp.close()
         self.ssh.close()
 
-    def exec(self, cmd):
+    def exec_remote(self, cmd):
         """Execute a command on the HOST and check its completion."""
         _, cmd_out, cmd_err = self.ssh.exec_command(cmd)
         ret = cmd_err.channel.recv_exit_status()
@@ -207,7 +208,7 @@ class RemoteExecutor:
                     self.sftp.symlink(os.path.join(root, f), os.path.join(local, f))
 
         # execute command
-        self.exec('cd {} && {}'.format(snapdir, self._cmd))
+        self.exec_remote('cd {} && {}'.format(snapdir, self._cmd))
 
         # get result
         with self._lock:
@@ -218,6 +219,6 @@ class RemoteExecutor:
         # cleaning
         if self._clean:
             shutil.rmtree(lsnapdir)
-            self.exec('rm -r {}'.format(snapdir))
+            self.exec_remote('rm -r {}'.format(snapdir))
 
         return np.append(point, data)

@@ -127,7 +127,8 @@ class ProviderJob(object):
         if pool is not None:
             self._pool = pool
         if host is not None:
-            self._executor = RemoteExecutor(local_root=workdir, **host, **self._job)
+            self._job.update(host)
+            self._executor = RemoteExecutor(local_root=workdir, **self._job)
         else:
             self._executor = LocalExecutor(local_root=workdir, **self._job)
 
