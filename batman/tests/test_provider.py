@@ -1,6 +1,7 @@
 import os
 import pytest
 from concurrent import futures
+import copy
 import numpy as np
 import numpy.testing as npt
 from paramiko.ssh_exception import NoValidConnectionsError
@@ -179,17 +180,26 @@ def test_remote_job(tmp, sample_spec):
     flabels = sample_spec['flabels']
     datadir = os.path.join(os.path.dirname(__file__), 'data', 'snapshots')
 
-    host = {
-        'hostname': 'localhost',
-        'remote_root': 'TETE'
-    }
+    host = [
+        {
+            'hostname': 'localhost',
+            'remote_root': 'TATA'
+        },
+        {
+            'hostname': 'localhost',
+            'remote_root': 'TITI'
+        }
+    ]
     pool = futures.ThreadPoolExecutor(max_workers=3)
-    provider = ProviderJob(command='bash remote_script.sh',
-                           context_directory=os.path.join(datadir, 'job'),
-                           coupling={'coupling_directory': 'coupling-dir'},
-                           discover_pattern=os.path.join(datadir, '*'),
-                           pool=pool, host=host, save_dir=tmp,
-                           **sample_spec)
+
+    sample_spec = copy.deepcopy(sample_spec)
+    sample_spec.update(dict(command='bash remote_script.sh',
+                            context_directory=os.path.join(datadir, 'job'),
+                            coupling={'coupling_directory': 'coupling-dir'},
+                            discover_pattern=os.path.join(datadir, '*'),
+                            pool=pool, hosts=host, save_dir=tmp))
+
+    provider = ProviderJob(**sample_spec)
 
     # test return existing
     points = space_fmt.read(os.path.join(datadir, '3', space_file), plabels)

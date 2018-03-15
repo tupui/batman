@@ -4,6 +4,7 @@ Executor: remote computations
 =============================
 
 This executor perform remotelly the generation of the sample.
+:class:`MasterRemoteExecutor` 
 """
 import logging
 import os
@@ -13,12 +14,78 @@ import tarfile
 import getpass
 import threading
 import subprocess as sp
+import itertools
 import numpy as np
 import paramiko
 from paramiko.ssh_exception import (PasswordRequiredException,
                                     AuthenticationException,
                                     SSHException)
 from batman.input_output import formater
+
+
+class MasterRemoteExecutor:
+    """Master Remote executor."""
+
+    logger = logging.getLogger(__name__)
+
+    def __init__(self, local_root, job, hosts):
+        """Initialize master remote executor.
+
+        Store one instance of :class:`RemoteExecutor` per host.
+        An internal counter handle load balancing between hosts.
+
+        :param str local_root: Local folder to create and store data.
+        :param dict job: Parametrization of the jobs:
+
+            - **local_root** (str) -- Local folder to create and store data.
+            - **command** (str) -- command to be executed for computing new
+              snapshots.
+            - **context_directory** (str) -- store every ressource required for
+              executing a job.
+            - **coupling_directory** (str) -- sub-directory in
+              ``context_directory`` that will contain input parameters and
+              output file.
+            - **input_fname** (str) -- basename for files storing the point
+              coordinates ``plabels``.
+            - **input_format** (str) -- ``json`` (default), ``csv``, ``npy``,
+              ``npz``.
+            - **input_labels** (list(str)) -- input parameter names.
+            - **input_sizes** (list(int)) -- number of components of
+              parameters.
+            - **output_fname** (str) -- basename for files storing values
+              associated to ``flabels``.
+            - **output_format** (str) -- ``json`` (default), ``csv``, ``npy``,
+              ``npz``.
+            - **output_labels** (list(str)) -- output feature names.
+            - **output_sizes** (list(int)) -- number of components of output
+              features.
+            - **clean** (bool) -- whether to remove working directories.
+
+        :param list(dict) hosts: Parametrization of each host:
+
+            - **hostname** (str) -- Remote host to connect to.
+            - **remote_root** (str) -- Remote folder to create and store data.
+            - **username** (str) -- username.
+            - **password** (str) -- password.
+        """
+        self.hosts = []
+        for host in hosts:
+            host.update(job)
+            self.hosts.append(RemoteExecutor(local_root=local_root, **host))
+
+        self.cycle = itertools.cycle(range(len(self.hosts)))
+
+    def snapshot(self, point, sample_id):
+        """Compute a snapshot remotelly.
+
+        Depending on the internal counter, distribute the computation on hosts.
+
+        :param array_like point: point to compute (n_features,).
+        :param list sample_id: points indices in the points list.
+        :return: concatenation of point and data for requested point
+        :rtype: array_like
+        """
+        return self.hosts[self.cycle.__next__()].snapshot(point, sample_id)
 
 
 class RemoteExecutor:
@@ -111,6 +178,8 @@ class RemoteExecutor:
                 except (AuthenticationException, SSHException):
                     raise SystemExit('Permission denied.')
         self.sftp = self.ssh.open_sftp()
+
+        self.logger.info('Connected to remote host: {}'.format(hostname))
 
         # working directories
         self.exec_remote('mkdir -p {}'.format(remote_root))
