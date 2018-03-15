@@ -183,11 +183,11 @@ def test_remote_job(tmp, sample_spec):
     host = [
         {
             'hostname': 'localhost',
-            'remote_root': 'TATA'
+            'remote_root': 'TTA'
         },
         {
             'hostname': 'localhost',
-            'remote_root': 'TITI'
+            'remote_root': 'TTB'
         }
     ]
     pool = futures.ThreadPoolExecutor(max_workers=3)
@@ -211,6 +211,19 @@ def test_remote_job(tmp, sample_spec):
     # test return new
     points *= -1
     data = np.tile([42, 87, 74, 74], (len(points), 1))
+    sample = provider.require_data(points)
+    npt.assert_array_equal(points, sample.space)
+    npt.assert_array_equal(data, sample.data)
+    npt.assert_array_equal(data, sample.data)
+
+    # test with weights
+    sample_spec['hosts'][0]['weight'] = 0.3
+    sample_spec['hosts'][1]['weight'] = 0.8
+    sample_spec['hosts'][0]['remote_root'] = 'TTC'
+    sample_spec['hosts'][1]['remote_root'] = 'TTD'
+    sample_spec['save_dir'] = os.path.join(tmp, 'new')
+    provider = ProviderJob(**sample_spec)
+
     sample = provider.require_data(points)
     npt.assert_array_equal(points, sample.space)
     npt.assert_array_equal(data, sample.data)

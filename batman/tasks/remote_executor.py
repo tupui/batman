@@ -68,12 +68,17 @@ class MasterRemoteExecutor:
             - **username** (str) -- username.
             - **password** (str) -- password.
         """
+        self.n_hosts = len(hosts)
+        if 'weight' in hosts[0]:
+            self.load_balancing = np.array([host.pop('weight') for host in hosts])
+            self.load_balancing = self.load_balancing / sum(self.load_balancing)
+        else:
+            self.load_balancing = itertools.cycle(range(self.n_hosts))
+
         self.hosts = []
         for host in hosts:
             host.update(job)
             self.hosts.append(RemoteExecutor(local_root=local_root, **host))
-
-        self.cycle = itertools.cycle(range(len(self.hosts)))
 
     def snapshot(self, point, sample_id):
         """Compute a snapshot remotelly.
@@ -85,7 +90,12 @@ class MasterRemoteExecutor:
         :return: concatenation of point and data for requested point
         :rtype: array_like
         """
-        return self.hosts[self.cycle.__next__()].snapshot(point, sample_id)
+        if isinstance(self.load_balancing, np.ndarray):
+            host = np.random.choice(self.n_hosts, p=self.load_balancing)
+        else:
+            host = self.load_balancing.__next__()
+
+        return self.hosts[host].snapshot(point, sample_id)
 
 
 class RemoteExecutor:
