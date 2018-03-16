@@ -1,6 +1,7 @@
 import os
 import pytest
 from concurrent import futures
+import copy
 import numpy as np
 import numpy.testing as npt
 from paramiko.ssh_exception import NoValidConnectionsError
@@ -179,17 +180,26 @@ def test_remote_job(tmp, sample_spec):
     flabels = sample_spec['flabels']
     datadir = os.path.join(os.path.dirname(__file__), 'data', 'snapshots')
 
-    host = {
-        'hostname': 'localhost',
-        'remote_root': 'TETE'
-    }
+    host = [
+        {
+            'hostname': 'localhost',
+            'remote_root': 'TTA'
+        },
+        {
+            'hostname': 'localhost',
+            'remote_root': 'TTB'
+        }
+    ]
     pool = futures.ThreadPoolExecutor(max_workers=3)
-    provider = ProviderJob(command='bash remote_script.sh',
-                           context_directory=os.path.join(datadir, 'job'),
-                           coupling={'coupling_directory': 'coupling-dir'},
-                           discover_pattern=os.path.join(datadir, '*'),
-                           pool=pool, host=host, save_dir=tmp,
-                           **sample_spec)
+
+    sample_spec = copy.deepcopy(sample_spec)
+    sample_spec.update(dict(command='bash remote_script.sh',
+                            context_directory=os.path.join(datadir, 'job'),
+                            coupling={'coupling_directory': 'coupling-dir'},
+                            discover_pattern=os.path.join(datadir, '*'),
+                            pool=pool, hosts=host, save_dir=tmp))
+
+    provider = ProviderJob(**sample_spec)
 
     # test return existing
     points = space_fmt.read(os.path.join(datadir, '3', space_file), plabels)
@@ -201,6 +211,19 @@ def test_remote_job(tmp, sample_spec):
     # test return new
     points *= -1
     data = np.tile([42, 87, 74, 74], (len(points), 1))
+    sample = provider.require_data(points)
+    npt.assert_array_equal(points, sample.space)
+    npt.assert_array_equal(data, sample.data)
+    npt.assert_array_equal(data, sample.data)
+
+    # test with weights
+    sample_spec['hosts'][0]['weight'] = 0.3
+    sample_spec['hosts'][1]['weight'] = 0.8
+    sample_spec['hosts'][0]['remote_root'] = 'TTC'
+    sample_spec['hosts'][1]['remote_root'] = 'TTD'
+    sample_spec['save_dir'] = os.path.join(tmp, 'new')
+    provider = ProviderJob(**sample_spec)
+
     sample = provider.require_data(points)
     npt.assert_array_equal(points, sample.space)
     npt.assert_array_equal(data, sample.data)

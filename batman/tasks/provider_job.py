@@ -21,7 +21,7 @@ import shutil
 import subprocess as sp
 import numpy as np
 from .local_executor import LocalExecutor
-from .remote_executor import RemoteExecutor
+from .remote_executor import MasterRemoteExecutor
 from .sample_cache import SampleCache
 from ..space import Sample
 
@@ -33,7 +33,7 @@ class ProviderJob(object):
 
     def __init__(self, plabels, flabels, command, context_directory,
                  psizes=None, fsizes=None,
-                 coupling=None, host=None,
+                 coupling=None, hosts=None,
                  pool=None, clean=False,
                  discover_pattern=None, save_dir=None,
                  space_fname='sample-space.json',
@@ -63,7 +63,7 @@ class ProviderJob(object):
             - **output_format** (str) -- ``json`` (default), ``csv``, ``npy``,
               ``npz``.
 
-        :param dict host: Definition of the remote HOST if any:
+        :param list(dict) hosts: Definition of the remote HOSTS if any:
 
             - **hostname** (str) -- Remote host to connect to.
             - **remote_root** (str) -- Remote folder to create and store data.
@@ -126,9 +126,10 @@ class ProviderJob(object):
 
         if pool is not None:
             self._pool = pool
-        if host is not None:
-            self._job.update(host)
-            self._executor = RemoteExecutor(local_root=workdir, **self._job)
+
+        if hosts is not None:
+            self._executor = MasterRemoteExecutor(local_root=workdir,
+                                                  job=self._job, hosts=hosts)
         else:
             self._executor = LocalExecutor(local_root=workdir, **self._job)
 
@@ -166,6 +167,8 @@ class ProviderJob(object):
         :return: samples for requested points (carry both space and data)
         :rtype: :class:`Sample`
         """
+        self.safe_saved = False
+
         if np.size(points) == 0:
             return self._cache[:0]  # return empty container
         points = np.atleast_2d(points)
@@ -191,6 +194,7 @@ class ProviderJob(object):
             # safelly save sample space and data
             try:
                 self._cache.save()
+                self.safe_saved = True
             except OSError:
                 self.logger.error('Failed to save sample')
                 raise SystemExit
@@ -240,10 +244,11 @@ class ProviderJob(object):
             sample += snapshot
 
             # backup sample space and data
-            self._cache_backup = sum(sample, self._cache_backup)
+            self._cache_backup += sample
             self._cache_backup.save(self.backupdir)
         return sample, failed
 
-    def __dell_(self):
+    def __del__(self):
         """Remove backup directory."""
-        shutil.rmtree(self.backupdir)
+        if self.safe_saved:
+            shutil.rmtree(self.backupdir)

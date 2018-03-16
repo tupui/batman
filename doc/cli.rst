@@ -234,7 +234,7 @@ In case of expensive program, the snapshots can be send to an external host.
 
 + [``clean``]: delete after run working directories.
 + [``discover``]: UNIX-style pattern matching path to directories carrying snapshot files.
-+ [``host``]:
++ [``hosts``]: list of different remote host to connect to with the following options:
     * ``hostname``: Remote host to connect to.
     * ``remote_root``: Remote folder to create and store data in.
     * [``username``]: username.

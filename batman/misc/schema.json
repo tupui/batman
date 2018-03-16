@@ -99,15 +99,17 @@
                         "output_format": {"type": "string", "default": "json"}
                     }
                 },
-                "host": {
-                    "type": "object",
-                    "properties": {
-                        "hostname": {"type": "string"},
-                        "remote_root": {"type": "string"},
-                        "username": {"type": "string"},
-                        "password": {"type": "string"}
-                    },
-                    "required": ["hostname", "remote_root"]
+                "hosts": {"type": "array", "items": {
+                      "type": "object",
+                      "properties": {
+                          "hostname": {"type": "string"},
+                          "remote_root": {"type": "string"},
+                          "username": {"type": "string"},
+                          "password": {"type": "string"},
+                          "weight": {"type": "number"}
+                      },
+                      "required": ["hostname", "remote_root"]
+                  }
                 },
                 "clean": {"type": "boolean", "default": false},
                 "discover": {"type": "string"}
@@ -187,7 +189,7 @@
       "properties": {
         "sample": {"type": "integer", "default": 5000, "minimum": 10},
         "test": {"type": "string"},
-        "pdf": {"type": "array", "items": {}},
+        "pdf": {"type": "array", "items": {"type": "string"}},
         "type": {"type": "string", "default": "aggregated",
                  "enum": ["aggregated", "block"]},
         "method": {"type": "string", "default": "sobol",
