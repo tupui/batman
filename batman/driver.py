@@ -128,6 +128,11 @@ class Driver(object):
                                 space_provider['method'],
                                 distributions,
                                 discrete)
+
+        if provider_type == 'file':
+            self.space.empty()
+            self.space += self.provider._cache.space
+
         self.to_compute_points = self.space.values
 
         # Pod

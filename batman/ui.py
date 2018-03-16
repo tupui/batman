@@ -68,7 +68,8 @@ def run(settings, options):
                 # auto-discovery of existing snapshots
                 root = os.path.join(options.output, 'snapshots')
                 if os.path.isdir(root):
-                    settings['snapshot']['provider']['discover'] = root
+                    if 'discover' not in settings['snapshot']['provider']:
+                        settings['snapshot']['provider']['discover'] = os.path.join(root, '*', '*')
 
         if delete:
             try:
@@ -82,7 +83,8 @@ def run(settings, options):
         # auto-discovery of existing snapshots
         root = os.path.join(options.output, 'snapshots')
         if os.path.isdir(root):
-            settings['snapshot']['provider']['discover'] = root
+            if 'discover' not in settings['snapshot']['provider']:
+                settings['snapshot']['provider']['discover'] = os.path.join(root, '*', '*')
 
     driver = Driver(settings, options.output)
 
