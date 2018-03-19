@@ -295,15 +295,16 @@ def sobol(sobols, conf=None, plabels=None, xdata=None, xlabel='x', fname=None):
 
     s_lst = [item for sublist in objects for item in sublist]
     color = [item for sublist in color for item in sublist]
-    y_pos = np.arange(2 * p_len)
+    x_pos = np.arange(2 * p_len)
 
     figures = []
     fig = plt.figure('Aggregated Indices')
     ax = fig.add_subplot(111)
     figures.append(fig)
-    ax.bar(y_pos, np.array(sobols[:2]).flatten('F'),
+    ax.bar(x_pos, np.array(sobols[:2]).flatten('F'),
            yerr=conf, align='center', alpha=0.5, color=color)
-    ax.set_xticks(y_pos, s_lst)
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(s_lst)
     ax.tick_params(axis='x', labelsize=20)
     ax.tick_params(axis='y', labelsize=20)
     ax.set_ylabel("Sobol' aggregated indices", fontsize=20)

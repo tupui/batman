@@ -52,6 +52,7 @@ def run(settings, options):
     logger.info("Branch: {}\nLast commit: {}".format(__branch__, __commit__))
 
     # clean up output directory or re-use it
+    root = os.path.join(options.output, 'snapshots')
     if not options.restart and not options.no_surrogate:
         delete = True
         # check if output is empty and ask for confirmation
@@ -66,9 +67,8 @@ def run(settings, options):
                     raise SystemExit
 
                 # auto-discovery of existing snapshots
-                root = os.path.join(options.output, 'snapshots')
-                if os.path.isdir(root):
-                    settings['snapshot']['provider']['discover'] = root
+                if os.path.isdir(root) and ('discover' not in settings['snapshot']['provider']):
+                    settings['snapshot']['provider']['discover'] = os.path.join(root, '*', '*')
 
         if delete:
             try:
@@ -78,11 +78,10 @@ def run(settings, options):
             os.makedirs(options.output)
             logger.debug('cleaning : {}'.format(options.output))
 
-    elif options.restart:
-        # auto-discovery of existing snapshots
-        root = os.path.join(options.output, 'snapshots')
-        if os.path.isdir(root):
-            settings['snapshot']['provider']['discover'] = root
+    elif options.restart and os.path.isdir(root) and\
+        ('discover' not in settings['snapshot']['provider']):
+        # auto-discovery of existing snapshots        
+        settings['snapshot']['provider']['discover'] = os.path.join(root, '*', '*')
 
     driver = Driver(settings, options.output)
 
