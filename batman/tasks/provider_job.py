@@ -89,6 +89,8 @@ class ProviderJob(object):
             self._cache.discover(discover_pattern)
             self._cache.save()
 
+        self.safe_saved = False
+
         # job specification
         self._job = {
             'command': command,

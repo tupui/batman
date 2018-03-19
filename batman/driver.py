@@ -120,6 +120,8 @@ class Driver(object):
             # a list of points is provided
             self.logger.info('Reading list of points from the settings.')
             self.space += space_provider
+        elif provider_type == 'file':
+            self.space += self.provider._cache.space
         elif isinstance(space_provider, dict):
             # use sampling method
             distributions = space_provider.get('distributions')
@@ -128,10 +130,6 @@ class Driver(object):
                                 space_provider['method'],
                                 distributions,
                                 discrete)
-
-        if provider_type == 'file':
-            self.space.empty()
-            self.space += self.provider._cache.space
 
         self.to_compute_points = self.space.values
 
