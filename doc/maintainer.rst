@@ -14,7 +14,17 @@ This is an open-source project, thus its development strategy is also open-sourc
 * CI is provided by *Gitlab CI* using custom made Docker images. Relative configuration
   and definition files are located under ``.gitlab/continuous_integration``.
   Two images are available on `Docker cloud <https://cloud.docker.com>`_ at:
-  ``tupui/bat_ci_2`` and ``tupui/bat_ci_3``.
+  ``tupui/bat_ci_2`` and ``tupui/bat_ci_3``::
+
+    docker build -t tupui/bat_ci_[2,3] -f Dockerfile_python_[2,3] .
+
+    docker login -u tupui -p xxx
+    docker push tupui/bat_ci_[2,3]
+
+    docker login registry.gitlab.com -u tupui -p xxx
+    docker tag tupui/bat_ci_3 registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3
+    docker push registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3
+
 
 Making a release
 ................
