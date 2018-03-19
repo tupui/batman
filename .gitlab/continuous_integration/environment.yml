@@ -8,7 +8,7 @@ dependencies:
 - astroid
 - babel
 - backports
-- backports.functools_lru_cache
+- backports.functools-lru-cache
 - blas
 - bzip2
 - ca-certificates
@@ -54,6 +54,8 @@ dependencies:
 - openblas
 - openssl
 - openturns
+- pandas
+- paramiko
 - pathos
 - pbr
 - pcre
@@ -99,5 +101,4 @@ dependencies:
 - zlib
 - libgfortran
 - pip:
-  - backports.functools-lru-cache
-  - sphinx-rtd-theme
+  - backports.tempfile

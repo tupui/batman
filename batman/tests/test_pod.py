@@ -9,7 +9,7 @@ def pod(tolerance=1, dim_max=3):
     snapshots = np.array([[37., 40., 41., 49., 42., 46., 45., 48.],
                           [40., 43., 47., 46., 41., 46., 45., 48.],
                           [40., 41., 42., 45., 44., 46., 45., 47.]])
-    pod = Pod([[30, 30, 30], [40, 40, 40]], 8, tolerance, dim_max)
+    pod = Pod([[30, 30, 30], [40, 40, 40]], None, 8, tolerance, dim_max)
     pod._decompose(snapshots)
 
     return pod
@@ -52,7 +52,7 @@ def test_update(pod):
                           [40., 43., 47., 46., 41., 46., 45., 48.],
                           [40., 41., 42., 45., 44., 46., 45., 47.]])
 
-    pod_empty = Pod([[30, 30, 30], [40, 40, 40]], 8, 1, 3)
+    pod_empty = Pod([[30, 30, 30], [40, 40, 40]], None, 8, 1, 3)
     [pod_empty._update(snapshots[:, i]) for i in range(8)]
 
     npt.assert_almost_equal(abs(pod.U), abs(pod_empty.U), decimal=3)
@@ -66,7 +66,7 @@ def test_downsample(pod):
                           [40., 43., 47., 46., 41., 46., 45.],
                           [40., 41., 42., 45., 44., 46., 45.]])
 
-    pod_downsampled = Pod([[30, 30, 30], [40, 40, 40]], 8, 1, 3)
+    pod_downsampled = Pod([[30, 30, 30], [40, 40, 40]], None, 8, 1, 3)
     pod_downsampled._decompose(snapshots)
 
     V_1 = np.delete(pod.V, 7, 0)

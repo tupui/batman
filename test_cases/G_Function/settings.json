@@ -22,18 +22,16 @@
         "plabels": ["x1", "x2", "x3", "x4"],
         "flabels": ["F"],
         "provider": {
-            "type": "file",
+            "type": "job",
             "command": "bash script.sh",
             "context_directory": "data",
-            "coupling_directory": "batman-coupling",
-            "timeout": 10,
-            "clean": false,
-            "restart": "False"
+            "coupling": {"coupling_directory": "batman-coupling"},
+            "clean": false
         },
         "io": {
-            "point_filename": "sample-space.csv",
-            "data_filename": "sample-data.csv",
-            "point_format": "csv",
+            "space_fname": "sample-space.csv",
+            "space_format": "csv",
+            "data_fname": "sample-data.csv",
             "data_format": "csv"
         }
     },

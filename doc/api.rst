@@ -18,7 +18,7 @@ specifications may not be enough to give full guidelines on their uses.
 
 .. autosummary::
 
-   space.Point
+   space.Sample
    space.Space
    space.Doe
    space.Refiner
@@ -139,10 +139,9 @@ specifications may not be enough to give full guidelines on their uses.
 
 .. autosummary::
 
-   tasks.SnapshotIO
-   tasks.Snapshot
+   tasks.ProviderFunction
    tasks.ProviderFile
-   tasks.ProviderPlugin
+   tasks.ProviderJob
 
 .. py:module:: tasks
 .. automodule:: batman.tasks

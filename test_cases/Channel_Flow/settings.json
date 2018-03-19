@@ -12,8 +12,7 @@
         "resampling":{
             "delta_space": 0.08,
             "resamp_size": 0,
-            "method": "sigma",
-            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
+            "method": "discrepancy",
             "q2_criteria": 0.9
         }
     },
@@ -26,19 +25,17 @@
         "max_workers": 5,
         "plabels": ["x1", "x2"],
         "flabels": ["F"],
+        "fsizes": [5],
         "provider": {
-            "type": "file",
+            "type": "job",
             "command": "bash script.sh",
             "context_directory": "data",
-            "coupling_directory": "batman-coupling",
-            "timeout": 10,
-            "clean": false,
-            "restart": "False"
+            "clean": false
         },
         "io": {
-            "point_filename": "sample-space.json",
-            "data_filename": "sample-data.json",
-            "point_format": "json",
+            "space_fname": "sample-space.json",
+            "space_format": "json",
+            "data_fname": "sample-data.json",
             "data_format": "json"
         }
     },

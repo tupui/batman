@@ -5,10 +5,10 @@ Space module
 
 from .space import Space
 from .sampling import Doe
-from .point import Point
+from .sample import Sample
 from .refiner import Refiner
 
-__all__ = ["Space", "Doe", "Point", "Refiner", "dists_to_ot"]
+__all__ = ["Space", "Doe", "Sample", "Refiner", "dists_to_ot"]
 
 
 def dists_to_ot(dists):

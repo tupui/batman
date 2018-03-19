@@ -18,6 +18,9 @@ from sklearn.model_selection import GridSearchCV
 from scipy.optimize import differential_evolution
 from matplotlib import cm
 import matplotlib.pyplot as plt
+from matplotlib.patches import Circle
+from matplotlib.collections import PatchCollection
+import matplotlib.ticker as ticker
 import batman as bat
 from ..input_output import formater
 
@@ -64,7 +67,7 @@ def kernel_smoothing(data, optimize=False):
 
 
 def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
-        ticks_nbr=10, range_cbar=None, fname=None):
+        dotplot=False, ticks_nbr=10, range_cbar=None, fname=None):
     """Plot PDF in 1D or 2D.
 
     :param nd_array/dict data: array of shape (n_samples, n_features)
@@ -82,6 +85,7 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
     :param str xlabel: label of the discretization parameter.
     :param str flabel: name of the quantity of interest.
     :param bool moments: whether to plot moments along with PDF if dim > 1.
+    :param bool dotplot: whether to plot quantile dotplot or histogram.
     :param int ticks_nbr: number of color isolines for response surfaces.
     :param array_like range_cbar: Minimum and maximum values for output
       function (2 values).
@@ -95,7 +99,8 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
     dx = 100
     if isinstance(data, dict):
         try:
-            f = bat.surrogate.SurrogateModel(data['method'], data['bounds'])
+            max_points_nb = data.shape[0]
+            f = bat.surrogate.SurrogateModel(data['method'], data['bounds'], max_points_nb)
             f.read(data['model'])
         except (AttributeError, TypeError):
             f = data['model']
@@ -137,8 +142,7 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
         max_ = np.max(z_array, axis=0)
 
     # Plotting
-    fig = plt.figure('PDF')
-    ax = fig.add_subplot(111)
+    fig, ax = plt.subplots()
     ax.tick_params(axis='x', labelsize=26)
     ax.tick_params(axis='y', labelsize=26)
     if output_len > 1:
@@ -163,8 +167,12 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
             ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     else:
         ax.plot(xdata, pdf, color='k', ls='-', linewidth=3, label=None)
-        ax.hist(z_array, 30, fc='gray', histtype='stepfilled',
-                alpha=0.2, density=True)
+        if dotplot:
+            ax, ax2 = _dotplot(z_array.flatten(),
+                               np.exp(ks_gaussian.score_samples(z_array)), ax)
+        else:
+            ax.hist(z_array, 30, fc='gray', histtype='stepfilled',
+                    alpha=0.2, density=True)
         z_delta = np.max(pdf) * 5e-2
         ax.plot(z_array[:199, 0],
                 -z_delta - z_delta * np.random.random(z_array[:199].shape[0]),
@@ -186,21 +194,77 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
 
         io = formater('json')
         filename, _ = os.path.splitext(fname)
-        io.write(filename + '.json', data, names)
+        sizes = [data.shape[1]] * data.shape[0]
+        io.write(filename + '.json', data.flatten(), names, sizes)
 
         # Write moments to file
         if moments:
             data = np.array([min_, sd_min, mean, sd_max, max_])
+            sizes = 5 * [data.shape[1]]
             names = ['Min', 'SD_min', 'Mean', 'SD_max', 'Max']
             if output_len != 1:
                 names = ['x'] + names
                 data = np.append(xdata[0], data)
+                sizes = [np.size(xdata[0])] + sizes
 
-            io.write(filename + '-moment.json', data, names)
+            io.write(filename + '-moment.json', data.flatten(), names, sizes)
 
     bat.visualization.save_show(fname, [fig])
 
     return fig
+
+
+def _dotplot(data, pdf, ax, n_dots=20, n_bins=7):
+    """Quantile dotplot.
+
+    Based on R code from https://github.com/mjskay/when-ish-is-my-bus.
+
+    :param array_like data:
+    :param callable pdf:
+    :param ax: Matplotlib AxesSubplot instances to draw to.
+    :param int n_dots: Total number of dots.
+    :param int n_bins: Number of groups of dots.
+    :return: List of artists added.
+    :rtype: list.
+    """
+    # Evenly sample the CDF and do the inverse transformation
+    # (quantile function) to have x. Probability of drawing a value less than
+    # x (i.e. P(X < x)) and the corresponding value of x to achieve that
+    # probability on the underlying distribution.
+    p_less_than_x = np.linspace(1 / n_dots / 2, 1 - (1 / n_dots / 2), n_dots)
+    x = np.percentile(data, p_less_than_x * 100)  # Inverce CDF (ppf)
+
+    # Create bins
+    hist = np.histogram(x, bins=n_bins)
+    bins, edges = hist
+    radius = (edges[1] - edges[0]) / 2
+
+    # Dotplot
+    ax2 = ax.twinx()
+    patches = []
+    max_y = 0
+    for i in range(n_bins):
+        x_bin = (edges[i + 1] + edges[i]) / 2
+        y_bins = [(i + 1) * (radius * 2) for i in range(bins[i])]
+        max_y = max(y_bins) if max(y_bins) > max_y else max_y
+
+        for _, y_bin in enumerate(y_bins):
+            circle = Circle((x_bin, y_bin), radius)
+            patches.append(circle)
+
+    p = PatchCollection(patches, alpha=0.4)
+    ax2.add_collection(p)
+
+    # Axis tweek
+    y_scale = max_y / max(pdf)
+    ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x / y_scale))
+    ax2.yaxis.set_major_formatter(ticks_y)
+    ax2.set_yticklabels([])
+    ax2.set_ylim([- radius, (max_y + radius)])
+    ax2.autoscale_view()
+    ax2.set_aspect('equal')
+
+    return [ax, ax2]
 
 
 def sobol(sobols, conf=None, plabels=None, xdata=None, xlabel='x', fname=None):
@@ -231,15 +295,16 @@ def sobol(sobols, conf=None, plabels=None, xdata=None, xlabel='x', fname=None):
 
     s_lst = [item for sublist in objects for item in sublist]
     color = [item for sublist in color for item in sublist]
-    y_pos = np.arange(2 * p_len)
+    x_pos = np.arange(2 * p_len)
 
     figures = []
     fig = plt.figure('Aggregated Indices')
     ax = fig.add_subplot(111)
     figures.append(fig)
-    ax.bar(y_pos, np.array(sobols[:2]).flatten('F'),
+    ax.bar(x_pos, np.array(sobols[:2]).flatten('F'),
            yerr=conf, align='center', alpha=0.5, color=color)
-    ax.set_xticks(y_pos, s_lst)
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(s_lst)
     ax.tick_params(axis='x', labelsize=20)
     ax.tick_params(axis='y', labelsize=20)
     ax.set_ylabel("Sobol' aggregated indices", fontsize=20)
@@ -288,7 +353,6 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """
     p_len = np.asarray(sample).shape[1]
-    data_len = np.asarray(data).shape[1]
     data = ot.Sample(data)
 
     corr_yy = np.array(data.computePearsonCorrelation())
@@ -348,14 +412,18 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
     ax.tick_params(axis='y', labelsize=23)
 
     if fname is not None:
+        io = formater('json')
+        filename, _ = os.path.splitext(fname)
+
         data = np.append(x_2d_yy, [y_2d_yy, corr_yy, cov_yy])
         names = ['x', 'y', 'Correlation-YY', 'Covariance']
-        io = formater('json')
-        io.write(fname.split('.')[0] + '-correlation_covariance.json', data, names)
+        sizes = [np.size(x_2d_yy), np.size(y_2d_yy), np.size(corr_yy), np.size(cov_yy)]
+        io.write(filename + '-correlation_covariance.json', data, names, sizes)
 
         data = np.append(x_2d_xy, [y_2d_xy, cov_matrix_xy])
         names = ['x', 'y', 'Correlation-XY']
-        io.write(fname.split('.')[0] + '-correlation_XY.dat', data, names)
+        sizes = [np.size(x_2d_xy), np.size(y_2d_xy), np.size(cov_matrix_xy)]
+        io.write(filename + '-correlation_XY.dat', data, names, sizes)
 
     bat.visualization.save_show(fname, figures)
 

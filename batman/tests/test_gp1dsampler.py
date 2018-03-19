@@ -7,10 +7,7 @@ import numpy.testing as npt
 import openturns as ot
 from batman.space.gp_1d_sampler import Gp1dSampler
 
-ot_comp = LooseVersion(ot.__version__) < LooseVersion('1.10')
 
-
-@pytest.mark.skipif(not ot_comp, reason='openturns version > 1.9')
 @patch("matplotlib.pyplot.show")
 def test_Gp1dSampler(mock_show, tmp):
     sampler = Gp1dSampler(x=[[0.104], [1.]])
@@ -37,7 +34,6 @@ def sampler():
                        threshold=0.01, cov="AbsoluteExponential")
 
 
-@pytest.mark.skipif(not ot_comp, reason='openturns version > 1.9')
 def test_Gp1dSampler_modes(sampler):
     sol = np.array([[5.98847892e-01, 6.57519854e-01, 4.57218596e-01],
                     [9.17674523e-01, -1.81049751e-16, -3.97332946e-01],
@@ -45,7 +41,6 @@ def test_Gp1dSampler_modes(sampler):
     npt.assert_almost_equal(sampler.modes, sol, decimal=2)
 
 
-@pytest.mark.skipif(not ot_comp, reason='openturns version > 1.9')
 def test_Gp1dSampler_sample_values(sampler):
     size = 2
     ot.RandomGenerator.SetSeed(0)
@@ -56,7 +51,6 @@ def test_Gp1dSampler_sample_values(sampler):
     npt.assert_almost_equal(Y['Values'], sol, decimal=2)
 
 
-@pytest.mark.skipif(not ot_comp, reason='openturns version > 1.9')
 def test_Gp1dSampler_sample_coeff(sampler):
     size = 2
     ot.RandomGenerator.SetSeed(0)
@@ -66,7 +60,6 @@ def test_Gp1dSampler_sample_coeff(sampler):
     npt.assert_almost_equal(Y['Coefficients'], sol, decimal=2)
 
 
-@pytest.mark.skipif(not ot_comp, reason='openturns version > 1.9')
 def test_Gp1dSampler_build_values(sampler):
     coeff = [0.2, 0.7, -0.4, 1.6, 0.2, 0.8, 0.4]
     Y = sampler.build(coeff)
@@ -74,7 +67,6 @@ def test_Gp1dSampler_build_values(sampler):
     npt.assert_almost_equal(Y['Values'], sol, decimal=2)
 
 
-@pytest.mark.skipif(not ot_comp, reason='openturns version > 1.9')
 def test_Gp1dSampler_build_coeff(sampler):
     coeff = [0.2, 0.7, -0.4, 1.6, 0.2, 0.8, 0.4]
     Y = sampler.build(coeff)

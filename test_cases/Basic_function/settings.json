@@ -21,18 +21,15 @@
         "plabels": ["x1"],
         "flabels": ["F"],
         "provider": {
-            "type": "file",
+            "type": "job",
             "command": "bash script.sh",
             "context_directory": "data",
-            "coupling_directory": "batman-coupling",
-            "timeout": 10,
-            "clean": false,
-            "restart": "False"
+            "clean": false
         },
         "io": {
-            "point_filename": "sample-space.csv",
-            "data_filename": "sample-data.json",
-            "point_format": "csv",
+            "space_fname": "sample-space.csv",
+            "space_format": "csv",
+            "data_fname": "sample-data.json",
             "data_format": "json"
         }
     },

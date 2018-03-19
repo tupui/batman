@@ -9,7 +9,7 @@ Generalities
 
 A common class is used to manage surrogate models. Hence, several kind of surrogate model strategies can be used::
 
-    predictor = batman.surrogate.SurrogateModel('kriging', corners)
+    predictor = batman.surrogate.SurrogateModel('kriging', corners, max_points_nb)
     predictor.fit(space, target_space)
     predictor.save('.')
     points = [(12.5, 56.8), (2.2, 5.3)]

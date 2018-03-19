@@ -12,8 +12,7 @@
             "delta_space": 0.08,
             "resamp_size": 0,
             "method": "sigma",
-            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
-            "q2_criteria": 0.9
+            "hybrid": [["sigma", 4], ["loo_sobol", 2]]
         }
     },
     "pod": {
@@ -26,18 +25,22 @@
         "plabels": ["x1", "x2"],
         "flabels": ["F"],
         "provider": {
-            "type": "file",
-            "command": "bash script.sh",
+            "type": "job",
+            "command": "python function.py",
             "context_directory": "data",
-            "coupling_directory": "batman-coupling",
-            "timeout": 10,
-            "clean": false,
-            "restart": "False"
+            "coupling": {
+                "coupling_directory": "batman-coupling",
+                "input_fname": "sample-space.npy",
+                "input_format": "npy",
+                "output_fname": "sample-data.npz",
+                "output_format": "npz"
+            },
+            "clean": false
         },
         "io": {
-            "point_filename": "sample-space.npy",
-            "data_filename": "sample-data.npz",
-            "point_format": "npy",
+            "space_fname": "sample-space.npy",
+            "space_format": "npy",
+            "data_fname": "sample-data.npy",
             "data_format": "npz"
         }
     },
@@ -54,7 +57,7 @@
     "uq": {
         "sample": 1000,
         "test": "Michalewicz",
-        "pdf": ["Uniform(1., 3.415)", "Uniform(0., 3.1415)"],
+        "pdf": ["Uniform(1., 3.1415)", "Uniform(0., 3.1415)"],
         "type": "aggregated",
         "method": "sobol"
     }

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding:utf-8
 
-import json
 import numpy as np
 from batman.input_output import formater
 from batman.functions import Channel_Flow
@@ -22,8 +21,7 @@ Z = f([Ks, Q])
 # plt.show()
 
 # Output
-nb_value = np.size(X)
-
 names = ['X', 'F']
-data = np.append(np.reshape(X, (-1, 1)), np.reshape(Z, (-1, 1)), axis=1)
-io.write('./batman-coupling/sample-data.json', data, names)
+sizes = [np.size(X), np.size(Z)]
+data = np.append(X, Z)
+io.write('./batman-coupling/sample-data.json', data, names, sizes)

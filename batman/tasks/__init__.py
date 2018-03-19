@@ -1,11 +1,10 @@
 """
-Tasks module
-************
+Data Provider module
+********************
 """
 
-from .snapshot import Snapshot
-from .snapshot_io import SnapshotIO
+from .provider_function import ProviderFunction
 from .provider_file import ProviderFile
-from .provider_plugin import ProviderPlugin
+from .provider_job import ProviderJob
 
-__all__ = ['Snapshot', 'SnapshotIO', 'ProviderFile', 'ProviderPlugin']
+__all__ = ['ProviderFunction', 'ProviderFile', 'ProviderJob']

@@ -91,25 +91,24 @@ The space of parameters is created using the two extrem points of the domain her
 
 * Block 2 - Snapshot provider
 
-Then, we configure the snapshot itself. We define the name of the header and output file as well as the dimension of the output. Here BATMAN will look at the variable ``F``, which is a scalar value, within the file ``point.dat``.
+Then, we configure the snapshot itself. We define the name of the header and output file as well as the dimension of the output. Here BATMAN will look at the variable ``F``, which is a scalar value, within the file ``point.json``.
 
 .. code-block:: python
 
     "snapshot": {
         "max_workers": 10,
-        "parameters": ["x1", "x2"],
-        "variables": ["F"],
+        "plabels": ["x1", "x2"],
+        "flabels": ["F"],
         "provider": {
-            "type": "file"
+            "type": "job"
             "command": "bash script.sh",
             "context_directory": "data",
-            "coupling_directory": "batman-coupling",
+            "coupling": {"coupling_directory": "batman-coupling"},
             "clean": false
         },
         "io": {
-            "point_filename": "point.json",
-            "data_filename": "point.dat",
-            "data_format": "fmt_tp_fortran"
+            "space_fname": "point.json",
+            "data_fname": "point.json"
         }
     }
 
@@ -117,7 +116,7 @@ Then, we configure the snapshot itself. We define the name of the header and out
 .. note:: For a simple python function, you can pass it directly in the settings file::
 
         "provider": {
-            "type": "plugin",
+            "type": "function",
             "module": "python_module",
             "function": "func_name"
         }
@@ -209,15 +208,26 @@ Result files are separated in 4 directories under ``output``::
      |
      |__ output
          |
-         |__ surrogate
-         |
          |__ predictions
          |
          |__ snapshots
          |
+         |__ space
+         |
+         |__ surrogate
+         |
          |__ uq
+         |
+         |__ visualization
 
-``snapshots`` contains all snapshots computations, ``predictions`` contains all predictions, ``surrogate`` contains the model and ``uq`` contains the statistical analysis. Using predictions we can plot the response surface of the function as calculated using the model:
+* ``predictions:`` all predictions,
+* ``snapshots:`` snapshots computations,
+* ``space:`` contains the design of experiments,
+* ``surrogate:`` the surrogate model info,
+* ``uq:`` the statistical analysis,
+* ``visualization:`` some plots.
+
+Using predictions we can plot the response surface of the function as calculated using the model:
 
 .. image:: ../fig/response_Michalewicz_model_2D.png
 

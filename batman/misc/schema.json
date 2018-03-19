@@ -6,30 +6,26 @@
       "type": "object",
       "properties": {
         "corners": {"type": "array", "items": {}},
-
         "sampling": {
-          "oneOf":[
-          {
-            "type": "object",
-            "properties": {
-              "method": {
-                    "type": "string",
-                    "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc",
-                             "lhsopt", "faure", "uniform", "saltelli"],
-                    "default": "halton"
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "method": {
+                      "type": "string",
+                      "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc",
+                               "lhsopt", "faure", "uniform", "saltelli"],
+                      "default": "halton"
+                },
+                "distributions": {"type": "array", "items": {}},
+                "init_size": {"type": "integer", "default": 20, "minimum": 4},
+                "discrete": {"type": "integer", "minimum": 0}
               },
-              "distributions": {
-                    "type": "array", "items": {}
-              },
-              "init_size": {"type": "integer", "default": 20, "minimum": 4},
-              "discrete": {"type": "integer", "minimum": 0}
+              "required": ["method", "init_size"]
             },
-            "required": ["method", "init_size"]
-          },
-          {"type": "array", "items": {}}
+            {"type": "array", "items": {}}
           ]
         },
-
         "resampling": {
           "type": "object",
           "properties": {
@@ -72,42 +68,76 @@
         "max_workers": {"type": "integer", "default": 2, "minimum": 1},
         "plabels": {"type": "array", "items": {"type": "string"}},
         "flabels": {"type": "array", "items": {"type": "string"}},
+        "psizes": {"type": "array", "items": {"type": "integer"}},
+        "fsizes": {"type": "array", "items": {"type": "integer"}},
         "provider": {
           "oneOf": [
             {
               "type": "object",
               "properties": {
-                "type": {"type": "string", "enum": ["plugin"]},
+                "type": {"type": "string", "enum": ["function"]},
                 "module": {"type": "string"},
-                "function": {"type": "string"}
+                "function": {"type": "string"},
+                "discover": {"type": "string"}
               },
               "required": ["type", "module", "function"]
             },
             {
               "type": "object",
               "properties": {
-                "type": {"type": "string", "enum": ["file"]},
-                "discover_from": {"type": "string"},
+                "type": {"type": "string", "enum": ["job"]},
+                "command": {"type": "string", "default": "bash script.sh"},
                 "context_directory": {"type": "string", "default": "data"},
                 "coupling_directory": {"type": "string", "default": "batman-coupling"},
-                "command": {"type": "string", "default": "bash script.sh"},
-                "timeout": {"type": "integer", "default": 3600, "minimum": 0},
+                "coupling": {
+                    "type": "object",
+                    "properties": {
+                        "coupling_directory": {"type": "string", "default": "batman-coupling"},
+                        "input_fname": {"type": "string", "default": "sample-space.json"},
+                        "input_format": {"type": "string", "default": "json"},
+                        "output_fname": {"type": "string", "default": "sample-data.json"},
+                        "output_format": {"type": "string", "default": "json"}
+                    }
+                },
+                "hosts": {"type": "array", "items": {
+                      "type": "object",
+                      "properties": {
+                          "hostname": {"type": "string"},
+                          "remote_root": {"type": "string"},
+                          "username": {"type": "string"},
+                          "password": {"type": "string"},
+                          "weight": {"type": "number"}
+                      },
+                      "required": ["hostname", "remote_root"]
+                  }
+                },
                 "clean": {"type": "boolean", "default": false},
-                "restart": {"type": "string", "default": "false"}
+                "discover": {"type": "string"}
               },
-              "required": ["type"]
+              "required": ["type", "command", "context_directory"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {"type": "string", "enum": ["file"]},
+                "file_pairs": {
+                  "type": "array",
+                  "items": {"type": "array", "items": [{"type": "string"}, {"type": "string"}]}
+                },
+                "discover": {"type": "string"}
+              },
+              "required": ["type", "file_pairs"]
             }
           ]
         },
         "io": {
           "type": "object",
           "properties": {
-            "point_filename": {"type": "string", "default": "sample-space.json"},
-            "data_filename": {"type": "string", "default": "sample-data.json"},
-            "point_format": {"type": "string", "default": "json"},
+            "space_fname": {"type": "string", "default": "sample-space.json"},
+            "space_format": {"type": "string", "default": "json"},
+            "data_fname": {"type": "string", "default": "sample-data.json"},
             "data_format": {"type": "string", "default": "json"}
-          },
-          "required": ["point_filename", "data_filename", "point_format", "data_format"]
+          }
         }
       },
       "required": ["plabels", "flabels", "max_workers", "provider"]
@@ -125,8 +155,13 @@
                        "exclusiveMinimum": true},
         "grand_cost": {"type": "integer", "default": 30, "minimum": 4},
         "strategy": {"type": "string", "default": "Quad",
-                   "enum": ["Quad", "LS"]},
+                   "enum": ["Quad", "LS", "SparseLS"]},
         "degree": {"type": "integer", "default": 10, "minimum": 1},
+        "sparse_param": {"type": "object",
+                         "properties": {"max_considered_terms": {"type": "integer"},
+                                        "most_significant": {"type": "integer"},
+                                        "significance_factor": {"type": "number"},
+                                        "hyper_factor": {"type": "number"}}},
         "kernel": {"type": "string"},
         "noise": {"type": ["number", "boolean"], "default": false},
         "global_optimizer": {"type": "boolean", "default": true}
@@ -154,7 +189,7 @@
       "properties": {
         "sample": {"type": "integer", "default": 5000, "minimum": 10},
         "test": {"type": "string"},
-        "pdf": {"type": "array", "items": {}},
+        "pdf": {"type": "array", "items": {"type": "string"}},
         "type": {"type": "string", "default": "aggregated",
                  "enum": ["aggregated", "block"]},
         "method": {"type": "string", "default": "sobol",
@@ -198,7 +233,7 @@
                       {"sampling": {"properties":
                         {"distributions": {"type": "array", "items": {}}}},
                        "resampling": {"properties":
-                        {"resamp_size": {"type": "integer", "maximum": 0}}}
+                        {"method": {"enum": ["discrepancy", "extrema"]}}}
                       }
                     }}
     },

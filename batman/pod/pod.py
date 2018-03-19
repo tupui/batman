@@ -50,7 +50,7 @@ class Pod(object):
     # File name for storing the points
     points_file_name = 'points.dat'
 
-    def __init__(self, corners, nsample, tolerance, dim_max, nrefine=0):
+    def __init__(self, corners, plabels, nsample, tolerance, dim_max, nrefine=0):
         """Initialize POD components.
 
         The decomposition of the snapshot matrix is stored as attributes:
@@ -73,7 +73,8 @@ class Pod(object):
         self.predictor = None
         self.leave_one_out_predictor = 'kriging'
         self.corners = corners
-        self.space = Space(self.corners, nsample, nrefine)
+        self.plabels = plabels
+        self.space = Space(self.corners, plabels=plabels, sample=nsample, nrefine=nrefine)
 
         # POD computation related
         self.tolerance = tolerance
@@ -107,24 +108,27 @@ class Pod(object):
         """
         self.logger.info('Decomposing POD basis...')
 
-        matrix = np.column_stack(tuple([s.data for s in snapshots]))
+        matrix = np.transpose(snapshots.data)
+        # matrix = np.column_stack(tuple([s.data for s in snapshots]))
         self._decompose(matrix)
 
-        for s in snapshots:
-            self.space += s.point
+        self.space += snapshots.space
+        # for s in snapshots:
+        #     self.space += s.point
 
         self.logger.info('Computed POD basis with %g modes', self.S.shape[0])
 
-    def update(self, snapshot):
+    def update(self, samples):
         """Update POD with a new snapshot.
 
-        :param snapshot: new snapshot to update the POD with.
+        :param snapshots: new snapshots to update the POD with.
         """
         self.logger.info('Updating POD basis...')
-        self._update(snapshot.data)
-        self.space += snapshot.point
-        self.logger.info('Updated POD basis with snapshot at point {}'
-                         .format(snapshot.point))
+        for snapshot in samples.data:
+            self._update(snapshot)
+        self.space += samples.space
+        self.logger.info('Updated POD basis with snapshot at points {}'
+                         .format(samples.space))
 
     def estimate_quality(self):
         """Quality estimator.
@@ -160,9 +164,6 @@ class Pod(object):
         except OSError:
             pass
 
-        # points
-        self.space.write(os.path.join(path, self.points_file_name))
-
         # mean snapshot
         path_snapshot = os.path.join(path, self.directories['mean_snapshot'])
         np.savetxt(path_snapshot, self.mean_snapshot)
@@ -182,9 +183,6 @@ class Pod(object):
 
         :param str path: path to a directory.
         """
-        # points
-        self.space.read(os.path.join(path, self.points_file_name))
-
         # mean snapshot
         path_snapshot = os.path.join(path, self.directories['mean_snapshot'])
         self.mean_snapshot = np.atleast_1d(np.loadtxt(path_snapshot))
@@ -295,8 +293,9 @@ class Pod(object):
             h = snapshot - np.dot(self.U, s_proj)
             h_norm = np.linalg.norm(h)
 
+            # the whole block is effectless !
             h_norm *= h_norm
-            h_norm = np.sum(h_norm)
+            h_norm = np.sum(h_norm)   # meaningless. h_norm is a scalar
             # h_norm = mpi.allreduce(h_norm, op=mpi.sum)
             h_norm = np.sqrt(h_norm)
 
@@ -373,7 +372,7 @@ class Pod(object):
         error_matrix = np.empty((points_nb, data_len))
         var_matrix = np.empty((points_nb, data_len))
         surrogate = SurrogateModel(self.leave_one_out_predictor,
-                                   self.corners)
+                                   self.corners, points_nb, self.plabels)
 
         def quality(i):
             """Error at a point.

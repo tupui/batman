@@ -28,19 +28,22 @@ BATMAN
 quaNtification. It is a Python module distributed under the open-source
 CECILL-B license (MIT/BSD compatible).
 
-batman seamlessly allows to do statistical analysis (sensitivity analysis,
-Uncertainty Quantification, moments) using any computer solver.
+*batman* seamlessly allows to do statistical analysis (sensitivity analysis,
+Uncertainty Quantification, moments) based on non-intrusive ensemble experiment
+using any computer solver. It relies on open source python packages dedicated
+to statistics (`OpenTURNS <http://www.openturns.org>`_ and
+`scikit-learn <http://scikit-learn.org>`_).
 
 Main features are: 
 
 - Design of Experiment (LHS, low discrepancy sequences, MC),
 - Resample the parameter space based on the physic and the sample,
-- Surrogate Models (Gaussian process, Polynomial Chaos, RBF),
+- Surrogate Models (Gaussian process, Polynomial Chaos, RBF, *scikit-learn*'s regressors),
 - Optimization (Expected Improvement),
-- Realizing Sensitivity Analysises (SA) and Uncertainty Quantifications (UQ),
-- Visualization in *n*-dimensions (HDR, Kiviat),
+- Sensitivity/Uncertainty Analysis (SA, UA) and Uncertainty Quantification (UQ),
+- Visualization in *n*-dimensions (HDR, Kiviat, PDF),
 - *POD* for database optimization or data reduction,
-- Automatically managing code computations in parallel.
+- Automatically manage code computations in parallel.
 
 Full documentation is available at: 
 
@@ -52,19 +55,19 @@ Getting started
 ===============
 
 A detailled example can be found in 
-`tutorial <http://batman.readthedocs.io/tutorial.html>`_. The folder ``test_cases``
+`tutorial <http://batman.readthedocs.io/en/latest/tutorial.html>`_. The folder ``test_cases``
 contains examples that you can adapt to you needs. You can find more information
 about the cases within the respectives ``README.rst`` file. 
 
 Shoud you be interested by batman's implementation, consider
-reading `introduction <http://batman.readthedocs.io/introduction.html>`_.
+reading the `technical documentation <http://batman.readthedocs.io/en/latest/technical.html>`_.
 
 If you encounter a bug (or have a feature request), please report it via
 `GitLab <https://gitlab.com/cerfacs/batman/issues>`_. Or it might be you
 falling but "Why do we fall sir? So we can learn to pick ourselves up".
 
 Last but not least, if you consider contributing check-out
-`contributing <http://batman.readthedocs.io/contributing_link.html>`_.
+`contributing <http://batman.readthedocs.io/en/latest/contributing_link.html>`_.
 
 Happy batman.
 
@@ -81,12 +84,13 @@ Dependencies
 The required dependencies are: 
 
 - `Python <https://python.org>`_ >= 2.7 or >= 3.4
+- `OpenTURNS <http://www.openturns.org>`_ >= 1.10
 - `scikit-learn <http://scikit-learn.org>`_ >= 0.18
 - `numpy <http://www.numpy.org>`_ >= 1.13
 - `scipy <http://scipy.org>`_ >= 0.15
-- `OpenTURNS <http://www.openturns.org>`_ >= 1.9
 - `pathos <https://github.com/uqfoundation/pathos>`_ >= 0.2
 - `matplotlib <http://matplotlib.org>`_ >= 2.1
+- `Paramiko <http://www.paramiko.org>`_ >= 2.4
 - `jsonschema <http://python-jsonschema.readthedocs.io/en/latest/>`_
 
 Appart from OpenTURNS, required dependencies are satisfied by the installer.
@@ -158,7 +162,7 @@ Help and Support
 About us
 ........
 
-See authors and project history at: `about us <http://batman.readthedocs.io/about.html>`_.
+See authors and project history at: `about us <http://batman.readthedocs.io/en/latest/about.html>`_.
 
 Community
 .........
@@ -169,4 +173,4 @@ Or send us an email. We would really appreciate that as we keep record of the us
 Citation
 ........
 
-If you use batman in a scientific publication, we would appreciate `citations <http://batman.readthedocs.io/about.html#citing-batman>`_.
+If you use batman in a scientific publication, we would appreciate `citations <http://batman.readthedocs.io/en/latest/about.html#citing-batman>`_.

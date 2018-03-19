@@ -6,6 +6,39 @@
 Release history
 ===============
 
+Version 1.8 - Falcone
+=====================
+
+
+New features
+------------
+
+    - Quantile dot plot visualization option for the PDF, *by Pamphile Roy*,
+    - Sparce methods and hyperbolic truncation for PC with new keyword ``SparseLS``,
+      *by Andrea Trucchia*,
+    - New :class:`space.Sample` container. Samples are storred collectivelly.
+      *by Cyril Fournier*,
+    - New provider with :class:`tasks.remote_executor.RemoteExecutor`,
+      which enable snapshots to be remotelly computed. To be set with new
+      keyword ``hosts``, *by Cyril Fournier*,
+    - And :class:`tasks.remote_executor.MasterRemoteExecutor` which allows
+      multiple remote hosts. It handles load balancing with keyword ``weight``,
+      *by Pamphile Roy*.
+
+Enhancements
+------------
+
+    - Write DoE only once in the driver, *by Robin Campet*,
+    - Replace OpenTURNS' POD with up-to-date methods, *by Julien Schueller*.
+
+Bug fixes
+---------
+
+    - Set seed for OpenTURNS, *by Pamphile Roy*,
+    - Pickling issues with LS, *by Pamphile Roy*,
+    - GP pickling in functional cases, *by Pamphile Roy*,
+    - Restart from file using ``discover``, *by Robin Campet*.
+
 Version 1.7.3 - Lucius
 ======================
 

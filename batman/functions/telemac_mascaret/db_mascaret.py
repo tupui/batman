@@ -22,7 +22,7 @@ class Mascaret(object):
     def __init__(self):
         """Read the database and define the channel."""
         dataset = mascaret()
-        self.data_input, self.data_output = dataset.sample, dataset.data
+        self.data_input, self.data_output = dataset.space, dataset.data
         self.data_input = np.array(self.data_input.tolist())
         self.data_output = np.array(self.data_output.tolist())
         self.x = [float(label) for label in dataset.flabels]

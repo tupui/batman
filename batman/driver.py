@@ -27,9 +27,9 @@ from concurrent import futures
 import numpy as np
 import sklearn.gaussian_process.kernels as kernels
 from .pod import Pod
-from .space import (Space, dists_to_ot)
+from .space import (Space, Sample, dists_to_ot)
 from .surrogate import SurrogateModel
-from .tasks import (SnapshotIO, ProviderPlugin, ProviderFile)
+from .tasks import (ProviderFunction, ProviderFile, ProviderJob)
 from .uq import UQ
 from .visualization import (response_surface, Kiviat3D)
 from .functions.utils import multi_eval
@@ -42,18 +42,13 @@ class Driver(object):
     # Structure of the output directory
     fname_tree = {
         'snapshots': 'snapshots',
-        'space': 'space.dat',
+        'space': 'space',
         'data': 'data.dat',
         'pod': 'surrogate/pod',
         'surrogate': 'surrogate',
         'predictions': 'predictions',
         'uq': 'uq',
         'visualization': 'visualization',
-    }
-    # Data provider for snapshots
-    provider_class = {
-        'plugin': ProviderPlugin,
-        'file': ProviderFile,
     }
 
     def __init__(self, settings, fname):
@@ -92,55 +87,58 @@ class Driver(object):
                            plabels=self.settings['snapshot']['plabels'],
                            duplicate=duplicate)
 
-        # Asynchronous job manager
-        self.async_pool = futures.ThreadPoolExecutor(
-            max_workers=self.settings['snapshot']['max_workers'])
-
-        # Snapshot Management
-        args = settings['snapshot'].get('io', {})
-        self.snapshot_io = SnapshotIO(parameter_names=settings['snapshot']['plabels'],
-                                      feature_names=settings['snapshot']['flabels'],
-                                      **args)
-        provider_type = settings['snapshot']['provider']['type']
+        # Data Providers
+        setting_provider = copy(settings['snapshot']['provider'])
+        provider_type = setting_provider.pop('type')
+        args = {'discover_pattern': setting_provider.pop('discover', None)}
         self.logger.info('Select data provider type "{}"'.format(provider_type))
-        self.provider = self.provider_class[provider_type](
-            self.async_pool,
-            self.snapshot_io,
-            settings['snapshot']['provider'])
-        self.snapshot_counter = 0
+        if provider_type == 'function':
+            ProviderClass = ProviderFunction
+            args.update(setting_provider)
+        elif provider_type == 'file':
+            ProviderClass = ProviderFile
+            args.update(setting_provider)
+        elif provider_type == 'job':
+            ProviderClass = ProviderJob
+            args['save_dir'] = os.path.join(self.fname, self.fname_tree['snapshots'])
+            args['pool'] = futures.ThreadPoolExecutor(
+                max_workers=settings['snapshot']['max_workers'])
+            args.update(setting_provider)
 
-        # Sampling initialisation
-        self.to_compute_points = copy(self.provider.known_points)
-        if self.to_compute_points:
-            # use points that were automatically discovered by the provider
-            for point in self.to_compute_points:
-                self.space += point
-        else:
-            # generate points according to settings
-            space_provider = self.settings['space']['sampling']
-            if isinstance(space_provider, list):
-                # a list of points is provided
-                self.logger.info('Reading list of points from the settings.')
-                self.to_compute_points = space_provider
-                self.space += space_provider
-            elif isinstance(space_provider, dict):
-                # use sampling method
-                distributions = space_provider.get('distributions')
-                discrete = self.settings['space']['sampling'].get('discrete')
-                self.to_compute_points = self.space.sampling(
-                    space_provider['init_size'],
-                    space_provider['method'],
-                    distributions,
-                    discrete)
-            else:
-                self.logger.error('Bad space provider.')
-                raise SystemError
+        args.update(settings['snapshot'].get('io', {}))
+
+        self.provider = ProviderClass(plabels=settings['snapshot']['plabels'],
+                                      flabels=settings['snapshot']['flabels'],
+                                      psizes=settings['snapshot'].get('psizes'),
+                                      fsizes=settings['snapshot'].get('fsizes'),
+                                      **args)
+        self.snapshot_counter = 0  # [TODO] make it useless
+
+        # Fill space
+        space_provider = self.settings['space']['sampling']
+        if isinstance(space_provider, list):
+            # a list of points is provided
+            self.logger.info('Reading list of points from the settings.')
+            self.space += space_provider
+        elif provider_type == 'file':
+            self.space += self.provider._cache.space
+        elif isinstance(space_provider, dict):
+            # use sampling method
+            distributions = space_provider.get('distributions')
+            discrete = self.settings['space']['sampling'].get('discrete')
+            self.space.sampling(space_provider['init_size'],
+                                space_provider['method'],
+                                distributions,
+                                discrete)
+
+        self.to_compute_points = self.space.values
 
         # Pod
         if 'pod' in self.settings:
             settings_ = {'tolerance': self.settings['pod']['tolerance'],
                          'dim_max': self.settings['pod']['dim_max'],
                          'corners': self.settings['space']['corners'],
+                         'plabels': self.settings['snapshot']['plabels'],
                          'nsample': self.space.doe_init,
                          'nrefine': resamp_size}
             self.pod = Pod(**settings_)
@@ -161,7 +159,8 @@ class Driver(object):
                 settings_ = {'strategy': self.settings['surrogate']['strategy'],
                              'degree': self.settings['surrogate']['degree'],
                              'distributions': dists,
-                             'sample': self.space[:]}
+                             'sparse_param': self.settings['surrogate'].get('sparse_param', {}),
+                             'sample': self.space.values}
             elif self.settings['surrogate']['method'] == 'evofusion':
                 settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
                              'grand_cost': self.settings['surrogate']['grand_cost']}
@@ -183,13 +182,13 @@ class Driver(object):
 
             self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
                                             self.settings['space']['corners'],
+                                            max_points_nb=init_size + resamp_size,
+                                            plabels=self.settings['snapshot']['plabels'],
                                             **settings_)
             if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
-                sample = self.surrogate.predictor.sample
-                self.space += sample
-                if not self.provider.known_points:
-                    self.to_compute_points = sample[:len(self.space)]
+                self.space += self.surrogate.predictor.sample
+                self.to_compute_points = self.space.values
         else:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')
@@ -206,39 +205,29 @@ class Driver(object):
             points = self.to_compute_points
 
         # Generate snapshots
-        if isinstance(points, dict):
-            snapshot_points = points.items()
-        else:
-            snapshot_root = os.path.join(self.fname, self.fname_tree['snapshots'])
-            snapshot_points = [(point,
-                                os.path.join(snapshot_root,
-                                             str(i + self.snapshot_counter)))
-                               for i, point in enumerate(points)]
-        snapshots = [self.provider.snapshot(p, d) for p, d in snapshot_points]
-        self.snapshot_counter += len(snapshots)
+        samples = self.provider.require_data(points)
+        self.snapshot_counter += len(samples)  # still useless
 
         # Fit the Surrogate [and POD]
         if self.pod is not None:
             if update:
                 self.surrogate.space.empty()
-                [self.pod.update(snapshot) for snapshot in snapshots]
+                self.pod.update(samples)
             else:
-                self.pod.decompose(snapshots)
+                self.pod.decompose(samples)
             self.data = self.pod.VS()
-            points = self.pod.space
+            points = self.pod.space.values
 
         else:
-            if snapshots:
-                snapdata = np.vstack([snap.data for snap in snapshots])
+            # [TODO] Über complicated pour rien ! --> révision du space + data
+            if len(samples) > 0:
+                data = samples.data
                 if update:
-                    snapdata = np.vstack([self.data, snapdata])
-                    if len(snapdata) != len(self.space):  # no resampling
-                        snapdata = self.data
-                        for snapshot in snapshots:
-                            self.space += snapshot.point
-                            snapdata = np.vstack([snapdata, snapshot.data])
-                self.data = snapdata
-            points = self.space
+                    data = np.append(self.data, data, axis=0)
+                    if len(data) > len(self.space):  # no resampling
+                        self.space += samples.space
+                self.data = data
+            points = self.space.values
 
         try:  # if surrogate
             self.surrogate.fit(points, self.data, pod=self.pod)
@@ -268,6 +257,8 @@ class Driver(object):
                 quality, point_loo = self.surrogate.estimate_quality()
                 if quality >= q2_criteria:
                     break
+            elif 'loo' in method:
+                _, point_loo = self.surrogate.estimate_quality()
             else:
                 point_loo = None
 
@@ -287,7 +278,13 @@ class Driver(object):
                 self.space.optimization_results(extremum=extremum)
 
     def write(self):
-        """Write Surrogate [and POD] to disk."""
+        """Write DOE, Surrogate [and POD] to disk."""
+        path = os.path.join(self.fname, self.fname_tree['space'])
+        try:
+            os.makedirs(path)
+        except OSError:
+            pass
+        self.space.write(path, 'space.dat')
         if self.surrogate is not None:
             path = os.path.join(self.fname, self.fname_tree['surrogate'])
             try:
@@ -295,9 +292,6 @@ class Driver(object):
             except OSError:
                 pass
             self.surrogate.write(path)
-        else:
-            path = os.path.join(self.fname, self.fname_tree['space'])
-            self.space.write(path)
         if self.pod is not None:
             path = os.path.join(self.fname, self.fname_tree['pod'])
             try:
@@ -314,16 +308,16 @@ class Driver(object):
 
     def read(self):
         """Read Surrogate [and POD] from disk."""
+        path = os.path.join(self.fname, self.fname_tree['space'])
+        self.space.empty()
+        self.space.read(os.path.join(path, 'space.dat'))
         if self.surrogate is not None:
             self.surrogate.read(os.path.join(self.fname,
                                              self.fname_tree['surrogate']))
-            self.space[:] = self.surrogate.space[:]
             self.data = self.surrogate.data
-        else:
-            path = os.path.join(self.fname, self.fname_tree['space'])
-            self.space.read(path)
         if self.pod is not None:
             self.pod.read(os.path.join(self.fname, self.fname_tree['pod']))
+            self.pod.space = self.space
             self.surrogate.pod = self.pod
         elif (self.pod is None) and (self.surrogate is None):
             path = os.path.join(self.fname, self.fname_tree['data'])
@@ -336,7 +330,7 @@ class Driver(object):
         """Restart process."""
         # Surrogate [and POD] has already been computed
         self.logger.info('Restarting from previous computation...')
-        to_compute_points = self.space[:]
+        to_compute_points = self.space.values
         self.read()  # Reset space with actual computations
         self.snapshot_counter = len(self.space)
 
@@ -363,19 +357,20 @@ class Driver(object):
         """
         results, sigma = self.surrogate(points)
         if write:
-            root_path = os.path.join(self.fname, self.fname_tree['predictions'])
+            path = os.path.join(self.fname, self.fname_tree['predictions'])
+            space_fname = os.path.join(path, 'sample-space.json')
+            data_fname = os.path.join(path, 'sample-data.json')
             try:
-                points[0][0]
-            except TypeError:
-                points = [points]
-            for i, (data, point) in enumerate(zip(results, points)):
-                path = os.path.join(root_path, 'Newsnap{}'.format(i))
-                try:
-                    os.makedirs(path)
-                except OSError:
-                    pass
-                self.snapshot_io.write_point(path, point)
-                self.snapshot_io.write_data(path, data)
+                os.makedirs(path)
+            except OSError:
+                pass
+            # better: surrogate could return a Sample
+            samples = Sample(space=points, data=results,
+                             plabels=self.settings['snapshot']['plabels'],
+                             flabels=self.settings['snapshot']['flabels'],
+                             psizes=self.settings['snapshot'].get('psizes'),
+                             fsizes=self.settings['snapshot'].get('fsizes'))
+            samples.write(space_fname, data_fname)
         return results, sigma
 
     def uq(self):

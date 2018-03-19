@@ -21,9 +21,9 @@ else:
 
 
 def check_output(tmp):
-    assert os.path.isfile(os.path.join(tmp, 'surrogate/DOE.pdf'))
+    assert os.path.isfile(os.path.join(tmp, 'space/DOE.pdf'))
+    assert os.path.isfile(os.path.join(tmp, 'space/space.dat'))
     assert os.path.isfile(os.path.join(tmp, 'surrogate/surrogate.dat'))
-    assert os.path.isfile(os.path.join(tmp, 'surrogate/space.dat'))
     assert os.path.isfile(os.path.join(tmp, 'surrogate/data.dat'))
 
 
@@ -131,7 +131,7 @@ def test_restart_pod(tmp, case='Michalewicz'):
     assert os.path.isdir(os.path.join(tmp, 'snapshots/4'))
 
     init_case(tmp, case, force=True)
-    # Restart from snapshots and read a template directory
+    # Restart from snapshots
     batman.ui.run(settings, options)
 
     init_case(tmp, case, force=True)

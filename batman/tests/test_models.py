@@ -43,6 +43,20 @@ class Test1d:
         q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, surrogate.evaluate)
         assert q2 == pytest.approx(1, 0.2)
 
+        surrogate = PC(distributions=ishigami_data.dists, degree=10, sample=sample,
+                       sparse_param={"max_considered_terms": 130,
+                                     "most_significant": 30,
+                                     "significance_factor": 5e-5},
+                       strategy='SparseLS')
+        input_ = surrogate.sample
+        assert len(input_) == 2000
+        output = ishigami_data.func(input_)
+        surrogate.fit(input_, output)
+
+        # Compute predictivity coefficient Q2
+        q2 = sklearn_q2(ishigami_data.dists, ishigami_data.func, surrogate.evaluate)
+        assert q2 == pytest.approx(1, 0.2)
+
     def test_GP_1d(self, ishigami_data):
         surrogate = Kriging(ishigami_data.space, ishigami_data.target_space)
 
@@ -138,11 +152,26 @@ class TestNd:
         q2 = sklearn_q2(mascaret_data.dists, mascaret_data.func, surrogate.evaluate)
         assert q2 == pytest.approx(1, 0.1)
 
+        surrogate = PC(distributions=mascaret_data.dists, degree=10,
+                       sample=sample,
+                       strategy='SparseLS')
+        input_ = surrogate.sample
+        output = mascaret_data.func(input_)
+        surrogate.fit(input_, output)
+
+        # Compute predictivity coefficient Q2
+        q2 = sklearn_q2(mascaret_data.dists, mascaret_data.func, surrogate.evaluate)
+        assert q2 == pytest.approx(1, 0.1)
+
     def test_GP_nd(self, mascaret_data):
         # Scaling as class SurrogateModel does it
         scaler = preprocessing.MinMaxScaler()
         scaler.fit(np.array(mascaret_data.space.corners))
         space_scaled = scaler.transform(mascaret_data.space)
+
+        surrogate = Kriging(space_scaled, mascaret_data.target_space,
+                            kernel=Matern())
+
         surrogate = Kriging(space_scaled, mascaret_data.target_space)
 
         # Compute predictivity coefficient Q2
@@ -167,37 +196,56 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     space_ = copy.deepcopy(ishigami_data.space)
     space_.max_points_nb = 500
     sample = space_.sampling(500, 'halton')
+    path = os.path.join(tmp, 'surrogate')
+    path_space = os.path.join(tmp, 'space')
+
+    try:
+        os.makedirs(path)
+    except OSError:
+        pass
+    try:
+        os.makedirs(path_space)
+    except OSError:
+        pass
 
     # PC
     pc_settings = {'strategy': 'LS', 'degree': 10,
                    'distributions': ishigami_data.dists, 'sample': sample}
-    surrogate = SurrogateModel('pc', ishigami_data.space.corners, **pc_settings)
+    surrogate = SurrogateModel('pc', ishigami_data.space.corners,
+                               space_.max_points_nb, ishigami_data.space.plabels,
+                               **pc_settings)
     input_ = surrogate.predictor.sample
     output = ishigami_data.func(input_)
     surrogate.fit(input_, output)
     pred, sigma = surrogate(ishigami_data.point)
     assert sigma is None
     assert pred[0] == pytest.approx(ishigami_data.target_point, 0.5)
-    surrogate.write(tmp)
-    assert os.path.isfile(os.path.join(tmp, 'surrogate.dat'))
+    surrogate.write(path)
+    assert os.path.isfile(os.path.join(path, 'surrogate.dat'))
 
     # Kriging
-    surrogate = SurrogateModel('kriging', ishigami_data.space.corners)
+    surrogate = SurrogateModel('kriging', ishigami_data.space.corners,
+                               space_.max_points_nb, ishigami_data.space.plabels)
     surrogate.fit(ishigami_data.space, ishigami_data.target_space)
-    surrogate.write(tmp)
-    assert os.path.isfile(os.path.join(tmp, 'surrogate.dat'))
+    ishigami_data.space.write(path_space, 'space.dat')
+    surrogate.write(path)
+    assert os.path.isfile(os.path.join(path, 'surrogate.dat'))
 
-    surrogate = SurrogateModel('kriging', ishigami_data.space.corners)
-    surrogate.read(tmp)
+    surrogate = SurrogateModel('kriging', ishigami_data.space.corners,
+                               space_.max_points_nb, ishigami_data.space.plabels)
+    surrogate.read(path)
     assert surrogate.predictor is not None
-    assert surrogate.space == ishigami_data.space
+    npt.assert_array_equal(surrogate.space.values, ishigami_data.space.values)
 
     pred, _ = surrogate(ishigami_data.point)
     assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
 
 
 def test_quality(mufi_data):
-    surrogate = SurrogateModel('rbf', mufi_data.space.corners)
+    space = np.array(mufi_data.space)
+    max_points_nb = space.shape[0]
+    surrogate = SurrogateModel('rbf', mufi_data.space.corners, max_points_nb,
+                               mufi_data.space.plabels)
 
     # Split into cheap and expensive arrays
     space = np.array(mufi_data.space)

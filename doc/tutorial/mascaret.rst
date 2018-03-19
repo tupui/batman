@@ -239,7 +239,7 @@ We only consider the bathymetry as input parameter. We do not specify a probabil
 3.5.b. Snapshot provider
 ************************
 
-We configure the snapshot provider itself. We specify that no more than ``5`` can be simultaneous run. We define the name of the header and output file as well as the dimension of the output. Here BATMAN will look at the variable ``"F"``, which is a vector of size ``51``, within the file ``function.dat``. It corresponds to the values of the input parameter ``"x1"`` and ``"x2"`` stored in the file ``"header.py"``. The BASH script file of the provider is ``"script.sh"`` and is situated in the directory ``"data"``. The input values are stored in the directory ``"batman-data"`` and the input-output snapshots are stored in the directory ``"cfd-output-data"``. 
+We configure the snapshot provider itself. We specify that no more than ``5`` can be simultaneous run. We define the name of the header and output file as well as the dimension of the output. Here BATMAN will look at the variable ``"F"``, which is a vector of size ``51``, within the file ``point.json``. It corresponds to the values of the input parameter ``"x1"`` and ``"x2"`` stored in the file ``"space.json"``. The BASH script file of the provider is ``"script.sh"`` and is situated in the directory ``"data"``. The input values are stored in the directory ``"batman-coupling"``. 
 
 .. code-block:: python
 
@@ -248,14 +248,13 @@ We configure the snapshot provider itself. We specify that no more than ``5`` ca
         "plabels": ["x1", "x2"],
         "flabels": ["X", "F"],
         "io": {
-            "point_filename": "point.json",
-            "data_filename": "point.dat",
-            "data_format": "fmt_tp_fortran"
+            "space_fname": "space.json",
+            "data_fname": "point.json"
         },
         "provider": {
-            "type": "file",
+            "type": "job",
             "context_directory": "data",
-            "coupling_directory": "batman-coupling",
+            "coupling": {coupling_directory": "batman-coupling"},
             "command": "bash script.sh",
             "clean": false
         }
@@ -266,56 +265,43 @@ The BASH script file of the provider calls the Python file ``function.py``.
 .. code-block:: bash
 
     #!/bin/sh
+    python function.py
 
-    python function.py > function.out
-
-The Python file ``function.py`` creates an instance of the class ``MascaretApi`` which depends of the configuration test case file (here ``'config_garonne_lnhe.json'``) and configuration user file (``'config_garonne_lnhe_user.json'``). Then, it reads the input parameter values stored in ``'./batman-data/header.py'`` and makes a conversion to floating format. The Mascaret software is run with these input parameter values using the function ``__call__`` of the class ``MascaretApi``. The water level ``F`` is printed and plotted. Lastly, the input-output snapshot is stored in ``./cfd-output-data/function.dat``.
+The Python file ``function.py`` creates an instance of the class ``MascaretApi`` which depends of the configuration test case file (here ``'config_garonne_lnhe.json'``) and configuration user file (``'config_garonne_lnhe_user.json'``). Then, it reads the input parameter values stored in ``'./batman-coupling/space.json'`` and makes a conversion to floating format. The Mascaret software is run with these input parameter values using the function ``__call__`` of the class ``MascaretApi``. The water level ``F`` is printed and plotted. Lastly, the input-output snapshot is stored in ``./batman-coupling/point.json``.
 
 .. code-block:: python
 
     #!/usr/bin/env python
     # coding:utf-8
-    
-    import re
-    import json
+
     import numpy as np
     import ctypes
-    import csv
-    from batman.input_output import (IOFormatSelector, Dataset)
+    from batman.input_output import formater
     from batman.functions import MascaretApi
-        
+
     study = MascaretApi('config_garonne_lnhe.json','config_garonne_lnhe_user.json')  
-    
-    # Input from header.py
-    with open('./batman-coupling/point.json', 'r') as fd:
-        params = json.load(fd)
-    
+
+    io = formater('json')
+
+    # Input from space.json
+    params = io.read('./batman-coupling/space.json', ['x1', 'x2'])
+
+
     X1 = params['x1']
     X2 = params['x2']
-    
+
     X1 = float(X1)
     X2 = float(X2)
-    
+
     # Function
     X, F = study(x=[X1, X2])
-    
+
     # Output
-    nb_value = np.size(X)
-    with open('./batman-coupling/point.dat', 'w') as f:
-        f.writelines('TITLE = \"FUNCTION\" \n')
-        f.writelines('VARIABLES = \"X\" \"F\"  \n')
-        f.writelines('ZONE T=\"zone1\" , I=' + str(nb_value) + ', F=BLOCK  \n')
-        for i in range(len(X)):
-            f.writelines("{:.7E}".format(float(X[i])) + "\t ")
-            if i % 1000:
-                f.writelines('\n')
-        f.writelines('\n')
-    
-        for i in range(len(F)):
-            f.writelines("{:.7E}".format(float(F[i])) + "\t ")
-            if i % 1000:
-                f.writelines('\n')
-            f.writelines('\n')
+    # Output
+    names = ['X', 'F']
+    sizes = [np.size(X), np.size(Z)]
+    data = np.append(X, Z)
+    io.write('./batman-coupling/point.json', data, names, sizes)
 
 
 3.5.c. Data visualization
@@ -460,7 +446,7 @@ We define a design of experiments where:
 4.2.2. Generation of snapshots
 ******************************
 
-We configure the snapshot provider itself. We specify that no more than ``5`` can be simultaneous run. We define the name of the header and output file as well as the dimension of the output. Here BATMAN will look at the variable ``"F"``, which is a vector of size ``463``, within the file ``function.dat``. It corresponds to the values of the input parameter ``"x1"`` and ``"x2"`` stored in the file ``"header.py"``. The BASH script file of the provider is ``"script.sh"`` and is situated in the directory ``"data"``. The input values are stored in the directory ``"batman-data"`` and the input-output snapshots are stored in the directory ``"cfd-output-data"``.
+We configure the snapshot provider itself. We specify that no more than ``5`` can be simultaneous run. We define the name of the header and output file as well as the dimension of the output. Here BATMAN will look at the variable ``"F"``, which is a vector of size ``463``, within the file ``point.json``. It corresponds to the values of the input parameter ``"x1"`` and ``"x2"`` stored in the file ``"space.json"``. The BASH script file of the provider is ``"script.sh"`` and is situated in the directory ``"data"``. The input values are stored in the directory ``"batman-coupling"``.
 
 .. code-block:: python
 
@@ -469,12 +455,11 @@ We configure the snapshot provider itself. We specify that no more than ``5`` ca
         "plabels": ["x1", "x2"],
         "flabels": ["X", "F"],
         "io": {
-            "point_filename": "point.json",
-            "data_filename": "point.dat",
-            "data_format": "fmt_tp_fortran"
+            "point_filename": "space.json",
+            "data_filename": "point.json"
         },
         "provider": {
-            "type": "file",
+            "type": "job",
             "context_directory": "data",
             "coupling_directory": "batman-coupling",
             "command": "bash script.sh",
@@ -602,7 +587,6 @@ Source: ``./tests_cases/Mascaret/test_run.py``
 .. code-block:: python
 
 	import ctypes
-	import csv
 	import numpy as np
 	import os
 	from collections import OrderedDict 

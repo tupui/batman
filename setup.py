@@ -45,7 +45,7 @@ class BuildSphinx(Command):
 cmdclasses['build_sphinx'] = BuildSphinx
 
 # Check some import before starting build process.
-OPENTURNS_MIN_VERSION = LooseVersion('1.9')
+OPENTURNS_MIN_VERSION = LooseVersion('1.10')
 try:
     import openturns
     if LooseVersion(openturns.__version__) < OPENTURNS_MIN_VERSION:
@@ -67,6 +67,8 @@ setup_requires = ['pytest-runner']
 tests_require = ['pytest', 'mock', 'coverage', 'pylint']
 install_requires = ['scipy>=0.15',
                     'numpy>=1.13',
+                    'pandas>=0.22.0',
+                    'paramiko>=2',
                     'jsonschema',
                     'pathos>=0.2',
                     'matplotlib>=2.1',
@@ -76,6 +78,7 @@ extras_require = {'doc': ['sphinx_rtd_theme', 'sphinx>=1.4'],
 
 if sys.version_info <= (3, 4):
     install_requires.append('futures')
+    install_requires.append('backports.tempfile')
 
 
 def find_version(*file_paths):

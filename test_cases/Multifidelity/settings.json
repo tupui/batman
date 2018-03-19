@@ -26,14 +26,15 @@
         "plabels": ["fidelity", "x1", "x2"],
         "flabels": ["F"],
         "provider": {
-            "type": "plugin",
+            "type": "function",
             "module": "function",
             "function": "f"
         },
         "io": {
-            "point_filename": "point.json",
-            "data_filename": "point.npz",
-            "format": "numpy"
+            "space_fname": "point.json",
+            "space_format": "json",
+            "data_fname": "point.npz",
+            "data_format": "npz"
         }
     },
     "surrogate": {

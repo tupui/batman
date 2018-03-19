@@ -14,6 +14,7 @@ Bibliography
 .. [Scheidt] C. Scheidt: Analyse statistique d'expériences simulées : Modélisation adaptative de réponses non régulières par Krigeage et plans d'expériences, Application à la quantification des incertitudes en ingénierie des réservoirs pétroliers. Université Louis Pasteur. 2006 
 .. [Roy2017] P.T. Roy et al.: Resampling Strategies to Improve Surrogate Model-based Uncertainty Quantification - Application to LES of LS89. IJNMF. 2017 
 .. [Jones1998] D. Jones et al.: Efficient Global Optimization of Expensive Black-Box Functions. Journal of Global Optimization 1998. DOI: 10.1023/a:1008306431147 
+.. [Kay2016] M. Kay, T. Kola, J. Hullman, S. Munson. When (ish) is My Bus? User-centered Visualizations of Uncertainty in Everyday, Mobile Predictive Systems. CHI 2016. DOI: 10.1145/2858036.2858558
 .. [Krige1989] D.G. Krige, et al. “Early South African geostatistical techniques in today’s perspective”. Geostatistics 1. 1989. 
 .. [Matheron1963] G. Matheron. “Principles of Geostatistics”. Economic Geology 58. 1963. 
 .. [Robinson1991] G.K.Robinson.“That BLUP is a good thing: the estimation of random effects”. Statistical Science 6.1. 1991. DOI: 10.1214/ss/1177011926. 

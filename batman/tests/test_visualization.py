@@ -20,12 +20,10 @@ except (RuntimeError, KeyError):
     have_ffmpeg = False
 
 dataset = el_nino()
-dataset.toarray()
-labels, data = dataset.sample, dataset.data
+labels, data = dataset.space, dataset.data
 
 # dataset_tahiti = tahiti()
-# dataset_tahiti.toarray()
-# labels_tahiti, data_tahiti = dataset_tahiti.sample, dataset_tahiti.data
+# labels_tahiti, data_tahiti = dataset_tahiti.space, dataset_tahiti.data
 
 
 class TestHdr:
@@ -116,14 +114,14 @@ class TestHdr:
         hdr = HdrBoxplot(data, alpha=[0.8], threshold=0.93)
         labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)
         outliers = labels[labels_pos]
-        npt.assert_equal([1982, 1983, 1997, 1998], outliers)
+        npt.assert_equal([[1982], [1983], [1997], [1998]], outliers)
 
     @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
     def test_hdr_outliers_method(self, ):
         hdr = HdrBoxplot(data, threshold=0.93, outliers_method='forest')
         labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)
         outliers = labels[labels_pos]
-        npt.assert_equal([1982, 1983, 1997, 1998], outliers)
+        npt.assert_equal([[1982], [1983], [1997], [1998]], outliers)
 
     def test_hdr_optimize_bw(self, ):
         hdr = HdrBoxplot(data, optimize=True)
@@ -271,7 +269,10 @@ class TestPdf:
     @patch("matplotlib.pyplot.show")
     def test_pdf_surrogate(self, mock_show, ishigami_data):
         dist = ot.ComposedDistribution(ishigami_data.dists)
-        surrogate = SurrogateModel('rbf', ishigami_data.space.corners)
+        space = np.array(ishigami_data.space)
+        max_points_nb = space.shape[0]
+        surrogate = SurrogateModel('rbf', ishigami_data.space.corners,
+                                   max_points_nb, ishigami_data.space.plabels)
         surrogate.fit(ishigami_data.space, ishigami_data.target_space)
         settings = {
             "dist": dist,
@@ -285,7 +286,7 @@ class TestPdf:
     def test_pdf_nD(self, mock_show, tmp):
         fig_pdf = pdf(data, xdata=np.linspace(1, 12, 12),
                       range_cbar=[0, 0.5], ticks_nbr=6,
-                      fname=os.path.join('.', 'pdf_nd.pdf'))
+                      fname=os.path.join(tmp, 'pdf_nd.pdf'))
         reshow(fig_pdf)
         plt.plot([0, 10], [25, 25])
         plt.show()
@@ -294,6 +295,10 @@ class TestPdf:
     def test_pdf_nD_moments(self, tmp):
         pdf(data, xlabel='s', flabel='Y', moments=True,
             fname=os.path.join(tmp, 'pdf_nd_moments.pdf'))
+
+    def test_pdf_dotplot(self, tmp):
+        pdf(data[:10, 5].reshape(-1, 1), dotplot=True,
+            fname=os.path.join(tmp, 'pdf_dotplot.pdf'))
 
 
 class TestSobol:

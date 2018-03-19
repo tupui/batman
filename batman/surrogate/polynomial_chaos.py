@@ -38,24 +38,36 @@ class PC(object):
     logger = logging.getLogger(__name__)
 
     def __init__(self, strategy, degree, distributions, sample=None,
-                 stieltjes=True):
+                 stieltjes=True, sparse_param={}):
         """Generate truncature and projection strategies.
 
-        Allong with the strategies the sample is storred as an attribute:
-        :attr:`sample` as well as the weights: :attr:`weights`.
+        Allong with the strategies the sample is storred as an attribute.
+        :attr:`sample` as well as corresponding weights: :attr:`weights`.
 
-        :param str strategy: Least square or Quadrature ['LS', 'Quad'].
+        :param str strategy: Least square or Quadrature ['LS', 'Quad', 'SparseLS'].
         :param int degree: Polynomial degree.
         :param  distributions: Distributions of each input parameter.
         :type distributions: lst(:class:`openturns.Distribution`)
         :param int sample: Samples for least square.
         :param bool stieltjes: Wether to use Stieltjes algorithm for the basis.
+        :param dict sparse_param: Parameters for the Sparse Cleaning Truncation
+          Strategy and/or hyperbolic truncation of the initial basis.
+
+            - **max_considered_terms** (int) -- Maximum Considered Terms,
+            - **most_significant** (int), Most Siginificant number to retain,
+            - **significance_factor** (float), Significance Factor,
+            - **hyper_factor** (float), factor for hyperbolic truncation
+              strategy.
         """
         # distributions
         in_dim = len(distributions)
         self.dist = ot.ComposedDistribution(distributions)
+        self.sparse_param = sparse_param
 
-        enumerateFunction = ot.EnumerateFunction(in_dim)
+        if 'hyper_factor' in self.sparse_param:
+            enumerateFunction = ot.EnumerateFunction(in_dim, self.sparse_param['hyper_factor'])
+        else:
+            enumerateFunction = ot.EnumerateFunction(in_dim)
 
         if stieltjes:
             # Tend to result in performance issue
@@ -72,7 +84,7 @@ class PC(object):
 
         # Strategy choice for expansion coefficient determination
         self.strategy = strategy
-        if self.strategy == 'LS':  # least-squares method
+        if self.strategy == 'LS' or self.strategy == 'SparseLS':  # least-squares method
             self.sample = sample
         else:  # integration method
             # redefinition of sample size
@@ -106,20 +118,35 @@ class PC(object):
           (n_samples, n_features).
         :param array_like data: The observed data (n_samples, [n_features]).
         """
-        if self.strategy == 'LS':  # least-squares method
-            self.proj_strategy = ot.LeastSquaresStrategy(sample, data)
-            _, self.weights = self.proj_strategy.getExperiment().generateWithWeights()
-
-        sample_ = np.zeros_like(self.sample)
-        sample_[:len(sample)] = sample
-        sample_arg = np.all(np.isin(sample_, self.sample), axis=1)
-        weights = np.array(self.weights)[sample_arg]
-
         trunc_strategy = ot.FixedStrategy(self.basis, self.n_basis)
+
+        if self.strategy == 'LS':  # least-squares method
+            proj_strategy = ot.LeastSquaresStrategy(sample, data)
+            _, weights = proj_strategy.getExperiment().generateWithWeights()
+
+        elif self.strategy == 'SparseLS':
+            app = ot.LeastSquaresMetaModelSelectionFactory(ot.LARS(), ot.CorrectedLeaveOneOut())
+            proj_strategy = ot.LeastSquaresStrategy(sample, data, app)
+            _, weights = proj_strategy.getExperiment().generateWithWeights()
+
+            max_considered_terms = self.sparse_param.get('max_considered_terms', 120)
+            most_significant = self.sparse_param.get('most_significant', 30)
+            significance_factor = self.sparse_param.get('significance_factor', 1e-3)
+
+            trunc_strategy = ot.CleaningStrategy(ot.OrthogonalBasis(self.basis),
+                                                 max_considered_terms,
+                                                 most_significant,
+                                                 significance_factor, True)
+        else:
+            proj_strategy = self.proj_strategy
+            sample_ = np.zeros_like(self.sample)
+            sample_[:len(sample)] = sample
+            sample_arg = np.all(np.isin(sample_, self.sample), axis=1)
+            weights = np.array(self.weights)[sample_arg]
 
         pc_algo = ot.FunctionalChaosAlgorithm(sample, weights, data,
                                               self.dist, trunc_strategy)
-        pc_algo.setProjectionStrategy(self.proj_strategy)
+        pc_algo.setProjectionStrategy(proj_strategy)
 
         ot.Log.Show(ot.Log.ERROR)
         pc_algo.run()

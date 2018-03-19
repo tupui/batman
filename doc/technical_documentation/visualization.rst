@@ -302,16 +302,32 @@ With :math:`h_{i}` the bandwidth for the *i* th component and :math:`K_{h_i}(.) 
 
 So taking a case with a functionnal output [Roy2017]_, we can recover its PDF with::
 
+    import batman as bat
     fig_pdf = bat.visualization.pdf(data)
 
 .. image::  ../fig/pdf_ls89.pdf
 
+On the other hand, with a scalar quantity, a single PDF is displayed. By default,
+an histogram is plotted along with the curve.
+
+.. image::  ../fig/pdf_hist.pdf
+
+Another possibility is to use quantile dotplot [Kay2016]_ which allows to
+directly count the quantiles::
+
+    fig_pdf = bat.visualization.pdf(data, dotplot=True)
+
+.. image::  ../fig/pdf_dotplot.pdf
+
+In this example, there are 20 circles, and below F=22.5 there are 11 circles.
+Thus, >50% of the samples are located below F=22.5.
 
 Correlation matrix
 ==================
 
 The correlation and covariance matrices are also availlable::
 
+    import batman as bat
     bat.visualization.corr_cov(data, sample, func.x, plabels=['Ks', 'Q'])
 
 .. image::  ../fig/corr.pdf
@@ -321,6 +337,7 @@ The correlation and covariance matrices are also availlable::
 
 Once *Sobol'* indices are computed , it is easy to plot them with::
 
+    import batman as bat
     indices = [s_first, s_total]
     bat.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'])
 
