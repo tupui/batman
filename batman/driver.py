@@ -87,12 +87,19 @@ class Driver(object):
         except KeyError:
             multifidelity = None
 
+        if 'gp_samplers' in self.settings['space']:
+            gp_samplers = self.settings['space']['gp_samplers']
+        else:
+            gp_samplers = None
+
         self.space = Space(self.settings['space']['corners'],
                            init_size,
                            nrefine=resamp_size,
                            plabels=self.settings['snapshot']['plabels'],
+                           psizes=self.settings['snapshot']['psizes'],
                            multifidelity=multifidelity,
-                           duplicate=duplicate)
+                           duplicate=duplicate,
+                           gp_samplers=gp_samplers)
 
         # Data Providers
         setting_provider = copy(settings['snapshot']['provider'])

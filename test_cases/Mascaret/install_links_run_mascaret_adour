@@ -3,7 +3,6 @@ rm -rf *.loi *.xcas *.dtd *.geo *.lig fort.22 *.damoc
 mv ResultatsListing.lis ResultatsListing.lis_old
 mv ResultatsOpthyca.opt ResultatsOpthyca.opt_old
 mv config_adour.json config_adour.json_old
-mv config_adour_user.json config_adour_user.json_old
 ln -s data_adour_maritime/ParametresMascaret.xcas ParametresMascaret.xcas
 ln -s data_adour_maritime/mascaret-1.0.dtd mascaret-1.0.dtd 
 ln -s data_adour_maritime/Geometrie.geo Geometrie.geo

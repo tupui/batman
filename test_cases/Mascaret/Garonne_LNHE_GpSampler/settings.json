@@ -1,0 +1,38 @@
+{
+    "space": {
+        "corners": [
+            [15.0, 1000.0],
+            [60.0, 6000.0]
+        ],
+        "sampling": {
+            "init_size": 100,
+            "method": "saltelli",
+            "distributions": ["Uniform(15., 60.)",  "GpSampler"]
+        },
+        "gp_samplers": {
+            "index": [1],
+            "reference": ["reference.npy"],
+            "add": [true],
+            "kernel": ["AbsoluteExponential([0.5], [1.0])"],
+            "thresholds": [0.99]
+        }
+    },
+    "snapshot": {
+        "max_workers": 1,
+        "plabels": ["Ks", "Q"],
+        "flabels": ["H"],
+        "psizes": [1, 10],
+        "provider": {
+            "type": "job",
+            "command": "bash script.sh",
+            "context_directory": "data",
+            "clean": false
+        },
+        "io": {
+            "space_fname": "sample-space.npy",
+            "space_format": "npy",
+            "data_fname": "sample-data.npy",
+            "data_format": "npy"
+        }
+    }
+}
