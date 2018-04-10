@@ -37,6 +37,7 @@ def doe(sample, plabels=None, resampling=0, multifidelity=False, fname=None):
     if multifidelity:
         sample = sample[:, 1:]
         dim -= 1
+        plabels = plabels[1:]
 
     fig, sub_ax = plt.subplots()
     if dim < 2:

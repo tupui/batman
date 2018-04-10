@@ -13,6 +13,7 @@ The following people have been core contributors to batman's development and mai
   * Sophie Ricci,
   * Robin Campet,
   * Cyril Fournier,
+  * Antoine Dechaume (JPOD),
   * Thierry Braconnier (JPOD),
   * Marc Ferrier (JPOD).
 

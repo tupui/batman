@@ -202,23 +202,34 @@ In case of expensive program, the snapshots can be send to an external host.
 .. code-block:: python
 
     "provider": {
-        "type": "job",
-        "command": "bash script.sh",
-        "context_directory": "data",
-        "coupling": {
-            "coupling_directory": "batman-coupling",
-            "input_fname": "sample-space.npy",
-            "input_format": "npy",
-            "output_fname": "sample-data.npz",
-            "output_format": "npz"
-        "clean": false,
-        "discover": "some/*/snapshot/directories",
-        "host": {
+    "type": "job",
+    "command": "bash script.sh",
+    "context_directory": "data",
+    "coupling": {
+        "coupling_directory": "batman-coupling",
+        "input_fname": "sample-space.npy",
+        "input_format": "npy",
+        "output_fname": "sample-data.npz",
+        "output_format": "npz"
+    }
+    "clean": false,
+    "discover": "some/*/snapshot/directories",
+    "hosts": [
+            {
                 "hostname": "nemo",
                 "remote_root": "TOTO",
-                "username": "batman"
-                "password": "Iron man sucks!"
+                "username": "batman",
+                "password": "Iron man sucks!",
+                "weight": 0.2
+            },
+            {
+                "hostname": "occigen",
+                "remote_root": "TATA",
+                "username": "batman",
+                "password": "Iron man sucks!",
+                "weight": 0.8
             }
+        ]
     }
 
 + ``type``: type of provider. Must be set to ``job``.
@@ -234,11 +245,12 @@ In case of expensive program, the snapshots can be send to an external host.
 
 + [``clean``]: delete after run working directories.
 + [``discover``]: UNIX-style pattern matching path to directories carrying snapshot files.
-+ [``hosts``]: list of different remote host to connect to with the following options:
++ [``hosts``]: list of different remote hosts to connect to with the following options:
     * ``hostname``: Remote host to connect to.
     * ``remote_root``: Remote folder to create and store data in.
     * [``username``]: username.
     * [``password``]: password.
+    * [``weight``]: load balancing between hosts. Can use any units. Ex. with two hosts: 0.2, 0.8 or 20, 80 are equivalent.
 
   This functionality is based on *ssh* and *sftp*. So user configuration in ``~/.ssh/config`` is used by default.
   Also, private keys are used if located in default folder.

@@ -81,10 +81,17 @@ class Driver(object):
         except (KeyError, TypeError):
             duplicate = False
 
+        try:
+            multifidelity = [self.settings['surrogate'][key]
+                             for key in ['cost_ratio', 'grand_cost']]
+        except KeyError:
+            multifidelity = None
+
         self.space = Space(self.settings['space']['corners'],
                            init_size,
                            nrefine=resamp_size,
                            plabels=self.settings['snapshot']['plabels'],
+                           multifidelity=multifidelity,
                            duplicate=duplicate)
 
         # Data Providers
@@ -142,6 +149,8 @@ class Driver(object):
                          'nsample': self.space.doe_init,
                          'nrefine': resamp_size}
             self.pod = Pod(**settings_)
+            self.pod.space.multifidelity = multifidelity
+            self.pod.space.max_points_nb = self.space.max_points_nb
             self.pod.space.duplicate = duplicate
         else:
             self.pod = None
@@ -151,19 +160,27 @@ class Driver(object):
 
         # Surrogate model
         if 'surrogate' in self.settings:
-            settings_ = {}
+            settings_ = {'kind': self.settings['surrogate']['method'],
+                         'corners': self.settings['space']['corners'],
+                         'max_points_nb': init_size + resamp_size,
+                         'plabels': self.settings['snapshot']['plabels']}
             if self.settings['surrogate']['method'] == 'pc':
                 dists = self.settings['space']['sampling']['distributions']
                 dists = dists_to_ot(dists)
 
-                settings_ = {'strategy': self.settings['surrogate']['strategy'],
-                             'degree': self.settings['surrogate']['degree'],
-                             'distributions': dists,
-                             'sparse_param': self.settings['surrogate'].get('sparse_param', {}),
-                             'sample': self.space.values}
+                settings_.update({
+                    'strategy': self.settings['surrogate']['strategy'],
+                    'degree': self.settings['surrogate']['degree'],
+                    'distributions': dists,
+                    'sparse_param': self.settings['surrogate'].get('sparse_param', {}),
+                    'sample': self.space.values
+                })
             elif self.settings['surrogate']['method'] == 'evofusion':
-                settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
-                             'grand_cost': self.settings['surrogate']['grand_cost']}
+                settings_.update({
+                    'cost_ratio': self.settings['surrogate']['cost_ratio'],
+                    'grand_cost': self.settings['surrogate']['grand_cost'],
+                    'max_points_nb': self.space.max_points_nb
+                })
             elif self.settings['surrogate']['method'] == 'kriging':
                 if 'kernel' in self.settings['surrogate']:
                     kernel = self.settings['surrogate']['kernel']
@@ -173,18 +190,14 @@ class Driver(object):
                     except (TypeError, AttributeError):
                         self.logger.error('Scikit-Learn kernel unknown.')
                         raise SystemError
-                    settings_ = {'kernel': kernel}
+                    settings_.update({'kernel': kernel})
 
                 settings_.update({
                     'noise': self.settings['surrogate'].get('noise', False),
                     'global_optimizer': self.settings['surrogate'].get('global_optimizer', True)
                 })
 
-            self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                            self.settings['space']['corners'],
-                                            max_points_nb=init_size + resamp_size,
-                                            plabels=self.settings['snapshot']['plabels'],
-                                            **settings_)
+            self.surrogate = SurrogateModel(**settings_)
             if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
                 self.space += self.surrogate.predictor.sample
@@ -365,8 +378,12 @@ class Driver(object):
             except OSError:
                 pass
             # better: surrogate could return a Sample
+            plabels = self.settings['snapshot']['plabels']
+            if self.space.multifidelity:
+                plabels = plabels[1:]
+
             samples = Sample(space=points, data=results,
-                             plabels=self.settings['snapshot']['plabels'],
+                             plabels=plabels,
                              flabels=self.settings['snapshot']['flabels'],
                              psizes=self.settings['snapshot'].get('psizes'),
                              fsizes=self.settings['snapshot'].get('fsizes'))
@@ -382,6 +399,9 @@ class Driver(object):
         args['plabels'] = self.settings['snapshot']['plabels']
         args['dists'] = self.settings['uq']['pdf']
         args['nsample'] = self.settings['uq']['sample']
+
+        if self.space.multifidelity:
+            args['plabels'] = args['plabels'][1:]
 
         if self.pod is not None:
             args['data'] = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
@@ -399,7 +419,8 @@ class Driver(object):
             self.logger.warning("No surrogate model, be sure to have a "
                                 "statistically significant sample to trust "
                                 "following results.")
-        analyse.sobol()
+        if len(self.settings['space']['corners'][0]) > 1:
+            analyse.sobol()
         analyse.error_propagation()
 
     def visualization(self):
@@ -464,6 +485,9 @@ class Driver(object):
             args['plabels'] = self.settings['visualization']['plabels']
         except KeyError:
             args['plabels'] = self.settings['snapshot']['plabels']
+        finally:
+            if self.space.multifidelity:
+                args['plabels'] = args['plabels'][1:]
 
         if len(self.settings['snapshot']['flabels']) < 2:
             try:

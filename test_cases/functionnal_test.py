@@ -170,12 +170,14 @@ def test_resampling(tmp, case='Michalewicz'):
     ('G_Function'),
     ('Basic_function'),
     ('Channel_Flow'),
+    ('Multifidelity'),
 ])
 def test_cases(tmp, name):
     test_init(tmp, case=name)
-    test_quality(tmp, case=name)
+    if name != 'Multifidelity':
+        test_quality(tmp, case=name)
     test_uq(tmp, case=name)
-    if name != 'Channel_Flow':
+    if name not in ['Channel_Flow', 'Multifidelity']:
         test_restart_pod(tmp, case=name)
 
 

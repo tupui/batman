@@ -49,7 +49,7 @@ class RBFnet(object):
             self.rfunction = default_function
         else:
             self.rfunction = function
-        print(self.trainIn.shape, self.trainOut.shape)
+
         if self.trainIn.shape[0] != self.trainOut.shape[0]:
             raise ValueError('Incoherent number of samples I/O')
 
