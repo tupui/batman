@@ -31,6 +31,7 @@ import copy
 import warnings
 from scipy.optimize import (differential_evolution, basinhopping)
 from scipy.stats import norm
+from scipy.spatial.distance import cdist
 import numpy as np
 from sklearn import preprocessing
 import batman as bat
@@ -133,10 +134,10 @@ class Refiner(object):
     def distance_min(self, point):
         """Get the distance of influence.
 
-        Compute the distance, Linf norm between the anchor point and
-        every sampling points. Linf allows to add this lenght to all
+        Compute the Chebyshev distance, max Linf norm between the anchor point
+        and every sampling points. Linf allows to add this lenght to all
         coordinates and ensure that no points will be within this hypercube.
-        It returns the minimal distance. :attr:`point` needs to be scaled by
+        It returns the minimal distance. :attr:`point` will be scaled by
         :attr:`self.corners` so the returned distance is scaled.
 
         :param array_like point: Anchor point.
@@ -144,11 +145,12 @@ class Refiner(object):
         :rtype: float.
         """
         point = self.scaler.transform(point.reshape(1, -1))[0]
-        distances = np.array([np.linalg.norm(pod_point - point)
-                              for _, pod_point in enumerate(self.points)])
+        distances = cdist([point], self.points, 'chebyshev')[0]
+
         # Do not get itself
         distances = distances[np.nonzero(distances)]
         distance = min(distances)
+
         self.logger.debug("Distance min: {}".format(distance))
 
         return distance
@@ -157,8 +159,9 @@ class Refiner(object):
         """Get the hypercube to add a point in.
 
         Propagate the distance around the anchor.
-        :attr:`point` is scaled by :attr:`self.corners` and input distance has
-        to be. Ensure that new values are bounded by corners.
+        :attr:`point` will be scaled by :attr:`self.corners` and input distance
+        has to be already scalled. Ensure that new values are bounded by
+        corners.
 
         :param array_like point: Anchor point.
         :param float distance: The distance of influence.
@@ -189,13 +192,13 @@ class Refiner(object):
         :return: The hypercube around the point (a point per column).
         :rtype: array_like.
         """
-        distance = self.distance_min(point) / 3
+        distance = self.distance_min(point) * 0.99
         x0 = self.hypercube_distance(point, distance).flatten('F')
         point = np.minimum(point, self.corners[:, 1])
         point = np.maximum(point, self.corners[:, 0])
         point = self.scaler.transform(point.reshape(1, -1))[0]
 
-        gen = (p for p in self.points if not np.allclose(p, point))
+        gen = [p for p in self.points if not np.allclose(p, point)]
 
         def min_norm(hypercube):
             """Compute euclidean distance.
@@ -389,7 +392,7 @@ class Refiner(object):
 
         return point
 
-    def extrema(self, refined_pod_points):
+    def extrema(self, refined_points):
         """Find the min or max point.
 
         Using an anchor point based on the extremum value at sample points,
@@ -401,7 +404,7 @@ class Refiner(object):
         :rtype: lst(float)
         """
         self.logger.info("Extrema strategy")
-        points = np.delete(self.points, refined_pod_points, 0)
+        points = np.delete(self.points, refined_points, 0)
         point = None
         new_points = []
 
@@ -412,8 +415,8 @@ class Refiner(object):
             # Get a sample point where there is an extrema around
             while point is None:
                 # Get min or max point
-                evaluations = np.array([self.func(pod_point, sign)
-                                        for _, pod_point in enumerate(points)])
+                evaluations = np.array([self.func(ref_point, sign)
+                                        for _, ref_point in enumerate(points)])
                 try:
                     min_idx = np.argmin(evaluations)
                 except ValueError:
@@ -477,17 +480,17 @@ class Refiner(object):
                 points = np.delete(points, min_idx, 0)
 
             point = None
-            refined_pod_points.append(min_idx)
+            refined_points.append(min_idx)
 
-        return new_points, refined_pod_points
+        return new_points, refined_points
 
-    def hybrid(self, refined_pod_points, point_loo, method, dists):
+    def hybrid(self, refined_points, point_loo, method, dists):
         """Composite resampling strategy.
 
         Uses all methods one after another to add new points.
         It uses the navigator defined within settings file.
 
-        :param lst(int) refined_pod_points: points idx not to consider for extrema
+        :param lst(int) refined_points: points idx not to consider for extrema
         :param point_loo: leave one out point
         :type point_loo: :class:`batman.space.point.Point`
         :param str strategy: resampling method
@@ -506,7 +509,7 @@ class Refiner(object):
         elif method == 'loo_sobol':
             new_point = self.leave_one_out_sobol(point_loo, dists)
         elif method == 'extrema':
-            new_point, refined_pod_points = self.extrema(refined_pod_points)
+            new_point, refined_points = self.extrema(refined_points)
         elif method == 'discrepancy':
             new_point = self.discrepancy()
         elif method == 'optimization':
@@ -515,7 +518,7 @@ class Refiner(object):
             self.logger.exception("Resampling method does't exits")
             raise SystemExit
 
-        return new_point, refined_pod_points
+        return new_point, refined_points
 
     def optimization(self, method='EI', extremum='min'):
         """Maximization of the Probability/Expected Improvement.

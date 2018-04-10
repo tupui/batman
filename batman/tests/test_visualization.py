@@ -30,10 +30,11 @@ class TestHdr:
 
     @pytest.fixture(scope="session")
     def hdr(self):
+        np.random.seed(123456)
+        ot.RandomGenerator.SetSeed(123456)
         return HdrBoxplot(data)
 
-    @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
-    def test_hdr_basic(self, hdr, tmp):
+    def test_hdr_basic(self, hdr, tmp, seed):
         print('Data shape: ', data.shape)
 
         assert len(hdr.extra_quantiles) == 0
@@ -81,7 +82,7 @@ class TestHdr:
 
     @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
     @patch("matplotlib.pyplot.show")
-    def test_hdr_alpha(self, mock_show):
+    def test_hdr_alpha(self, mock_show, seed):
         hdr = HdrBoxplot(data, alpha=[0.7])
         extra_quant_t = np.vstack([[25.1, 26.4, 26.9, 26.3, 25.2, 23.9,
                                     22.7, 21.8, 21.5, 21.8, 22.5, 23.7],
@@ -93,7 +94,7 @@ class TestHdr:
 
     @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
     @patch("matplotlib.pyplot.show")
-    def test_hdr_multiple_alpha(self, mock_show):
+    def test_hdr_multiple_alpha(self, mock_show, seed):
         hdr = HdrBoxplot(data, alpha=[0.4, 0.92])
         extra_quant_t = [[25.712, 27.052, 27.711, 27.200,
                           26.162, 24.833, 23.639, 22.378,
@@ -110,20 +111,19 @@ class TestHdr:
         npt.assert_almost_equal(hdr.extra_quantiles, np.vstack(extra_quant_t), decimal=0)
         hdr.plot()
 
-    def test_hdr_threshold(self, ):
+    def test_hdr_threshold(self, seed):
         hdr = HdrBoxplot(data, alpha=[0.8], threshold=0.93)
         labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)
         outliers = labels[labels_pos]
         npt.assert_equal([[1982], [1983], [1997], [1998]], outliers)
 
-    @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
-    def test_hdr_outliers_method(self, ):
+    def test_hdr_outliers_method(self, seed):
         hdr = HdrBoxplot(data, threshold=0.93, outliers_method='forest')
         labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)
         outliers = labels[labels_pos]
         npt.assert_equal([[1982], [1983], [1997], [1998]], outliers)
 
-    def test_hdr_optimize_bw(self, ):
+    def test_hdr_optimize_bw(self, seed):
         hdr = HdrBoxplot(data, optimize=True)
         median_t = [24.27, 25.67, 25.98, 25.05, 23.76, 22.40,
                     21.31, 20.43, 20.20, 20.47, 21.17, 22.37]
@@ -343,7 +343,7 @@ class TestResponseSurface:
 
     @pytest.mark.xfail(raises=ValueError)
     @patch("matplotlib.pyplot.show")
-    def test_response_surface_2D_scalar(self, mock_show, tmp, branin_data):
+    def test_response_surface_2D_scalar(self, mock_show, tmp, branin_data, seed):
         space = branin_data.space
         bounds = [[-7, 0], [10, 15]]
         path = os.path.join(tmp, 'rs_2D_vector.pdf')

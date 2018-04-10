@@ -4,17 +4,11 @@ import pytest
 import numpy as np
 import numpy.testing as npt
 import openturns as ot
+import matplotlib.pyplot as plt
 from batman.space import (Space, Doe, dists_to_ot)
 from batman.functions import Ishigami
 from batman.surrogate import SurrogateModel
 from batman.space.refiner import Refiner
-
-
-def test_point_evaluation():
-    f_3d = Ishigami()
-    point = [2.20, 1.57, 3]
-    target_point = f_3d(point)
-    assert target_point == pytest.approx(14.357312835804658, 0.05)
 
 
 def test_dists_to_ot():
@@ -26,7 +20,7 @@ def test_dists_to_ot():
         dists_to_ot(['Uniorm(12, 15)'])
 
 
-def test_space(settings_ishigami):
+def test_space(settings_ishigami, seed):
     corners = settings_ishigami['space']['corners']
     space = Space(corners)
     assert space.max_points_nb == np.inf
@@ -53,7 +47,7 @@ def test_space(settings_ishigami):
     space2 = Space(corners,
                    sample=settings_ishigami['space']['sampling']['init_size'],
                    nrefine=settings_ishigami['space']['resampling']['resamp_size'])
-    ot.RandomGenerator.SetSeed(123456)
+
     s2 = space2.sampling(10, kind='lhsc')
     assert len(s2) == 10
     assert np.any(s1 != s2)
@@ -104,7 +98,7 @@ def test_space_evaluation(settings_ishigami):
     npt.assert_almost_equal(targets_space, f_data_base)
 
 
-def test_doe():
+def test_doe(seed):
     bounds = np.array([[0, 2], [10, 5]])
     n = 5
 
@@ -138,7 +132,6 @@ def test_doe():
     sample = doe.generate()
 
     doe = Doe(n, bounds, 'lhsopt')
-    ot.RandomGenerator.SetSeed(123456)
     sample = doe.generate()
     out = [[6.149, 2.343], [9.519, 3.497], [1.991, 4.058],
            [5.865, 4.995], [2.551, 2.737]]
@@ -167,69 +160,42 @@ def test_doe():
     assert len(sample) == 6
 
 
-@pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
-def test_resampling(tmp, branin_data, settings_ishigami):
+def plot_hypercube(hypercube):
+    """Plot an hypercube.
+
+    :param array_like hypercube ([min, n_features], [max, n_features]).
+    """
+    hypercube = hypercube.T
+    plt.plot([hypercube[0, 0], hypercube[0, 0],
+              hypercube[0, 0], hypercube[1, 0],
+              hypercube[1, 0], hypercube[1, 0],
+              hypercube[0, 0], hypercube[1, 0]],
+             [hypercube[0, 1], hypercube[1, 1],
+              hypercube[1, 1], hypercube[1, 1],
+              hypercube[1, 1], hypercube[0, 1],
+              hypercube[0, 1], hypercube[0, 1]])
+
+
+def test_refiner_basics(tmp, branin_data, settings_ishigami, seed):
     f_2d = branin_data.func
     space = branin_data.space
-    test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['snapshot']['plabels'] = ['x1', 'x2']
-    space.empty()
-    max_points_nb = 5
-    space.sampling(max_points_nb, 'halton')
-    space.max_points_nb = 100
-
-    surrogate = SurrogateModel('kriging', space.corners, max_points_nb, space.plabels)
+    space.sampling(11, 'halton')
+    surrogate = SurrogateModel('kriging', space.corners, 11, space.plabels)
     surrogate.fit(space, f_2d(space))
 
-    # LOO tests on small set
-    refiner = Refiner(surrogate, space.corners, delta_space=0.1)
-    point_loo = refiner.points[1]
-    refiner.leave_one_out_sigma(point_loo)
-    refiner.leave_one_out_sobol(point_loo, ['Uniform(-5, 0)',
-                                            'Uniform(10, 15)'])
+    refiner = Refiner(surrogate, space.corners, delta_space=0.08)
 
-    # Larger dataset to ensure stable results
-    space.empty()
-    max_points_nb = 11
-    space.sampling(max_points_nb, 'halton')
-    surrogate = SurrogateModel('kriging', space.corners, max_points_nb, space.plabels)
-    surrogate.fit(space, f_2d(space))
-    for _ in range(2):
-        space.refine(surrogate, 'sigma')
-        surrogate.fit(space, f_2d(space))
-    assert len(space) == 13
+    distance_min = refiner.distance_min(refiner.space.values[0])
+    assert distance_min == pytest.approx(0.163461, abs=0.001)
 
-    refiner = Refiner(surrogate, space.corners, delta_space=0.1)
+    hypercube = refiner.hypercube_distance(refiner.space.values[0], distance_min)
+    npt.assert_almost_equal(hypercube, [[-0.62, 3.62], [3.04, 6.96]], decimal=2)
 
-    sigma = refiner.sigma()
-    npt.assert_almost_equal(sigma, [8.47,  13.65], decimal=1)
+    hypercube_optim = refiner.hypercube_optim(refiner.space.values[0])
+    npt.assert_almost_equal(hypercube_optim,
+                            [[-0.61, 5.74], [1.0, 11.66]], decimal=2)
 
-    optim_EI = refiner.optimization(method='EI')
-    npt.assert_almost_equal(optim_EI, [-2.1, 9.0], decimal=1)
-
-    optim_EI = refiner.optimization(extremum='max')
-    npt.assert_almost_equal(optim_EI, [-5.3,  1.9], decimal=1)
-
-    optim_PI = refiner.optimization(method='PI')
-    npt.assert_almost_equal(optim_PI, [-2.2, 9.2], decimal=1)
-
-    disc = refiner.discrepancy()
-    npt.assert_almost_equal(disc, [8.47, 12.4], decimal=1)
-
-    extrema = np.array(refiner.extrema([])[0])
-    npt.assert_almost_equal(extrema, [[-2.694, 2.331], [2.576, 2.242]], decimal=1)
-
-    base_sigma_disc = refiner.sigma_discrepancy()
-    npt.assert_almost_equal(base_sigma_disc,
-                            refiner.sigma_discrepancy([0.5, 0.5]), decimal=1)
-    assert (base_sigma_disc != refiner.sigma_discrepancy([-0.1, 1.])).any()
-
-    # Refiner without surrogate
-    refiner = Refiner(surrogate, space.corners, delta_space=0.1)
-    disc2 = refiner.discrepancy()
-    npt.assert_almost_equal(disc2, [8.47, 12.416], decimal=1)
-
-    # # Plotting
+    # Plotting
     # import os
     # import itertools
     # import matplotlib.pyplot as plt
@@ -244,32 +210,142 @@ def test_resampling(tmp, branin_data, settings_ishigami):
     # pred = np.array(pred).flatten()
     # space = np.array(space[:])
 
-    # color = True
-    # c_map = cm.viridis if color else cm.gray
-    # fig = plt.figure('Composite sigma/discrepancy')
-    # plt.plot(space[:11, 0], space[:11, 1], 'ko', label='initial sample')
-    # plt.plot(space[11:, 0], space[11:, 1], 'm^', label='firsts sigma')
-    # plt.plot(-3.68928528, 13.62998774, 'rx')
-    # plt.tricontourf(x, y, pred, antialiased=True, cmap=c_map)
-    # plt.plot(sigma[0], sigma[1], '+', label='sigma')
-    # plt.plot(optim_EI[0], optim_EI[1], 's', label='optimization EI')
-    # plt.plot(optim_PI[0], optim_PI[1], 'p', label='optimization PI')
-    # plt.plot(disc[0], disc[1], 'v', label='discrepancy')
-    # plt.plot(disc[0], disc2[1], '-', label='discrepancy without surrogate')
-    # plt.plot(extrema[:, 0], extrema[:, 1], '>', label='extrema')
-    # plt.plot(base_sigma_disc[0], base_sigma_disc[1], '<', label='sigma+discrepancy')
+    # plt.figure()
+    # plt.tricontourf(x, y, pred, antialiased=True, cmap=cm.viridis)
     # cbar = plt.colorbar()
     # cbar.set_label(r'$f(x_1, x_2)$')
+    # plt.scatter(space[:11, 0], space[:11, 1], label='initial sample')
+
+    # # plt.scatter(space[4, 0], space[4, 1], label='Anchor point')
+    # plot_hypercube(refiner.corners)
+    # plot_hypercube(hypercube)
+    # plot_hypercube(hypercube_optim)
+
     # plt.xlabel(r'$x_1$', fontsize=24)
     # plt.ylabel(r'$x_2$', fontsize=24)
     # plt.tick_params(axis='y')
     # for txt, point in enumerate(space):
-    #     plt.annotate(txt, point, textcoords='offset points')
+    #     plt.annotate(txt, point, xycoords='offset points')
 
     # plt.legend(fontsize=21, bbox_to_anchor=(1.3, 1), borderaxespad=0)
-    # fig.tight_layout()
-    # path = os.path.join(tmp, 'refinements.pdf')
-    # fig.savefig(path, transparent=True, bbox_inches='tight')
+    # plt.show()
+
+
+def test_resampling(tmp, branin_data, settings_ishigami, seed):
+    f_2d = branin_data.func
+    space = branin_data.space
+    test_settings = copy.deepcopy(settings_ishigami)
+    test_settings['snapshot']['plabels'] = ['x1', 'x2']
+    space.empty()
+    max_points_nb = 5
+    space.sampling(max_points_nb, 'halton')
+    space.max_points_nb = 100
+
+    surrogate = SurrogateModel('kriging', space.corners, max_points_nb, space.plabels)
+    surrogate.fit(space, f_2d(space))
+
+    # Larger dataset to ensure stable results
+    space.empty()
+    max_points_nb = 11
+    space.sampling(max_points_nb, 'halton')
+    surrogate = SurrogateModel('kriging', space.corners, max_points_nb, space.plabels)
+    surrogate.fit(space, f_2d(space))
+    for _ in range(2):
+        space.refine(surrogate, 'sigma')
+        surrogate.fit(space, f_2d(space))
+    assert len(space) == 13
+
+    refiner = Refiner(surrogate, space.corners, delta_space=0.15)
+
+    point_loo = refiner.space.values[5]
+    loo_si = refiner.leave_one_out_sigma(point_loo)
+    npt.assert_almost_equal(loo_si, [-2.76,  2.], decimal=2)
+
+    loo_so = refiner.leave_one_out_sobol(point_loo, ['Uniform(-5, 0)',
+                                                     'Uniform(10, 15)'])
+    npt.assert_almost_equal(loo_so, [-2.86,  2.28], decimal=2)
+
+    sigma = refiner.sigma()
+    npt.assert_almost_equal(sigma, [4.85,  6.561], decimal=1)
+
+    optim_EI_min = refiner.optimization(method='EI')
+    npt.assert_almost_equal(optim_EI_min, [-2.176, 9.208], decimal=1)
+
+    optim_EI_max = refiner.optimization(extremum='max')
+    npt.assert_almost_equal(optim_EI_max, [6.59,  12.999], decimal=1)
+
+    optim_PI = refiner.optimization(method='PI')
+    npt.assert_almost_equal(optim_PI, [-2.328, 9.441], decimal=1)
+
+    disc = refiner.discrepancy()
+    npt.assert_almost_equal(disc, [5.007, 13.], decimal=1)
+
+    extrema = np.array(refiner.extrema([])[0])
+    # npt.assert_almost_equal(extrema, [[-2.694, 2.331], [2.576, 2.242]], decimal=1)
+
+    base_sigma_disc = refiner.sigma_discrepancy()
+    npt.assert_almost_equal(base_sigma_disc,
+                            refiner.sigma_discrepancy([0.5, 0.5]), decimal=1)
+    assert (base_sigma_disc != refiner.sigma_discrepancy([-0.1, 1.])).any()
+
+    # Refiner without surrogate
+    refiner = Refiner(surrogate, space.corners, delta_space=0.1)
+    disc2 = refiner.discrepancy()
+    npt.assert_almost_equal(disc2, [8., 13.], decimal=1)
+
+    # Plotting
+    # import os
+    # import itertools
+    # import matplotlib.pyplot as plt
+    # from matplotlib import cm
+    # num = 25
+    # x = np.linspace(-7, 10, num=num)
+    # y = np.linspace(0, 15, num=num)
+    # points = np.array([(float(i), float(j)) for i, j in itertools.product(x, y)])
+    # x = points[:, 0].flatten()
+    # y = points[:, 1].flatten()
+    # pred, si = surrogate(points)
+    # si = np.array(si).flatten()
+    # pred = np.array(pred).flatten()
+    # space = np.array(space[:])
+
+    # plt.figure()
+    # plt.tricontourf(x, y, si, antialiased=True, cmap=cm.viridis)
+    # cbar = plt.colorbar()
+    # cbar.set_label(r'$f(x_1, x_2)$')
+    # plt.show()
+
+    # plt.figure()
+    # plt.tricontourf(x, y, pred, antialiased=True, cmap=cm.viridis)
+    # cbar = plt.colorbar()
+    # cbar.set_label(r'$f(x_1, x_2)$')
+    # plt.scatter(space[:11, 0], space[:11, 1], label='initial sample')
+    # plt.scatter(space[11:, 0], space[11:, 1], label='firsts sigma')
+    # plt.scatter(-3.68928528, 13.62998774, label='global extrema')
+
+    # hypercube_optim = refiner.hypercube_optim(refiner.space.values[5])
+    # plot_hypercube(hypercube_optim)
+    # plot_hypercube(refiner.corners)
+    # plt.scatter(loo_so[0], loo_so[1], label='LOO-sigma')
+    # plt.scatter(loo_si[0], loo_si[1], label='LOO-sobol')
+
+    # plt.scatter(sigma[0], sigma[1], label='sigma')
+    # plt.scatter(optim_EI_min[0], optim_EI_min[1], label='optimization EI min')
+    # plt.scatter(optim_EI_max[0], optim_EI_max[1], label='optimization EI max')
+    # plt.scatter(optim_PI[0], optim_PI[1], label='optimization PI')
+    # plt.scatter(disc[0], disc[1], label='discrepancy')
+    # plt.scatter(disc2[0], disc2[1], label='discrepancy without surrogate')
+    # # plt.scatter(extrema[:, 0], extrema[:, 1], label='extrema')
+    # plt.scatter(base_sigma_disc[0], base_sigma_disc[1], label='sigma+discrepancy')
+
+    # plt.xlabel(r'$x_1$', fontsize=24)
+    # plt.ylabel(r'$x_2$', fontsize=24)
+    # plt.tick_params(axis='y')
+    # for txt, point in enumerate(space):
+    #     plt.annotate(txt, point, xycoords='offset points')
+
+    # plt.legend(fontsize=21, bbox_to_anchor=(1.3, 1), borderaxespad=0)
+    # plt.show()
 
 
 def test_discrepancy():

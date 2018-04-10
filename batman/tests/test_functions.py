@@ -30,8 +30,7 @@ def test_Branin():
     npt.assert_almost_equal(results.x, x_target, decimal=2)
 
 
-@pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
-def test_Michalewicz():
+def test_Michalewicz(seed):
     f_2d = Michalewicz()
     assert f_2d([2.20, 1.57]) == pytest.approx(-1.8013, 0.01)
 
