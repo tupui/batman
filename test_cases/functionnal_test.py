@@ -221,14 +221,12 @@ def test_only_surrogate(tmp, case='Michalewicz'):
     check_output(tmp)
 
 
-@pytest.mark.xfail(raises=ValueError, reason='Flat response, no contour possible')
-def test_only_surrogate_settings(tmp, case='Ishigami'):
+def test_only_surrogate_settings(tmp, case='Basic_function'):
     os.chdir(os.path.join(PATH, case))
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
     settings = batman.misc.import_config(options.settings, SCHEMA)
     settings['space'].pop('resampling')
-    settings.pop('pod')
     settings.pop('uq')
     # Kriging settings
     settings['surrogate'].update({

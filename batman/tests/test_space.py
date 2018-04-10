@@ -11,13 +11,6 @@ from batman.surrogate import SurrogateModel
 from batman.space.refiner import Refiner
 
 
-def test_point_evaluation():
-    f_3d = Ishigami()
-    point = [2.20, 1.57, 3]
-    target_point = f_3d(point)
-    assert target_point == pytest.approx(14.357312835804658, 0.05)
-
-
 def test_dists_to_ot():
     dists = dists_to_ot(['Uniform(12, 15)', 'Normal(400, 10)'])
     out = [ot.Uniform(12, 15), ot.Normal(400, 10)]
@@ -27,7 +20,7 @@ def test_dists_to_ot():
         dists_to_ot(['Uniorm(12, 15)'])
 
 
-def test_space(settings_ishigami):
+def test_space(settings_ishigami, seed):
     corners = settings_ishigami['space']['corners']
     space = Space(corners)
     assert space.max_points_nb == np.inf
@@ -54,7 +47,7 @@ def test_space(settings_ishigami):
     space2 = Space(corners,
                    sample=settings_ishigami['space']['sampling']['init_size'],
                    nrefine=settings_ishigami['space']['resampling']['resamp_size'])
-    ot.RandomGenerator.SetSeed(123456)
+
     s2 = space2.sampling(10, kind='lhsc')
     assert len(s2) == 10
     assert np.any(s1 != s2)
@@ -105,7 +98,7 @@ def test_space_evaluation(settings_ishigami):
     npt.assert_almost_equal(targets_space, f_data_base)
 
 
-def test_doe():
+def test_doe(seed):
     bounds = np.array([[0, 2], [10, 5]])
     n = 5
 
@@ -139,7 +132,6 @@ def test_doe():
     sample = doe.generate()
 
     doe = Doe(n, bounds, 'lhsopt')
-    ot.RandomGenerator.SetSeed(123456)
     sample = doe.generate()
     out = [[6.149, 2.343], [9.519, 3.497], [1.991, 4.058],
            [5.865, 4.995], [2.551, 2.737]]
@@ -184,10 +176,7 @@ def plot_hypercube(hypercube):
               hypercube[0, 1], hypercube[0, 1]])
 
 
-def test_refiner_basics(tmp, branin_data, settings_ishigami):
-    # Global optimization
-    np.random.seed(123456)
-    ot.RandomGenerator.SetSeed(123456)
+def test_refiner_basics(tmp, branin_data, settings_ishigami, seed):
     f_2d = branin_data.func
     space = branin_data.space
     space.sampling(11, 'halton')
@@ -242,10 +231,7 @@ def test_refiner_basics(tmp, branin_data, settings_ishigami):
     # plt.show()
 
 
-def test_resampling(tmp, branin_data, settings_ishigami):
-    # Global optimization
-    np.random.seed(123456)
-    ot.RandomGenerator.SetSeed(123456)
+def test_resampling(tmp, branin_data, settings_ishigami, seed):
     f_2d = branin_data.func
     space = branin_data.space
     test_settings = copy.deepcopy(settings_ishigami)
