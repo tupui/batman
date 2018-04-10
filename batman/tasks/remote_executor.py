@@ -4,7 +4,7 @@ Executor: remote computations
 =============================
 
 This executor perform remotelly the generation of the sample.
-:class:`MasterRemoteExecutor` 
+:class:`MasterRemoteExecutor`
 """
 import logging
 import os
@@ -173,7 +173,7 @@ class RemoteExecutor:
             prompt = "{}@{}'s password: ".format(username, hostname)
             args['allow_agent'] = False
             args['timeout'] = 3
-            for i in range(3):
+            for _ in range(3):
                 args['password'] = getpass.getpass(prompt=prompt)
                 try:
                     self.ssh.connect(**args)
@@ -256,7 +256,8 @@ class RemoteExecutor:
         dirs = [attr.filename for attr in content if stat.S_ISDIR(attr.st_mode)]
         yield (directory, dirs, files)
         for d in dirs:
-            self.walk(os.path.join(directory, d))
+            for x in self.walk(os.path.join(directory, d)):
+                yield x
 
     def snapshot(self, point, sample_id):
         """Compute a snapshot remotelly.
@@ -267,6 +268,7 @@ class RemoteExecutor:
         :rtype: array_like
         """
         # build input file
+        self.logger.debug('Building snapshot directory')
         lsnapdir = os.path.join(self._lwkroot, str(sample_id))
         os.makedirs(lsnapdir)
         infile = os.path.join(lsnapdir, self._input_file)
@@ -287,9 +289,11 @@ class RemoteExecutor:
                     self.sftp.symlink(os.path.join(root, f), os.path.join(local, f))
 
         # execute command
+        self.logger.debug('Executing command on remote host')
         self.exec_remote('cd {} && {}'.format(snapdir, self._cmd))
 
         # get result
+        self.logger.debug('Getting results')
         with self._lock:
             outfile = os.path.join(lsnapdir, self._output_file)
             self.sftp.get(os.path.join(cpldir, self._output_file), outfile)

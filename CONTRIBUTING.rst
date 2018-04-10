@@ -29,7 +29,9 @@ This will create a simlink to your python install folder. Thus you won't have
 to re-install the package after you modified it.
 
 Make sure you have installed the testing dependencies as detailed in the
-``README``.
+``README``. If using ``conda``, you can install all dependencies with::
+
+    conda create -n bat_ci -c conda-forge python=3 openturns=1.10 matplotlib numpy pandas scipy scikit-learn pathos jsonschema paramiko sphinx sphinx_rtd_theme pytest pytest-runner mock ffmpeg pycodestyle pylint coverage
 
 Python
 ------

@@ -245,21 +245,8 @@ def test_quality(mufi_data):
     space = np.array(mufi_data.space)
     max_points_nb = space.shape[0]
     surrogate = SurrogateModel('rbf', mufi_data.space.corners, max_points_nb,
-                               mufi_data.space.plabels)
-
-    # Split into cheap and expensive arrays
-    space = np.array(mufi_data.space)
-    target_space = np.array(mufi_data.target_space)
-    space = [space[space[:, 0] == 0][:, 1],
-             space[space[:, 0] == 1][:, 1]]
-    n_e = space[0].shape[0]
-    n_c = space[1].shape[0]
-    space = [space[0].reshape((n_e, -1)),
-             space[1].reshape((n_c, -1))]
-    target_space = [target_space[:n_e].reshape((n_e, -1)),
-                    target_space[n_e:].reshape((n_c, -1))]
-
-    surrogate.fit(space[1], target_space[1])
+                               np.array(mufi_data.space.plabels)[1:])
+    surrogate.fit(mufi_data.space.values[10:, 1:], mufi_data.target_space[10:])
 
     assert surrogate.estimate_quality()[0] == pytest.approx(1, 0.1)
 

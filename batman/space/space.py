@@ -74,19 +74,11 @@ class Space(Sample):
             plabels = ['x{}'.format(i) for i in range(self.dim)]
         if psizes is None:
             psizes = [1] * self.dim
-        try:
-            pos = plabels.index('fidelity')
-        except ValueError:
-            pass
-        else:
-            plabels = list(np.delete(plabels, pos))
-            psizes = list(np.delete(psizes, pos))
 
         # Multifidelity configuration
         if multifidelity is not None:
             self.doe_cheap = self._cheap_doe_from_expensive(self.doe_init)
-            plabels = ['fidelity'] + plabels
-            psizes = ['fidelity'] + psizes
+            psizes = [1] + psizes
             self.logger.info("Multifidelity with Ne: {} and Nc: {}"
                              .format(self.doe_init, self.doe_cheap))
 
@@ -134,7 +126,8 @@ class Space(Sample):
 
         self.logger.info("Created {} samples with the {} method".format(len(self), kind))
         self.logger.debug("Points are:\n{}".format(samples))
-        self.logger.info("Discrepancy is {}".format(self.discrepancy()))
+        s = int(bool(self.multifidelity))
+        self.logger.info("Discrepancy is {}".format(self.discrepancy(self.values[:, s:])))
         return self.values
 
     def refine(self, surrogate, method, point_loo=None, delta_space=0.08,
@@ -290,7 +283,9 @@ class Space(Sample):
         points = points.reshape(-1, points.shape[-1])
 
         # select only points in the space boundaries
-        mask = np.logical_and(points >= self.corners[0], points <= self.corners[1]).all(axis=1)
+        s = int(bool(self.multifidelity))  # drop 1st column during test if multifidelity
+        mask = np.logical_and(points[:, s:] >= self.corners[0],
+                              points[:, s:] <= self.corners[1]).all(axis=1)
         if not np.all(mask):
             drop = np.logical_not(mask)
             self.logger.warning("Ignoring Points - Out of Space - {}".format(points[drop, :]))
@@ -298,7 +293,6 @@ class Space(Sample):
 
         # find new points to append
         if (not self.duplicate) and (len(self) > 0):
-            s = int(bool(self.multifidelity))  # drop 1st column during test if multifidelity
             existing_points = self.values[:, s:]
             test_points = points[:, s:]
             new_idx = []

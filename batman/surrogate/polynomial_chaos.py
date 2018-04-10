@@ -48,7 +48,8 @@ class PC(object):
         :param int degree: Polynomial degree.
         :param  distributions: Distributions of each input parameter.
         :type distributions: lst(:class:`openturns.Distribution`)
-        :param int sample: Samples for least square.
+        :param array_like sample: Samples for least square
+          (n_samples, n_features).
         :param bool stieltjes: Wether to use Stieltjes algorithm for the basis.
         :param dict sparse_param: Parameters for the Sparse Cleaning Truncation
           Strategy and/or hyperbolic truncation of the initial basis.

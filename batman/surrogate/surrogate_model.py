@@ -59,7 +59,8 @@ class SurrogateModel(object):
             - **degree** (int) -- Polynomial degree.
             - **distributions** (lst(:class:`openturns.Distribution`)) --
               Distributions of each input parameter.
-            - **n_samples** (int) -- Number of samples for least square.
+            - **sample** (array_like) -- Samples for least square
+              (n_samples, n_features).
             - **sparse_param** (dict) -- Parameters for the Sparse Cleaning
               Truncation Strategy and/or hyperbolic truncation of the initial
               basis.
@@ -107,9 +108,9 @@ class SurrogateModel(object):
         """
         self.data = data
         sample = np.array(sample)
-        try:
+        if self.kind != 'evofusion':
             sample_scaled = self.scaler.transform(sample)
-        except ValueError:  # With multifidelity
+        else:
             sample_scaled = self.scaler.transform(sample[:, 1:])
             sample_scaled = np.hstack((sample[:, 0].reshape(-1, 1), sample_scaled))
 
