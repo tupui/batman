@@ -62,7 +62,7 @@ class Space(Sample):
             self.refiner = None
             self.hybrid = None
             self.max_points_nb += nrefine
-        self.refined_pod_points = []
+        self.refined_points = []
 
         self.dim = len(corners[0])
         self.multifidelity = multifidelity
@@ -83,7 +83,7 @@ class Space(Sample):
                              .format(self.doe_init, self.doe_cheap))
 
         # Corner points
-        self.corners = np.array(corners)
+        self.corners = np.asarray(corners)
         if np.any(self.corners[0] == self.corners[1]):
             raise ValueError('corners coordinates at positions {} are equal'
                              .format(np.flatnonzero(self.corners[0] == self.corners[1])))
@@ -167,9 +167,9 @@ class Space(Sample):
         elif method == 'loo_sobol':
             new_point = self.refiner.leave_one_out_sobol(point_loo, dists)
         elif method == 'extrema':
-            new_point, self.refined_pod_points = self.refiner.extrema(self.refined_pod_points)
+            new_point, self.refined_points = self.refiner.extrema(self.refined_points)
         elif method == 'hybrid':
-            new_point, self.refined_pod_points = self.refiner.hybrid(self.refined_pod_points,
+            new_point, self.refined_points = self.refiner.hybrid(self.refined_points,
                                                                      point_loo,
                                                                      next(self.hybrid),
                                                                      dists)
