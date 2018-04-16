@@ -1,5 +1,6 @@
 import os
 import itertools
+import json
 from pyramid.view import view_config, view_defaults
 import colander
 import deform.widget
@@ -157,6 +158,7 @@ form_completed = {'form1': False, 'form2': False}
 
 @view_defaults(route_name='settings')
 class BatGirlViews(object):
+
     def __init__(self, request):
         self.request = request
         self.view_name = 'Settings Views'
@@ -172,6 +174,10 @@ class BatGirlViews(object):
 
         if 'run_batman' in self.request.POST:
             print('Running batman')
+
+        if 'settings' in self.request.POST:
+            settings = self.request.POST['settings']
+            settings = json.load(settings.file)
 
         if 'submit' in self.request.POST:
             posted_formid = self.request.POST['__formid__']
@@ -197,7 +203,7 @@ class BatGirlViews(object):
             except TypeError:
                 pass
         else:
-            for _, form in forms.items(): 
+            for _, form in forms.items():
                 html.append(form['form'].render())
 
         reqts = forms['form1']['form'].get_widget_resources()
