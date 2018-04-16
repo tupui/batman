@@ -1,8 +1,11 @@
+import os
+import itertools
 from pyramid.view import view_config, view_defaults
 import colander
 import deform.widget
-import itertools
+from plotly.offline import plot_mpl
 from batman.space import Space
+from batman.visualization import doe
 
 
 class SchemaSampling(colander.Schema):
@@ -160,18 +163,11 @@ class BatGirlViews(object):
     def home(self):
         return {'page_title': 'Home View'}
 
-    @property
-    def reqts(self):
-        return forms['form1']['form'].get_widget_resources()
-
     @view_config(renderer='templates/settings.jinja2')
     def settings(self):
         html = []
         output = {}
 
-        msg_space = ("<div class=\"alert alert-info\">"
-                     "<strong>Info!</strong> Fill in the space settings and "
-                     "submit to see the DoE.</div>")
 
         if 'submit' in self.request.POST:
             posted_formid = self.request.POST['__formid__']
@@ -180,8 +176,6 @@ class BatGirlViews(object):
                     try:
                         controls = self.request.POST.items()
                         form['captured'] = form['form'].validate(controls)
-
-
                         html.append(form['form'].render(form['captured']))
                     except deform.ValidationFailure as e:
                         # the submitted values could not be validated
@@ -196,11 +190,9 @@ class BatGirlViews(object):
             try:
                 output.update(self.generate_space(forms['form1']['captured']))
             except TypeError:
-                output.update({'script_plotly': msg_space})
-
+                pass
         else:
             for _, form in forms.items(): 
-                output.update({'script_plotly': msg_space})
                 html.append(form['form'].render())
 
         reqts = forms['form1']['form'].get_widget_resources()
@@ -208,33 +200,31 @@ class BatGirlViews(object):
         html = ''.join(html)
 
         output.update({'form': html, 'reqts': reqts})
-        # print(repr(forms['form1']['captured']))
 
         # values passed to template for rendering
         return output
 
     def generate_space(self, data):
-
+        """Interpret settings to render space with plotly."""
         corners = [[], []]
+        plabels = []
         for parameter in data['parameters']:
             corners[0].append(parameter['min_value'])
             corners[1].append(parameter['max_value'])
+            plabels.append(parameter['name'])
 
-        space_settings = {'space': {
-                              'corners': corners, 
-                              'sampling': data['sampling']
-                              }
-                          }
+        space_settings = {'corners': corners, 
+                          'sample': data['sampling']['init_size'],
+                          'plabels': plabels}
 
-        print(space_settings, data)
-
-        space = Space(space_settings)
-        space.sampling()
+        space = Space(**space_settings)
+        space.sampling(kind=data['sampling']['method'])
 
         disc = space.discrepancy()
 
-        script = space.plot_space()
-        
-        # script = script.replace('\n', '')
-        # div = div.replace('\n', '')
-        return {'script_plotly': script}
+        fig, _ = doe(space, fname=os.path.join('.', 'DOE.pdf'))
+
+        script = plot_mpl(fig, auto_open=False, output_type='div',
+                          resize=True, strip_style=True)
+
+        return {'script_plotly': script, 'discrepancy': disc}

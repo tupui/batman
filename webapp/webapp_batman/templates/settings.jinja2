@@ -57,11 +57,17 @@
   </div>
   <div class="col-md-5">
     <h2>Design of Experiment</h2>
-    <p>Based on your space definition, the space of parameter is described as follow.
-    You can update the space if needed.
-    </p>
-
-    {{script_plotly | safe}}
+    {% if script_plotly %}
+      <p>Based on your space definition, the space of parameter is described as follow.
+      You can update the space if needed.
+      </p>
+      {{script_plotly | safe}}
+      <p>C2 Discrepancy is: {{discrepancy | safe}}</p>
+    {% else %}
+      <div class="alert alert-info">
+        <strong>Info!</strong> Fill in the space settings and submit to see the DoE.
+      </div>
+    {% endif %}
 
   </div>
 </div>
