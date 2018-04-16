@@ -53,6 +53,17 @@
 
     {{form | safe}}
 
+    {% if form_completed %}
+      <form method="post">
+          <button type="submit" name="run_batman" class="btn btn-danger">Launch</button>
+      </form>
+    {% else %}
+      <form method="post">
+          <p>You must validate all items before</p>
+          <button type="submit" name="run_batman" class="btn btn-danger disabled">Launch</button>
+      </form>
+    {% endif %}
+
     </div>
   </div>
   <div class="col-md-5">

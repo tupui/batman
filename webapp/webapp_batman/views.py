@@ -153,6 +153,8 @@ forms['form2']['form'] = deform.Form(schema2, buttons=('submit',),
                                      formid='form2',
                                      counter=counter)
 
+form_completed = {'form1': False, 'form2': False}
+
 @view_defaults(route_name='settings')
 class BatGirlViews(object):
     def __init__(self, request):
@@ -168,6 +170,8 @@ class BatGirlViews(object):
         html = []
         output = {}
 
+        if 'run_batman' in self.request.POST:
+            print('Running batman')
 
         if 'submit' in self.request.POST:
             posted_formid = self.request.POST['__formid__']
@@ -177,6 +181,7 @@ class BatGirlViews(object):
                         controls = self.request.POST.items()
                         form['captured'] = form['form'].validate(controls)
                         html.append(form['form'].render(form['captured']))
+                        form_completed[formid] = True
                     except deform.ValidationFailure as e:
                         # the submitted values could not be validated
                         html.append(e.render())
@@ -199,7 +204,8 @@ class BatGirlViews(object):
 
         html = ''.join(html)
 
-        output.update({'form': html, 'reqts': reqts})
+        output.update({'form': html, 'reqts': reqts,
+                       'form_completed': all(form_completed.values())})
 
         # values passed to template for rendering
         return output
