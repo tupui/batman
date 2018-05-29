@@ -235,3 +235,35 @@ def test_container(sample_case):
         sample_work = deepcopy(sample_space)
         with pytest.raises(ValueError):
             sample_work.append(sample_data.values, axis=1)
+
+
+def test_sample_incomplete(tmp):
+    args = {}
+
+    # space
+    space, plabels, psizes = build_dataset(10, 2, 1, 'p')
+    args['space'] = space
+    args['plabels'] = plabels
+    args['psizes'] = psizes
+
+    # data
+    data, flabels, fsizes = build_dataset(7, 2, 1, 'f')
+    args['data'] = data
+    args['flabels'] = flabels
+    args['fsizes'] = fsizes
+
+    # case
+    sample = Sample(**args)
+    assert np.count_nonzero(~np.isnan(sample.data)) == 14
+    assert sample.space.shape == (10, 2)
+
+    fname_space = os.path.join(tmp, 'sample-space.json')
+    fname_data = os.path.join(tmp, 'sample-data.json')
+    sample.write(fname_space, fname_data)
+
+    sample_work = deepcopy(sample)
+    sample_work.empty()
+    sample_work.read(fname_space, fname_data)
+
+    assert sample_work.data.shape == (7, 2)
+    assert sample_work.space.shape == (7, 2)

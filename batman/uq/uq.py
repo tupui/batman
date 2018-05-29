@@ -60,6 +60,7 @@ for uncertainty quantification in simulation. 2015. ArXiv ID: 1501.05242
 import logging
 import os
 import itertools
+import re
 import numpy as np
 import openturns as ot
 from openturns.viewer import View
@@ -465,7 +466,8 @@ class UQ:
         # Plot
         if self.fname is not None:
             path = os.path.join(self.fname, 'sensitivity.pdf')
-            visualization.sobol(full_indices, plabels=self.plabels, conf=conf,
+            plabels = [re.sub(r'(_)(.*)', r'\1{\2}', label) for label in self.plabels]
+            visualization.sobol(full_indices, plabels=plabels, conf=conf,
                                 xdata=self.xdata, fname=path)
 
         # Compute error of the POD with a known function

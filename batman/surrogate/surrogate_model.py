@@ -76,6 +76,8 @@ class SurrogateModel(object):
             - **kernel** (:class:`sklearn.gaussian_process.kernels`.*) --
               Kernel.
             - **noise** (float/bool) -- noise level.
+            - **global_optimizer** (bool) -- Whether to do global optimization
+              or gradient based optimization to estimate hyperparameters.
         """
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
