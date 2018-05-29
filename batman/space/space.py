@@ -170,9 +170,9 @@ class Space(Sample):
             new_point, self.refined_points = self.refiner.extrema(self.refined_points)
         elif method == 'hybrid':
             new_point, self.refined_points = self.refiner.hybrid(self.refined_points,
-                                                                     point_loo,
-                                                                     next(self.hybrid),
-                                                                     dists)
+                                                                 point_loo,
+                                                                 next(self.hybrid),
+                                                                 dists)
         elif method == 'optimization':
             new_point = self.refiner.optimization(extremum=extremum)
         elif method == 'sigma_discrepancy':
