@@ -78,7 +78,9 @@ class UQ:
 
     def __init__(self, surrogate, dists=None, nsample=5000, method='sobol',
                  indices='aggregated', space=None, data=None, plabels=None,
-                 xlabel=None, flabel=None, xdata=None, fname=None, test=None):
+                 xlabel=None, flabel=None, xdata=None, fname=None, test=None,
+                 fname2D='no', fformat2D='txt', xlabel2D='x', ylabel2D='y',
+                 vmin=0.0):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -111,6 +113,11 @@ class UQ:
         self.fname = fname
         self.xlabel = xlabel
         self.flabel = flabel
+        self.fname2D = fname2D
+        self.fformat2D = fformat2D
+        self.xlabel2D = xlabel2D
+        self.ylabel2D = ylabel2D
+        self.vmin = vmin
 
         if self.fname is not None:
             try:
@@ -469,6 +476,20 @@ class UQ:
             plabels = [re.sub(r'(_)(.*)', r'\1{\2}', label) for label in self.plabels]
             visualization.sobol(full_indices, plabels=plabels, conf=conf,
                                 xdata=self.xdata, fname=path)
+            if self.fname2D is not 'no':
+                xlabel = self.xlabel2D
+                ylabel = self.ylabel2D
+                vmin = self.vmin
+                path = os.path.join(self.fname, '1order_Sobol_map')
+                visualization.mesh_2D_add_var(fname=self.fname2D, fformat=self.fformat2D,
+                                             xlabel=xlabel, ylabel=ylabel, vmin=vmin,
+                                             var=full_indices[2], plabels=self.plabels,
+                                             output_path=path)
+                path = os.path.join(self.fname, 'Total_Sobol_map')
+                visualization.mesh_2D_add_var(fname=self.fname2D, fformat=self.fformat2D,
+                                             xlabel=xlabel, ylabel=ylabel, vmin=vmin,
+                                             var=full_indices[3], plabels=self.plabels,
+                                             output_path=path)
 
         # Compute error of the POD with a known function
         if (self.type_indices in ['aggregated', 'block'])\

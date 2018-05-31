@@ -29,6 +29,8 @@ there are several options implemented in the package.
 +----------------------------------+-----------+----------------+---------------------------------------+
 | :func:`sobol`                    | scalar    | scalar, vector | Sensitivity indices                   |
 +----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`mesh_2D`                  | vector    | vector         | Sensitivity analysis on a 2D mesh     |
++----------------------------------+-----------+----------------+---------------------------------------+
 
 All options return a figure object that can be reuse using :func:`reshow`.
 This enables some modification of the graph. In most cases, the first parameter ``data`` is
@@ -350,6 +352,61 @@ passed to the function and both plot are made::
     bat.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'], xdata=x)
 
 .. image::  ../fig/sobol_map.pdf
+
+Sensitivity analysis on a 2D mesh
+=================================
+
+*Sobol'* indices can also be represented on a 2D mesh when dealing with functional
+inputs. If *Sobol'* indices are computed, the user can provide the coordinates of
+a 2D mesh corresponding to the coordinates of the functional input. Note that the
+mesh points and the dimension of the functional input should have the same length
+in order for the graph to be plotted.
+
+.. image:: ../fig/sobol_2Dmesh.pdf
+
+The first and second columns of the input file must represent the x and y coordinates
+respectively. Note that if the provided input file contains more than 2 columns,
+additional columns are considered as fonctional outputs corresponding to the mesh
+coordinates and additional graphs are automatically plotted.
+
+Options
+-------
+
+Several display options can be set specifically for graph on provided 2D meshes.
+A block named '2D_mesh' can be added in the 'visualization' block to specify
+display options related to those graphs. All the availavle options are listed in
+the following table:
+
++-------------+-------------------+-------------------+-----------------------------------------+
+| Option      || Dimensionality   || Default          ||              Description               |
++ name        +                   +                   +                                         +
++=============+===================+===================+=========================================+
+| name        || String.          || None             || Name of the input file containing the  |
+|             |                   |                   || mesh coordinates. The file might       |
+|             |                   |                   || contain additional columns representing|
+|             |                   |                   || additional functional outputs to be    |
+|             |                   |                   || plotted. The number of mesh points must|
+|             |                   |                   || correspond to the size of the          |
+|             |                   |                   || functional input.                      |
++-------------+-------------------+-------------------+-----------------------------------------+
+| format      || String.          || "txt"            || Format of the input file to read.      |
++-------------+-------------------+-------------------+-----------------------------------------+
+| xlabel2D    || String.          || "x axis"         || Name of the x-axis to be plotted on the|
+|             |                   |                   || graph.                                 |
++-------------+-------------------+-------------------+-----------------------------------------+
+| ylabel2D    || String.          || "y axis"         || Name of the y-axis to be plotted on the|
+|             |                   |                   || graph.                                 |
++-------------+-------------------+-------------------+-----------------------------------------+
+| title2D     || String.          || "Title"          || Title to be plotted on the graph.      |
++-------------+-------------------+-------------------+-----------------------------------------+
+| flabel2D    || String.          || "Parameter"      || Name of the variable of interest to be |
+|             |                   |                   || plotted on the graph.                  |
++-------------+-------------------+-------------------+-----------------------------------------+
+| vmin        || Float.           || ".txt"           || Display the Design of Experiment on    |
+|             |                   |                   || graph, represented by black dots.      |
++-------------+-------------------+-------------------+-----------------------------------------+
+
+
 
 Acknowledgement
 ===============

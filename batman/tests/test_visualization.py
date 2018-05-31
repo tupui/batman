@@ -7,7 +7,8 @@ from scipy.io import wavfile
 import openturns as ot
 from mock import patch
 from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf, sobol,
-                                  reshow, response_surface, doe, corr_cov)
+                                  reshow, response_surface, doe, corr_cov,
+                                  mesh_2D, mesh_2D_add_var)
 from batman.surrogate import SurrogateModel
 from batman.functions import (Ishigami, Mascaret, el_nino)
 import matplotlib.pyplot as plt
@@ -382,6 +383,28 @@ class TestResponseSurface:
         path = os.path.join(tmp, 'rs_4D_vector')
         response_surface(bounds=bounds, fun=fun, doe=space, resampling=10,
                          axis_disc=[2, 15, 15, 15], fname=path, feat_order=order)
+
+
+class Test2Dmesh:
+
+    @patch("matplotlib.pyplot.show")
+    def test_2D_mesh(self, mock_show, tmp):
+        datadir = os.path.join(os.path.dirname(__file__), 'data')
+        fname = os.path.join(datadir, 'data_Garonne.txt')
+        path = os.path.join(tmp, '')
+        vmin=2.5
+        mesh_2D(fname=fname, fformat='txt', xlabel='x label', title2D='Title',
+                outlabel='Variable', vmin=vmin, output_path=path)
+
+    @patch("matplotlib.pyplot.show")
+    def test_2D_mesh_add_var(self, mock_show, tmp, mascaret_data):
+        datadir = os.path.join(os.path.dirname(__file__), 'data')
+        fname = os.path.join(datadir, 'data_2D_mesh.txt')
+        var_sobol = [[0.1, 0.2], [0.3, 0.2], [0.88, 0.2], [0.9, 1.0], [0.1, 0.12]]
+        path = os.path.join(tmp, '')
+        plabels=['Ks', 'Q']
+        mesh_2D_add_var(fname=fname, fformat='txt', xlabel='x label', var=var_sobol,
+                        var_name='Sobol', plabels=plabels, output_path=path)
 
 
 class TestDoe:

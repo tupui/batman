@@ -11,10 +11,11 @@ from .hdr import HdrBoxplot
 from .uncertainty import (kernel_smoothing, pdf, sobol, corr_cov)
 from .doe import doe
 from .response_surface import response_surface
+from .mesh_2D import mesh_2D, mesh_2D_add_var
 
 __all__ = ['Kiviat3D', 'Tree', 'HdrBoxplot', 'kernel_smoothing', 'pdf',
            'sobol', 'corr_cov', 'reshow', 'save_show', 'response_surface',
-           'doe']
+           'doe', 'mesh_2D', 'mesh_2D_add_var']
 
 
 def reshow(fig):
