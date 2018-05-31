@@ -416,7 +416,7 @@ class Driver(object):
         args['fformat2D'] = self.settings.get('visualization', {}).get('2D_mesh', {}).get('format', 'txt')
         args['xlabel2D'] = self.settings.get('visualization', {}).get('2D_mesh', {}).get('xlabel2D', 'X axis')
         args['ylabel2D'] = self.settings.get('visualization', {}).get('2D_mesh', {}).get('ylabel2D', 'Y axis')
-        args['vmin']= self.settings.get('visualization', {}).get('2D_mesh', {}).get('vmin', 0.0)
+        args['vmin'] = self.settings.get('visualization', {}).get('2D_mesh', {}).get('vmin', 0.0)
 
         analyse = UQ(self.surrogate, **args)
 
@@ -486,8 +486,8 @@ class Driver(object):
                     self.logger.info("Creating 2D statistic graph from mesh...")
                     output_path = os.path.join(path, 'Mesh_graph')
                     mesh_2D(fname=name_mesh, fformat=format_mesh, xlabel=xlabel,
-                           ylabel=ylabel, title2D=title2D, outlabel=outlabel,
-                           vmin=vmin, output_path=output_path)
+                            ylabel=ylabel, title2D=title2D, outlabel=outlabel,
+                            vmin=vmin, output_path=output_path)
 
         else:
             args['xdata'] = np.linspace(0, 1, output_len) if output_len > 1 else None

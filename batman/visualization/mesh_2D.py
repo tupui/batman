@@ -14,6 +14,7 @@ from matplotlib.tri import Triangulation, TriAnalyzer
 import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
 
+
 def read_file(fname=None):
     """Reader of .txt file format.
 
@@ -34,7 +35,7 @@ def read_file(fname=None):
     for line in file_mesh:
         coord_line = line.split()
         for n in range(len(coord_line)):
-            coords[i,n] = float(coord_line[n])
+            coords[i, n] = float(coord_line[n])
         i = i + 1
 
     file_mesh.close()
@@ -43,7 +44,7 @@ def read_file(fname=None):
 
 
 def mesh_2D(fname=None, fformat='txt', xlabel='X axis', ylabel='Y axis', 
-           title2D=None, outlabel=None, vmin=0.0, output_path=None):
+            title2D=None, outlabel=None, vmin=0.0, output_path=None):
     """Visualization of some statistics on a user provided 2D mesh.
 
     The provided mesh should contain more than two columns (x,y coordinates for each mesh point,
@@ -75,10 +76,10 @@ def mesh_2D(fname=None, fformat='txt', xlabel='X axis', ylabel='Y axis',
             col = col + 2
 
             # Masking contours with no datas
-            mask = [(coords[j,col] != 0.0) for j in range(i)]
-            x_coords = [coords[j,0] for j, _ in enumerate(coords[:,0]) if mask[j]]
-            y_coords = [coords[j,1] for j, _ in enumerate(coords[:,1]) if mask[j]]
-            z_coords = [coords[j,col] for j, _ in enumerate(coords[:,col]) if mask[j]]
+            mask = [(coords[j, col] != 0.0) for j in range(i)]
+            x_coords = [coords[j, 0] for j, _ in enumerate(coords[:, 0]) if mask[j]]
+            y_coords = [coords[j, 1] for j, _ in enumerate(coords[:, 1]) if mask[j]]
+            z_coords = [coords[j, col] for j, _ in enumerate(coords[:, col]) if mask[j]]
 
             # Meshing with Delaunay triangulation
             tri = Triangulation(x_coords, y_coords)
@@ -115,8 +116,8 @@ def mesh_2D(fname=None, fformat='txt', xlabel='X axis', ylabel='Y axis',
 
 
 def mesh_2D_add_var(fname=None, fformat='txt', xlabel='X axis', ylabel='Y axis',
-                   vmin=0.0, var=None, var_name="Sobol", plabels=None,
-                   output_path=None):
+                    vmin=0.0, var=None, var_name="Sobol", plabels=None,
+                    output_path=None):
     """Visualization of some statistics (Sobol' indices) on a user provided 2D mesh.
 
     The provided mesh should contain two columns (x,y coordinates for each mesh point)
@@ -146,13 +147,12 @@ def mesh_2D_add_var(fname=None, fformat='txt', xlabel='X axis', ylabel='Y axis',
         # Loop over input parameters
         for i in range(len(var[0])):
 
-            x_coords = coords[:,0]
-            y_coords = coords[:,1]
+            x_coords = coords[:, 0]
+            y_coords = coords[:, 1]
             z_coords = [0.0]*len(var)
             for j in range(len(var)):
                 z_coords_tuple = var[j]
                 z_coords[j] = z_coords_tuple[i]
-            
 
             # Meshing with Delaunay triangulation
             tri = Triangulation(x_coords, y_coords)

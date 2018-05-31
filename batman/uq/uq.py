@@ -482,14 +482,14 @@ class UQ:
                 vmin = self.vmin
                 path = os.path.join(self.fname, '1order_Sobol_map')
                 visualization.mesh_2D_add_var(fname=self.fname2D, fformat=self.fformat2D,
-                                             xlabel=xlabel, ylabel=ylabel, vmin=vmin,
-                                             var=full_indices[2], plabels=self.plabels,
-                                             output_path=path)
+                                              xlabel=xlabel, ylabel=ylabel, vmin=vmin,
+                                              var=full_indices[2], plabels=self.plabels,
+                                              output_path=path)
                 path = os.path.join(self.fname, 'Total_Sobol_map')
                 visualization.mesh_2D_add_var(fname=self.fname2D, fformat=self.fformat2D,
-                                             xlabel=xlabel, ylabel=ylabel, vmin=vmin,
-                                             var=full_indices[3], plabels=self.plabels,
-                                             output_path=path)
+                                              xlabel=xlabel, ylabel=ylabel, vmin=vmin,
+                                              var=full_indices[3], plabels=self.plabels,
+                                              output_path=path)
 
         # Compute error of the POD with a known function
         if (self.type_indices in ['aggregated', 'block'])\

@@ -392,7 +392,7 @@ class Test2Dmesh:
         datadir = os.path.join(os.path.dirname(__file__), 'data')
         fname = os.path.join(datadir, 'data_Garonne.txt')
         path = os.path.join(tmp, '')
-        vmin=2.5
+        vmin = 2.5
         mesh_2D(fname=fname, fformat='txt', xlabel='x label', title2D='Title',
                 outlabel='Variable', vmin=vmin, output_path=path)
 
@@ -402,7 +402,7 @@ class Test2Dmesh:
         fname = os.path.join(datadir, 'data_2D_mesh.txt')
         var_sobol = [[0.1, 0.2], [0.3, 0.2], [0.88, 0.2], [0.9, 1.0], [0.1, 0.12]]
         path = os.path.join(tmp, '')
-        plabels=['Ks', 'Q']
+        plabels = ['Ks', 'Q']
         mesh_2D_add_var(fname=fname, fformat='txt', xlabel='x label', var=var_sobol,
                         var_name='Sobol', plabels=plabels, output_path=path)
 
