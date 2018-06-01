@@ -79,7 +79,7 @@ def run(settings, options):
             logger.debug('cleaning : {}'.format(options.output))
 
     elif options.restart and os.path.isdir(root) and\
-        ('discover' not in settings['snapshot']['provider']):
+            ('discover' not in settings['snapshot']['provider']):
         # auto-discovery of existing snapshots
         settings['snapshot']['provider']['discover'] = os.path.join(root, '*', '*')
 

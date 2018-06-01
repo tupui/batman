@@ -56,12 +56,11 @@
         "ticks_nbr": 5,
         "flabel": "F(Ks, Q)",
         "2D_mesh": {
-                 "name": "dataTest.txt",
-                 "format": "txt",
-                 "xlabel2D": "W -- E",
-                 "ylabel2D": "S -- N",
-                 "title2D": "Garonne River",
-                 "flabel2D": "Water level [m]"
+                 "fname": "dataTest.txt",
+                 "format": "csv",
+                 "xlabel": "W -- E",
+                 "ylabel": "S -- N",
+                 "flabels": ["Water level [m]"]
         }
     },
     "uq": {

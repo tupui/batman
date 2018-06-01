@@ -325,11 +325,10 @@ Uncertainty Quantification (UQ), see :ref:`UQ <uq>`.
         "type": "aggregated",
     }
 
-+ ``test``: use a test method for indices comparison and quality calculation. Use one of: *Rosenbrock*, *Michalewicz*, *Ishigami*, *G_Function*, *Channel_Flow*,
++ [``test``]: use a test method for indices comparison and quality calculation. Use one of: *Rosenbrock*, *Michalewicz*, *Ishigami*, *G_Function*, *Channel_Flow*,
 + ``sample``: number of points per sample to use for SA,
 + ``method``: type of Sobol analysis: *sobol*, *FAST* (Fourier Amplitude Sensitivity Testing). If FAST, no second-order indices are computed and defining a surrogate model is mandatory.
 + ``type``: type of indices: *aggregated* or *block*.
-
 + ``pdf`` *Probability density function* for uncertainty propagation. Enter the PDF of the inputs,
   as list of openturns distributions. Ex: x1-Normal(mu, sigma), x2-Uniform(inf, sup)
   => ``["Uniform(15., 60.)", "Normal(4035., 400.)"]``
@@ -378,36 +377,35 @@ Set up for the visualization options. Batman creates a response function (1 inpu
         "contours": [0.5, 1.0, 1.5],
         "kiviat_fill": true,
         "2D_mesh": {
-                 "name": "mesh_file.txt",
-                 "format": "txt",
-                 "xlabel2D": "x label",
-                 "ylabel2D": "y label",
-                 "title2D": "Title",
-                 "flabel2D": "Variable of interest"
+                 "fname": "mesh_file.csv",
+                 "format": "csv",
+                 "xlabel": "x label",
+                 "ylabel": "y label",
+                 "flabel": ["Variable of interest"],
+                 "vmins" = [0.1]
         }
      }
 
-+ ``bounds``: Floats. Response surface boundaries. Those boundaries should be included inside the space corners defined in the Space of Parameters block. Default values are the space corners,
-+ ``doe``: Boolean. If *true*, the Design of Experiment is represented on the response surface by black dots. Default value is *false*,
-+ ``resampling``: Boolean. If *true*, Design of Experiment corresponding to the resampling points are displayed in a different color. Such points are represented by red triangles. Only activates if doe is *true*,
-+ ``axis_disc``: Integers. Discretisation of each axis. Indicated value for the x and the y axis modify the surface resolution, while values corresponding the the 3rd and 4th parameters impact the frame number per movie and the movie number,
-+ ``flabel``: String. Name of the cost function,
-+ ``xlabel``: String. Name of the abscissa,
-+ ``ylabel``: String. Name of the ordinate,
-+ ``plabels``: Strings. Name of the input parameters to be plotted on each axis,
-+ ``feat_order``: Integers. Associate each input parameter to an axis, the first indicated number corresponding to the parameter to be plotted on the x-axis, etc... A size equal to the input parameter number is expected, all integers from 1 to the parameter number should be used. Default is *[1, 2, 3, 4]*,
-+ ``ticks_nbr``: Integer. Number of ticks on the colorbar (Display n-1 colors). Default is *10*,
-+ ``range_cbar``: Floats. Minimum and maximum values on the colorbar,
-+ ``contours``: Floats. Values of the iso-contours to be plotted on the response surface,
-+ ``kiviat_fill``: Boolean. If *true*, will fill the surface of the Kiviat plot,
-+ ``2D_mesh``: Block containing all options related to representation of statistical variable of interest on a 2D mesh provided by the user. Possible options are:
-        + ``name``: String. Name of the input file containing the mesh coordinates,
++ [``bounds``]: Floats. Response surface boundaries. Those boundaries should be included inside the space corners defined in the Space of Parameters block. Default values are the space corners,
++ [``doe``]: Boolean. If *true*, the Design of Experiment is represented on the response surface by black dots. Default value is *false*,
++ [``resampling``]: Boolean. If *true*, Design of Experiment corresponding to the resampling points are displayed in a different color. Such points are represented by red triangles. Only activates if doe is *true*,
++ [``axis_disc``]: Integers. Discretisation of each axis. Indicated value for the x and the y axis modify the surface resolution, while values corresponding the the 3rd and 4th parameters impact the frame number per movie and the movie number,
++ [``flabel``]: String. Name of the cost function,
++ [``xlabel``]: String. Name of the abscissa,
++ [``ylabel``]: String. Name of the ordinate,
++ [``plabels``]: Strings. Name of the input parameters to be plotted on each axis,
++ [``feat_order``]: Integers. Associate each input parameter to an axis, the first indicated number corresponding to the parameter to be plotted on the x-axis, etc... A size equal to the input parameter number is expected, all integers from 1 to the parameter number should be used. Default is *[1, 2, 3, 4]*,
++ [``ticks_nbr``]: Integer. Number of ticks on the colorbar (Display n-1 colors). Default is *10*,
++ [``range_cbar``]: Floats. Minimum and maximum values on the colorbar,
++ [``contours``]: Floats. Values of the iso-contours to be plotted on the response surface,
++ [``kiviat_fill``]: Boolean. If *true*, will fill the surface of the Kiviat plot,
++ [``2D_mesh``]: Block containing all options related to representation of statistical variable of interest on a 2D mesh provided by the user. Possible options are:
+        + ``fname``: String. Name of the input file containing the mesh coordinates,
         + ``format``: String. Format of the input file,
-        + ``xlabel2D``: String. Name of the abscissa,
-        + ``ylabel2D``: String. Name of the ordinates,
-        + ``title2D``: String. Title of the graph,
-        + ``flabel2D``: String. Name of the variable of interest,
-        + ``vmin``: Float. Minimum value of the variable of interest to be plotted for data filtering. Default is *0*.
+        + ``xlabel``: String. Name of the abscissa,
+        + ``ylabel``: String. Name of the ordinates,
+        + ``flabels``: List(String). Names of the variables of interest,
+        + ``vmins``: List(Float). Minimum values of the variables of interest to be plotted for data filtering.
 
 
 .. py:module:: driver

@@ -220,7 +220,17 @@
                                  "minItems": 2, "maxItems": 2}},
         "contours": {"type": "array",
                      "items": {"type": "number", "maxItems": 10}},
-        "kiviat_fill": {"type": "boolean", "default": true}
+        "kiviat_fill": {"type": "boolean", "default": true},
+        "2D_mesh": {
+          "type": "object",
+          "properties": {
+            "fname": {"type": "string"},
+            "format": {"type": "string"},
+            "xlabel": {"type": "string"},
+            "ylabel": {"type": "string"},
+            "flabels": {"type": "array", "items": {"type": "string"}},
+            "vmins": {"type": "array", "items": {"type": "number"}}}
+        }
       }
     }
   },

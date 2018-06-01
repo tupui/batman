@@ -11,17 +11,17 @@ from .hdr import HdrBoxplot
 from .uncertainty import (kernel_smoothing, pdf, sobol, corr_cov)
 from .doe import doe
 from .response_surface import response_surface
-from .mesh_2D import mesh_2D, mesh_2D_add_var
+from .mesh_2D import mesh_2D
 
 __all__ = ['Kiviat3D', 'Tree', 'HdrBoxplot', 'kernel_smoothing', 'pdf',
            'sobol', 'corr_cov', 'reshow', 'save_show', 'response_surface',
-           'doe', 'mesh_2D', 'mesh_2D_add_var']
+           'doe', 'mesh_2D']
 
 
 def reshow(fig):
     """Create a dummy figure and use its manager to display :attr:`fig`.
 
-    :param fig: Matplotlib figure instance
+    :param fig: Matplotlib figure instance.
     """
     dummy = plt.figure()
     new_manager = dummy.canvas.manager
@@ -30,7 +30,7 @@ def reshow(fig):
     return dummy
 
 
-def save_show(fname, figures):
+def save_show(fname, figures, **kwargs):
     """Either show or save the figure[s].
 
     If :attr:`fname` is `None` the figure will show.
@@ -40,12 +40,13 @@ def save_show(fname, figures):
     """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        plt.tight_layout()
+        for fig in figures:
+            fig.tight_layout()
 
     if fname is not None:
         pdf = matplotlib.backends.backend_pdf.PdfPages(fname)
         for fig in figures:
-            pdf.savefig(fig, transparent=True, bbox_inches='tight')
+            pdf.savefig(fig, transparent=True, bbox_inches='tight', **kwargs)
         pdf.close()
     else:
         plt.show()

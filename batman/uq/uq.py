@@ -79,8 +79,7 @@ class UQ:
     def __init__(self, surrogate, dists=None, nsample=5000, method='sobol',
                  indices='aggregated', space=None, data=None, plabels=None,
                  xlabel=None, flabel=None, xdata=None, fname=None, test=None,
-                 fname2D='no', fformat2D='txt', xlabel2D='x', ylabel2D='y',
-                 vmin=0.0):
+                 mesh={}):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -107,17 +106,24 @@ class UQ:
         :param array_like xdata: 1D discretization of the function (n_features,).
         :param str fname: folder output path.
         :param str test: Test function from class:`batman.functions`.
+
+        :param dict mesh: For 2D plots the following keywords are available
+
+            - **fname** (str) -- name of mesh file.
+            - **fformat** (str) -- format of the mesh file.
+            - **xlabel** (str) -- name of the x-axis.
+            - **ylabel** (str) -- name of the y-axis.
+            - **vmins** (lst(double)) -- value of the minimal output for data
+              filtering.
+
         """
         self.logger.info("\n----- UQ module -----")
         self.test = test
         self.fname = fname
         self.xlabel = xlabel
         self.flabel = flabel
-        self.fname2D = fname2D
-        self.fformat2D = fformat2D
-        self.xlabel2D = xlabel2D
-        self.ylabel2D = ylabel2D
-        self.vmin = vmin
+
+        self.mesh_kwargs = mesh
 
         if self.fname is not None:
             try:
@@ -471,29 +477,22 @@ class UQ:
             self.xdata = None
 
         # Plot
-        if self.fname is not None:
+        if self.fname:
             path = os.path.join(self.fname, 'sensitivity.pdf')
             plabels = [re.sub(r'(_)(.*)', r'\1{\2}', label) for label in self.plabels]
             visualization.sobol(full_indices, plabels=plabels, conf=conf,
                                 xdata=self.xdata, fname=path)
-            if self.fname2D is not 'no':
-                xlabel = self.xlabel2D
-                ylabel = self.ylabel2D
-                vmin = self.vmin
-                path = os.path.join(self.fname, '1order_Sobol_map')
-                visualization.mesh_2D_add_var(fname=self.fname2D, fformat=self.fformat2D,
-                                              xlabel=xlabel, ylabel=ylabel, vmin=vmin,
-                                              var=full_indices[2], plabels=self.plabels,
-                                              output_path=path)
-                path = os.path.join(self.fname, 'Total_Sobol_map')
-                visualization.mesh_2D_add_var(fname=self.fname2D, fformat=self.fformat2D,
-                                              xlabel=xlabel, ylabel=ylabel, vmin=vmin,
-                                              var=full_indices[3], plabels=self.plabels,
-                                              output_path=path)
+            if self.mesh_kwargs.get('fname'):
+                path = os.path.join(self.fname, '1st_order_Sobol_map.pdf')
+                visualization.mesh_2D(var=full_indices[2], flabels=plabels,
+                                      output_path=path, **self.mesh_kwargs)
+                path = os.path.join(self.fname, 'Total_order_Sobol_map.pdf')
+                visualization.mesh_2D(var=full_indices[3], flabels=plabels,
+                                      output_path=path, **self.mesh_kwargs)
 
         # Compute error of the POD with a known function
         if (self.type_indices in ['aggregated', 'block'])\
-                and (self.test is not None) and (self.surrogate is not None):
+                and (self.test) and (self.surrogate):
             self.error_model(aggregated, self.test)
 
         return aggregated

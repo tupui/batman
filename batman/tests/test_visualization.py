@@ -8,7 +8,7 @@ import openturns as ot
 from mock import patch
 from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf, sobol,
                                   reshow, response_surface, doe, corr_cov,
-                                  mesh_2D, mesh_2D_add_var)
+                                  mesh_2D)
 from batman.surrogate import SurrogateModel
 from batman.functions import (Ishigami, Mascaret, el_nino)
 import matplotlib.pyplot as plt
@@ -387,24 +387,26 @@ class TestResponseSurface:
 
 class Test2Dmesh:
 
-    @patch("matplotlib.pyplot.show")
-    def test_2D_mesh(self, mock_show, tmp):
+    def test_2D_mesh(self, tmp):
         datadir = os.path.join(os.path.dirname(__file__), 'data')
-        fname = os.path.join(datadir, 'data_Garonne.txt')
-        path = os.path.join(tmp, '')
+        fname = os.path.join(datadir, 'data_Garonne.csv')
+        path = os.path.join(tmp, 'garonne_2D.pdf')
         vmin = 2.5
-        mesh_2D(fname=fname, fformat='txt', xlabel='x label', title2D='Title',
-                outlabel='Variable', vmin=vmin, output_path=path)
+        mesh_2D(fname=fname, fformat='csv', xlabel='x label',
+                flabels=['Variable'], vmins=[vmin], output_path=path)
 
-    @patch("matplotlib.pyplot.show")
-    def test_2D_mesh_add_var(self, mock_show, tmp, mascaret_data):
+    def test_2D_mesh_add_var(self, tmp, mascaret_data):
         datadir = os.path.join(os.path.dirname(__file__), 'data')
-        fname = os.path.join(datadir, 'data_2D_mesh.txt')
+        fname = os.path.join(datadir, 'data_2D_mesh.csv')
         var_sobol = [[0.1, 0.2], [0.3, 0.2], [0.88, 0.2], [0.9, 1.0], [0.1, 0.12]]
-        path = os.path.join(tmp, '')
-        plabels = ['Ks', 'Q']
-        mesh_2D_add_var(fname=fname, fformat='txt', xlabel='x label', var=var_sobol,
-                        var_name='Sobol', plabels=plabels, output_path=path)
+        path = os.path.join(tmp, 'data_2D.pdf')
+        flabels = ['Ks', 'Q']
+        mesh_2D(fname=fname, fformat='csv', xlabel='x label', var=var_sobol,
+                flabels=flabels, output_path=path)
+
+        var_sobol = [[0.1, 0.2], [0.3, 0.2], [0.88, 0.2], [0.9, 1.0]]
+        with pytest.raises(ValueError):
+            mesh_2D(fname=fname, var=var_sobol)
 
 
 class TestDoe:

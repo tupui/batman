@@ -361,7 +361,8 @@ class Driver(object):
         """Perform a prediction.
 
         :param points: point(s) to predict.
-        :type points: :class:`space.point.Point` or array_like (n_samples, n_features).
+        :type points: :class:`space.point.Point` or array_like
+          (n_samples, n_features).
         :param bool write: whether to write snapshots.
         :return: Result.
         :rtype: array_like (n_samples, n_features).
@@ -412,13 +413,20 @@ class Driver(object):
         args['xdata'] = self.settings.get('visualization', {}).get('xdata')
         args['xlabel'] = self.settings.get('visualization', {}).get('xlabel')
         args['flabel'] = self.settings.get('visualization', {}).get('flabel')
-        args['fname2D'] = self.settings.get('visualization', {}).get('2D_mesh', {}).get('name', 'no')
-        args['fformat2D'] = self.settings.get('visualization', {}).get('2D_mesh', {}).get('format', 'txt')
-        args['xlabel2D'] = self.settings.get('visualization', {}).get('2D_mesh', {}).get('xlabel2D', 'X axis')
-        args['ylabel2D'] = self.settings.get('visualization', {}).get('2D_mesh', {}).get('ylabel2D', 'Y axis')
-        args['vmin'] = self.settings.get('visualization', {}).get('2D_mesh', {}).get('vmin', 0.0)
 
-        analyse = UQ(self.surrogate, **args)
+        mesh = {}
+        mesh['fname'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('fname')
+        mesh['fformat'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('format', 'csv')
+        mesh['xlabel'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('xlabel', 'X axis')
+        mesh['ylabel'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('ylabel', 'Y axis')
+        mesh['vmins'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('vmins')
+
+        analyse = UQ(self.surrogate, mesh=mesh, **args)
 
         if self.surrogate is None:
             self.logger.warning("No surrogate model, be sure to have a "
@@ -468,26 +476,32 @@ class Driver(object):
             else:
                 args['resampling'] = 0
 
-            args['ticks_nbr'] = self.settings.get('visualization', {}).get('ticks_nbr', 10)
+            args['ticks_nbr'] = self.settings.get(
+                'visualization', {}).get('ticks_nbr', 10)
             args['contours'] = self.settings.get('visualization', {}).get('contours')
             args['range_cbar'] = self.settings.get('visualization', {}).get('range_cbar')
             args['axis_disc'] = self.settings.get('visualization', {}).get('axis_disc')
 
             # Create the 2D mesh graph
             if '2D_mesh' in self.settings['visualization']:
-                name_mesh = self.settings.get('visualization', {}).get('2D_mesh', {}).get('name')
-                format_mesh = self.settings.get('visualization', {}).get('2D_mesh', {}).get('format', 'txt')
-                xlabel = self.settings.get('visualization', {}).get('2D_mesh', {}).get('xlabel2D', 'X axis')
-                ylabel = self.settings.get('visualization', {}).get('2D_mesh', {}).get('ylabel2D', 'Y axis')
-                title2D = self.settings.get('visualization', {}).get('2D_mesh', {}).get('title2D', 'Title')
-                outlabel = self.settings.get('visualization', {}).get('2D_mesh', {}).get('flabel2D', 'Column value')
-                vmin = self.settings.get('visualization', {}).get('2D_mesh', {}).get('vmin', 0.0)
-                if name_mesh is not 'no':
+                name_mesh = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('fname')
+                format_mesh = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('format', 'csv')
+                xlabel = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('xlabel', 'X axis')
+                ylabel = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('ylabel', 'Y axis')
+                outlabel = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('flabels')
+                vmins = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('vmins')
+                if name_mesh:
                     self.logger.info("Creating 2D statistic graph from mesh...")
-                    output_path = os.path.join(path, 'Mesh_graph')
-                    mesh_2D(fname=name_mesh, fformat=format_mesh, xlabel=xlabel,
-                            ylabel=ylabel, title2D=title2D, outlabel=outlabel,
-                            vmin=vmin, output_path=output_path)
+                    output_path = os.path.join(path, 'Mesh_graph.pdf')
+                    mesh_2D(fname=name_mesh, fformat=format_mesh,
+                            xlabel=xlabel, ylabel=ylabel, flabels=outlabel,
+                            vmins=vmins, output_path=output_path)
 
         else:
             args['xdata'] = np.linspace(0, 1, output_len) if output_len > 1 else None
