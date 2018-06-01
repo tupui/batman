@@ -5,7 +5,8 @@ Built-in Inputs / Outputs
 This module provides several formater objects
 for reading and writing dataset with named fields.
 
-File formats store variable names whenever it is possible.
+File formats store variables' name whenever it is possible.
+If no variables' name are provided, it will try to load them all.
 
 The formaters are available from the :ref:`FORMATER`
 dictionary whose keys are format names.
@@ -24,7 +25,7 @@ Formater = namedtuple('Formater', ['read', 'write'])
 
 # JSON
 
-def json_read(fname, varnames):
+def json_read(fname, varnames=None):
     """Reader method for json file.
 
     :param str fname: file to read.
@@ -35,6 +36,9 @@ def json_read(fname, varnames):
     with open(fname, 'r') as fd:
         data = json.load(fd)
     dataset = []
+
+    varnames = data.keys() if varnames is None else varnames
+
     for var in varnames:
         dset = np.atleast_1d(data[var])
         dset = dset.reshape(len(dset), -1)
@@ -66,8 +70,11 @@ def json_write(fname, dataset, varnames, sizes=None):
 
 # CSV
 
-def csv_read(fname, varnames):
+def csv_read(fname, varnames=None):
     """Reader method for csv file.
+
+    Header consists in the varnames and footer of their respective sizes.
+    Both header and footer must start with `#` and be separated by comma.
 
     :param str fname: file to read.
     :param list(str) varnames: names of variables to read.
@@ -76,11 +83,13 @@ def csv_read(fname, varnames):
     """
     with open(fname, 'r') as fd:
         lines = fd.readlines()
-    names = lines[0].strip('# \n').split(',')
+    names = lines[0].strip('# \n').replace(' ', '').split(',')
     sizes = list(map(int, lines[-1].lstrip('#').split(',')))
     offsets = np.append(0, np.cumsum(sizes)[:-1])
     nsample = len(lines) - 2
     data = np.genfromtxt(fname, delimiter=',').reshape(nsample, sum(sizes))
+
+    varnames = names if varnames is None else varnames
 
     index = [names.index(var) for var in varnames]
     offsets = [offsets[i] for i in index]
@@ -109,7 +118,7 @@ def csv_write(fname, dataset, varnames, sizes=None):
 
 # NUMPY BINARY (uncompressed)
 
-def npy_read(fname, varnames):
+def npy_read(fname, varnames=None):
     """Reader method for numpy npy file.
     The uncompressed file contains exactly one dataset.
 
@@ -128,6 +137,7 @@ def npy_read(fname, varnames):
 
 def npy_write(fname, dataset, varnames, sizes=None):
     """Write method for numpy npy file.
+
     The uncompressed file contains exactly one dataset.
 
     :param str fname: file to write.
@@ -147,8 +157,9 @@ def npy_write(fname, dataset, varnames, sizes=None):
 
 # NUMPY BINARY (compressed)
 
-def npz_read(fname, varnames):
+def npz_read(fname, varnames=None):
     """Reader method for numpy npz file.
+
     The file may be compressed or not.
     file members are:
     - 'data': values to read as a 2D array
@@ -169,7 +180,8 @@ def npz_read(fname, varnames):
         nsample = len(data)
         data = data.reshape(nsample, sum(sizes))
     offsets = np.append(0, np.cumsum(sizes)[:-1])
-    index = [labels.index(v) for v in varnames]
+    index = [labels.index(v) for v in varnames] if varnames else range(len(labels))
+
     sizes = [sizes[i] for i in index]
     offsets = [offsets[i] for i in index]
     dataset = [data[:, start:start+size] for start, size in zip(offsets, sizes)]
@@ -179,6 +191,7 @@ def npz_read(fname, varnames):
 
 def npz_write(fname, dataset, varnames, sizes=None):
     """Write method for numpy npz file.
+
     The file is compressed.
 
     :param str fname: file to write.
