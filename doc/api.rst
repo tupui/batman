@@ -76,6 +76,7 @@ specifications may not be enough to give full guidelines on their uses.
    visualization.pdf
    visualization.kernel_smoothing
    visualization.reshow
+   visualization.mesh_2D
 
 .. py:module:: visualization
 .. automodule:: batman.visualization

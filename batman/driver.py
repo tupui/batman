@@ -31,7 +31,7 @@ from .space import (Space, Sample, dists_to_ot)
 from .surrogate import SurrogateModel
 from .tasks import (ProviderFunction, ProviderFile, ProviderJob)
 from .uq import UQ
-from .visualization import (response_surface, Kiviat3D)
+from .visualization import (response_surface, Kiviat3D, mesh_2D)
 from .functions.utils import multi_eval
 
 
@@ -361,7 +361,8 @@ class Driver(object):
         """Perform a prediction.
 
         :param points: point(s) to predict.
-        :type points: :class:`space.point.Point` or array_like (n_samples, n_features).
+        :type points: :class:`space.point.Point` or array_like
+          (n_samples, n_features).
         :param bool write: whether to write snapshots.
         :return: Result.
         :rtype: array_like (n_samples, n_features).
@@ -413,7 +414,19 @@ class Driver(object):
         args['xlabel'] = self.settings.get('visualization', {}).get('xlabel')
         args['flabel'] = self.settings.get('visualization', {}).get('flabel')
 
-        analyse = UQ(self.surrogate, **args)
+        mesh = {}
+        mesh['fname'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('fname')
+        mesh['fformat'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('format', 'csv')
+        mesh['xlabel'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('xlabel', 'X axis')
+        mesh['ylabel'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('ylabel', 'Y axis')
+        mesh['vmins'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('vmins')
+
+        analyse = UQ(self.surrogate, mesh=mesh, **args)
 
         if self.surrogate is None:
             self.logger.warning("No surrogate model, be sure to have a "
@@ -437,6 +450,13 @@ class Driver(object):
 
         self.logger.info('Creating response surface...')
         args = {}
+
+        path = os.path.join(self.fname, self.fname_tree['visualization'])
+        try:
+            os.makedirs(path)
+        except OSError:
+            pass
+
         if 'visualization' in self.settings:
             # xdata for output with dim > 1
             if ('xdata' in self.settings['visualization']) and (output_len > 1):
@@ -456,10 +476,33 @@ class Driver(object):
             else:
                 args['resampling'] = 0
 
-            args['ticks_nbr'] = self.settings.get('visualization', {}).get('ticks_nbr', 10)
+            args['ticks_nbr'] = self.settings.get(
+                'visualization', {}).get('ticks_nbr', 10)
             args['contours'] = self.settings.get('visualization', {}).get('contours')
             args['range_cbar'] = self.settings.get('visualization', {}).get('range_cbar')
             args['axis_disc'] = self.settings.get('visualization', {}).get('axis_disc')
+
+            # Create the 2D mesh graph
+            if '2D_mesh' in self.settings['visualization']:
+                name_mesh = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('fname')
+                format_mesh = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('format', 'csv')
+                xlabel = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('xlabel', 'X axis')
+                ylabel = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('ylabel', 'Y axis')
+                outlabel = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('flabels')
+                vmins = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('vmins')
+                if name_mesh:
+                    self.logger.info("Creating 2D statistic graph from mesh...")
+                    output_path = os.path.join(path, 'Mesh_graph.pdf')
+                    mesh_2D(fname=name_mesh, fformat=format_mesh,
+                            xlabel=xlabel, ylabel=ylabel, flabels=outlabel,
+                            vmins=vmins, output_path=output_path)
+
         else:
             args['xdata'] = np.linspace(0, 1, output_len) if output_len > 1 else None
 
@@ -494,12 +537,6 @@ class Driver(object):
                 args['flabel'] = self.settings['visualization']['flabel']
             except KeyError:
                 args['flabel'] = self.settings['snapshot']['flabels'][0]
-
-        path = os.path.join(self.fname, self.fname_tree['visualization'])
-        try:
-            os.makedirs(path)
-        except OSError:
-            pass
 
         if p_len < 5:
             # Creation of the response surface(s)

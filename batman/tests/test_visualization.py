@@ -7,7 +7,8 @@ from scipy.io import wavfile
 import openturns as ot
 from mock import patch
 from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf, sobol,
-                                  reshow, response_surface, doe, corr_cov)
+                                  reshow, response_surface, doe, corr_cov,
+                                  mesh_2D)
 from batman.surrogate import SurrogateModel
 from batman.functions import (Ishigami, Mascaret, el_nino)
 import matplotlib.pyplot as plt
@@ -382,6 +383,30 @@ class TestResponseSurface:
         path = os.path.join(tmp, 'rs_4D_vector')
         response_surface(bounds=bounds, fun=fun, doe=space, resampling=10,
                          axis_disc=[2, 15, 15, 15], fname=path, feat_order=order)
+
+
+class Test2Dmesh:
+
+    def test_2D_mesh(self, tmp):
+        datadir = os.path.join(os.path.dirname(__file__), 'data')
+        fname = os.path.join(datadir, 'data_Garonne.csv')
+        path = os.path.join(tmp, 'garonne_2D.pdf')
+        vmin = 2.5
+        mesh_2D(fname=fname, fformat='csv', xlabel='x label',
+                flabels=['Variable'], vmins=[vmin], output_path=path)
+
+    def test_2D_mesh_add_var(self, tmp, mascaret_data):
+        datadir = os.path.join(os.path.dirname(__file__), 'data')
+        fname = os.path.join(datadir, 'data_2D_mesh.csv')
+        var_sobol = [[0.1, 0.2], [0.3, 0.2], [0.88, 0.2], [0.9, 1.0], [0.1, 0.12]]
+        path = os.path.join(tmp, 'data_2D.pdf')
+        flabels = ['Ks', 'Q']
+        mesh_2D(fname=fname, fformat='csv', xlabel='x label', var=var_sobol,
+                flabels=flabels, output_path=path)
+
+        var_sobol = [[0.1, 0.2], [0.3, 0.2], [0.88, 0.2], [0.9, 1.0]]
+        with pytest.raises(ValueError):
+            mesh_2D(fname=fname, var=var_sobol)
 
 
 class TestDoe:
