@@ -42,12 +42,11 @@ class SurrogateModel(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, kind, corners, max_points_nb, plabels, **kwargs):
+    def __init__(self, kind, corners, plabels, **kwargs):
         r"""Init Surrogate model.
 
         :param str kind: name of prediction method, rbf or kriging.
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
-        :param integer max_points_nb: number of sample points
         :param list(str) plabels: labels of sample points
         :param \**kwargs: See below
 
@@ -82,13 +81,13 @@ class SurrogateModel(object):
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
-        self.space = Space(corners, max_points_nb, plabels=plabels)
+        self.space = Space(corners, plabels=plabels)
         self.data = None
         self.pod = None
         self.update = False  # switch: update model if POD update
         self.dir = {
             'surrogate': 'surrogate.dat',
-            'space': '../space/space.dat',
+            'space': 'space.dat',
             'data': 'data.dat',
         }
 
@@ -96,14 +95,11 @@ class SurrogateModel(object):
 
         if self.kind == 'pc':
             self.predictor = PC(**self.settings)
-        elif self.kind == 'evofusion':
-            self.space.multifidelity = [self.settings['cost_ratio'],
-                                        self.settings['grand_cost']]
 
     def fit(self, sample, data, pod=None):
         """Construct the surrogate.
 
-        :param array_like sample: sample of the sample (n_samples, n_features).
+        :param array_like sample: sample (n_samples, n_features).
         :param array_like data: function evaluations (n_samples, n_features).
         :param pod: POD instance.
         :type pod: :class:`batman.pod.Pod`.
@@ -248,7 +244,7 @@ class SurrogateModel(object):
 
         return q2_loo, point
 
-    def write(self, fname):
+    def write(self, fname='.'):
         """Save model and data to disk.
 
         :param str fname: path to a directory.
@@ -259,15 +255,17 @@ class SurrogateModel(object):
             pickler.dump(self.predictor)
         self.logger.debug('Model wrote to {}'.format(path))
 
+        self.space.write(fname, self.dir['space'], doe=False)
+
         path = os.path.join(fname, self.dir['data'])
         with open(path, 'wb') as f:
             pickler = pickle.Pickler(f)
             pickler.dump(self.data)
         self.logger.debug('Data wrote to {}'.format(path))
 
-        self.logger.info('Model and data wrote.')
+        self.logger.info('Model, data and space wrote.')
 
-    def read(self, fname):
+    def read(self, fname='.'):
         """Load model, data and space from disk.
 
         :param str fname: path to a directory.

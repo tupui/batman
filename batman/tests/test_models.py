@@ -212,7 +212,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     pc_settings = {'strategy': 'LS', 'degree': 10,
                    'distributions': ishigami_data.dists, 'sample': sample}
     surrogate = SurrogateModel('pc', ishigami_data.space.corners,
-                               space_.max_points_nb, ishigami_data.space.plabels,
+                               ishigami_data.space.plabels,
                                **pc_settings)
     input_ = surrogate.predictor.sample
     output = ishigami_data.func(input_)
@@ -225,14 +225,14 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
 
     # Kriging
     surrogate = SurrogateModel('kriging', ishigami_data.space.corners,
-                               space_.max_points_nb, ishigami_data.space.plabels)
+                               ishigami_data.space.plabels)
     surrogate.fit(ishigami_data.space, ishigami_data.target_space)
     ishigami_data.space.write(path_space, 'space.dat')
     surrogate.write(path)
     assert os.path.isfile(os.path.join(path, 'surrogate.dat'))
 
     surrogate = SurrogateModel('kriging', ishigami_data.space.corners,
-                               space_.max_points_nb, ishigami_data.space.plabels)
+                               ishigami_data.space.plabels)
     surrogate.read(path)
     assert surrogate.predictor is not None
     npt.assert_array_equal(surrogate.space.values, ishigami_data.space.values)
@@ -244,7 +244,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
 def test_quality(mufi_data):
     space = np.array(mufi_data.space)
     max_points_nb = space.shape[0]
-    surrogate = SurrogateModel('rbf', mufi_data.space.corners, max_points_nb,
+    surrogate = SurrogateModel('rbf', mufi_data.space.corners,
                                np.array(mufi_data.space.plabels)[1:])
     surrogate.fit(mufi_data.space.values[10:, 1:], mufi_data.target_space[10:])
 

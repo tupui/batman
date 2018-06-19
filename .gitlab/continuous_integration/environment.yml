@@ -8,7 +8,6 @@ dependencies:
 - astroid
 - babel
 - backports
-- backports.functools-lru-cache
 - blas
 - bzip2
 - ca-certificates

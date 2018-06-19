@@ -162,7 +162,6 @@ class Driver(object):
         if 'surrogate' in self.settings:
             settings_ = {'kind': self.settings['surrogate']['method'],
                          'corners': self.settings['space']['corners'],
-                         'max_points_nb': init_size + resamp_size,
                          'plabels': self.settings['snapshot']['plabels']}
             if self.settings['surrogate']['method'] == 'pc':
                 dists = self.settings['space']['sampling']['distributions']
@@ -178,8 +177,7 @@ class Driver(object):
             elif self.settings['surrogate']['method'] == 'evofusion':
                 settings_.update({
                     'cost_ratio': self.settings['surrogate']['cost_ratio'],
-                    'grand_cost': self.settings['surrogate']['grand_cost'],
-                    'max_points_nb': self.space.max_points_nb
+                    'grand_cost': self.settings['surrogate']['grand_cost']
                 })
             elif self.settings['surrogate']['method'] == 'kriging':
                 if 'kernel' in self.settings['surrogate']:
