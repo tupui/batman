@@ -162,11 +162,7 @@ class Doe():
         # Generate sobol sequence
         self.sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(self.dim))
         samples = self.sequence_type.generate(self.n_samples)
-        r = np.empty([self.n_samples, self.dim])
-
-        for i, p in enumerate(samples):
-            for j in range(self.dim):
-                r[i, j] = p[j]
+        r = np.array(samples)
 
         # Scramble the sequence
         for col in range(self.dim):

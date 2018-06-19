@@ -109,12 +109,9 @@ class Pod(object):
         self.logger.info('Decomposing POD basis...')
 
         matrix = np.transpose(snapshots.data)
-        # matrix = np.column_stack(tuple([s.data for s in snapshots]))
         self._decompose(matrix)
 
         self.space += snapshots.space
-        # for s in snapshots:
-        #     self.space += s.point
 
         self.logger.info('Computed POD basis with %g modes', self.S.shape[0])
 
@@ -372,7 +369,7 @@ class Pod(object):
         error_matrix = np.empty((points_nb, data_len))
         var_matrix = np.empty((points_nb, data_len))
         surrogate = SurrogateModel(self.leave_one_out_predictor,
-                                   self.corners, points_nb, self.plabels)
+                                   self.corners, self.plabels)
 
         def quality(i):
             """Error at a point.

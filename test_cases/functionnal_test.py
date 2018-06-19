@@ -130,19 +130,15 @@ def test_restart_pod(tmp, case='Michalewicz'):
     batman.ui.run(settings, options)
     assert os.path.isdir(os.path.join(tmp, 'snapshots/4'))
 
-    init_case(tmp, case, force=True)
-    # Restart from snapshots
-    batman.ui.run(settings, options)
-
-    init_case(tmp, case, force=True)
-    # Restart from 4 and add 2 points continuing the DOE sequence
-    settings['space']['resampling']['resamp_size'] = 0
+    # Restart from 5 and add 2 points continuing the DOE sequence
+    # DoE from 4 to 6 so max points is 7
+    ns = 12 if case == 'G_Function' else 6
     try:
-        settings['space']['sampling']['init_size'] = 6
+        settings['space']['sampling']['init_size'] = ns
     except TypeError:  # Case with list instead of dict
-        settings['space']['sampling'] = {'init_size': 6, 'method': 'halton'}
+        settings['space']['sampling'] = {'init_size': ns, 'method': 'halton'}
     batman.ui.run(settings, options)
-    assert os.path.isdir(os.path.join(tmp, 'snapshots/5'))
+    assert os.path.isdir(os.path.join(tmp, 'snapshots/6'))
 
 
 def test_resampling(tmp, case='Michalewicz'):

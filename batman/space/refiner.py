@@ -44,7 +44,7 @@ class Refiner(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, data, corners, delta_space=0.08, discrete=None):
+    def __init__(self, data, corners, delta_space=0.08, discrete=None, pod=None):
         """Initialize the refiner with the Surrogate and space corners.
 
         Points data are scaled between ``[0, 1]`` based on the size of the
@@ -56,20 +56,19 @@ class Refiner(object):
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
         :param float delta_space: Shrinking factor for the parameter space.
         :param int discrete: index of the discrete variable.
+        :param pod: POD instance.
+        :type pod: :class:`batman.pod.Pod`.
         """
         if isinstance(data, bat.surrogate.SurrogateModel):
             self.surrogate = data
         else:
             max_points_nb = data.shape[0]
             self.surrogate = bat.surrogate.SurrogateModel('kriging', data.corners, max_points_nb)
-            self.surrogate.space = data
+            self.space = data
             self.logger.debug("Using Space instance instead of SurrogateModel "
                               "-> restricted to discrepancy refiner")
 
-        if self.surrogate.pod is None:
-            self.pod_S = 1
-        else:
-            self.pod_S = self.surrogate.pod.S
+        self.pod_S = 1 if pod is None else pod.S
 
         self.space = self.surrogate.space
         self.points = copy.deepcopy(self.space[:])
@@ -268,13 +267,14 @@ class Refiner(object):
         :rtype: lst(float).
         """
         self.logger.debug("Discrepancy strategy")
-        init_discrepancy = self.surrogate.space.discrepancy()
+        init_discrepancy = bat.space.Space.discrepancy(self.space,
+                                                       self.space.corners)
 
         @optimization(self.corners, self.discrete)
         def func_discrepancy(coords):
             """Discrepancy of the augmented space."""
-            sample = np.vstack([self.surrogate.space[:], coords])
-            return self.surrogate.space.discrepancy(sample)
+            sample = np.vstack([self.space[:], coords])
+            return bat.space.Space.discrepancy(sample)
 
         min_x, new_discrepancy = func_discrepancy()
 
@@ -604,8 +604,9 @@ class Refiner(object):
 
         _, sigma = zip(*[self.pred_sigma(s) for s in sample])
 
-        disc = [1 / self.surrogate.space.discrepancy(
-            np.vstack([self.surrogate.space, p])) for p in sample]
+        disc = [1 / bat.space.Space.discrepancy(np.vstack([self.space, p]),
+                                                self.space.corners)
+                for p in sample]
 
         sigma = np.array(sigma).reshape(-1, 1)
         disc = np.array(disc).reshape(-1, 1)
@@ -619,8 +620,8 @@ class Refiner(object):
             _, sigma = self.pred_sigma(x)
             sigma = scale_sigma.transform(sigma.reshape(1, -1))
 
-            disc = 1 / self.surrogate.space.discrepancy(
-                np.vstack([self.surrogate.space, x]))
+            disc = 1 / bat.space.Space.discrepancy(np.vstack([self.space, x]),
+                                                   self.space.corners)
             disc = scale_disc.transform(disc.reshape(1, -1))
 
             sigma_disc = sigma * weights[0] + disc * weights[1]

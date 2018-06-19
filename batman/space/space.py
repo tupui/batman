@@ -91,6 +91,11 @@ class Space(Sample):
         # Initialize Sample container with empty space dataframe
         super(Space, self).__init__(plabels=plabels)
 
+        try:
+            self += sample
+        except IndexError:
+            pass
+
     def sampling(self, n_samples=None, kind='halton', dists=None, discrete=None):
         """Create point samples in the parameter space.
 
@@ -156,7 +161,9 @@ class Space(Sample):
         if (self.refiner is None) and (method == 'hybrid'):
             strategy = [[m[0]] * m[1] for m in hybrid]
             self.hybrid = itertools.cycle(itertools.chain.from_iterable(strategy))
-        self.refiner = Refiner(surrogate, self.corners, delta_space, discrete)
+
+        pod = None if surrogate.pod is None else surrogate.pod
+        self.refiner = Refiner(surrogate, self.corners, delta_space, discrete, pod)
 
         if method == 'sigma':
             new_point = self.refiner.sigma()
@@ -183,7 +190,8 @@ class Space(Sample):
         new_points = self.append(points)
 
         self.logger.info('Refined sampling with new point: {}'.format(new_points))
-        self.logger.info("New discrepancy is {}".format(self.discrepancy()))
+        self.logger.info('New discrepancy is {}'
+                         .format(self.discrepancy(self.values, self.corners)))
         return new_points
 
     def optimization_results(self, extremum):
@@ -205,25 +213,33 @@ class Space(Sample):
         _x = results.x
         self.logger.info('Optimization with surrogate: f(x)={} for x={}'.format(_extremum, _x))
 
-    def discrepancy(self, sample=None):
+    @staticmethod
+    def discrepancy(sample, bounds=None):
         """Compute the centered discrepancy.
 
-        :type sample: array_like
+        :param array_like sample: The sample to compute the discrepancy from
+          (n_samples, k_vars).
+        :param array_like bounds: Desired range of transformed data.
+          The transformation apply the bounds on the sample and not the
+          theoretical space, unit cube. Thus min and max values of the sample
+          will coincide with the bounds. ([min, k_vars], [max, k_vars]).
         :return: Centered discrepancy.
         :rtype: float.
         """
-        scaler = preprocessing.MinMaxScaler()
-        scaler.fit(self.corners)
-        if sample is None:
-            sample = scaler.transform(self.values)
-        else:
+        if bounds is not None:
+            scaler = preprocessing.MinMaxScaler()
+            scaler.fit(bounds)
             sample = scaler.transform(sample)
+        else:
+            sample = np.asarray(sample)
+
+        n_s, dim = sample.shape
 
         abs_ = abs(sample - 0.5)
         disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
 
         prod_arr = 1
-        for i in range(self.dim):
+        for i in range(dim):
             s0 = sample[:, i]
             prod_arr *= (1 +
                          0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5) -
@@ -231,7 +247,7 @@ class Space(Sample):
         disc2 = prod_arr.sum()
 
         n_s = len(sample)
-        c2 = (13.0 / 12.0) ** self.dim - 2.0 / n_s * disc1 + 1.0 / (n_s ** 2) * disc2
+        c2 = (13.0 / 12.0) ** dim - 2.0 / n_s * disc1 + 1.0 / (n_s ** 2) * disc2
         return c2
 
     def _cheap_doe_from_expensive(self, n):
@@ -257,8 +273,8 @@ class Space(Sample):
 
         Ignore any point that already exists or that would exceed space capacity.
 
-        :param array_like points: point(s) to add to space (n_samples, n_features)
-        :return: Added points
+        :param array_like points: Point(s) to add to space (n_samples, n_features)
+        :return: Added points.
         :rtype: :class:`numpy.ndarray`
         """
         # avoid unnecessary operations
@@ -325,14 +341,16 @@ class Space(Sample):
         super(Space, self).read(space_fname=path)
         self.logger.debug('Space read from {}'.format(path))
 
-    def write(self, path='.', fname='space.dat'):
+    def write(self, path='.', fname='space.dat', doe=True):
         """Write space to file `path`, then plot it."""
         space_file = os.path.join(path, fname)
         super(Space, self).write(space_fname=space_file)
-        resampling = len(self) - self.doe_init
-        visualization.doe(self, plabels=self.plabels, resampling=resampling,
-                          multifidelity=self.multifidelity,
-                          fname=os.path.join(path, 'DOE.pdf'))
+
+        if doe:
+            resampling = len(self) - self.doe_init
+            visualization.doe(self, plabels=self.plabels, resampling=resampling,
+                              multifidelity=self.multifidelity,
+                              fname=os.path.join(path, 'DOE.pdf'))
         self.logger.debug('Space wrote to {}'.format(space_file))
 
     def __str__(self):
