@@ -76,7 +76,7 @@ class UQ:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, surrogate, dists=None, nsample=5000, method='sobol',
+    def __init__(self, surrogate, dists=None, nsample=1000, method='sobol',
                  indices='aggregated', space=None, data=None, plabels=None,
                  xlabel=None, flabel=None, xdata=None, fname=None, test=None,
                  mesh={}):

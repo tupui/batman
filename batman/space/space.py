@@ -132,7 +132,8 @@ class Space(Sample):
         self.logger.info("Created {} samples with the {} method".format(len(self), kind))
         self.logger.debug("Points are:\n{}".format(samples))
         s = int(bool(self.multifidelity))
-        self.logger.info("Discrepancy is {}".format(self.discrepancy(self.values[:, s:])))
+        self.logger.info("Discrepancy is {}".format(
+            self.discrepancy(self.values[:, s:], self.corners)))
         return self.values
 
     def refine(self, surrogate, method, point_loo=None, delta_space=0.08,
