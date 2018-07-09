@@ -376,5 +376,6 @@ def test_discrepancy():
                       [2, 2, 2, 1, 2, 2]])
     space = (2 * space - 1) / (2 * 2)
 
+    assert Space.discrepancy(space, method='MD') == pytest.approx(2.5000, abs=1e-4)
     assert Space.discrepancy(space, method='WD') == pytest.approx(1.3680, abs=1e-4)
     assert Space.discrepancy(space, method='CD') == pytest.approx(0.3172, abs=1e-4)

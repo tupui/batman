@@ -218,7 +218,7 @@ class Space(Sample):
     def discrepancy(sample, bounds=None, method='CD'):
         """Compute the discrepancy.
 
-        Star discrepancy or wrap around discrepancy measures the uniformity
+        Centered, wrap around or mixture discrepancy measures the uniformity
         of the parameter space. The lowest the value, the uniform the design.
 
         :param array_like sample: The sample to compute the discrepancy from
@@ -227,7 +227,7 @@ class Space(Sample):
           The transformation apply the bounds on the sample and not the
           theoretical space, unit cube. Thus min and max values of the sample
           will coincide with the bounds. ([min, k_vars], [max, k_vars]).
-        :param str method: Type of discrepancy. ['CD', 'WD'].
+        :param str method: Type of discrepancy. ['CD', 'WD', 'MD'].
         :return: Centered discrepancy.
         :rtype: float.
         """
@@ -261,6 +261,20 @@ class Space(Sample):
                 prod_arr *= 3.0 / 2.0 - x_kikj + x_kikj ** 2
 
             disc = - (4.0 / 3.0) ** dim + 1.0 / (n_s ** 2) * prod_arr.sum()
+        elif method == 'MD':
+            abs_ = abs(sample - 0.5)
+            disc1 = np.sum(np.prod(5.0 / 3.0 - 0.25 * abs_ - 0.25 * abs_ ** 2, axis=1))
+
+            prod_arr = 1
+            for i in range(dim):
+                s0 = sample[:, i]
+                prod_arr *= (15.0 / 8.0 -
+                             0.25 * abs(s0[:, None] - 0.5) - 0.25 * abs(s0 - 0.5) -
+                             3.0 / 4.0 * abs(s0[:, None] - s0) +
+                             0.5 * abs(s0[:, None] - s0) ** 2)
+            disc2 = prod_arr.sum()
+
+            disc = (19.0 / 12.0) ** dim - 2.0 / n_s * disc1 + 1.0 / (n_s ** 2) * disc2
         else:
             raise ValueError('Method {} is not valid. Options are CD or WD'
                              .format(method))
