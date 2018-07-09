@@ -41,7 +41,10 @@ def save_show(fname, figures, **kwargs):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         for fig in figures:
-            fig.tight_layout()
+            try:
+                fig.tight_layout()
+            except ValueError:
+                pass
 
     if fname is not None:
         pdf = matplotlib.backends.backend_pdf.PdfPages(fname)

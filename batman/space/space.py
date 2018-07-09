@@ -215,8 +215,11 @@ class Space(Sample):
         self.logger.info('Optimization with surrogate: f(x)={} for x={}'.format(_extremum, _x))
 
     @staticmethod
-    def discrepancy(sample, bounds=None):
-        """Compute the centered discrepancy.
+    def discrepancy(sample, bounds=None, method='CD'):
+        """Compute the discrepancy.
+
+        Star discrepancy or wrap around discrepancy measures the uniformity
+        of the parameter space. The lowest the value, the uniform the design.
 
         :param array_like sample: The sample to compute the discrepancy from
           (n_samples, k_vars).
@@ -224,6 +227,7 @@ class Space(Sample):
           The transformation apply the bounds on the sample and not the
           theoretical space, unit cube. Thus min and max values of the sample
           will coincide with the bounds. ([min, k_vars], [max, k_vars]).
+        :param str method: Type of discrepancy. ['CD', 'WD'].
         :return: Centered discrepancy.
         :rtype: float.
         """
@@ -236,20 +240,32 @@ class Space(Sample):
 
         n_s, dim = sample.shape
 
-        abs_ = abs(sample - 0.5)
-        disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
+        if method == 'CD':
+            abs_ = abs(sample - 0.5)
+            disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
 
-        prod_arr = 1
-        for i in range(dim):
-            s0 = sample[:, i]
-            prod_arr *= (1 +
-                         0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5) -
-                         0.5 * abs(s0[:, None] - s0))
-        disc2 = prod_arr.sum()
+            prod_arr = 1
+            for i in range(dim):
+                s0 = sample[:, i]
+                prod_arr *= (1 +
+                             0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5) -
+                             0.5 * abs(s0[:, None] - s0))
+            disc2 = prod_arr.sum()
 
-        n_s = len(sample)
-        c2 = (13.0 / 12.0) ** dim - 2.0 / n_s * disc1 + 1.0 / (n_s ** 2) * disc2
-        return c2
+            disc = (13.0 / 12.0) ** dim - 2.0 / n_s * disc1 + 1.0 / (n_s ** 2) * disc2
+        elif method == 'WD':
+            prod_arr = 1
+            for i in range(dim):
+                s0 = sample[:, i]
+                x_kikj = abs(s0[:, None] - s0)
+                prod_arr *= 3.0 / 2.0 - x_kikj + x_kikj ** 2
+
+            disc = - (4.0 / 3.0) ** dim + 1.0 / (n_s ** 2) * prod_arr.sum()
+        else:
+            raise ValueError('Method {} is not valid. Options are CD or WD'
+                             .format(method))
+
+        return disc
 
     def _cheap_doe_from_expensive(self, n):
         """Compute the number of points required for the cheap DOE.
