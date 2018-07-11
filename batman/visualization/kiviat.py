@@ -15,6 +15,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import batman as bat
+from .hdr import HdrBoxplot
 
 
 class Arrow3D(FancyArrowPatch):
@@ -41,7 +42,7 @@ class Kiviat3D(object):
     """
 
     def __init__(self, sample, data, idx=None, bounds=None, plabels=None,
-                 range_cbar=None):
+                 range_cbar=None, stack_order='qoi', cbar_order='qoi'):
         """Prepare params for Kiviat plot.
 
         :param array_like sample: Sample of parameters of Shape
@@ -54,6 +55,8 @@ class Kiviat3D(object):
         :param list(str) plabels: Names of each parameters (n_features).
         :param array_like range_cbar: Minimum and maximum values for output
           function (2 values).
+        :param str stack_order: Set stacking order ['qoi', 'hdr'].
+        :param str cbar_order: Set color mapping order ['qoi', 'hdr'].
         """
         self.sample = np.asarray(sample)
         self.data = np.asarray(data)
@@ -64,13 +67,32 @@ class Kiviat3D(object):
         else:
             self.data = self.data[:, idx].reshape(-1, 1)
 
-        order = np.argsort(self.data, axis=0).flatten()
+        # Stacking and coloring orders
+        if 'hdr' in [stack_order, cbar_order]:
+            hdr = HdrBoxplot(data)
+            pdf = np.exp(hdr.ks_gaussian.score_samples(hdr.data_r)).flatten()
+
+        if stack_order == 'qoi':
+            order = np.argsort(self.data, axis=0).flatten()
+        elif stack_order == 'hdr':
+            order = np.argsort(pdf, axis=0).flatten()
+        else:
+            raise ValueError('Stacking order {} is not valid. Options are qoi or hdr'
+                             .format(stack_order))
+
+        if cbar_order == 'qoi':
+            pass
+        elif cbar_order == 'hdr':
+            self.data = pdf[:, None]
+        else:
+            raise ValueError('Colorbar order {} is not valid. Options are qoi or hdr'
+                             .format(cbar_order))
+
         self.sample = self.sample[order]
         self.data = self.data[order]
 
         # Color scaling with function evaluations min and max
         self.cmap = cm.get_cmap('viridis')
-        self.ticks = [0.2, 0.5, 0.8]
         scaler = MinMaxScaler()
 
         # Sample scaling and take into account n_features < 3
@@ -106,6 +128,7 @@ class Kiviat3D(object):
         self.plabels = ['x' + str(i) for i in range(self.n_params)]\
             if plabels is None else plabels
         self.z_offset = - 1
+        self.ticks = [0.2, 0.5, 0.8]
         self.ticks = np.tile(self.ticks, self.n_params).reshape(-1, len(self.ticks)).T
         self.ticks_values = self.scale.inverse_transform(self.ticks).T
         self.x_ticks = np.cos(self.alphas)
