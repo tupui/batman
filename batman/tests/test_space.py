@@ -364,7 +364,7 @@ def test_discrepancy():
     assert Space.discrepancy(space_1, space_1.corners) == pytest.approx(0.0081, abs=1e-4)
     assert Space.discrepancy(space_2, space_2.corners) == pytest.approx(0.0105, abs=1e-4)
 
-    space_1 = (2 * space_1.values - 1) / (2 * 6)
+    space_1 = (2.0 * space_1.values - 1.0) / (2.0 * 6.0)
     assert Space.discrepancy(space_1) == pytest.approx(0.0081, abs=1e-4)
 
     space = np.array([[2, 1, 1, 2, 2, 2],
@@ -374,7 +374,7 @@ def test_discrepancy():
                       [1, 2, 2, 2, 1, 1],
                       [2, 2, 2, 2, 1, 1],
                       [2, 2, 2, 1, 2, 2]])
-    space = (2 * space - 1) / (2 * 2)
+    space = (2.0 * space - 1.0) / (2.0 * 2.0)
 
     assert Space.discrepancy(space, method='MD') == pytest.approx(2.5000, abs=1e-4)
     assert Space.discrepancy(space, method='WD') == pytest.approx(1.3680, abs=1e-4)

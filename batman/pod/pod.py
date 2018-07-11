@@ -211,12 +211,9 @@ class Pod(object):
         :param array_like snapshots: Snapshot matrix (nb of data per snapshot,
             nb of samples)
         """
-        # compute mean snapshot
+        # center snapshots using the mean snapshot
         self.mean_snapshot = np.average(snapshots, 1)
-
-        # center snapshots
-        for i in range(snapshots.shape[1]):
-            snapshots[:, i] -= self.mean_snapshot
+        snapshots -= self.mean_snapshot[:, None]
 
         self.U, self.S, self.V = np.linalg.svd(snapshots, full_matrices=False)
         self.V = self.V.T
@@ -240,14 +237,11 @@ class Pod(object):
         :rtype: array_like.
         """
         total_sum = np.sum(S)
+        s_cum_sum = np.cumsum(S)
 
-        for i in range(S.shape[0]):
-            dim = i+1
-
-            with np.errstate(divide='ignore', invalid='ignore'):
-                if np.sum(S[:i + 1]) / total_sum > tolerance:
-                    break
-
+        with np.errstate(divide='ignore', invalid='ignore'):
+            ratio_cum_cum = s_cum_sum / total_sum
+        dim = np.searchsorted(ratio_cum_cum, tolerance) + 1
         dim = min(dim, dim_max)
 
         # copy ensures an array is not a slice of a bigger memory zone
@@ -285,16 +279,8 @@ class Pod(object):
             snapshot -= mean_snapshot_copy
             s_proj = np.dot(self.U.T, snapshot)
 
-            # mpi.Allreduce(sendbuf=s_proj.copy(), recvbuf=s_proj, op=mpi.sum)
-
             h = snapshot - np.dot(self.U, s_proj)
             h_norm = np.linalg.norm(h)
-
-            # the whole block is effectless !
-            h_norm *= h_norm
-            h_norm = np.sum(h_norm)   # meaningless. h_norm is a scalar
-            # h_norm = mpi.allreduce(h_norm, op=mpi.sum)
-            h_norm = np.sqrt(h_norm)
 
             # St = |S   U^T s_proj|
             #      |0      norm(h)|
