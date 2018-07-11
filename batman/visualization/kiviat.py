@@ -40,7 +40,7 @@ class Kiviat3D(object):
     parameters used to perform the realization.
     """
 
-    def __init__(self, sample, data, bounds=None, plabels=None,
+    def __init__(self, sample, data, idx=None, bounds=None, plabels=None,
                  range_cbar=None):
         """Prepare params for Kiviat plot.
 
@@ -48,6 +48,7 @@ class Kiviat3D(object):
           (n_samples, n_params).
         :param array_like data: Sample of realization which corresponds to the
           sample of parameters :attr:`sample` (n_samples, n_features).
+        :param int idx: Index on the functional data to consider.
         :param array_like bounds: Boundaries to scale the colors
            shape ([min, n_features], [max, n_features]).
         :param list(str) plabels: Names of each parameters (n_features).
@@ -56,8 +57,12 @@ class Kiviat3D(object):
         """
         self.sample = np.asarray(sample)
         self.data = np.asarray(data)
-        # Adapt how data are reduced to 1D
-        self.data = np.median(self.data, axis=1).reshape(-1, 1)
+
+        # Adapt how data are reduced to scalar values
+        if idx is None:
+            self.data = np.median(self.data, axis=1).reshape(-1, 1)
+        else:
+            self.data = self.data[:, idx].reshape(-1, 1)
 
         order = np.argsort(self.data, axis=0).flatten()
         self.sample = self.sample[order]

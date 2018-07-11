@@ -280,7 +280,7 @@ class HdrBoxplot:
         """
         figures, axs = [], []
 
-        pre_outliers = False  # Flag to compute or not 
+        pre_outliers = False  # Flag to compute or not
         if samples is None:
             data = self.data
             data_r = self.data_r
