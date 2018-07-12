@@ -248,17 +248,18 @@ colored by the value of the function.
 .. image::  ../fig/kiviat_2D.pdf
 
 To be able to get a whole set of sample, a 3D version of the Kiviat plot is
-used [Hackstadt1994]_. Thus, each sample corresponds to a 2D Kiviat plot::
+used [Hackstadt1994]_. Thus, each sample corresponds to a 2D Kiviat plot
+colored by value of the quantity of interest::
 
     import batman as bat
-    kiviat = bat.visualization.Kiviat3D(space, feval, bounds)
+    kiviat = bat.visualization.Kiviat3D(space, feval, bounds=bounds)
     kiviat.plot()
 
 .. image::  ../fig/kiviat_3D.pdf
 
-Note that only the DOE points are plotted in the Kiviat plot in order to
-limit the number of surfaces to visualize. Surrogate model is thus never used
-to predict the value of the function.
+.. note:: Only the DOE points are plotted in the Kiviat plot in order to
+          limit the number of surfaces to visualize. Surrogate model is thus
+          never used to predict the value of the function.
 
 Several visualization options used for the response surfaces generation can
 be used to create the Kiviat plot. Options working with Kiviat plot are
@@ -275,6 +276,16 @@ functional-HOPs-Kiviat with sound::
     hdr.sound()
 
 .. image::  ../fig/kiviat_3D.gif
+
+Another possibility is to take advantage of other stacking and color mapping
+strategies. One can stack samples using the quantity of interest and choose to
+color each stack by their distance from the median realization::
+
+    kiviat = bat.visualization.Kiviat3D(space, feval, bounds=bounds,
+                                        stack_order='qoi', cbar_order='hdr')
+    kiviat.plot()
+
+.. image::  ../fig/mascaret_kiviat_qoi_hdr.pdf
 
 Tree
 ====
