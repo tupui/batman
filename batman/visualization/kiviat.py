@@ -55,7 +55,8 @@ class Kiviat3D(object):
         :param list(str) plabels: Names of each parameters (n_features).
         :param array_like range_cbar: Minimum and maximum values for output
           function (2 values).
-        :param str stack_order: Set stacking order ['qoi', 'hdr'].
+        :param str/int stack_order: Set stacking order ['qoi', 'hdr']. If an
+          integer, it represents the input variable to take into account.
         :param str cbar_order: Set color mapping order ['qoi', 'hdr'].
         """
         self.sample = np.asarray(sample)
@@ -76,6 +77,8 @@ class Kiviat3D(object):
             order = np.argsort(self.data, axis=0).flatten()
         elif stack_order == 'hdr':
             order = np.argsort(pdf, axis=0).flatten()
+        elif isinstance(stack_order, int):
+            order = np.argsort(self.sample[:, stack_order], axis=0).flatten()
         else:
             raise ValueError('Stacking order {} is not valid. Options are qoi or hdr'
                              .format(stack_order))

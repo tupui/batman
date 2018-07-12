@@ -275,6 +275,7 @@ class HdrBoxplot:
         :param list(str) labels: labels for each curve.
         :param str xlabel: label for x axis.
         :param str flabel: label for y axis.
+        :param bool dataset: Show dataset or hide it.
         :returns: figures and all axis.
         :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
         """
@@ -345,7 +346,6 @@ class HdrBoxplot:
         if dataset:
             plt.plot(np.array([x_common] * n_samples).T, data.T,
                      c='c', alpha=.1, label='dataset')
-        plt.plot(x_common, self.median, c='k', label='Median')
         plt.fill_between(x_common, *self.hdr_50,
                          color='gray', alpha=.4, label='50% HDR')
         plt.fill_between(x_common, *self.hdr_90,
@@ -367,6 +367,8 @@ class HdrBoxplot:
                          ls='--', alpha=0.7, label=label)
         else:
             self.logger.debug('It seems that there are no outliers...')
+
+        plt.plot(x_common, self.median, c='k', label='Median')
 
         plt.xlabel(xlabel)
         plt.ylabel(flabel)

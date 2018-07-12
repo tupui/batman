@@ -199,7 +199,7 @@ class TestKiviat:
         data = [[12], [15]]
         plabels = ['Ks', 'Q', '-']
         bounds = [[15.0, 2500.0], [60.0, 6000.0]]
-        kiviat = Kiviat3D(sample, data, bounds, plabels=plabels)
+        kiviat = Kiviat3D(sample, data, bounds=bounds, plabels=plabels)
         kiviat.plot()
 
         return kiviat
@@ -217,6 +217,9 @@ class TestKiviat:
         kiviat.plot(fill=False, ticks_nbr=12)
 
         kiviat = Kiviat3D(sample, functional_data)
+        kiviat = Kiviat3D(sample, functional_data, stack_order='qoi', cbar_order='hdr')
+        kiviat = Kiviat3D(sample, functional_data, stack_order='hdr', cbar_order='qoi')
+        kiviat = Kiviat3D(sample, functional_data, stack_order=1, cbar_order='hdr')
         kiviat.plot(fname=os.path.join(tmp, 'kiviat.pdf'))
 
     @pytest.mark.skipif(not have_ffmpeg, reason='ffmpeg not available')

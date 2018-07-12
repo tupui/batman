@@ -552,8 +552,8 @@ class Driver(object):
                 args['ticks_nbr'] = 10
             if 'kiviat_fill' not in args:
                 args['kiviat_fill'] = True
-            kiviat = Kiviat3D(args['sample'], args['bounds'], args['data'],
-                              plabels=args['plabels'],
+            kiviat = Kiviat3D(args['sample'], data=args['data'],
+                              bounds=args['bounds'], plabels=args['plabels'],
                               range_cbar=args['range_cbar'])
             kiviat.plot(fname=args['fname'], flabel=args['flabel'],
                         ticks_nbr=args['ticks_nbr'], fill=args['kiviat_fill'])
