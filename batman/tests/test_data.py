@@ -1,7 +1,5 @@
-import pytest
 from batman.functions import (el_nino, tahiti, mascaret, marthe)
 import numpy.testing as npt
-import numpy as np
 
 
 def test_el_nino():
