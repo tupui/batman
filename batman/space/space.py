@@ -24,6 +24,9 @@ import itertools
 import numpy as np
 import pandas as pd
 from scipy.optimize import differential_evolution
+from scipy.sparse.csgraph import minimum_spanning_tree
+from scipy.spatial.distance import cdist
+import matplotlib.pyplot as plt
 from sklearn import preprocessing
 from .sampling import Doe
 from .sample import Sample
@@ -228,7 +231,7 @@ class Space(Sample):
           theoretical space, unit cube. Thus min and max values of the sample
           will coincide with the bounds. ([min, k_vars], [max, k_vars]).
         :param str method: Type of discrepancy. ['CD', 'WD', 'MD'].
-        :return: Centered discrepancy.
+        :return: Discrepancy.
         :rtype: float.
         """
         if bounds is not None:
@@ -280,6 +283,38 @@ class Space(Sample):
                              .format(method))
 
         return disc
+
+    @staticmethod
+    def mst(sample, fname=None, plot=True):
+        """Minimum Spanning Tree.
+
+        MST is used here as a discrepancy criterion.
+        Comparing two different designs: the higher the mean,
+        the better the design is in terms of space filling.
+
+        :param array_like sample: The sample to compute the discrepancy from
+          (n_samples, k_vars).
+        :param str fname: wether to export to filename or display the figures.
+        :return: Mean, standard deviation and edges of the MST.
+        :rtypes: float, float, array_like (n_edges, 2 nodes indices).
+        """
+        sample = np.asarray(sample)
+
+        dist = cdist(sample, sample)
+        mst = minimum_spanning_tree(dist)
+
+        edges = np.where(mst.toarray() > 0)
+        edges = np.array(edges).T
+
+        if (sample.shape[1] == 2) and plot:
+            fig, ax = plt.subplots()
+            for edge in edges:
+                ax.plot(sample[edge, 0], sample[edge, 1], c='k')
+            ax.scatter(sample[:, 0], sample[:, 1])
+
+            visualization.save_show(fname, [fig])
+
+        return mst.data.mean(), mst.data.std(), edges
 
     def _cheap_doe_from_expensive(self, n):
         """Compute the number of points required for the cheap DOE.
