@@ -220,6 +220,8 @@ class TestKiviat:
         kiviat = Kiviat3D(sample, functional_data, stack_order='qoi', cbar_order='hdr')
         kiviat = Kiviat3D(sample, functional_data, stack_order='hdr', cbar_order='qoi')
         kiviat = Kiviat3D(sample, functional_data, stack_order=1, cbar_order='hdr')
+        kiviat = Kiviat3D(sample, functional_data, idx=1, cbar_order='hdr',
+                          range_cbar=[0, 1])
         kiviat.plot(fname=os.path.join(tmp, 'kiviat.pdf'))
 
     @pytest.mark.skipif(not have_ffmpeg, reason='ffmpeg not available')
@@ -265,7 +267,6 @@ class TestPdf:
     @patch("matplotlib.pyplot.show")
     def test_pdf_surrogate(self, mock_show, ishigami_data):
         dist = ot.ComposedDistribution(ishigami_data.dists)
-        space = np.array(ishigami_data.space)
         surrogate = SurrogateModel('rbf', ishigami_data.space.corners,
                                    ishigami_data.space.plabels)
         surrogate.fit(ishigami_data.space, ishigami_data.target_space)

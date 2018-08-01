@@ -1,5 +1,6 @@
 # coding: utf8
 import copy
+import os
 import pytest
 import numpy as np
 import numpy.testing as npt
@@ -379,3 +380,12 @@ def test_discrepancy():
     assert Space.discrepancy(space, method='MD') == pytest.approx(2.5000, abs=1e-4)
     assert Space.discrepancy(space, method='WD') == pytest.approx(1.3680, abs=1e-4)
     assert Space.discrepancy(space, method='CD') == pytest.approx(0.3172, abs=1e-4)
+
+
+def test_mst(tmp):
+    sample = np.array([[0.25, 0.5], [0.6, 0.4], [0.7, 0.2]])
+    mean, std, edges = Space.mst(sample, fname=os.path.join(tmp, 'mst.pdf'))
+
+    assert mean == pytest.approx(0.2938, abs=1e-4)
+    assert std == pytest.approx(0.0702, abs=1e-4)
+    npt.assert_equal(edges, [[0, 1], [1, 2]])
