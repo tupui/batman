@@ -12,7 +12,7 @@ import numpy.testing as npt
 
 samples = np.array([[1., 5.], [2., 5.], [3., 5.],
                     [4., 5.], [5., 5.], [6., 5.], [7., 5.]])
-data = np.array([[1], [1], [1], [1], [100], [100], [100]]).T
+data = np.array([[1], [1], [1], [1], [100], [100], [100]])
 sample_new = np.array([[0., 5.], [1.5, 5.], [8., 5.], [2.5, 5.], [7.5, 5.]])
 
 
@@ -21,62 +21,60 @@ class TestMixture:
     @pytest.fixture(scope="session")
     def obj(self):
 
-        algo = Mixture('GaussianMixture',data,
-                       n_components=2,random_state=np.random.seed(123456))
-        algo.clustering()
-        algo.localmodels(samples, data)
-        algo.classification('SVC', samples, sample_new, kernel="linear")
+        algo = Mixture('GaussianMixture', 'SVC', samples, data,
+                       {'n_components':2,'random_state':np.random.seed(123456)},{'kernel':'linear'})
         algo.prediction(sample_new)
 
         return algo
 
     def test_init(self, obj):
-
-        assert obj.clusterer.get_params()['n_components'] == 2
-
-        algo = Mixture('KMeans', data, n_clusters=2)
-
-        assert algo.clusterer.get_params()['n_clusters'] == 2
-
+        
+        target_clt = np.array([0, 0, 0, 0, 1, 1, 1])
+        indice_clt = {0: [0, 1, 2, 3], 1: [4, 5, 6]}
+        
+        #Error Test
         with pytest.raises(ValueError):
-            algo = Mixture('nimp', data, n_components=2)
-
-    def test_clustering(self, obj):
-
-        target = np.array([0, 0, 0, 0, 1, 1, 1])
-        indice = {0: [0, 1, 2, 3], 1: [4, 5, 6]}
-
-        algo = Mixture('KMeans',data,n_clusters=2,
-                       random_state=np.random.seed(123456))
-        algo.clustering()
-        npt.assert_almost_equal(algo.label, target, decimal=2)
-
-        npt.assert_almost_equal(obj.label, target, decimal=2)
-        assert obj.indice_clt == indice
-
-    def test_localmodels(self, obj):
+            algo = Mixture('nimp', 'SVC', samples, data,
+                       {'n_components':2,'random_state':np.random.seed(123456)},{'kernel':'linear'})
+        # Test with Gaussian Mixture
+        assert obj.clusterer.get_params()['n_components'] == 2
+        npt.assert_almost_equal(obj.label, target_clt, decimal=2)
+        assert obj.indice_clt == indice_clt
 
         predict, sigma = obj.model[0].evaluate(sample_new[0])
         assert predict == 1
         predict, sigma = obj.model[1].evaluate(sample_new[-1])
         assert predict == 100
+        
+        assert obj.classifier.get_params()['kernel'] == 'linear'        
+        #Test with KMeans
+        algo = Mixture('KMeans', 'SVC', samples, data,
+                       {'n_clusters':2,'random_state':np.random.seed(123456)},{'kernel':'linear'})
+        assert algo.clusterer.get_params()['n_clusters'] == 2
+        npt.assert_almost_equal(algo.label, target_clt, decimal=2)
+        assert algo.indice_clt == indice_clt
 
-    def test_classification(self, obj):
+        predict, sigma = algo.model[0].evaluate(sample_new[0])
+        assert predict == 1
+        predict, sigma = algo.model[1].evaluate(sample_new[-1])
+        assert predict == 100
+        
+        assert algo.classifier.get_params()['kernel'] == 'linear'
 
-        target = np.array([0, 0, 1, 0, 1])
-
-        assert obj.classifier.get_params()['kernel'] == 'linear'
-        npt.assert_almost_equal(obj.classif, target, decimal=2)
-
-    def test_prediction(self, obj):
-
-        target = np.array([[1], [1], [100], [1], [100]])
-        indice = {0: [0, 1, 3], 1: [2, 4]}
-
-        assert obj.indice_clf == indice
-        predict, sigma = obj.prediction(sample_new)
-        npt.assert_almost_equal(predict, target, decimal=2)
-
+    def test_prediction(self,obj):
+        
+        target_clf = np.array([0, 0, 1, 0, 1])
+        target_predict = np.array([[1], [1], [100], [1], [100]])
+        target_sigma = np.array([[2.068e-05],[7.115e-06],[2.094e-05],[6.828e-06],[1.405e-05]])
+        indice_clf = {0: [0, 1, 3], 1: [2, 4]}
+        
+        predict, sigma, classif = obj.prediction(sample_new)
+        
+        assert obj.indice_clf == indice_clf
+        npt.assert_almost_equal(classif, target_clf, decimal=2)
+        npt.assert_almost_equal(predict, target_predict, decimal=2)
+        npt.assert_almost_equal(sigma, target_sigma, decimal=2)
+        
 #    def test_Branin(self,obj):
 #
 #        f = Branin()

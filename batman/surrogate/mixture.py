@@ -28,7 +28,7 @@ Mixture of expert using local Kriging models and clustering Machine Learning.
 import logging
 from sklearn.decomposition import PCA
 import numpy as np
-from sklearn.cluster import (DBSCAN,KMeans,MiniBatchKMeans,SpectralClustering)
+from sklearn.cluster import (DBSCAN,KMeans,MiniBatchKMeans)
 from sklearn.mixture import GaussianMixture
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
@@ -70,7 +70,7 @@ class Mixture:
         
         if len(data[:, 0]) > 1:
             pca = PCA(n_components=tolerance)
-            vect = pca.fit_transform(data)
+            pca.fit(data)
             clust = pca.components_.T
         else:
             clust = data.T
@@ -79,7 +79,6 @@ class Mixture:
             'DBSCAN': DBSCAN,
             'KMeans': KMeans,
             'MiniBatchKMeans': MiniBatchKMeans,
-            'SpectralClustering': SpectralClustering,
             'GaussianMixture': GaussianMixture,
             'GaussianNB': GaussianNB,
             'SVC': SVC,
@@ -92,7 +91,7 @@ class Mixture:
                               .format(clusterer.get_params))
             method_clt = clusterer
         except AttributeError:
-            # Instanciate regressor from str
+            # Instanciate clusterer from str
             try:
                 method_clt = methods[clusterer]
             except (KeyError):
@@ -101,13 +100,13 @@ class Mixture:
             self.logger.debug('Clusterer info:\n{}'
                               .format(method_clt().get_params()))
 
-        clusterer = method_clt(**param_clt)
+        self.clusterer = method_clt(**param_clt)
         
         if method_clt == GaussianMixture:
-            clusterer.fit(clust)
-            self.label = clusterer.predict(clust)
+            self.clusterer.fit(clust)
+            self.label = self.clusterer.predict(clust)
         else:
-            self.label = clusterer.fit_predict(clust)
+            self.label = self.clusterer.fit_predict(clust)
 
         self.num_clust = np.unique(self.label)
         indices = []
@@ -128,7 +127,7 @@ class Mixture:
                               .format(classifier.get_params))
             method_clf = classifier
         except AttributeError:
-            # Instanciate regressor from str
+            # Instanciate classifier from str
             try:
                 method_clf = methods[classifier]
             except (KeyError):
@@ -144,7 +143,7 @@ class Mixture:
         and make predictions.
         
         Classify new samples given by using the samples already trained and
-        a classifier from Scikit-learn tools then make predictions using these
+        a classifier from Scikit-learn tools then make predictions using
         local models with new sample points.
         
         :param ndarray_like sample_new: Samples to classify (n_samples, n_features)
@@ -155,25 +154,25 @@ class Mixture:
         """
         classif = self.classifier.predict(sample_new)
         indice = []
-        indice_clf = {}
+        self.indice_clf = {}
 
         for i, k in enumerate(self.num_clust):
             ii = np.where(classif == k)[0]
             indice.append(list(ii))
-            indice_clf[k] = indice[i]  
+            self.indice_clf[k] = indice[i]  
 
-        for i, k in enumerate(indice_clf):
-            clf_i = sample_new[indice_clf[k]]
+        for i, k in enumerate(self.indice_clf):
+            clf_i = sample_new[self.indice_clf[k]]
             predict_i, sigma_i = self.model[k].evaluate(clf_i)
 
             if i == 0:
                 predict = predict_i
                 sigma = sigma_i
-                ind = indice_clf[k]
+                ind = self.indice_clf[k]
             else:
                 predict = np.concatenate((predict, predict_i))
                 sigma = np.concatenate((sigma, sigma_i))
-                ind = np.concatenate((ind, indice_clf[k]))
+                ind = np.concatenate((ind, self.indice_clf[k]))
 
         key = np.argsort(ind)
         predict = predict[key]
