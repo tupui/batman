@@ -3,7 +3,7 @@
 Mixture Class
 =============
 
-Mixture of expert using local Kriging models and clustering Machine Learning.
+Mixture of expert using clustering machine learning and local Kriging models.
 
 :Example:
     
@@ -12,11 +12,11 @@ Mixture of expert using local Kriging models and clustering Machine Learning.
 
     >> from batman.surrogate import Mixture
     >> import numpy as np
-    >> samples = np.array([[1.,5.], [2.,5.], [8.,5.], [9.,5.]])
-    >> data = np.array([[50.,51.,52.], [49.,48.,47.], [10.,11.,12,], [9.,8.,7.]])
-    >> sample_new = np.array([[0.5,5.],[10.,5.],[8.5,5.]])
-    >> algo = Mixture('GaussianMixture', 'SVC', samples, data, {'n_components':2},
-    {'kernel':'linear'})
+    >> samples = np.array([[1., 5.], [2., 5.], [8., 5.], [9., 5.]])
+    >> data = np.array([[50., 51., 52.], [49., 48., 47.], [10., 11., 12,],
+       [9., 8., 7.]])
+    >> sample_new = np.array([[0.5, 5.],[10., 5.],[8.5, 5.]])
+    >> algo = Mixture(samples, data, 'cluster.KMeans(n_clusters=2)', 'SVC()')
     >> algo.prediction(sample_new)
     (array([[30.196, 31.196, 32.196],
        [29.   , 28.   , 27.   ],
@@ -26,156 +26,272 @@ Mixture of expert using local Kriging models and clustering Machine Learning.
 """
 
 import logging
-from sklearn.decomposition import PCA
 import numpy as np
-from sklearn.cluster import (DBSCAN,KMeans,MiniBatchKMeans)
-from sklearn.mixture import GaussianMixture
-from sklearn.naive_bayes import GaussianNB
-from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.gaussian_process import GaussianProcessClassifier
-from batman.surrogate import Kriging
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+import sklearn.mixture
+import sklearn.cluster
+import sklearn.gaussian_process
+import sklearn.svm
+import sklearn.naive_bayes
+import sklearn.neighbors
+from sklearn import preprocessing
+from ..space import Sample
+import pandas as pd
+from pandas.tools.plotting import parallel_coordinates
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.colors import Normalize
 
 
-class Mixture:
+class Mixture(object):
     """Mixture of expert based on unsupervised machine learning and local 
     Kriging Models to predict new samples and their affiliations."""
     
     logger = logging.getLogger(__name__)
 
-    def __init__(self, clusterer, classifier, samples,
-                 data,  param_clt, param_clf, tolerance=0.8):
-        """Compute PCA on datas to cluster and form local models for classification.
+    def __init__(self, samples, data, plabels, corners, pod=None, tolerance=0.99,
+                 dim_max=100, local_method=None, pca_percentage=0.8,
+                 clusterer='cluster.KMeans(n_clusters=2)', classifier='svm.SVC()'):
+        """Compute PCA on datas to cluster and form local models used with 
+        classification of new points to predict.
 
         Uses the data given to compute PCA from scikit-learn tools.
         If the data is a scalar, no PCA is done.
         Then, set the parameters for the clusterer used from scikit-learn.
         The choosen clusterer and parameters will cluster datas and put a label
-        on these. These clusters are then separated to return the affiliation 
+        on these. These clusters are then separated to decide the affiliation 
         of each sample to its cluster.
         Datas from each cluster are taken to form a local Kriging model
         for each cluster.
-        
-        :attr:`tolerance` is set at 0.8 for a 80% of the total information.
 
-        :param str clusterer: Scikit-learn clusterer (unsupervised machine learning).
-        :param str classifier: Classifier from Scikit-learn
-        :param ndarray_like samples: Sample features (n_samples, n_features).
-        :param ndarray_like data: Observed data (n_samples, n_features)
+        :param str clusterer: Clusterer from scikit-learn (unsupervised machine 
+          learning).
+          http://scikit-learn.org/stable/modules/clustering.html#clustering
+        :param str classifier: Classifier from Scikit-learn (supervised machine
+          learning)
+          http://scikit-learn.org/stable/supervised_learning.html
+        :param array_like samples: Sample features (n_samples, n_features).
+        :param array_like data: Observed data (n_samples, n_features)
         :param float tolerance: % of information for PCA.
-        :param dict param_clt,param_clf: Scikit-learn parameters for the clusterer
-        and classifier. Check the API or documentation for more informations.
         """
-        data = data.T
-        
-        if len(data[:, 0]) > 1:
-            pca = PCA(n_components=tolerance)
-            pca.fit(data)
+        self.plabels = plabels
+        self.scaler = preprocessing.MinMaxScaler()
+        self.scaler.fit(np.array(corners))
+        samples = self.scaler.transform(samples)
+        corners = [[0 for i in range(samples.shape[1])],
+                   [1 for i in range(samples.shape[1])]]
+        # Computation of PCA
+        scaler = StandardScaler()
+        data_clt = scaler.fit_transform(data).T
+        if len(data_clt[:, 0]) > 1:
+            pca = PCA(n_components = pca_percentage)
+            pca.fit(data_clt)
             clust = pca.components_.T
         else:
-            clust = data.T
-
-        methods = {
-            'DBSCAN': DBSCAN,
-            'KMeans': KMeans,
-            'MiniBatchKMeans': MiniBatchKMeans,
-            'GaussianMixture': GaussianMixture,
-            'GaussianNB': GaussianNB,
-            'SVC': SVC,
-            'KNeighborsClassifier': KNeighborsClassifier,
-            'GaussianProcessClassifier': GaussianProcessClassifier}
-
+            clust = data_clt.T
+            
+        # Acquisition of clusterer
         try:
             # Clusterer is already a sklearn object
             self.logger.debug('Clusterer info:\n{}'
                               .format(clusterer.get_params))
-            method_clt = clusterer
         except AttributeError:
             # Instanciate clusterer from str
             try:
-                method_clt = methods[clusterer]
-            except (KeyError):
-                raise ValueError('Clusterer unknown from sklearn.')
+                clusterer = eval("sklearn." + clusterer,
+                                {'__builtins__': None},
+                                {'sklearn': __import__('sklearn'),
+                                 'sklearn.cluster': __import__('sklearn.cluster'),
+                                 'sklearn.mixture': __import__('sklearn.mixture')
+                                })
+            except (TypeError, AttributeError):
+                raise AttributeError('Clusterer unknown from sklearn.')
 
             self.logger.debug('Clusterer info:\n{}'
-                              .format(method_clt().get_params()))
+                              .format(clusterer.get_params()))
 
-        self.clusterer = method_clt(**param_clt)
-        
-        if method_clt == GaussianMixture:
-            self.clusterer.fit(clust)
-            self.label = self.clusterer.predict(clust)
-        else:
-            self.label = self.clusterer.fit_predict(clust)
+        try:
+            self.label = clusterer.fit_predict(clust)
+        except AttributeError:
+            clusterer.fit(clust)
+            self.label = clusterer.predict(clust)
 
-        self.num_clust = np.unique(self.label)
+        num_clust = np.unique(self.label)
         indices = []
         self.indice_clt = {}
         self.model = {}
         
-        for i, k in enumerate(self.num_clust):
+        # Creation of local models
+        try:
+            index = list(local_method.keys())
+        except:
+            pass
+        
+        for i, k in enumerate(num_clust):
             ii = np.where(self.label == k)[0]
             indices.append(list(ii))
             self.indice_clt[k] = indices[i]
             sample_i = [samples[j] for j in indices[i]]
-            data_i = [data[:, j] for j in indices[i]]
-            self.model[k] = Kriging(np.asarray(sample_i), np.asarray(data_i))
-            
+            data_i = [data[j, :] for j in indices[i]]
+
+            if pod == True:
+                from batman.pod import Pod
+                pod = Pod(corners, self.plabels, sample_i, tolerance, dim_max)
+                snapshots = Sample(space=sample_i, data=data_i)
+                pod.decompose(snapshots)
+                
+            from batman.surrogate import SurrogateModel
+            if local_method == None:          
+                self.model[k] = SurrogateModel('kriging', corners, plabels)
+            else: 
+                self.model[k] = SurrogateModel(index[i], corners, plabels, **local_method[index[i]])
+
+            self.model[k].fit(np.asarray(sample_i), np.asarray(data_i), pod=pod)
+
+        # Acqusition of Classifier    
         try:
             # Classifier is already a sklearn object
             self.logger.debug('Classifier info:\n{}'
                               .format(classifier.get_params))
-            method_clf = classifier
         except AttributeError:
             # Instanciate classifier from str
             try:
-                method_clf = methods[classifier]
-            except (KeyError):
+                classifier = eval('ske.' + classifier,
+                                 {'__builtins__': None},
+                                 {'ske': __import__('sklearn'),
+                                  'sklearn.svm': __import__('sklearn.svm'),
+                                  'sklearn.naive_bayes': __import__('sklearn.naive_bayes'),
+                                  'sklearn.gaussian_process': __import__('sklearn.gaussian_process'),
+                                  'sklearn.neighbors': __import__('sklearn.neighbors'),
+                                  'sklearn.ensemble': __import__('sklearn.ensemble')
+                                 })
+            except (TypeError, AttributeError):
                 raise ValueError('Classifier unknown from sklearn.')
             self.logger.debug('Classifier info:\n{}'
-                              .format(method_clf().get_params()))
-
-        self.classifier = method_clf(**param_clf)
-        self.classifier.fit(samples, self.label)        
+                              .format(classifier.get_params()))
             
-    def prediction(self, sample_new):
+        self.classifier = classifier
+        self.classifier.fit(samples, self.label)
+
+    def boundaries(self, samples):
+        """Plot the boundaries for cluster visualization.
+        
+        Plot the boundaries for 2D and 3D hypercube using viridis colar map
+        or plot the parallel coordinates for 1D and more than 3D to see the
+        influence of sample variables on cluster affiliation.
+        
+        :param array_like samples: Sample features (n_samples, n_features).
+        """
+        n_dim = samples.shape[1]
+        resolution = 10
+        cmap = cm.get_cmap('viridis')
+        scale = Normalize(clip=True)
+        
+        if n_dim == 3:
+            mins = samples.min(axis=0)
+            maxs = samples.max(axis=0)
+            xx, yy, zz = np.meshgrid(*[np.linspace(mins[i], maxs[i],
+                                       resolution) for i in range(n_dim)])
+            mesh = np.stack((xx.ravel(), yy.ravel(), zz.ravel()), axis = -1)
+            classif = self.classifier.predict(mesh)  
+                 
+            fig = plt.figure(figsize=(8,4))
+            ax = Axes3D(fig) 
+            color = cmap(scale(classif))
+            ax.scatter(mesh[:,0], mesh[:,1], mesh[:,2], alpha=0.8, c=color,
+                       edgecolors='none', s=30)
+            plt.show()
+        elif n_dim ==2:
+            mins = samples.min(axis=0)
+            maxs = samples.max(axis=0)
+            xx, yy = np.meshgrid(*[np.linspace(mins[i], maxs[i],
+                                   resolution) for i in range(n_dim)])
+            mesh = np.stack((xx.ravel(), yy.ravel()), axis = -1)
+            classif = self.classifier.predict(mesh)              
+                         
+            fig = plt.figure(figsize=(8,4))
+            color = cmap(scale(classif))
+            plt.scatter(mesh[:,0], mesh[:,1], alpha=0.8, c=color,
+                        edgecolors='none', s=30)
+            plt.show() 
+        else:
+            samples = np.stack((samples, self.label), axis = -1)
+            self.plabels.append("cluster")
+            df = pd.DataFrame(samples, columns = self.plabels)
+            parallel_coordinates(df, "cluster")
+            plt.show()    
+
+    def estimate_quality(self, multiq2 = False):
+        """Estimate quality of the local models.
+        
+        Compute the Q2 for each cluster and return either the
+        Q2 for each cluster or the lowest one with its cluster affiliation.
+        
+        :param float/bool multiq2: Whether to return the minimal q2 or the q2
+          of each cluster. 
+        :return: q2: Q2 quality for each cluster or the minimal value
+        :rtype: array_like(n_cluster) or float
+        :return: point: Max MSE point for each cluster or the one corresponding
+          to minimal Q2 value
+        :rtype: array_like(n_cluster) or float
+        """
+        q2 = {}
+        point = {}
+        for k in self.num_clust:
+            q2[k], point[k] = self.model[k].estimate_quality()
+        
+        if multiq2 == True:
+            output = q2, point
+        else: 
+            ind = np.argmin(q2)
+            output = q2[ind], point[ind]
+            
+        return output     
+            
+    def evaluate(self, samples_new):
         """Classification of new samples based on Supervised Machine Learning
-        and make predictions.
+        and predictions of new points.
         
         Classify new samples given by using the samples already trained and
         a classifier from Scikit-learn tools then make predictions using
         local models with new sample points.
         
-        :param ndarray_like sample_new: Samples to classify (n_samples, n_features)
-        :return: predict, sigma, classif: Prediction, sigma and classification of
-        new samples
-        :rtype: ndarray_like (n_samples, n_features), ndarray_like (n_samples, n_features),
-        array_like (n_samples)
+        :param array_like sample_new: Samples to classify (n_samples,
+          n_features)
+        :return: predict, sigma and classif: Prediction, sigma and 
+          classification of new samples
+        :rtype: array_like (n_samples, n_features), array_like (n_samples,
+          n_features), array_like (n_samples)
         """
-        classif = self.classifier.predict(sample_new)
+        samples_new = self.scaler.transform(samples_new)
+        classif = self.classifier.predict(samples_new)
+        num_clust = np.unique(classif)
         indice = []
-        self.indice_clf = {}
-
-        for i, k in enumerate(self.num_clust):
+        indice_clf = {}
+        
+        for i, k in enumerate(num_clust):
             ii = np.where(classif == k)[0]
             indice.append(list(ii))
-            self.indice_clf[k] = indice[i]  
+            indice_clf[k] = indice[i]  
 
-        for i, k in enumerate(self.indice_clf):
-            clf_i = sample_new[self.indice_clf[k]]
-            predict_i, sigma_i = self.model[k].evaluate(clf_i)
+        # Prediction of new points 
+        for i, k in enumerate(indice_clf):
+            clf_i = samples_new[indice_clf[k]]
+            result_i, sigma_i = self.model[k](clf_i)
 
             if i == 0:
-                predict = predict_i
+                result = result_i
                 sigma = sigma_i
-                ind = self.indice_clf[k]
+                ind = indice_clf[k]
             else:
-                predict = np.concatenate((predict, predict_i))
+                result = np.concatenate((result, result_i))
                 sigma = np.concatenate((sigma, sigma_i))
-                ind = np.concatenate((ind, self.indice_clf[k]))
+                ind = np.concatenate((ind, indice_clf[k]))
 
         key = np.argsort(ind)
-        predict = predict[key]
+        result = result[key]
         sigma = sigma[key]
 
-        return predict, sigma, classif
+        return result, sigma, classif

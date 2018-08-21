@@ -30,6 +30,7 @@ from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import r2_score
 from .kriging import Kriging
 from .sk_interface import SklearnRegressor
+from .mixture import Mixture
 from .polynomial_chaos import PC
 from .RBFnet import RBFnet
 from .multifidelity import Evofusion
@@ -46,7 +47,7 @@ class SurrogateModel(object):
         r"""Init Surrogate model.
 
         :param str kind: name of prediction method, one of:
-          ['rbf', 'kriging', 'pc', 'evofusion', sklearn-regressor].
+          ['rbf', 'kriging', 'pc', 'evofusion', 'mixture', sklearn-regressor].
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
         :param list(str) plabels: labels of sample points
         :param \**kwargs: See below
@@ -94,10 +95,12 @@ class SurrogateModel(object):
         }
 
         self.settings = kwargs
-
+        
         if self.kind == 'pc':
             self.predictor = PC(**self.settings)
-
+        elif self.kind == 'mixture':
+            self.settings.update({'corners': corners, 'plabels': plabels})
+            
     def fit(self, sample, data, pod=None):
         """Construct the surrogate.
 
@@ -113,7 +116,6 @@ class SurrogateModel(object):
         else:
             sample_scaled = self.scaler.transform(sample[:, 1:])
             sample_scaled = np.hstack((sample[:, 0].reshape(-1, 1), sample_scaled))
-
         # predictor object
         self.logger.info('Creating predictor of kind {}...'.format(self.kind))
         if self.kind == 'rbf':
@@ -124,9 +126,11 @@ class SurrogateModel(object):
             self.predictor.fit(sample, data)
         elif self.kind == 'evofusion':
             self.predictor = Evofusion(sample_scaled, data)
+        elif self.kind == 'mixture':
+            self.predictor = Mixture(sample, data, **self.settings)
         else:
             self.predictor = SklearnRegressor(sample_scaled, data, self.kind)
-
+            
         self.pod = pod
         self.space.empty()
         self.space += sample
@@ -154,6 +158,9 @@ class SurrogateModel(object):
 
         if self.kind in ['kriging', 'evofusion']:
             results, sigma = self.predictor.evaluate(points)
+        elif self.kind == 'mixture':
+            results, sigma, classif = self.predictor.evaluate(points)
+            self.logger.info("Classification of predicted points : {}".format(classif))
         else:
             results = self.predictor.evaluate(points)
             sigma = None
@@ -174,6 +181,9 @@ class SurrogateModel(object):
         :return: Max MSE point.
         :rtype: lst(float).
         """
+        if self.kind == 'mixture':
+            return self.predictor.estimate_quality()
+
         if self.pod is not None:
             return self.pod.estimate_quality()
 
@@ -210,7 +220,7 @@ class SurrogateModel(object):
             pred, _ = train_pred(sample[test])
 
             return pred
-
+        
         pool = NestedPool(n_cpu)
         progress = ProgressBar(points_nb)
         results = pool.imap(loo_quality, range(points_nb))
