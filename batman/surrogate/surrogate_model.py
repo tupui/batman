@@ -95,12 +95,12 @@ class SurrogateModel(object):
         }
 
         self.settings = kwargs
-        
+
         if self.kind == 'pc':
             self.predictor = PC(**self.settings)
         elif self.kind == 'mixture':
             self.settings.update({'corners': corners, 'plabels': plabels})
-            
+
     def fit(self, sample, data, pod=None):
         """Construct the surrogate.
 
@@ -130,7 +130,7 @@ class SurrogateModel(object):
             self.predictor = Mixture(sample, data, **self.settings)
         else:
             self.predictor = SklearnRegressor(sample_scaled, data, self.kind)
-            
+
         self.pod = pod
         self.space.empty()
         self.space += sample
@@ -156,11 +156,8 @@ class SurrogateModel(object):
         if self.kind != 'pc':
             points = self.scaler.transform(points)
 
-        if self.kind in ['kriging', 'evofusion']:
+        if self.kind in ['kriging', 'evofusion', 'mixture']:
             results, sigma = self.predictor.evaluate(points)
-        elif self.kind == 'mixture':
-            results, sigma, classif = self.predictor.evaluate(points)
-            self.logger.info("Classification of predicted points : {}".format(classif))
         else:
             results = self.predictor.evaluate(points)
             sigma = None
@@ -220,7 +217,7 @@ class SurrogateModel(object):
             pred, _ = train_pred(sample[test])
 
             return pred
-        
+
         pool = NestedPool(n_cpu)
         progress = ProgressBar(points_nb)
         results = pool.imap(loo_quality, range(points_nb))

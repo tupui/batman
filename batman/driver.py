@@ -192,22 +192,22 @@ class Driver(object):
                 settings_.update({
                     'noise': self.settings['surrogate'].get('noise', False),
                     'global_optimizer': self.settings['surrogate'].get('global_optimizer', True)
-                })
-            #Mixture    
+                })    
             elif self.settings['surrogate']['method'] == 'mixture':
                 self.pod = None
                 settings_.update({
                     'pod': True if 'pod' in self.settings else None,
                     'plabels': self.settings['snapshot']['plabels'],
                     'corners': self.settings['space']['corners'],
+                    'fsizes': self.settings['snapshot'].get('fsizes'),
                     'tolerance': self.settings['pod'].get('tolerance', 0.99),
-                    'dim_max': self.settings['pod'].get('dim_max',  100),
-                    'pca_percentage': self.settings['surrogate'].get('infos', 0.8),
+                    'dim_max': self.settings['pod'].get('dim_max', 100),
+                    'pca_percentage': self.settings['surrogate'].get('pca_percentage', 0.8),
                     'clusterer': self.settings['surrogate'].get('clusterer',
                                                                 'cluster.KMeans(n_clusters=2)'),
                     'classifier': self.settings['surrogate'].get('classifier', 'svm.SVC()')
                 })
-                
+
             self.surrogate = SurrogateModel(**settings_)
             if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
@@ -216,7 +216,7 @@ class Driver(object):
         else:
             self.surrogate = None
             self.logger.info('No surrogate is computed.')
-        
+
     def sampling(self, points=None, update=False):
         """Create snapshots.
 
@@ -398,7 +398,7 @@ class Driver(object):
                              psizes=self.settings['snapshot'].get('psizes'),
                              fsizes=self.settings['snapshot'].get('fsizes'))
             samples.write(space_fname, data_fname)
-            
+
         return results, sigma
 
     def uq(self):
