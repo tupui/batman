@@ -1,0 +1,23 @@
+{
+ "files": {
+        "xcas": "mascaret0.xcas",
+        "geo": "mascaret0.geo",
+        "res": "ResultatsOpthyca.opt",
+        "listing": "ResultatsListing.lis",
+        "damocle": "listing.damoc",
+        "lig": "LigneEauInitiale.lig",
+        "loi": [
+            "mascaret0_0.loi",
+            "mascaret0_1.loi"
+        ]
+ },
+ 
+ "boundary_conditions": [{"type": "discharge", "index": 1, "value": 3000},
+                         {"type": "discharge", "index": 2, "value": 1500}
+                        ],
+ 
+ "friction_coefficients": [{"type": "zone", "index": 1, "value": 35},
+                          {"type": "node", "index": 1, "value": 35}
+                         ],
+ 
+ }

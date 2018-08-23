@@ -10,7 +10,7 @@ from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf, sobol,
                                   reshow, response_surface, doe, corr_cov,
                                   mesh_2D)
 from batman.surrogate import SurrogateModel
-from batman.functions import (Ishigami, Mascaret, el_nino)
+from batman.functions import (Ishigami, db_Mascaret, el_nino)
 import matplotlib.pyplot as plt
 
 try:
@@ -311,7 +311,7 @@ class TestSobol:
 
     @patch("matplotlib.pyplot.show")
     def test_sobols_map(self, mock_show, tmp):
-        fun = Mascaret()
+        fun = db_Mascaret()
         indices = [fun.s_first, fun.s_total, fun.s_first_full, fun.s_total_full]
         sobol(indices)
         sobol(indices, plabels=['Ks', 'Q'],

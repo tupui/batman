@@ -44,7 +44,7 @@
       <pasTemps>1800.0</pasTemps>
       <tempsInit>432000</tempsInit>
       <critereArret>1</critereArret>
-      <nbPasTemps>1</nbPasTemps>
+      <nbPasTemps>10</nbPasTemps>
       <tempsMax>691200</tempsMax>
       <pasTempsVar>false</pasTempsVar>
       <nbCourant>0.8</nbCourant>

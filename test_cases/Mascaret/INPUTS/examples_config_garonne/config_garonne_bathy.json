@@ -1,0 +1,18 @@
+{
+  "files": {"xcas": "ParametresMascaret.xcas",
+            "geo": "geometrie.geo",
+            "res": "ResultatsOpthyca.opt",
+            "listing": "ResultatsListing.lis",
+            "damocle": "listing.damoc",
+            "lig": "LigneEauInitiale.lig",
+            "loi": [
+                "Hydro_Tonneins.loi",
+                "CT_LaReole.loi"]},
+ 
+ "bathymetry": {"section": 128, "variation": 1},
+ "bathymetry": {"variation": 1},
+ "bathymetry": {"section": 128, "covariance": "AbsoluteExponential(....)"},
+ "bathymetry": {"covariance": "AbsoluteExponential(....)"}
+
+
+ }

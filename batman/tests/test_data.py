@@ -24,8 +24,15 @@ def test_mascaret():
     assert data.shape == (100000, 16)
     assert data.data[6][4] == 23.058688963373736
     npt.assert_almost_equal(data.space[6].tolist(), [55.6690593, 3550.8123906])
-#    assert data.data['21925'][4] == 25.384495603739079
     assert data.dataframe['data']['21925'].values[4] == 25.384495603739079
+
+    data = mascaret(multizone=True)
+    assert len(data) == 5000
+    assert data.shape == (5000, 467)
+    assert data.data[5][4] == 27.907469930354466
+    npt.assert_almost_equal(data.space[5].tolist(), [34.5856891, 36.695892, 33.8615593, 4592.2619857])
+    print(data.dataframe['data']['13750.0'])
+    assert data.dataframe['data']['13750.0'].values[5][0] == 27.86339870997002
 
 
 def test_marthe():

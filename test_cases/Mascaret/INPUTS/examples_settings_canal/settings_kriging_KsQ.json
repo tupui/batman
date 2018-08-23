@@ -6,37 +6,26 @@
         ],
         "sampling": {
             "init_size": 120,
-            "method": "saltelli"
+            "method": "saltelli",
             "distributions": ["Uniform(20., 40.)", "BetaMuSigma(2000, 500, 1000, 3000).getDistribution()"]
         }
     },
     "snapshot": {
         "max_workers": 5,
-        "io": {
-            "shapes": {
-                "0": [
-                    [1]
-                ]
-            },
-            "format": "fmt_tp_fortran",
-            "variables": ["F"],
-            "point_filename": "header.py",
-            "filenames": {
-                "0": ["function.dat"]
-            },
-            "template_directory": null,
-            "parameter_names": ["x1", "x2"]
+	"plabels": ["x1", "x2"],
+        "flabels": ["F"],
+        "fsizes": [51],
+	"provider": {
+            "type": "job",
+            "command": "bash script.sh",
+            "context_directory": "data",
+            "coupling": {"coupling_directory": "batman-coupling"},
+            "clean": false
         },
-        "provider": {
-            "command": "bash",
-            "timeout": 20,
-            "context": "data",
-            "script": "data/script.sh",
-            "clean": false,
-            "private-directory": "batman-data",
-            "data-directory": "cfd-output-data",
-            "restart": "False"
-        }
+        "io": {
+            "space_fname": "space.dat",
+            "data_fname": "point.dat"
+        },
     },
     "surrogate": {
         "predictions": [22, 1500],

@@ -7,5 +7,5 @@ ln -s data_garonne_lnhe/LigneEauInitiale.lig LigneEauInitiale.lig
 ln -s data_garonne_lnhe/Hydro_Tonneins.loi Hydro_Tonneins.loi
 ln -s data_garonne_lnhe/CT_LaReole.loi CT_LaReole.loi
 ln -s data_garonne_lnhe/config_garonne_lnhe.json config_garonne_lnhe.json
-ln -s data_garonne_lnhe/config_garonne_lnhe_user.json config_garonne_lnhe_user.json
+
 

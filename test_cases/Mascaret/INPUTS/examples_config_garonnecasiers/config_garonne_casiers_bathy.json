@@ -1,0 +1,24 @@
+{
+  "files": {
+        "xcas": "ParametresMascaret.xcas",
+        "geo": "geometrie.geo",
+        "casier": "GeometrieCasiers.casier",
+        "res": "ResultatsOpthyca.opt",
+        "res_casier": "Resultats.res_casier",
+        "res_liaison": "Resultats.res_liaison",
+        "listing": "ResultatsListing.lis",
+        "listing_casier": "ResultatsListing.listing_casier",
+        "listing_liaison": "ResultatsListing.listing_liaison",
+        "damocle": "listing.damoc",
+        "lig": "LigneEauInitiale.lig",
+        "loi": [
+            "Hydro_Tonneins.loi",
+            "CT_LaReole.loi"]},
+ 
+ "bathymetry": {"section": 128, "variation": 1},
+ "bathymetry": {"variation": 1},
+ "bathymetry": {"section": 128, "covariance": "AbsoluteExponential(....)"},
+ "bathymetry": {"covariance": "AbsoluteExponential(....)"}
+
+
+ }

@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.metrics import r2_score
 import openturns as ot
 from batman.functions import (Ishigami, Branin, G_Function,
-                              Mascaret, Forrester)
+                              db_Mascaret, Forrester)
 from batman.space import Space
 from batman.driver import Driver
 
@@ -146,7 +146,7 @@ def g_function_data(settings_ishigami):
 @pytest.fixture(scope='session')
 def mascaret_data(settings_ishigami):
     data = {}
-    fun = Mascaret()
+    fun = db_Mascaret()
     data['func'] = lambda x: fun(x).reshape(-1, 14)[:, 0:3]
     data['func'].x = fun.x[0:3]
     x1 = ot.Uniform(15., 60.)

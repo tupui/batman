@@ -23,7 +23,7 @@ It implements the following classes:
 - :class:`Manning`,
 - :class:`ChemicalSpill`.
 
-In each case, Sobol' indices are declared.
+In most case, Sobol' indices are pre-computed and storred as attributes.
 
 References
 ----------

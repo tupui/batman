@@ -8,11 +8,11 @@ from .data import (el_nino, tahiti, mascaret, marthe)
 from .analytical import (SixHumpCamel, Branin, Michalewicz, Rosenbrock,
                          Rastrigin, Ishigami, G_Function,
                          Forrester, Channel_Flow, Manning, ChemicalSpill)
-from .telemac_mascaret import (Mascaret, MascaretApi)
+from .db_mascaret import db_Mascaret
 from .utils import (output_to_sequence)
 
 __all__ = ['SixHumpCamel', 'Branin', 'Michalewicz', 'Rosenbrock', 'Ishigami',
            'Rastrigin', 'G_Function', 'Forrester', 'Channel_Flow', 'Manning',
-           'Mascaret', 'MascaretApi', 'ChemicalSpill',
+           'db_Mascaret', 'ChemicalSpill',
            'output_to_sequence',
            'el_nino', 'tahiti', 'mascaret', 'marthe']

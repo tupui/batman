@@ -37,7 +37,7 @@ class PC(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, strategy, degree, distributions, sample=None,
+    def __init__(self, strategy, degree, distributions, N_quad=None, sample=None,
                  stieltjes=True, sparse_param={}):
         """Generate truncature and projection strategies.
 
@@ -94,7 +94,11 @@ class PC(object):
             # by default: the marginal degree for each input random
             # variable is set to the total polynomial degree 'degree'+1
             measure = self.basis.getMeasure()
-            degrees = [degree + 1] * in_dim
+
+            if N_quad is not None:
+                degrees = [int(N_quad ** 0.25)] * in_dim
+            else:
+                degrees = [degree + 1] * in_dim
 
             self.proj_strategy = ot.IntegrationStrategy(
                 ot.GaussProductExperiment(measure, degrees))

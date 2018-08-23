@@ -115,8 +115,7 @@ specifications may not be enough to give full guidelines on their uses.
    functions.analytical.ChemicalSpill
    functions.analytical.Channel_Flow
    functions.analytical.Manning
-   functions.telemac_mascaret.Mascaret
-   functions.telemac_mascaret.MascaretApi
+   functions.db_Mascaret
    functions.utils.multi_eval
    functions.utils.output_to_sequence
 
