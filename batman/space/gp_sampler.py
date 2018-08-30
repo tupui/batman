@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import openturns as ot
 import numpy as np
 import batman as bat
+from .sampling import Doe
 from scipy.spatial import Delaunay
 import sys
 PY2 = sys.version_info.major == 2
@@ -179,23 +180,31 @@ class GpSampler(object):
 
         return summary.format(*format_)
 
-    def __call__(self, sample_size=1, coeff=None):
+    def __call__(self, sample_size=1, coeff=None, kind="mc"):
         """Compute realizations of the GP sampler.
 
         :param int sample_size: number of GP instances.
         :param list coeff: coefficients of the Karhunen Loeve decomposition.
+        :param str kind: Sampling Method if string can be one of
+          ['halton', 'sobol', 'faure', 'lhs[c]', 'sobolscramble', 'uniform',
+          'discrete'] otherwize can be a list of openturns distributions.
         :return: instances of GP discretized over the mesh and KLd coefficients
         :rtype: np.array([sample_size x sum(n_nodes)]),
                 np.array([sample_size x n_modes])
         """
         if coeff is None:
-            dist = ot.ComposedDistribution([ot.Normal(0., 1.)] * self.n_modes,
-                                           ot.IndependentCopula(self.n_modes))
-            # Sampled weights
-            weights = np.array(dist.getSample(sample_size))
+            if kind == "mc":
+                dist = ot.ComposedDistribution([ot.Normal(0., 1.)] * self.n_modes,
+                                                ot.IndependentCopula(self.n_modes))
+                # Sampled weights
+                weights = np.array(dist.getSample(sample_size))
+            else:
+                doe = Doe(sample_size, [[-10]*self.n_modes, [10]*self.n_modes], kind, ['Normal(0., 1.)'], None)
+                weights = doe.generate()
         else:
-            weights = list(coeff[0:self.n_modes]) + \
-                      list(np.zeros(max(0, self.n_modes - len(coeff))))
+            weights = [list(x[0:self.n_modes]) + \
+                       list(np.zeros(max(0, self.n_modes - len(x))))
+                       for x in coeff]
             weights = np.array(weights)
 
         # Predictions

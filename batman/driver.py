@@ -88,12 +88,14 @@ class Driver(object):
             multifidelity = None
 
         gp_samplers = self.settings['space'].get('gp_samplers')
+        psizes = self.settings['snapshot'].get('psizes')
+        plabels = self.settings['snapshot'].get('plabels')
 
         self.space = Space(self.settings['space']['corners'],
                            init_size,
                            nrefine=resamp_size,
-                           plabels=self.settings['snapshot']['plabels'],
-                           psizes=self.settings['snapshot']['psizes'],
+                           plabels=plabels,
+                           psizes=psizes,
                            multifidelity=multifidelity,
                            duplicate=duplicate,
                            gp_samplers=gp_samplers)

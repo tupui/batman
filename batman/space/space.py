@@ -96,17 +96,10 @@ class Space(Sample):
         if psizes is None:
             psizes = [1] * self.dim
             if gp_samplers is not None:
-                self.input_indices = []
                 for i in range(self.nb_gp_samplers):
-                    self.input_indices.append(gp_samplers['index'][i])
-                    psizes[self.input_indices[i]] = psizes[self.input_indices[i]] - 1 + gp_samplers['n_nodes'][i]
-        try:
-            pos = plabels.index('fidelity')
-        except ValueError:
-            pass
-        else:
-            plabels = list(np.delete(plabels, pos))
-            psizes = list(np.delete(psizes, pos))
+                    index_i = gp_samplers['index'][i]
+                    n_modes_i = gp_samplers['n_nodes'][i]
+                    psizes[index_i] = psizes[index_i] - 1 + n_modes_i
 
         # Multifidelity configuration
         if multifidelity is not None:
@@ -156,7 +149,7 @@ class Space(Sample):
         # sample the GP-distributed inputs and concatenate
         if hasattr(self, 'gp_samplers'):
             for i in range(self.nb_gp_samplers):
-                gp_samples_i = self.gp_samplers[i](n_samples)['Values']
+                gp_samples_i = self.gp_samplers[i](n_samples, kind=kind)['Values']
                 samples = np.append(samples, gp_samples_i, axis=1)
 
         # concatenate cheap and expensive space, prepend identifier 0 or 1

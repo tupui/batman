@@ -30,7 +30,7 @@ Parameters whose distributions are Gaussian samplers are treated independently o
 Gaussian process sampler
 ------------------------
 
-Let :math:`x(t)` be a parameter :math:`x\in\mathbb{R}` indexed by :math:`t\in\mathbf{R}^d` with :math:`d\in\{1,2,3\}`. :math:`t` can represent a time point (:math:`d=1`), space point (:math:`d=1` or :math:`d=2`) or a time-space point (:math:`d=1`, :math:`d=2` or :math:`d=3`).
+Let :math:`x(t)` be a real parameter indexed by :math:`t\in\mathbf{R}^d` with :math:`d\in\{1,2,3\}`. :math:`t` can represent a time point (:math:`d=1`), a space point (:math:`d=1` or :math:`d=2`) or a time-space point (:math:`d=1`, :math:`d=2` or :math:`d=3`).
 
 This parameter is observed at many index values:
   

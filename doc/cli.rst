@@ -91,10 +91,10 @@ First of all, we define the parameter space using an hypercube. Taking the minim
       ``["Uniform(15., 60.)", "GpSampler", "Normal(4035., 400.)"]``,
     * [``discrete``]: index of the parameter which is discrete.
 
-+ ``gp_samplers``: define the Gaussian processes for vectorial parameters whose ``distributions`` are  ``GpSample`` with the following:
++ [``gp_samplers``]: define the Gaussian processes for vectorial parameters whose ``distributions`` are  ``GpSampler`` with the following:
 
-    * [``index``]: list of the indices corresponding to the vectorial parameters whose distributions are Gaussian processes,
-    * [``reference``]: list of the reference vectorial parameters from which Gaussian process realizations are created,
+    * ``index``: list of the indices corresponding to the vectorial parameters whose distributions are Gaussian processes,
+    * ``reference``: list of the reference vectorial parameters from which Gaussian process realizations are created,
       each element being a dictionnary made of ``indices`` representing a list of the index values of the parameter values (e.g. ``t``) and ``values`` representing a list of reference parameter values (e.g. ``reference(t)``),
     * [``kernel``]: list of kernels,
     * [``add``]: list of boolean variables, True when Gaussian process realizations are added to the reference parameters, and False if not.
