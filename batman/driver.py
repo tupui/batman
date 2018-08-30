@@ -87,10 +87,7 @@ class Driver(object):
         except KeyError:
             multifidelity = None
 
-        if 'gp_samplers' in self.settings['space']:
-            gp_samplers = self.settings['space']['gp_samplers']
-        else:
-            gp_samplers = None
+        gp_samplers = self.settings['space'].get('gp_samplers')
 
         self.space = Space(self.settings['space']['corners'],
                            init_size,

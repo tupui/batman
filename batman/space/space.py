@@ -87,8 +87,6 @@ class Space(Sample):
                                           gp_samplers['add'][i],
                                           thresholds[i])
                                 for i in range(self.nb_gp_samplers)]
-            gp_dim = [self.gp_samplers[i].n_modes
-                      for i in range(self.nb_gp_samplers)]
         else:
             self.nb_gp_samplers = 0
 
@@ -101,7 +99,7 @@ class Space(Sample):
                 self.input_indices = []
                 for i in range(self.nb_gp_samplers):
                     self.input_indices.append(gp_samplers['index'][i])
-                    psizes[self.input_indices[i]] = psizes[self.input_indices[i]] - 1 + gp_samplers['n_nodes'][i]#gp_dim[i]
+                    psizes[self.input_indices[i]] = psizes[self.input_indices[i]] - 1 + gp_samplers['n_nodes'][i]
         try:
             pos = plabels.index('fidelity')
         except ValueError:
