@@ -10,6 +10,8 @@ import openturns as ot
 import numpy as np
 import batman as bat
 from scipy.spatial import Delaunay
+import sys
+PY2 = sys.version_info.major == 2
 
 
 class GpSampler(object):
@@ -39,7 +41,9 @@ class GpSampler(object):
         >>
         >> # Dimension 1 - Creation of the Gp sampler
         >> n_nodes = 100
-        >> reference = {'indices': [[x/float(n_nodes)] for x in range(n_nodes)], 'values': [0 for x in range(n_nodes)]}
+        >> reference = {'indices': [[x/float(n_nodes)]
+        >>                          for x in range(n_nodes)],
+        >>              'values': [0 for x in range(n_nodes)]}
         >> sampler = GpSampler(reference)
         >> print(sampler)
         >> sampler.plot_modes()
@@ -57,8 +61,13 @@ class GpSampler(object):
         >> # Dimension 2 - Creation of the Gp sampler
         >> n_nodes_by_dim = 10
         >> n_nodes = n_nodes_by_dim**2
-        >> reference = {'indices': [[x/float(n_nodes_by_dim), y/float(n_nodes_by_dim)] for x in range(n_nodes_by_dim) for y in range(n_nodes_by_dim)], 'values': [0 for x in range(n_nodes)]}
-        >> sampler = GpSampler(reference, "AbsoluteExponential([0.5, 0.5], [1.0])")
+        >> reference = {'indices': [[x/float(n_nodes_by_dim),
+        >>                           y/float(n_nodes_by_dim)]
+        >>                          for x in range(n_nodes_by_dim)
+        >>                          for y in range(n_nodes_by_dim)],
+        >>              'values': [0 for x in range(n_nodes)]}
+        >> sampler = GpSampler(reference,
+        >>                     "AbsoluteExponential([0.5, 0.5], [1.0])")
         >> print(sampler)
         >> sampler.plot_modes()
         >>
@@ -93,7 +102,8 @@ class GpSampler(object):
         :param float threshold: minimal relative amplitude of the
                eigenvalues to consider in the KLd wrt the maximum eigenvalue.
         """
-        if type(reference) is str or type(reference) is unicode:
+        # Check if string (lenient for byte-strings on Py2):
+        if isinstance(reference, basestring if PY2 else str):
             self.reference = np.atleast_1d(np.load(reference))[0]
         else:
             self.reference = reference
@@ -111,11 +121,13 @@ class GpSampler(object):
         elif self.n_dim == 2:
             vertices = indices
             tri = Delaunay(np.array(vertices))
-            simplices = [[np.asscalar(xi) for xi in x] for x in list(tri.simplices)]
+            simplices = [[np.asscalar(xi) for xi in x]
+                         for x in list(tri.simplices)]
         elif self.n_dim == 3:
             vertices = indices
             tri = Delaunay(np.array(vertices))
-            simplices = [[np.asscalar(xi) for xi in x] for x in list(tri.simplices)]
+            simplices = [[np.asscalar(xi) for xi in x]
+                         for x in list(tri.simplices)]
         self.mesh = ot.Mesh(vertices, simplices)
 
         # Kernel
@@ -133,7 +145,9 @@ class GpSampler(object):
 
         # Evaluation of the eigen functions
         for i in range(n_modes):
-            modes[i] = ot.Field(self.mesh, modes[i].getValues() * [np.sqrt(eigen_values[i])])
+            ev_i = eigen_values[i]
+            eV_i = modes[i].getValues()
+            modes[i] = ot.Field(self.mesh, eV_i * [np.sqrt(ev_i)])
 
         # Matrix of the modes over the grid (lines <> modes; columns <> times)
         gridded_modes = np.eye(n_modes, len(vertices))
