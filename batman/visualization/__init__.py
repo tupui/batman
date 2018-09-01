@@ -9,13 +9,14 @@ from .kiviat import Kiviat3D
 from .tree import Tree
 from .hdr import HdrBoxplot
 from .uncertainty import (kernel_smoothing, pdf, sobol, corr_cov)
+from .density import cusunoro
 from .doe import doe
 from .response_surface import response_surface
 from .mesh_2D import mesh_2D
 
 __all__ = ['Kiviat3D', 'Tree', 'HdrBoxplot', 'kernel_smoothing', 'pdf',
-           'sobol', 'corr_cov', 'reshow', 'save_show', 'response_surface',
-           'doe', 'mesh_2D']
+           'sobol', 'corr_cov', 'cusunoro', 'reshow', 'save_show',
+           'response_surface', 'doe', 'mesh_2D']
 
 
 def reshow(fig):

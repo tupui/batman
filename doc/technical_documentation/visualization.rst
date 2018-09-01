@@ -31,6 +31,8 @@ there are several options implemented in the package.
 +----------------------------------+-----------+----------------+---------------------------------------+
 | :func:`mesh_2D`                  |           | vector         | Sensitivity analysis on a 2D mesh     |
 +----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`cusunoro`                 | vector    | scalar         | Density-based Sensitivity plot        |
++----------------------------------+-----------+----------------+---------------------------------------+
 
 All options return a figure object that can be reuse using :func:`reshow`.
 This enables some modification of the graph. In most cases, the first parameter ``data`` is
@@ -416,8 +418,38 @@ the following table:
 +-------------+-------------------+-------------------+-----------------------------------------+
 
 
+Density-based Sensitivity Analysis
+==================================
+
+The following are visual methods to assess sensitivity impact of the parameters
+on the quantity of interest. These methods are all density-based.
+
+CUSUNORO
+--------
+
+CUSUNORO stands for: cumulative sums of normalised reordered output[Plischke2012]_.
+The output is normalized and ordered in function of a given feature. Then, its
+cumulative sum vector is computed. In other words, this corresponds to the
+conditional ECDF after normalization. The more the curve is from the
+unconditional ECDF (a flat line after normalization), the more the output
+is sensitive to the feature. 
+
+In this example, the *Ishigami* function is used::
+
+    import batman as bat
+    bat.visualization.cusunoro(space, feval)
+
+.. image:: ../fig/cusunoro-ishigami.pdf
+
+It can be seen from the figure (*left*) that first an second parameters deviate
+from a flat line. From the second figure (*right*), the third parameter shows some
+effects. To conclude, first and second parameters have a first order influence
+while third parameter has a second order influence on the quantity of interest.
+
 
 Acknowledgement
 ===============
 
 We are gratefull to the help and support on OpenTURNS Michaël Baudin has provided.
+We would like to thank Irene Witte (University of Hohenheim) for her help
+with density-based methods.

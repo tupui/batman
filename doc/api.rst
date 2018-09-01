@@ -77,6 +77,7 @@ specifications may not be enough to give full guidelines on their uses.
    visualization.kernel_smoothing
    visualization.reshow
    visualization.mesh_2D
+   visualization.density
 
 .. py:module:: visualization
 .. automodule:: batman.visualization
@@ -128,7 +129,7 @@ specifications may not be enough to give full guidelines on their uses.
    :members:
    :undoc-members:
 
-.. automodule:: batman.functions.telemac_mascaret
+.. automodule:: batman.functions.db_Mascaret
    :members:
    :undoc-members:
 

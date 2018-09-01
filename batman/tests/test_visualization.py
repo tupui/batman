@@ -8,7 +8,7 @@ import openturns as ot
 from mock import patch
 from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf, sobol,
                                   reshow, response_surface, doe, corr_cov,
-                                  mesh_2D)
+                                  mesh_2D, cusunoro)
 from batman.surrogate import SurrogateModel
 from batman.functions import (Ishigami, db_Mascaret, el_nino)
 import matplotlib.pyplot as plt
@@ -430,3 +430,14 @@ def test_corr_cov(mock_show, mascaret_data, tmp):
     data = func(sample)
     corr_cov(data, sample, func.x, interpolation='lanczos', plabels=['Ks', 'Q'])
     corr_cov(data, sample, func.x, fname=os.path.join(tmp, 'corr_cov.pdf'))
+
+
+class TestDensity:
+
+    def test_cusunoro(self, ishigami_data, tmp):
+        Y = ishigami_data.target_space.flatten()
+        X = ishigami_data.space
+        cuso = cusunoro(X, Y, plabels=['x1', 'x2', 'x3'],
+                        fname=os.path.join(tmp, 'cusunoro.pdf'))
+
+        npt.assert_almost_equal(cuso[2], [0.328, 0.353, 0.018], decimal=3)
