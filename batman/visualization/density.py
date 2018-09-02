@@ -4,6 +4,21 @@ Density-based measures
 
 This module is based on code initially written by Irene Witte (University of
 Hohenheim).
+
+:Example:
+
+::
+
+    >> from batman.space import Space
+    >> from batman.functions import Ishigami
+    >> f = Ishigami()
+    >> sample = Space(corners=[[-3.14, -3.14, -3.14], [3.14, 3.14, 3.14]],
+    >>               sample=1000)
+    >> sample.sampling()
+    >> data = f(sample)
+    >>
+    >> cusunoro(sample, data)
+    >> moment_independent(sample, data)
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -80,3 +95,88 @@ def cusunoro(sample, data, plabels=None, fname=None):
     bat.visualization.save_show(fname, [fig])
 
     return fig, ax, s_indices
+
+
+def ecdf(data):
+    """Empirical Cumulative Distribution.
+
+    :param array_like data: Sample of realization which corresponds to the
+          sample of parameters :attr:`sample` (n_samples, n_features).
+    :returns: xs (ordered data), ys (CDF(xs)).
+    :rtypes: array_like (n_samples, n_features), (n_samples,)
+    """
+    xs = np.sort(data)
+    ys = np.linspace(0, 1, num=len(data))
+    return xs, ys
+
+
+def moment_independent(sample, data, plabels=None, fname=None):
+    """Moment independent measures.
+
+    Both Kolmogorov and Kuiper measures are conditionaly computed to give
+    sensitivity indices.
+
+    :param array_like sample: Sample of parameters of Shape
+      (n_samples, n_params).
+    :param array_like data: Sample of realization which corresponds to the
+      sample of parameters :attr:`sample` (n_samples, ).
+    :param list(str) plabels: Names of each parameters (n_features).
+    :param str fname: wether to export to filename or display the figures.
+    :returns: figure, axis and sensitivity indices.
+    :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instances,
+      dict([Kolmogorov, Kuiper], n_features).
+    """
+    sample = np.asarray(sample)
+    data = np.asarray(data).flatten()
+
+    ns, dim = sample.shape
+    if plabels is None:
+        plabels = ['x' + str(i) for i in range(dim)]
+    else:
+        plabels = plabels
+
+    s_indices = {'Kolmogorov': [], 'Kuiper': []}
+    n_parts = 20
+    len_part = ns / n_parts
+
+    # Unconditional ECDF
+    ecdf_u = ecdf(data)
+
+    fig, axs = plt.subplots(1, dim)
+
+    for d in range(dim):
+        # Sensitivity indices
+        ks = []
+        kui = []
+
+        # Data reordering
+        idx = sample[:, d].argsort()
+        data_r = data[idx]
+
+        for i in range(n_parts):
+            # Conditional ECDF
+            ecdf_c = ecdf(data_r[int(i * len_part):int((i + 1) * len_part)])
+            axs[d].plot(ecdf_c[0], ecdf_c[1], alpha=.3)
+
+            # Metrics
+            data_all = np.concatenate([ecdf_u[0], ecdf_c[0]])
+            cdf1 = np.searchsorted(ecdf_u[0], data_all, side='right') / ns
+            cdf2 = np.searchsorted(ecdf_c[0], data_all, side='right') / len_part
+
+            ks_ = np.max(np.absolute(cdf1 - cdf2))
+            kui_ = np.max(cdf1 - cdf2) - np.min(cdf1 - cdf2)
+
+            ks.append(ks_)
+            kui.append(kui_)
+
+        s_indices['Kolmogorov'].append(np.mean(ks))
+        s_indices['Kuiper'].append(np.mean(kui))
+
+        axs[d].plot(ecdf_u[0], ecdf_u[1], c='k', linewidth=2)
+
+        axs[d].set_xlabel('Y|' + plabels[d])
+        axs[d].set_ylabel('CDF')
+
+    bat.visualization.save_show(fname, [fig])
+
+    return fig, axs, s_indices

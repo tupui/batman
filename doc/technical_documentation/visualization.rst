@@ -31,7 +31,9 @@ there are several options implemented in the package.
 +----------------------------------+-----------+----------------+---------------------------------------+
 | :func:`mesh_2D`                  |           | vector         | Sensitivity analysis on a 2D mesh     |
 +----------------------------------+-----------+----------------+---------------------------------------+
-| :func:`cusunoro`                 | vector    | scalar         | Density-based Sensitivity plot        |
+| :func:`moment_independent`       | vector    | scalar         | Density-based Sensitivity      (CDF)  |
++----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`cusunoro`                 | vector    | scalar         | Density-based Sensitivity (norm-CDF)  |
 +----------------------------------+-----------+----------------+---------------------------------------+
 
 All options return a figure object that can be reuse using :func:`reshow`.
@@ -423,6 +425,23 @@ Density-based Sensitivity Analysis
 
 The following are visual methods to assess sensitivity impact of the parameters
 on the quantity of interest. These methods are all density-based.
+
+Moment independent
+------------------
+
+Based on the unconditional ECDF, a conditional ECDF per feature is computed.
+The more the conditional ECDF deviates from the unconditional ECDF, the more
+the feature has an impact on the quantity of interest.
+
+In this example, the *Ishigami* function is used::
+
+    import batman as bat
+    bat.visualization.moment_independent(space, feval)
+
+.. image:: ../fig/moment_independent-ishigami.pdf
+
+From these ECDF, some distance measures are computed. The *Kolmogorov-Smirnov*
+and the *Kuiper* distances. They both allow to rank the features.
 
 CUSUNORO
 --------
