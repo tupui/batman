@@ -143,7 +143,12 @@ class Space(Sample):
 
         # sample the inputs non GP-distributed
         dim = self.dim-self.nb_gp_samplers
-        doe = Doe(n_samples, [x[0:dim] for x in self.corners], kind, dists[0:dim], discrete)
+        corners_dim = [x[0:dim] for x in self.corners]
+        if dists is None:
+            dists_dim = None
+        else:
+            dists_dim = dists[0:dim]
+        doe = Doe(n_samples, corners_dim, kind, dists_dim, discrete)
         samples = doe.generate()
 
         # sample the GP-distributed inputs and concatenate
@@ -168,7 +173,8 @@ class Space(Sample):
         self.logger.debug("Points are:\n{}".format(samples))
 
         if not hasattr(self, 'gp_samplers'):
-            self.logger.info("Discrepancy is {}".format(self.discrepancy(self.values[:, s:])))
+            s = int(bool(self.multifidelity))
+            self.logger.info("Discrepancy is {}".format(self.discrepancy(self.values[:, s:], self.corners)))
 
         return self.values
 
