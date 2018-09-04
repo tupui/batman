@@ -48,16 +48,19 @@ class GpSampler(object):
         >> sampler = GpSampler(reference)
         >> print(sampler)
         >> sampler.plot_modes()
+        >> sampler.plot_modes("modes.pdf")
         >>
         >> # Dimension 1 - Selection of a Gp instance from KLd coefficients
-        >> coeff = [0.2, 0.7, -0.4, 1.6, 0.2, 0.8]
+        >> coeff = [[0.2, 0.7, -0.4, 1.6, 0.2, 0.8]]
         >> instance = sampler(coeff=coeff)
         >> sampler.plot_sample(instance)
+        >> sampler.plot_sample(sample, "sample.pdf")
         >>
         >> # Dimension 1 - Sampling the Gp
         >> sample_size = 10
         >> sample = sampler(sample_size=sample_size)
         >> sampler.plot_sample(sample)
+        >> sampler.plot_sample(sample, "sample.pdf")
         >>
         >> # Dimension 2 - Creation of the Gp sampler
         >> n_nodes_by_dim = 10
@@ -71,16 +74,19 @@ class GpSampler(object):
         >>                     "AbsoluteExponential([0.5, 0.5], [1.0])")
         >> print(sampler)
         >> sampler.plot_modes()
+        >> sampler.plot_modes("mode.pdf")
         >>
         >> # Dimension 2 - Selection of a Gp instance from KLd coefficients
-        >> coeff = [0.2, 0.7, -0.4, 1.6, 0.2, 0.8]
+        >> coeff = [[0.2, 0.7, -0.4, 1.6, 0.2, 0.8]]
         >> instance = sampler(coeff=coeff)
         >> sampler.plot_sample(instance)
+        >> sampler.plot_sample(instance, "instance.pdf")
         >>
         >> # Dimension 2 - Sampling the Gp
         >> sample_size = 10
         >> sample = sampler(sample_size=sample_size)
         >> sampler.plot_sample(sample)
+        >> sampler.plot_sample(sample, "instance.pdf")
 
     """
 
@@ -119,12 +125,7 @@ class GpSampler(object):
         if self.n_dim == 1:
             vertices = indices
             simplices = [[i, i+1] for i in range(self.n_nodes-1)]
-        elif self.n_dim == 2:
-            vertices = indices
-            tri = Delaunay(np.array(vertices))
-            simplices = [[np.asscalar(xi) for xi in x]
-                         for x in list(tri.simplices)]
-        elif self.n_dim == 3:
+        elif self.n_dim in [2, 3]:
             vertices = indices
             tri = Delaunay(np.array(vertices))
             simplices = [[np.asscalar(xi) for xi in x]
@@ -199,10 +200,11 @@ class GpSampler(object):
                 # Sampled weights
                 weights = np.array(dist.getSample(sample_size))
             else:
-                doe = Doe(sample_size, [[-10]*self.n_modes, [10]*self.n_modes], kind, ['Normal(0., 1.)'], None)
+                doe = Doe(sample_size, [[-10]*self.n_modes, [10]*self.n_modes],
+                          kind, ['Normal(0., 1.)'], None)
                 weights = doe.generate()
         else:
-            weights = [list(x[0:self.n_modes]) + \
+            weights = [list(x[0:self.n_modes]) +
                        list(np.zeros(max(0, self.n_modes - len(x))))
                        for x in coeff]
             weights = np.array(weights)
@@ -215,66 +217,67 @@ class GpSampler(object):
 
         return {'Values': sample, 'Coefficients': weights}
 
-    def plot_modes(self, path='.'):
+    def plot_modes(self, fname=None):
         """Plot the modes of the Karhunen Loeve decomposition.
 
-        :param str path: path to write plot
+        :param str fname: path to write plot; show the figure if None
         """
         if self.n_dim == 1:
             fig = plt.figure('Modes')
-            ind = np.argsort(np.array(self.mesh.getVertices()).T)
-            plt.plot(self.mesh.getVertices().sort(), self.modes[ind][0])
+            abscissa = np.array(self.mesh.getVertices()).T
+            ind = np.argsort(abscissa)
+            values = [[x[i] for i in ind[0]] for x in self.modes.T]
+            abscissa.sort()
+            plt.plot(abscissa[0], np.array(values).T)
             fig.tight_layout()
-            path = os.path.join(path, 'modes_gp.pdf')
-            fig.savefig(path, transparent=True, bbox_inches='tight')
-            plt.close('all')
+            bat.visualization.save_show(fname, [fig])
         elif self.n_dim == 2:
             for i in range(self.n_modes):
                 mode = np.reshape(self.modes.T[i], self.n_nodes)
-                filename = path+'/'+'mode_gp_'+str(i)+'.pdf'
-                title = "Gp mode #"+str(i + 1)
-                self.surface_plot(mode, filename, title)
+                title = "Gp mode #"+str(i)
+                if fname is not None:
+                    basename = os.path.splitext(fname)[0]
+                    extension = os.path.splitext(fname)[1]
+                    fname_i = basename+'_'+str(i)+extension
+                else:
+                    fname_i = None
+                self.surface_plot(mode, fname_i, title)
 
-    def plot_sample(self, sample, path='.'):
+    def plot_sample(self, sample, fname=None):
         """Plot the sample.
 
         :param dict sample: Output of :func:`GpSampler.__call__`
-        :param str path: path to write plot
+        :param str fname: path to write plot; show the figure if None
         """
         if self.n_dim == 1:
             fig = plt.figure('Sample')
-            if len(sample['Values'].shape) == 1:
-                instance = sample['Values']
-            else:
-                instance = sample['Values'].T
-            ind = np.argsort(np.array(self.mesh.getVertices()).T)
-            plt.plot(self.mesh.getVertices().sort(), instance[ind[0]])
+            abscissa = np.array(self.mesh.getVertices()).T
+            ind = np.argsort(abscissa)
+            values = [[x[i] for i in ind[0]] for x in sample['Values']]
+            abscissa.sort()
+            plt.plot(abscissa[0], np.array(values).T)
             fig.tight_layout()
-            path = os.path.join(path, 'sample_gp.pdf')
-            fig.savefig(path, transparent=True, bbox_inches='tight')
-            plt.close('all')
+            bat.visualization.save_show(fname, [fig])
         elif self.n_dim == 2:
-            if len(sample['Values'].shape) == 1:
-                instance = np.reshape(sample['Values'], self.n_nodes)
-                filename = path+'/'+'sample_gp.pdf'
-                title = "Gp instance"
-                self.surface_plot(instance, filename, title)
-            else:
-                for i, _ in enumerate(sample['Values']):
-                    instance = np.reshape(sample['Values'][i], self.n_nodes)
-                    filename = path+'/'+'gp_instance_'+str(i)+'.pdf'
-                    title = "Gp instance #" + str(i + 1)
-                    self.surface_plot(instance, filename, title)
+            for i, value in enumerate(sample['Values']):
+                title = "Gp instance #"+str(i)
+                if fname is not None:
+                    basename = os.path.splitext(fname)[0]
+                    extension = os.path.splitext(fname)[1]
+                    fname_i = basename+'_'+str(i)+extension
+                else:
+                    fname_i = None
+                self.surface_plot(value, fname_i, title)
 
-    def surface_plot(self, z_values, filename="surface_plot.pdf", title=""):
+    def surface_plot(self, z_values, fname=None, title=None):
         """Plot a 2D surface plot.
         :param array_like z_values: Gp instance to plot
-        :param str filename: filename to write plot
+        :param str fname: filename to write plot; show the figure if None
         :param str title: title of the plot
         """
-        fig = plt.figure(filename)
+        fig = plt.figure(fname)
         plt.tricontourf(self.x_coord, self.y_coord, z_values, 100)
         plt.plot(self.x_coord, self.y_coord, 'ko ')
-        plt.title(title)
-        fig.savefig(filename)
-        plt.close('all')
+        if not None:
+            plt.title(title)
+        bat.visualization.save_show(fname, [fig])
