@@ -135,6 +135,7 @@ def moment_independent(sample, data, plabels=None, fname=None):
     mean_t = np.mean(data)
 
     ns, dim = sample.shape
+    ns = float(ns)
     if plabels is None:
         plabels = ['x' + str(i) for i in range(dim)]
     else:

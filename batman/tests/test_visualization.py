@@ -453,13 +453,13 @@ class TestDensity:
     def test_moment_independant(self, ishigami_data, tmp):
         ishigami_data_ = copy.deepcopy(ishigami_data)
         ishigami_data_.space.max_points_nb = 5000
-        X = ishigami_data_.space.sampling(5000)
+        X = ishigami_data_.space.sampling(5000, 'lhsopt')
         Y = ishigami_data_.func(X).flatten()
 
         momi = moment_independent(X, Y, plabels=['x1', 'x2', 'x3'],
                                   fname=os.path.join(tmp, 'moment_independent.pdf'))
 
-        npt.assert_almost_equal(momi[2]['Kolmogorov'], [0.233, 0.381, 0.1], decimal=3)
-        npt.assert_almost_equal(momi[2]['Kuiper'], [0.255, 0.404, 0.193], decimal=3)
-        npt.assert_almost_equal(momi[2]['Delta'], [0.21, 0.347, 0.159], decimal=3)
-        npt.assert_almost_equal(momi[2]['Sobol'], [0.31, 0.425, 0.000], decimal=3)
+        npt.assert_almost_equal(momi[2]['Kolmogorov'], [0.236, 0.377, 0.107], decimal=2)
+        npt.assert_almost_equal(momi[2]['Kuiper'], [0.257, 0.407, 0.199], decimal=2)
+        npt.assert_almost_equal(momi[2]['Delta'], [0.211, 0.347, 0.162], decimal=2)
+        npt.assert_almost_equal(momi[2]['Sobol'], [0.31 , 0.421, 0.002], decimal=2)
