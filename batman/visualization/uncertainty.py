@@ -281,7 +281,7 @@ def sobol(sobols, conf=None, plabels=None, xdata=None, xlabel='x', fname=None):
     :param list(str) plabels: parameters' names.
     :param array_like xdata: 1D discretization of the function (n_features,).
     :param str xlabel: label of the discretization parameter.
-    :param str fname: wether to export to filename or display the figures.
+    :param str fname: whether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """
@@ -348,7 +348,7 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
     :param str interpolation: If None, does not interpolate correlation and
         covariance matrices (YY). Otherwize use Matplotlib methods from
         `imshow` such as `['bilinear', 'lanczos', 'spline16', 'hermite', ...]`.
-    :param str fname: wether to export to filename or display the figures.
+    :param str fname: whether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """

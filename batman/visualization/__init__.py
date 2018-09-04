@@ -36,7 +36,7 @@ def save_show(fname, figures, **kwargs):
 
     If :attr:`fname` is `None` the figure will show.
 
-    :param str fname: wether to export to filename or display the figures.
+    :param str fname: whether to export to filename or display the figures.
     :param list(Matplotlib figure instance) figures: Figures to handle.
     """
     with warnings.catch_warnings():

@@ -31,7 +31,7 @@ there are several options implemented in the package.
 +----------------------------------+-----------+----------------+---------------------------------------+
 | :func:`mesh_2D`                  |           | vector         | Sensitivity analysis on a 2D mesh     |
 +----------------------------------+-----------+----------------+---------------------------------------+
-| :func:`moment_independent`       | vector    | scalar         | Density-based Sensitivity      (CDF)  |
+| :func:`moment_independent`       | vector    | scalar         | Density-based Sensitivity (CDF/PDF)   |
 +----------------------------------+-----------+----------------+---------------------------------------+
 | :func:`cusunoro`                 | vector    | scalar         | Density-based Sensitivity (norm-CDF)  |
 +----------------------------------+-----------+----------------+---------------------------------------+
@@ -426,12 +426,16 @@ Density-based Sensitivity Analysis
 The following are visual methods to assess sensitivity impact of the parameters
 on the quantity of interest. These methods are all density-based.
 
+.. seealso:: The personal website of `Elmar Plischke <https://artefakte.rz-housing.tu-clausthal.de/epl/work/GlobalSA/GlobalSensitivityIndexEstimators.html>`_
+  provides some detail explanations on the following methods.
+
 Moment independent
 ------------------
 
-Based on the unconditional ECDF, a conditional ECDF per feature is computed.
-The more the conditional ECDF deviates from the unconditional ECDF, the more
-the feature has an impact on the quantity of interest.
+Based on the unconditional PDF, a conditional PDF per feature is computed.
+The more the conditional PDF deviates from the unconditional PDF, the more
+the feature has an impact on the quantity of interest. The same procedure is done
+using the Empirical Density Function (ECDF), respectively with the unconditional ECDF.
 
 In this example, the *Ishigami* function is used::
 
@@ -440,13 +444,15 @@ In this example, the *Ishigami* function is used::
 
 .. image:: ../fig/moment_independent-ishigami.pdf
 
-From these ECDF, some distance measures are computed. The *Kolmogorov-Smirnov*
-and the *Kuiper* distances. They both allow to rank the features.
+Using the PDF, *delta* indices are computed and with the ECDF *Kolmogorov*
+    and *Kuiper* measures are computed. Based on the successive bins, *Sobol'*
+    indices are also given. All these measures are used to rank the
+    parameters.
 
 CUSUNORO
 --------
 
-CUSUNORO stands for: cumulative sums of normalised reordered output[Plischke2012]_.
+CUSUNORO stands for: cumulative sums of normalized reordered output[Plischke2012]_.
 The output is normalized and ordered in function of a given feature. Then, its
 cumulative sum vector is computed. In other words, this corresponds to the
 conditional ECDF after normalization. The more the curve is from the

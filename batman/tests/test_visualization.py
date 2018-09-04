@@ -447,8 +447,8 @@ class TestDensity:
     def test_ecdf(self):
         data = np.array([1, 3, 6, 10, 2])
         xs, ys = ecdf(data)
-        npt.assert_equal(xs, [ 1, 2, 3, 6, 10])
-        npt.assert_equal(ys, [0 , 0.25, 0.5, 0.75, 1.])
+        npt.assert_equal(xs, [1, 2, 3, 6, 10])
+        npt.assert_equal(ys, [0, 0.25, 0.5, 0.75, 1.])
 
     def test_moment_independant(self, ishigami_data, tmp):
         ishigami_data_ = copy.deepcopy(ishigami_data)
@@ -457,7 +457,9 @@ class TestDensity:
         Y = ishigami_data_.func(X).flatten()
 
         momi = moment_independent(X, Y, plabels=['x1', 'x2', 'x3'],
-                                  fname=os.path.join(tmp, 'cusunoro.pdf'))
+                                  fname=os.path.join(tmp, 'moment_independent.pdf'))
 
-        npt.assert_almost_equal(momi[2]['Kolmogorov'], [0.234, 0.378, 0.103], decimal=3)
-        npt.assert_almost_equal(momi[2]['Kuiper'], [0.255, 0.412, 0.195], decimal=3)
+        npt.assert_almost_equal(momi[2]['Kolmogorov'], [0.233, 0.381, 0.1], decimal=3)
+        npt.assert_almost_equal(momi[2]['Kuiper'], [0.255, 0.404, 0.193], decimal=3)
+        npt.assert_almost_equal(momi[2]['Delta'], [0.21, 0.347, 0.159], decimal=3)
+        npt.assert_almost_equal(momi[2]['Sobol'], [0.31, 0.425, 0.000], decimal=3)

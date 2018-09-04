@@ -21,16 +21,16 @@ Hohenheim).
     >> moment_independent(sample, data)
 """
 import numpy as np
+from scipy.stats import gaussian_kde
 import matplotlib.pyplot as plt
-import pandas as pd
 import batman as bat
 
 
 def cusunoro(sample, data, plabels=None, fname=None):
-    """CUmulative SUms of NOrmalised Reordered Output.
+    """Cumulative sums of normalised reordered output.
 
     1. Data are normalized (mean=0, variance=1),
-    2. Chose a feature and order its values,
+    2. Choose a feature and order its values,
     3. Order normalized data accordingly,
     4. Compute the cumulative sum vector.
     5. Plot and repeat for all features.
@@ -40,7 +40,7 @@ def cusunoro(sample, data, plabels=None, fname=None):
     :param array_like data: Sample of realization which corresponds to the
       sample of parameters :attr:`sample` (n_samples, ).
     :param list(str) plabels: Names of each parameters (n_features).
-    :param str fname: wether to export to filename or display the figures.
+    :param str fname: whether to export to filename or display the figures.
     :returns: figure, axis and sensitivity indices.
     :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instance,
       array_like.
@@ -51,10 +51,7 @@ def cusunoro(sample, data, plabels=None, fname=None):
     ns, dim = sample.shape
     if plabels is None:
         plabels = ['x' + str(i) for i in range(dim)]
-    else:
-        plabels = plabels
 
-    """Cusunoro computation and plot."""
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
 
     # Normalization (mean=0, var=1) for first and second moment
@@ -66,7 +63,7 @@ def cusunoro(sample, data, plabels=None, fname=None):
     s_indices = np.zeros(dim)
 
     interval = int(ns / 500) if ns > 500 else 1
-    n_partition = int(np.ceil(np.sqrt(ns)))  # from Plischke
+    n_bins = int(np.ceil(np.sqrt(ns)))  # from Plischke
 
     for i in range(dim):
         # Reordering and cumulative sum
@@ -75,7 +72,7 @@ def cusunoro(sample, data, plabels=None, fname=None):
         cumsum2 = np.cumsum(ynorm2[idx])
 
         # Estimation of the first order effect from the cusunoro curve
-        s_indices[i] = sum(np.diff(cumsum[::n_partition])**2) * n_partition
+        s_indices[i] = sum(np.diff(cumsum[::n_bins]) ** 2) * n_bins
         # Si_max = (condmax[1]**2)*(1/condmax[0] + 1/(1 - condmax[0]))
 
         # Plot
@@ -113,21 +110,29 @@ def ecdf(data):
 def moment_independent(sample, data, plabels=None, fname=None):
     """Moment independent measures.
 
-    Both Kolmogorov and Kuiper measures are conditionaly computed to give
-    sensitivity indices.
+    Use both PDF and ECDF to cumpute moment independent measures. The following
+    algorithm describes the PDF method (ECDF works the same):
+
+    1. Compute the unconditional PDF,
+    2. Choose a feature and order its values and order the data accordingly,
+    3. Create bins based on the feature ranges,
+    4. Compute the PDF of the ordered data on all successive bins,
+    5. Plot and repeat for all features.
 
     :param array_like sample: Sample of parameters of Shape
       (n_samples, n_params).
     :param array_like data: Sample of realization which corresponds to the
       sample of parameters :attr:`sample` (n_samples, ).
     :param list(str) plabels: Names of each parameters (n_features).
-    :param str fname: wether to export to filename or display the figures.
+    :param str fname: whether to export to filename or display the figures.
     :returns: figure, axis and sensitivity indices.
     :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instances,
-      dict([Kolmogorov, Kuiper], n_features).
+      dict(['Kolmogorov', 'Kuiper', 'Delta', 'Sobol'], n_features).
     """
     sample = np.asarray(sample)
     data = np.asarray(data).flatten()
+    var_t = np.var(data)
+    mean_t = np.mean(data)
 
     ns, dim = sample.shape
     if plabels is None:
@@ -135,28 +140,39 @@ def moment_independent(sample, data, plabels=None, fname=None):
     else:
         plabels = plabels
 
-    s_indices = {'Kolmogorov': [], 'Kuiper': []}
-    n_parts = 20
+    s_indices = {'Kolmogorov': [], 'Kuiper': [], 'Delta': [], 'Sobol': []}
+    n_parts = int(min(np.ceil(ns ** (2 / (7 + np.tanh((1500 - ns) / 500)))), 48))
     len_part = ns / n_parts
+
+    # Unconditional PDF
+    xs = np.linspace(np.min(data), np.max(data), 100)
+    pdf_u = gaussian_kde(data, bw_method="silverman")(xs)
 
     # Unconditional ECDF
     ecdf_u = ecdf(data)
 
-    fig, axs = plt.subplots(1, dim)
+    fig, axs = plt.subplots(2, dim)
 
     for d in range(dim):
         # Sensitivity indices
         ks = []
         kui = []
+        d_hat = 0
+        var_d = 0
 
         # Data reordering
         idx = sample[:, d].argsort()
         data_r = data[idx]
 
         for i in range(n_parts):
+            # Conditional PDF
+            data_ = data_r[int(i * len_part):int((i + 1) * len_part)]
+            pdf_c = gaussian_kde(data_, bw_method="silverman")(xs)
+            axs[0][d].plot(xs, pdf_c, alpha=.3)
+
             # Conditional ECDF
-            ecdf_c = ecdf(data_r[int(i * len_part):int((i + 1) * len_part)])
-            axs[d].plot(ecdf_c[0], ecdf_c[1], alpha=.3)
+            ecdf_c = ecdf(data_)
+            axs[1][d].plot(ecdf_c[0], ecdf_c[1], alpha=.3)
 
             # Metrics
             data_all = np.concatenate([ecdf_u[0], ecdf_c[0]])
@@ -168,14 +184,22 @@ def moment_independent(sample, data, plabels=None, fname=None):
 
             ks.append(ks_)
             kui.append(kui_)
+            d_hat += (len_part / (2 * ns)) * np.trapz(np.abs(pdf_u - pdf_c), xs)
+            var_d += (len_part / ns) * (data_.mean() - mean_t) ** 2
 
         s_indices['Kolmogorov'].append(np.mean(ks))
         s_indices['Kuiper'].append(np.mean(kui))
+        s_indices['Delta'].append(d_hat)
+        s_indices['Sobol'].append(var_d / var_t)
 
-        axs[d].plot(ecdf_u[0], ecdf_u[1], c='k', linewidth=2)
+        axs[0][d].plot(xs, pdf_u, c='k', linewidth=2)
 
-        axs[d].set_xlabel('Y|' + plabels[d])
-        axs[d].set_ylabel('CDF')
+        axs[1][d].plot(ecdf_u[0], ecdf_u[1], c='k', linewidth=2)
+        axs[1][d].set_xlabel('Y|' + plabels[d])
+
+        if d == 0:
+            axs[0][d].set_ylabel('PDF')
+            axs[1][d].set_ylabel('CDF')
 
     bat.visualization.save_show(fname, [fig])
 
