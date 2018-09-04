@@ -142,13 +142,13 @@ class Space(Sample):
             n_samples = self._cheap_doe_from_expensive(n_samples)
 
         # sample the inputs non GP-distributed
-        dim = self.dim-self.nb_gp_samplers
-        corners_dim = [x[0:dim] for x in self.corners]
+        isNotGp = [dist != 'GpSampler' for dist in dists]
         if dists is None:
-            dists_dim = None
+            distsNotGp = None
         else:
-            dists_dim = dists[0:dim]
-        doe = Doe(n_samples, corners_dim, kind, dists_dim, discrete)
+            distsNotGp = [dists[i] for i, _ in enumerate(dists) if isNotGp[i]]
+        cornersNotGp = [self.corners[i] for i, _ in enumerate(dists) if isNotGp[i]]
+        doe = Doe(n_samples, cornersNotGp, kind, distsNotGp, discrete)
         samples = doe.generate()
 
         # sample the GP-distributed inputs and concatenate
