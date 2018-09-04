@@ -270,7 +270,7 @@ class HdrBoxplot:
         otherwize the given sample is used.
 
         :param array_like: samples to plot (n_samples, n_features).
-        :param str fname: wether to export to filename or display the figures.
+        :param str fname: whether to export to filename or display the figures.
         :param array_like x_common: abscissa (1, n_features).
         :param list(str) labels: labels for each curve.
         :param str xlabel: label for x axis.

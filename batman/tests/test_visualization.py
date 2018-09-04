@@ -1,5 +1,6 @@
 # coding: utf8
 import os
+import copy
 import pytest
 import numpy as np
 import numpy.testing as npt
@@ -8,7 +9,8 @@ import openturns as ot
 from mock import patch
 from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf, sobol,
                                   reshow, response_surface, doe, corr_cov,
-                                  mesh_2D)
+                                  mesh_2D, cusunoro, moment_independent)
+from batman.visualization.density import ecdf
 from batman.surrogate import SurrogateModel
 from batman.functions import (Ishigami, db_Mascaret, el_nino)
 import matplotlib.pyplot as plt
@@ -430,3 +432,34 @@ def test_corr_cov(mock_show, mascaret_data, tmp):
     data = func(sample)
     corr_cov(data, sample, func.x, interpolation='lanczos', plabels=['Ks', 'Q'])
     corr_cov(data, sample, func.x, fname=os.path.join(tmp, 'corr_cov.pdf'))
+
+
+class TestDensity:
+
+    def test_cusunoro(self, ishigami_data, tmp):
+        Y = ishigami_data.target_space.flatten()
+        X = ishigami_data.space
+        cuso = cusunoro(X, Y, plabels=['x1', 'x2', 'x3'],
+                        fname=os.path.join(tmp, 'cusunoro.pdf'))
+
+        npt.assert_almost_equal(cuso[2], [0.328, 0.353, 0.018], decimal=3)
+
+    def test_ecdf(self):
+        data = np.array([1, 3, 6, 10, 2])
+        xs, ys = ecdf(data)
+        npt.assert_equal(xs, [1, 2, 3, 6, 10])
+        npt.assert_equal(ys, [0, 0.25, 0.5, 0.75, 1.])
+
+    def test_moment_independant(self, ishigami_data, tmp):
+        ishigami_data_ = copy.deepcopy(ishigami_data)
+        ishigami_data_.space.max_points_nb = 5000
+        X = ishigami_data_.space.sampling(5000)
+        Y = ishigami_data_.func(X).flatten()
+
+        momi = moment_independent(X, Y, plabels=['x1', 'x2', 'x3'],
+                                  fname=os.path.join(tmp, 'moment_independent.pdf'))
+
+        npt.assert_almost_equal(momi[2]['Kolmogorov'], [0.233, 0.381, 0.1], decimal=3)
+        npt.assert_almost_equal(momi[2]['Kuiper'], [0.255, 0.404, 0.193], decimal=3)
+        npt.assert_almost_equal(momi[2]['Delta'], [0.21, 0.347, 0.159], decimal=3)
+        npt.assert_almost_equal(momi[2]['Sobol'], [0.31, 0.425, 0.000], decimal=3)

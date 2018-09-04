@@ -294,7 +294,7 @@ class Space(Sample):
 
         :param array_like sample: The sample to compute the discrepancy from
           (n_samples, k_vars).
-        :param str fname: wether to export to filename or display the figures.
+        :param str fname: whether to export to filename or display the figures.
         :return: Mean, standard deviation and edges of the MST.
         :rtypes: float, float, array_like (n_edges, 2 nodes indices).
         """

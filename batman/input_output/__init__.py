@@ -34,10 +34,10 @@ FORMATER.update(BUILTIN_FORMATER)  # highest priority to built-in formaters
 
 
 def available_formats():
-    """Returns the list of available format names."""
+    """Return the list of available format names."""
     return copy(FORMATER.keys())
 
 
 def formater(format_name):
-    """Returns a Formater"""
+    """Return a Formater."""
     return FORMATER[format_name]

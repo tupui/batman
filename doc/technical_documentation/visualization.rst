@@ -31,6 +31,10 @@ there are several options implemented in the package.
 +----------------------------------+-----------+----------------+---------------------------------------+
 | :func:`mesh_2D`                  |           | vector         | Sensitivity analysis on a 2D mesh     |
 +----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`moment_independent`       | vector    | scalar         | Density-based Sensitivity (CDF/PDF)   |
++----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`cusunoro`                 | vector    | scalar         | Density-based Sensitivity (norm-CDF)  |
++----------------------------------+-----------+----------------+---------------------------------------+
 
 All options return a figure object that can be reuse using :func:`reshow`.
 This enables some modification of the graph. In most cases, the first parameter ``data`` is
@@ -416,8 +420,61 @@ the following table:
 +-------------+-------------------+-------------------+-----------------------------------------+
 
 
+Density-based Sensitivity Analysis
+==================================
+
+The following are visual methods to assess sensitivity impact of the parameters
+on the quantity of interest. These methods are all density-based.
+
+.. seealso:: The personal website of `Elmar Plischke <https://artefakte.rz-housing.tu-clausthal.de/epl/work/GlobalSA/GlobalSensitivityIndexEstimators.html>`_
+  provides some detail explanations on the following methods.
+
+Moment independent
+------------------
+
+Based on the unconditional PDF, a conditional PDF per feature is computed.
+The more the conditional PDF deviates from the unconditional PDF, the more
+the feature has an impact on the quantity of interest. The same procedure is done
+using the Empirical Density Function (ECDF), respectively with the unconditional ECDF.
+
+In this example, the *Ishigami* function is used::
+
+    import batman as bat
+    bat.visualization.moment_independent(space, feval)
+
+.. image:: ../fig/moment_independent-ishigami.pdf
+
+Using the PDF, *delta* indices are computed and with the ECDF *Kolmogorov*
+    and *Kuiper* measures are computed. Based on the successive bins, *Sobol'*
+    indices are also given. All these measures are used to rank the
+    parameters.
+
+CUSUNORO
+--------
+
+CUSUNORO stands for: cumulative sums of normalized reordered output[Plischke2012]_.
+The output is normalized and ordered in function of a given feature. Then, its
+cumulative sum vector is computed. In other words, this corresponds to the
+conditional ECDF after normalization. The more the curve is from the
+unconditional ECDF (a flat line after normalization), the more the output
+is sensitive to the feature. 
+
+In this example, the *Ishigami* function is used::
+
+    import batman as bat
+    bat.visualization.cusunoro(space, feval)
+
+.. image:: ../fig/cusunoro-ishigami.pdf
+
+It can be seen from the figure (*left*) that first an second parameters deviate
+from a flat line. From the second figure (*right*), the third parameter shows some
+effects. To conclude, first and second parameters have a first order influence
+while third parameter has a second order influence on the quantity of interest.
+
 
 Acknowledgement
 ===============
 
 We are gratefull to the help and support on OpenTURNS Michaël Baudin has provided.
+We would like to thank Irene Witte (University of Hohenheim) for her help
+with density-based methods.
