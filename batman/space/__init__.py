@@ -7,6 +7,7 @@ from .space import Space
 from .sampling import Doe
 from .sample import Sample
 from .refiner import Refiner
+import sklearn as sk
 
 __all__ = ["Space", "Doe", "Sample", "Refiner", "dists_to_ot", "kernel_to_ot"]
 
@@ -58,5 +59,29 @@ def kernel_to_ot(kernel):
                       {'ot': __import__('openturns')})
     except (TypeError, AttributeError):
         raise AttributeError('OpenTURNS kernel unknown.')
+
+    return kernel
+
+def kernel_to_skl(kernel):
+    """Convert kernel to scikit-learn.
+
+    The kernel is converted to scikit-learn objects.
+
+    :Example:
+
+    ::
+
+        >> from batman.space import kernel_to_skl
+        >> kernel = kernel_to_skl("RBF(0.5)")
+
+    :param str kernel: Kernel available in scikit-learn.
+    :return: scikit-learn kernel.
+    :rtype: list(:class:`sklearn.gaussian_process.kernels.kernel`)
+    """
+    try:
+        kernel = eval('kernels.' + kernel, {'__builtins__': None},
+                      {'kernels': __import__('sklearn.gaussian_process.kernels', fromlist=['kernels'])})
+    except (TypeError, AttributeError):
+        raise AttributeError('scikit-learn kernel unknown.')
 
     return kernel

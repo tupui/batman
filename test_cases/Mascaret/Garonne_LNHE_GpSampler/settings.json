@@ -14,7 +14,7 @@
             "reference": ["reference.npy"],
             "add": [true],
             "kernel": ["AbsoluteExponential([0.5], [1.0])"],
-            "thresholds": [0.99]
+            "thresholds": [0.01]
         }
     },
     "snapshot": {

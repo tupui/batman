@@ -98,7 +98,7 @@ First of all, we define the parameter space using an hypercube. Taking the minim
       each element being a dictionnary made of ``indices`` representing a list of the index values of the parameter values (e.g. ``t``) and ``values`` representing a list of reference parameter values (e.g. ``reference(t)``),
     * [``kernel``]: list of kernels,
     * [``add``]: list of boolean variables, True when Gaussian process realizations are added to the reference parameters, and False if not.
-    * [``thresholds``]: list of explaine variance ratios for Karhunen-Loeve decomposition of the Gaussian processes.
+    * [``thresholds``]: list of thresholds corresponding to the minimal relative amplitude of the eigenvalues to consider in the Karhunen-Loeve decomposition of the Gaussian process wrt the sum of the preceeding eigenvalues.
 
 + [``resampling``]: to do resampling, fill this dictionary
 

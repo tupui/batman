@@ -25,7 +25,7 @@ def test_GpSampler(mock_show, tmp):
     sampler.plot_sample(Y, tmp)
 
     # Build a Gp instance and plot the instances
-    coeff = [0.2, 0.7, -0.4, 1.6, 0.2, 0.8]
+    coeff = [[0.2, 0.7, -0.4, 1.6, 0.2, 0.8]]
     Y = sampler(coeff=coeff)
     sampler.plot_sample(Y, tmp)
 
@@ -39,34 +39,36 @@ def sampler():
 
 
 def test_GpSampler_modes(sampler):
-    sol = np.array([[6.938e-01, 6.068e-01, 3.878e-01],
-                    [9.363e-01, 1.440e-16, -3.512e-01],
-                    [6.938e-01, -6.068e-01, 3.878e-01]])
+    sol = np.array([[ 0.531,  0.635,  0.562],
+                    [-0.729,  0.004,  0.684],
+                    [ 0.432, -0.773,  0.465]])
     npt.assert_almost_equal(sampler.modes, sol, decimal=2)
 
 
 def test_GpSampler_sample_values(sampler):
     size = 2
     ot.RandomGenerator.SetSeed(0)
+    np.random.seed(0)
     Y = sampler(size)
-    sol = np.array([[-0.69 ,  1.336, -0.158],
-                    [-0.011, -1.308, -1.474]])
+    sol = np.array([[0.742, 0.608, 1.076],
+                    [0.11 , 1.39 , 1.455]])
     npt.assert_almost_equal(Y['Values'], sol, decimal=2)
 
 
 def test_GpSampler_sample_coeff(sampler):
     size = 2
     ot.RandomGenerator.SetSeed(0)
+    np.random.seed(0)
     Y = sampler(size)
-    sol = np.array([[ 0.608, -0.438, -2.181],
-                    [-1.266,  1.205,  0.35 ]])
+    sol = np.array([[ 1.764,  0.4  ,  0.979],
+                    [ 2.241,  1.868, -0.977]])
     npt.assert_almost_equal(Y['Coefficients'], sol, decimal=2)
 
 
 def test_GpSampler_build_values(sampler):
     coeff = [[0.2, 0.7, -0.4, 1.6, 0.2, 0.8]]
     Y = sampler(coeff=coeff)
-    sol = np.array([0.408,  0.328, -0.441])
+    sol = np.array([-0.23, 0.212, 0.258])
     npt.assert_almost_equal(Y['Values'], sol, decimal=2)
 
 

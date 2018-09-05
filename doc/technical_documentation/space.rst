@@ -38,7 +38,7 @@ This parameter is observed at many index values:
     
 and this parameter ``reference`` can be either an object of type ``list`` or a .npy file storing this object.
     
-A Gaussian process with zero mean is built from ``reference`` and a kernel function. The Gaussian process information can be compressed by thresholding the Karhunen Loeve Decomposition (KLD) involved in the Gaussian process sampling. This threshold corresponds to the percentage of Gaussian process variance explained by the truncation of the KLD.
+A Gaussian process with zero mean is built from ``reference`` and a kernel function. The Gaussian process information can be compressed by thresholding the Karhunen Loeve Decomposition (KLD) involved in the Gaussian process sampling. This threshold corresponds to the minimal relative amplitude of the eigenvalues to consider in the Karhunen-Loeve decomposition of the Gaussian process wrt the sum of the preceeding eigenvalues.
 
 Lastly, Gaussian process realizations can either be added to the reference values [v_1, ..., v_n] and the totals become inputs of the output provider, or directly become inputs of the ouput provider.
 

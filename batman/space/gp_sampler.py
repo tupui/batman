@@ -6,11 +6,11 @@ Gaussian process sampler
 import logging
 import os
 import matplotlib.pyplot as plt
-import openturns as ot
 import numpy as np
 import batman as bat
 from .sampling import Doe
-from scipy.spatial import Delaunay
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.decomposition import PCA
 import sys
 PY2 = sys.version_info.major == 2
 
@@ -54,7 +54,7 @@ class GpSampler(object):
         >> coeff = [[0.2, 0.7, -0.4, 1.6, 0.2, 0.8]]
         >> instance = sampler(coeff=coeff)
         >> sampler.plot_sample(instance)
-        >> sampler.plot_sample(sample, "sample.pdf")
+        >> sampler.plot_sample(instance, "instance.pdf")
         >>
         >> # Dimension 1 - Sampling the Gp
         >> sample_size = 10
@@ -71,7 +71,7 @@ class GpSampler(object):
         >>                          for y in range(n_nodes_by_dim)],
         >>              'values': [0 for x in range(n_nodes)]}
         >> sampler = GpSampler(reference,
-        >>                     "AbsoluteExponential([0.5, 0.5], [1.0])")
+        >>                     "Matern([0.5, 0.5], nu=0.5)")
         >> print(sampler)
         >> sampler.plot_modes()
         >> sampler.plot_modes("mode.pdf")
@@ -94,7 +94,7 @@ class GpSampler(object):
 
     def __init__(self,
                  reference,
-                 kernel="AbsoluteExponential([0.5], [1.0])",
+                 kernel="Matern(0.5, nu=0.5)",
                  add=True,
                  threshold=0.01):
         """From a reference function, define the Gp over an index set and
@@ -105,9 +105,10 @@ class GpSampler(object):
                                 'values': [v1, v2, ..., vn]}
                                where ij = [ij1, ij2, ..., ijd], d in {1, 2, 3}
         :param bool add: add the Gp realizations to the reference function.
-        :param str kernel: kernel for the covariance model.
-        :param float threshold: minimal relative amplitude of the
-               eigenvalues to consider in the KLd wrt the maximum eigenvalue.
+        :param str kernel: scikit-learn kernel for the covariance model.
+        :param float threshold: the minimal relative amplitude of the
+                                eigenvalues to consider in the decomposition
+                                wrt the sum of the preceeding eigenvalues.
         """
         # Check if string (lenient for byte-strings on Py2):
         if isinstance(reference, basestring if PY2 else str):
@@ -119,53 +120,29 @@ class GpSampler(object):
         self.kernel = kernel
         self.add = add
         self.threshold = threshold
+        gp = GaussianProcessRegressor(kernel=bat.space.kernel_to_skl(self.kernel))
+        y = gp.sample_y(self.reference['indices'], 10000).T
+        self.pca = PCA(svd_solver="full")
+        y_transform = self.pca.fit_transform(y)
+        def truncation_order(x):
+            kept = [x[i]/np.sum(x[:i]) > self.threshold for i, _ in enumerate(x) if i>0]
+            kept.insert(0, True)
+            return np.sum(kept)
+        self.standard_deviation = np.std(y_transform, 0)
+        self.n_modes = truncation_order((self.standard_deviation/np.sqrt(self.n_nodes))**2)
+        self.modes = self.pca.components_[:self.n_modes, :]
+        self.standard_deviation = self.standard_deviation[:self.n_modes]/np.sqrt(self.n_nodes)
+        self.scaled_modes = (self.modes.T*self.standard_deviation).T
 
-        # OpenTurns mesh construction
-        indices = self.reference['indices']
-        if self.n_dim == 1:
-            vertices = indices
-            simplices = [[i, i+1] for i in range(self.n_nodes-1)]
-        elif self.n_dim in [2, 3]:
-            vertices = indices
-            tri = Delaunay(np.array(vertices))
-            simplices = [[np.asscalar(xi) for xi in x]
-                         for x in list(tri.simplices)]
-        self.mesh = ot.Mesh(vertices, simplices)
+        def extract_coord(i):
+            temp = np.array([[x[i]] for x in self.reference['indices']])
+            return temp.reshape(self.n_nodes)
 
-        # Kernel
-        model = bat.space.kernel_to_ot(self.kernel)
-
-        # Karhunen-Loeve decomposition algorithm using P1 approximation
-        algo = ot.KarhunenLoeveP1Algorithm(self.mesh, model, self.threshold)
-
-        # Computation of the eigenvalues and eigen function values at nodes
-        algo.run()
-        result = algo.getResult()
-        eigen_values = result.getEigenValues()
-        modes = result.getModesAsProcessSample()
-        n_modes = modes.getSize()
-
-        # Evaluation of the eigen functions
-        for i in range(n_modes):
-            ev_i = eigen_values[i]
-            eV_i = modes[i].getValues()
-            modes[i] = ot.Field(self.mesh, eV_i * [np.sqrt(ev_i)])
-
-        # Matrix of the modes over the grid (lines <> modes; columns <> times)
-        gridded_modes = np.eye(n_modes, len(vertices))
-        for i in range(n_modes):
-            gridded_mode = np.array(modes[i].getValues())
-            gridded_modes[i, :] = gridded_mode.T
-
-        # Modes of the KLD evaluated over the mesh ([Nt x Nmodes] matrix)
-        self.n_modes = n_modes
-        self.modes = gridded_modes.T
-        self.standard_deviation = np.sqrt(eigen_values)
-        self.x_coord = np.array(self.mesh.getVertices())[:, 0].reshape(len(vertices))
+        self.x_coord = extract_coord(0)
         if self.n_dim > 1:
-            self.y_coord = np.array(self.mesh.getVertices())[:, 1].reshape(len(vertices))
+            self.y_coord = extract_coord(1)
         if self.n_dim > 2:
-            self.z_coord = np.array(self.mesh.getVertices())[:, 2].reshape(len(vertices))
+            self.z_coord = extract_coord(2)
 
     def __str__(self):
         """Summary of Gp and its Karhunen Loeve decomposition."""
@@ -195,22 +172,22 @@ class GpSampler(object):
         """
         if coeff is None:
             if kind == "mc":
-                dist = ot.ComposedDistribution([ot.Normal(0., 1.)] * self.n_modes,
-                                                ot.IndependentCopula(self.n_modes))
-                # Sampled weights
-                weights = np.array(dist.getSample(sample_size))
+                weights = np.random.normal(size=(sample_size, self.n_modes))
             else:
                 doe = Doe(sample_size, [[-10]*self.n_modes, [10]*self.n_modes],
                           kind, ['Normal(0., 1.)'], None)
                 weights = doe.generate()
         else:
-            weights = [list(x[0:self.n_modes]) +
-                       list(np.zeros(max(0, self.n_modes - len(x))))
-                       for x in coeff]
-            weights = np.array(weights)
+            def pad(x):
+                x_n_modes = np.array(x[0:self.n_modes])
+                n_non_modes = max(0, self.n_modes - len(x))
+                temp = np.pad(x_n_modes, (0, n_non_modes),
+                              'constant', constant_values=(0))
+                return temp
 
-        # Predictions
-        sample = np.dot(self.modes, weights.T).T
+            weights = np.array([pad(x) for x in coeff])
+
+        sample = weights.dot(self.scaled_modes)
 
         if self.add:
             sample += self.reference['values']
@@ -224,16 +201,15 @@ class GpSampler(object):
         """
         if self.n_dim == 1:
             fig = plt.figure('Modes')
-            abscissa = np.array(self.mesh.getVertices()).T
+            abscissa = np.array(self.reference['indices']).T
             ind = np.argsort(abscissa)
-            values = [[x[i] for i in ind[0]] for x in self.modes.T]
+            values = [[x[i] for i in ind[0]] for x in self.scaled_modes]
             abscissa.sort()
             plt.plot(abscissa[0], np.array(values).T)
             fig.tight_layout()
             bat.visualization.save_show(fname, [fig])
         elif self.n_dim == 2:
             for i in range(self.n_modes):
-                mode = np.reshape(self.modes.T[i], self.n_nodes)
                 title = "Gp mode #"+str(i)
                 if fname is not None:
                     basename = os.path.splitext(fname)[0]
@@ -241,7 +217,7 @@ class GpSampler(object):
                     fname_i = basename+'_'+str(i)+extension
                 else:
                     fname_i = None
-                self.surface_plot(mode, fname_i, title)
+                self.surface_plot(self.scaled_modes[i, :], fname_i, title)
 
     def plot_sample(self, sample, fname=None):
         """Plot the sample.
@@ -251,7 +227,7 @@ class GpSampler(object):
         """
         if self.n_dim == 1:
             fig = plt.figure('Sample')
-            abscissa = np.array(self.mesh.getVertices()).T
+            abscissa = np.array(self.reference['indices']).T
             ind = np.argsort(abscissa)
             values = [[x[i] for i in ind[0]] for x in sample['Values']]
             abscissa.sort()
