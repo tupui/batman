@@ -39,7 +39,7 @@ def cosi(sample, data, plabels=None):
         # Do not take the first coefficient which is the mean
         var_u = sum(coeffs[1:] ** 2)
         var_c = sum(coeffs[1:n_coeffs] ** 2)
-        s_c = var_c / var_u;
+        s_c = var_c / var_u
 
         s_indices.append(s_c)
 

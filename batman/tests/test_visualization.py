@@ -12,6 +12,7 @@ from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf, sobol,
                                   mesh_2D, cusunoro, moment_independent)
 from batman.visualization.density import ecdf
 from batman.surrogate import SurrogateModel
+from batman.space import Space
 from batman.functions import (Ishigami, db_Mascaret, el_nino)
 import matplotlib.pyplot as plt
 
@@ -462,4 +463,15 @@ class TestDensity:
         npt.assert_almost_equal(momi[2]['Kolmogorov'], [0.236, 0.377, 0.107], decimal=2)
         npt.assert_almost_equal(momi[2]['Kuiper'], [0.257, 0.407, 0.199], decimal=2)
         npt.assert_almost_equal(momi[2]['Delta'], [0.211, 0.347, 0.162], decimal=2)
-        npt.assert_almost_equal(momi[2]['Sobol'], [0.31 , 0.421, 0.002], decimal=2)
+        npt.assert_almost_equal(momi[2]['Sobol'], [0.31, 0.421, 0.002], decimal=2)
+
+        # Cramer
+        space = Space(corners=[[-5, -5], [5, 5]], sample=5000)
+        space.sampling(dists=['Normal(0, 1)', 'Normal(0, 1)'])
+        Y = [np.exp(x_i[0] + 2 * x_i[1]) for x_i in space]
+        X = np.array(space)
+
+        momi = moment_independent(X, Y,
+                                  fname=os.path.join(tmp, 'moment_independent.pdf'))
+
+        npt.assert_almost_equal(momi[2]['Cramer'], [0.113, 0.572], decimal=2)

@@ -22,6 +22,7 @@ Hohenheim).
 """
 import numpy as np
 from scipy.stats import gaussian_kde
+from scipy.integrate import simps
 import matplotlib.pyplot as plt
 import batman as bat
 
@@ -141,7 +142,7 @@ def moment_independent(sample, data, plabels=None, fname=None):
     else:
         plabels = plabels
 
-    s_indices = {'Kolmogorov': [], 'Kuiper': [], 'Delta': [], 'Sobol': []}
+    s_indices = {'Kolmogorov': [], 'Kuiper': [], 'Delta': [], 'Cramer': [], 'Sobol': []}
     n_parts = int(min(np.ceil(ns ** (2 / (7 + np.tanh((1500 - ns) / 500)))), 48))
     len_part = ns / n_parts
 
@@ -158,7 +159,8 @@ def moment_independent(sample, data, plabels=None, fname=None):
         # Sensitivity indices
         ks = []
         kui = []
-        d_hat = 0
+        delta = 0
+        cramer = 0
         var_d = 0
 
         # Data reordering
@@ -179,18 +181,21 @@ def moment_independent(sample, data, plabels=None, fname=None):
             data_all = np.concatenate([ecdf_u[0], ecdf_c[0]])
             cdf1 = np.searchsorted(ecdf_u[0], data_all, side='right') / ns
             cdf2 = np.searchsorted(ecdf_c[0], data_all, side='right') / len_part
+            cdf_diff = cdf1 - cdf2
 
-            ks_ = np.max(np.absolute(cdf1 - cdf2))
-            kui_ = np.max(cdf1 - cdf2) - np.min(cdf1 - cdf2)
-
-            ks.append(ks_)
-            kui.append(kui_)
-            d_hat += (len_part / (2 * ns)) * np.trapz(np.abs(pdf_u - pdf_c), xs)
+            ks.append(np.max(np.absolute(cdf_diff)))
+            kui.append(np.max(cdf_diff) - np.min(cdf_diff))
+            delta += (len_part / (2 * ns)) * simps(np.abs(pdf_u - pdf_c), xs)
             var_d += (len_part / ns) * (data_.mean() - mean_t) ** 2
+
+            xs_cdf = np.linspace(0, 1, len(cdf_diff))
+            cramer += (len_part / ns) * simps((cdf_diff) ** 2, xs_cdf)\
+                / np.trapz((cdf1 * (1 - cdf1)), xs_cdf)
 
         s_indices['Kolmogorov'].append(np.mean(ks))
         s_indices['Kuiper'].append(np.mean(kui))
-        s_indices['Delta'].append(d_hat)
+        s_indices['Delta'].append(delta)
+        s_indices['Cramer'].append(cramer)
         s_indices['Sobol'].append(var_d / var_t)
 
         axs[0][d].plot(xs, pdf_u, c='k', linewidth=2)
