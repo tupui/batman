@@ -263,7 +263,8 @@ class Sample(object):
             try:
                 np_space = self._pformater.read(space_fname, plabels)
             except (OSError, IOError):
-                pass  # file not found.
+                self.logger.error('Cannot read {} in {}'
+                                  .format(plabels, space_fname))
             else:
                 pd_sample.append(pd.DataFrame(np_space))
 
@@ -273,7 +274,8 @@ class Sample(object):
             try:
                 np_data = self._fformater.read(data_fname, flabels)
             except (OSError, IOError):
-                pass  # file not found.
+                self.logger.error('Cannot read {} in {}'
+                                  .format(plabels, data_fname))
             else:
                 pd_sample.append(pd.DataFrame(np_data))
 

@@ -153,9 +153,9 @@ class Driver(object):
                          'corners': self.settings['space']['corners'],
                          'plabels': self.settings['snapshot']['plabels'],
                          'nsample': self.space.doe_init,
-                         'nrefine': resamp_size}
+                         'nrefine': resamp_size,
+                         'multifidelity': multifidelity}
             self.pod = Pod(**settings_)
-            self.pod.space.multifidelity = multifidelity
             self.pod.space.max_points_nb = self.space.max_points_nb
             self.pod.space.duplicate = duplicate
         else:

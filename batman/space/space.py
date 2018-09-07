@@ -75,10 +75,10 @@ class Space(Sample):
         self.threshold = threshold
 
         # Gaussian process samplers for functional inputs
-        if gp_samplers is not None:
+        if gp_samplers:
             self.nb_gp_samplers = len(gp_samplers['index'])
             if 'thresholds' in gp_samplers.keys():
-                thresholds = [1-gp_samplers['thresholds'][i]
+                thresholds = [1 - gp_samplers['thresholds'][i]
                               for i in range(self.nb_gp_samplers)]
             else:
                 thresholds = [None] * self.nb_gp_samplers
@@ -95,16 +95,16 @@ class Space(Sample):
             plabels = ['x{}'.format(i) for i in range(self.dim)]
         if psizes is None:
             psizes = [1] * self.dim
-            if gp_samplers is not None:
+            if gp_samplers:
                 for i in range(self.nb_gp_samplers):
                     index_i = gp_samplers['index'][i]
                     n_modes_i = gp_samplers['n_nodes'][i]
-                    psizes[index_i] = psizes[index_i] - 1 + n_modes_i
+                    psizes[index_i] = n_modes_i
 
         # Multifidelity configuration
-        if multifidelity is not None:
+        psizes = [1] + psizes if multifidelity else psizes
+        if multifidelity and not isinstance(multifidelity, bool):
             self.doe_cheap = self._cheap_doe_from_expensive(self.doe_init)
-            psizes = [1] + psizes
             self.logger.info("Multifidelity with Ne: {} and Nc: {}"
                              .format(self.doe_init, self.doe_cheap))
 
@@ -142,13 +142,15 @@ class Space(Sample):
             n_samples = self._cheap_doe_from_expensive(n_samples)
 
         # sample the inputs non GP-distributed
-        isNotGp = [dist != 'GpSampler' for dist in dists]
         if dists is None:
-            distsNotGp = None
+            dists_not_gp = None
+            corners_not_gp = self.corners
         else:
-            distsNotGp = [dists[i] for i, _ in enumerate(dists) if isNotGp[i]]
-        cornersNotGp = [self.corners[i] for i, _ in enumerate(dists) if isNotGp[i]]
-        doe = Doe(n_samples, cornersNotGp, kind, distsNotGp, discrete)
+            not_gp = [dist != 'GpSampler' for dist in dists]
+            dists_not_gp = [dist for i, dist in enumerate(dists) if not_gp[i]]
+            corners_not_gp = np.array(self.corners)[:, not_gp]
+
+        doe = Doe(n_samples, corners_not_gp, kind, dists_not_gp, discrete)
         samples = doe.generate()
 
         # sample the GP-distributed inputs and concatenate

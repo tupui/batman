@@ -45,7 +45,8 @@ class SurrogateModel(object):
     def __init__(self, kind, corners, plabels, **kwargs):
         r"""Init Surrogate model.
 
-        :param str kind: name of prediction method, rbf or kriging.
+        :param str kind: name of prediction method, one of:
+          ['rbf', 'kriging', 'pc', 'evofusion', sklearn-regressor].
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
         :param list(str) plabels: labels of sample points
         :param \**kwargs: See below
@@ -81,7 +82,8 @@ class SurrogateModel(object):
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
-        self.space = Space(corners, plabels=plabels)
+        multifidelity = True if self.kind == 'evofusion' else False
+        self.space = Space(corners, plabels=plabels, multifidelity=multifidelity)
         self.data = None
         self.pod = None
         self.update = False  # switch: update model if POD update

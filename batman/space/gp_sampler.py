@@ -5,13 +5,13 @@ Gaussian process sampler
 """
 import logging
 import os
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
-import batman as bat
-from .sampling import Doe
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.decomposition import PCA
-import sys
+import batman as bat
+from .sampling import Doe
 PY2 = sys.version_info.major == 2
 
 
@@ -92,10 +92,7 @@ class GpSampler(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self,
-                 reference,
-                 kernel="Matern(0.5, nu=0.5)",
-                 add=True,
+    def __init__(self, reference, kernel="Matern(0.5, nu=0.5)", add=True,
                  threshold=0.01):
         """From a reference function, define the Gp over an index set and
         compute its Karhunen Loeve decomposition.
@@ -107,8 +104,8 @@ class GpSampler(object):
         :param bool add: add the Gp realizations to the reference function.
         :param str kernel: scikit-learn kernel for the covariance model.
         :param float threshold: the minimal relative amplitude of the
-                                eigenvalues to consider in the decomposition
-                                wrt the sum of the preceeding eigenvalues.
+          eigenvalues to consider in the decomposition wrt the sum of the
+          preceeding eigenvalues.
         """
         # Check if string (lenient for byte-strings on Py2):
         if isinstance(reference, basestring if PY2 else str):
@@ -124,15 +121,17 @@ class GpSampler(object):
         y = gp.sample_y(self.reference['indices'], 10000).T
         self.pca = PCA(svd_solver="full")
         y_transform = self.pca.fit_transform(y)
+
         def truncation_order(x):
-            kept = [x[i]/np.sum(x[:i]) > self.threshold for i, _ in enumerate(x) if i>0]
+            kept = [x[i] / np.sum(x[:i]) > self.threshold for i, _ in enumerate(x[1:], 1)]
             kept.insert(0, True)
             return np.sum(kept)
-        self.standard_deviation = np.std(y_transform, 0)
-        self.n_modes = truncation_order((self.standard_deviation/np.sqrt(self.n_nodes))**2)
+
+        standard_deviation = np.std(y_transform, 0)
+        self.n_modes = truncation_order((standard_deviation / np.sqrt(self.n_nodes)) ** 2)
         self.modes = self.pca.components_[:self.n_modes, :]
-        self.standard_deviation = self.standard_deviation[:self.n_modes]/np.sqrt(self.n_nodes)
-        self.scaled_modes = (self.modes.T*self.standard_deviation).T
+        standard_deviation = standard_deviation[:self.n_modes] / np.sqrt(self.n_nodes)
+        self.scaled_modes = (self.modes.T * standard_deviation).T
 
         def extract_coord(i):
             temp = np.array([[x[i]] for x in self.reference['indices']])
@@ -153,8 +152,8 @@ class GpSampler(object):
                    "- Threshold for the KLd = {}\n"
                    "- Number of modes = {}")
 
-        format_ = [self.n_dim,
-                   self.kernel, self.n_nodes, self.threshold, self.n_modes]
+        format_ = [self.n_dim, self.kernel, self.n_nodes,
+                   self.threshold, self.n_modes]
 
         return summary.format(*format_)
 
@@ -174,12 +173,12 @@ class GpSampler(object):
             if kind == "mc":
                 weights = np.random.normal(size=(sample_size, self.n_modes))
             else:
-                doe = Doe(sample_size, [[-10]*self.n_modes, [10]*self.n_modes],
+                doe = Doe(sample_size, [[-10] * self.n_modes, [10] * self.n_modes],
                           kind, ['Normal(0., 1.)'], None)
                 weights = doe.generate()
         else:
             def pad(x):
-                x_n_modes = np.array(x[0:self.n_modes])
+                x_n_modes = np.array(x[:self.n_modes])
                 n_non_modes = max(0, self.n_modes - len(x))
                 temp = np.pad(x_n_modes, (0, n_non_modes),
                               'constant', constant_values=(0))
@@ -197,63 +196,65 @@ class GpSampler(object):
     def plot_modes(self, fname=None):
         """Plot the modes of the Karhunen Loeve decomposition.
 
-        :param str fname: path to write plot; show the figure if None
+        :param str fname: whether to export to filename or display the figures.
         """
         if self.n_dim == 1:
-            fig = plt.figure('Modes')
             abscissa = np.array(self.reference['indices']).T
             ind = np.argsort(abscissa)
             values = [[x[i] for i in ind[0]] for x in self.scaled_modes]
             abscissa.sort()
+
+            fig = plt.figure('Modes')
             plt.plot(abscissa[0], np.array(values).T)
-            fig.tight_layout()
             bat.visualization.save_show(fname, [fig])
         elif self.n_dim == 2:
             for i in range(self.n_modes):
-                title = "Gp mode #"+str(i)
+                title = "Gp mode #" + str(i)
                 if fname is not None:
                     basename = os.path.splitext(fname)[0]
                     extension = os.path.splitext(fname)[1]
-                    fname_i = basename+'_'+str(i)+extension
+                    fname_i = basename + '_' + str(i) + extension
                 else:
                     fname_i = None
-                self.surface_plot(self.scaled_modes[i, :], fname_i, title)
+                self._surface_plot(self.scaled_modes[i, :], fname_i, title)
 
     def plot_sample(self, sample, fname=None):
         """Plot the sample.
 
-        :param dict sample: Output of :func:`GpSampler.__call__`
-        :param str fname: path to write plot; show the figure if None
+        :param dict sample: Output of :func:`GpSampler.__call__`.
+        :param str fname: whether to export to filename or display the figures.
         """
         if self.n_dim == 1:
-            fig = plt.figure('Sample')
             abscissa = np.array(self.reference['indices']).T
             ind = np.argsort(abscissa)
             values = [[x[i] for i in ind[0]] for x in sample['Values']]
             abscissa.sort()
+
+            fig = plt.figure('Sample')
             plt.plot(abscissa[0], np.array(values).T)
-            fig.tight_layout()
             bat.visualization.save_show(fname, [fig])
         elif self.n_dim == 2:
             for i, value in enumerate(sample['Values']):
-                title = "Gp instance #"+str(i)
+                title = "Gp instance #" + str(i)
                 if fname is not None:
                     basename = os.path.splitext(fname)[0]
                     extension = os.path.splitext(fname)[1]
-                    fname_i = basename+'_'+str(i)+extension
+                    fname_i = basename + '_' + str(i) + extension
                 else:
                     fname_i = None
-                self.surface_plot(value, fname_i, title)
 
-    def surface_plot(self, z_values, fname=None, title=None):
+                self._surface_plot(value, fname_i, title)
+
+    def _surface_plot(self, z_values, fname=None, title=None):
         """Plot a 2D surface plot.
-        :param array_like z_values: Gp instance to plot
-        :param str fname: filename to write plot; show the figure if None
-        :param str title: title of the plot
+
+        :param array_like z_values: Gp instance to plot.
+        :param str fname: whether to export to filename or display the figures.
+        :param str title: title of the plot.
         """
         fig = plt.figure(fname)
         plt.tricontourf(self.x_coord, self.y_coord, z_values, 100)
         plt.plot(self.x_coord, self.y_coord, 'ko ')
-        if not None:
+        if title:
             plt.title(title)
         bat.visualization.save_show(fname, [fig])

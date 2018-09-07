@@ -13,7 +13,7 @@
             "index": [1],
             "reference": ["reference.npy"],
             "add": [true],
-            "kernel": ["AbsoluteExponential([0.5], [1.0])"],
+            "kernel": ["Matern(0.5, nu=0.5)"],
             "thresholds": [0.01]
         }
     },
@@ -29,10 +29,10 @@
             "clean": false
         },
         "io": {
-            "space_fname": "sample-space.npy",
-            "space_format": "npy",
-            "data_fname": "sample-data.npy",
-            "data_format": "npy"
+            "space_fname": "sample-space.json",
+            "space_format": "json",
+            "data_fname": "sample-data.json",
+            "data_format": "json"
         }
     }
 }

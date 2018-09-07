@@ -10,7 +10,7 @@ import numpy as np
 from scipy.fftpack import dct
 
 
-def cosi(sample, data, plabels=None):
+def cosi(sample, data):
     """Cosine transformation sensitivity.
 
     Use Discret Cosine Transformation (DCT) to compute sensitivity indices.
