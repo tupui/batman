@@ -1,0 +1,38 @@
+{
+    "space": {
+        "corners": [
+            [15.0, 1000.0],
+            [60.0, 6000.0]
+        ],
+        "sampling": {
+            "init_size": 100,
+            "method": "saltelli",
+            "distributions": ["Uniform(15., 60.)",  "GpSampler"]
+        },
+        "gp_samplers": {
+            "index": [1],
+            "reference": ["reference.npy"],
+            "add": [true],
+            "kernel": ["Matern(0.5, nu=0.5)"],
+            "thresholds": [0.01]
+        }
+    },
+    "snapshot": {
+        "max_workers": 1,
+        "plabels": ["Ks", "Q"],
+        "flabels": ["H"],
+        "psizes": [1, 10],
+        "provider": {
+            "type": "job",
+            "command": "bash script.sh",
+            "context_directory": "data",
+            "clean": false
+        },
+        "io": {
+            "space_fname": "sample-space.json",
+            "space_format": "json",
+            "data_fname": "sample-data.json",
+            "data_format": "json"
+        }
+    }
+}

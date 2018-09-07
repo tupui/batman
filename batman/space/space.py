@@ -31,6 +31,7 @@ from sklearn import preprocessing
 from .sampling import Doe
 from .sample import Sample
 from .refiner import Refiner
+from .gp_sampler import GpSampler
 from .. import visualization
 
 
@@ -40,7 +41,7 @@ class Space(Sample):
     logger = logging.getLogger(__name__)
 
     def __init__(self, corners, sample=np.inf, nrefine=0, plabels=None, psizes=None,
-                 multifidelity=None, duplicate=False, threshold=0.):
+                 multifidelity=None, duplicate=False, threshold=0., gp_samplers=None):
         """Generate a Space.
 
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
@@ -52,8 +53,9 @@ class Space(Sample):
         :param list(float) multifidelity: Whether to consider the first
           parameter as the fidelity level. It is a list of ['cost_ratio',
           'grand_cost'].
-        :param bool duplicate: Whether to allow duplicate points in space.
-        :param float threshold: minimal distance between 2 disctinct points.
+        :param bool duplicate: Whether to allow duplicate points in space,
+        :param float threshold: minimal distance between 2 disctinct points,
+        :param dict gp_samplers: Gaussian process samplers for functional inputs
         """
         try:
             self.doe_init = len(sample)
@@ -72,16 +74,37 @@ class Space(Sample):
         self.duplicate = duplicate
         self.threshold = threshold
 
+        # Gaussian process samplers for functional inputs
+        if gp_samplers:
+            self.nb_gp_samplers = len(gp_samplers['index'])
+            if 'thresholds' in gp_samplers.keys():
+                thresholds = [1 - gp_samplers['thresholds'][i]
+                              for i in range(self.nb_gp_samplers)]
+            else:
+                thresholds = [None] * self.nb_gp_samplers
+            self.gp_samplers = [GpSampler(gp_samplers['reference'][i],
+                                          gp_samplers['kernel'][i],
+                                          gp_samplers['add'][i],
+                                          thresholds[i])
+                                for i in range(self.nb_gp_samplers)]
+        else:
+            self.nb_gp_samplers = 0
+
         # Parameter names list
         if plabels is None:
             plabels = ['x{}'.format(i) for i in range(self.dim)]
         if psizes is None:
             psizes = [1] * self.dim
+            if gp_samplers:
+                for i in range(self.nb_gp_samplers):
+                    index_i = gp_samplers['index'][i]
+                    n_modes_i = gp_samplers['n_nodes'][i]
+                    psizes[index_i] = n_modes_i
 
         # Multifidelity configuration
-        if multifidelity is not None:
+        psizes = [1] + psizes if multifidelity else psizes
+        if multifidelity and not isinstance(multifidelity, bool):
             self.doe_cheap = self._cheap_doe_from_expensive(self.doe_init)
-            psizes = [1] + psizes
             self.logger.info("Multifidelity with Ne: {} and Nc: {}"
                              .format(self.doe_init, self.doe_cheap))
 
@@ -92,7 +115,7 @@ class Space(Sample):
                              .format(np.flatnonzero(self.corners[0] == self.corners[1])))
 
         # Initialize Sample container with empty space dataframe
-        super(Space, self).__init__(plabels=plabels)
+        super(Space, self).__init__(plabels=plabels, psizes=psizes)
 
         try:
             self += sample
@@ -117,8 +140,24 @@ class Space(Sample):
             n_samples = self.doe_init
         if self.multifidelity:
             n_samples = self._cheap_doe_from_expensive(n_samples)
-        doe = Doe(n_samples, self.corners, kind, dists, discrete)
+
+        # sample the inputs non GP-distributed
+        if dists is None:
+            dists_not_gp = None
+            corners_not_gp = self.corners
+        else:
+            not_gp = [dist != 'GpSampler' for dist in dists]
+            dists_not_gp = [dist for i, dist in enumerate(dists) if not_gp[i]]
+            corners_not_gp = np.array(self.corners)[:, not_gp]
+
+        doe = Doe(n_samples, corners_not_gp, kind, dists_not_gp, discrete)
         samples = doe.generate()
+
+        # sample the GP-distributed inputs and concatenate
+        if hasattr(self, 'gp_samplers'):
+            for i in range(self.nb_gp_samplers):
+                gp_samples_i = self.gp_samplers[i](n_samples, kind=kind)['Values']
+                samples = np.append(samples, gp_samples_i, axis=1)
 
         # concatenate cheap and expensive space, prepend identifier 0 or 1
         if self.multifidelity:
@@ -134,9 +173,11 @@ class Space(Sample):
 
         self.logger.info("Created {} samples with the {} method".format(len(self), kind))
         self.logger.debug("Points are:\n{}".format(samples))
-        s = int(bool(self.multifidelity))
-        self.logger.info("Discrepancy is {}".format(
-            self.discrepancy(self.values[:, s:], self.corners)))
+
+        if not hasattr(self, 'gp_samplers'):
+            s = int(bool(self.multifidelity))
+            self.logger.info("Discrepancy is {}".format(self.discrepancy(self.values[:, s:], self.corners)))
+
         return self.values
 
     def refine(self, surrogate, method, point_loo=None, delta_space=0.08,
@@ -366,8 +407,9 @@ class Space(Sample):
 
         # select only points in the space boundaries
         s = int(bool(self.multifidelity))  # drop 1st column during test if multifidelity
-        mask = np.logical_and(points[:, s:] >= self.corners[0],
-                              points[:, s:] <= self.corners[1]).all(axis=1)
+        dim = self.dim-self.nb_gp_samplers
+        mask = np.logical_and(points[:, s:dim] >= self.corners[0][0:dim],
+                              points[:, s:dim] <= self.corners[1][0:dim]).all(axis=1)
         if not np.all(mask):
             drop = np.logical_not(mask)
             self.logger.warning("Ignoring Points - Out of Space - {}".format(points[drop, :]))

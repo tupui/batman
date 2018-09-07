@@ -60,8 +60,15 @@ First of all, we define the parameter space using an hypercube. Taking the minim
         "sampling": {
             "init_size": 4,
             "method": "halton",
-            "distributions": ["Uniform(15., 60.)", "BetaMuSigma(4035, 400, 2500, 6000).getDistribution()"],
+            "distributions": ["Uniform(15., 60.)", "GpSampler", "BetaMuSigma(4035, 400, 2500, 6000).getDistribution()"],
             "discrete": 0
+        },
+        "gp_samplers": {
+            "index": [1],
+            "reference": ["reference.npy"],
+            "add": [true],
+            "kernel": ["AbsoluteExponential([0.5], [1.0])"],
+            "thresholds": [0.99]
         },
         "resampling":{
             "delta_space": 0.08,
@@ -80,9 +87,18 @@ First of all, we define the parameter space using an hypercube. Taking the minim
     * ``init_size``: define the initial number of snapshots,
     * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*,
       *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *lhsopt* (optimized LHS), *saltelli*,
-    * [``distributions``]: A list of distributions. Ex for two input variables:
-      ``["Uniform(15., 60.)", "Normal(4035., 400.)"]``,
+    * [``distributions``]: A list of distributions. Ex for three input variables:
+      ``["Uniform(15., 60.)", "GpSampler", "Normal(4035., 400.)"]``,
     * [``discrete``]: index of the parameter which is discrete.
+
++ [``gp_samplers``]: define the Gaussian processes for vectorial parameters whose ``distributions`` are  ``GpSampler`` with the following:
+
+    * ``index``: list of the indices corresponding to the vectorial parameters whose distributions are Gaussian processes,
+    * ``reference``: list of the reference vectorial parameters from which Gaussian process realizations are created,
+      each element being a dictionnary made of ``indices`` representing a list of the index values of the parameter values (e.g. ``t``) and ``values`` representing a list of reference parameter values (e.g. ``reference(t)``),
+    * [``kernel``]: list of kernels,
+    * [``add``]: list of boolean variables, True when Gaussian process realizations are added to the reference parameters, and False if not.
+    * [``thresholds``]: list of thresholds corresponding to the minimal relative amplitude of the eigenvalues to consider in the Karhunen-Loeve decomposition of the Gaussian process wrt the sum of the preceeding eigenvalues.
 
 + [``resampling``]: to do resampling, fill this dictionary
 
@@ -101,11 +117,13 @@ All *faure*, *halton* and *sobol* methods are low discrepancy sequences with
 good filling properties. *saltelli* is particular as it will create a DoE for
 the computation of *Sobol'* indices using *Saltelli*'s formulation.
 
-When *distribution* is set, a join distribution is built an is used to perform
+When *distribution* is set, a join distribution is built and is used to perform
 an inverse transformation (inverse CDF) on the sample. This allows to have a
-low discrepancy sample will still following some distribution.
+low discrepancy sample will still following some distribution. For vectorial 
+parameters whose distributions are ``GpSampler``, users has to add a block 
+``gp_samplers`` in order to define this distributions.
 
-Regarding the resampling, all methods need a good initial sample. Meanning that the quality is about :math:`Q_2\sim0.5`. ``loo_sigma, loo_sobol`` work better than ``sigma`` in high dimentionnal cases (>2).
+Regarding the resampling, all methods need a good initial sample. Meaning that the quality is about :math:`Q_2\sim0.5`. ``loo_sigma, loo_sobol`` work better than ``sigma`` in high dimentionnal cases (>2).
 
 .. warning:: If using a PC surrogate model, the only possibilities are ``discrepancy`` and ``extrema``. Furthermore, sampling ``method`` must be set as a list of distributions.
 

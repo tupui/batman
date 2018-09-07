@@ -87,12 +87,18 @@ class Driver(object):
         except KeyError:
             multifidelity = None
 
+        gp_samplers = self.settings['space'].get('gp_samplers')
+        psizes = self.settings['snapshot'].get('psizes')
+        plabels = self.settings['snapshot'].get('plabels')
+
         self.space = Space(self.settings['space']['corners'],
                            init_size,
                            nrefine=resamp_size,
-                           plabels=self.settings['snapshot']['plabels'],
+                           plabels=plabels,
+                           psizes=psizes,
                            multifidelity=multifidelity,
-                           duplicate=duplicate)
+                           duplicate=duplicate,
+                           gp_samplers=gp_samplers)
 
         # Data Providers
         setting_provider = copy(settings['snapshot']['provider'])
@@ -147,9 +153,9 @@ class Driver(object):
                          'corners': self.settings['space']['corners'],
                          'plabels': self.settings['snapshot']['plabels'],
                          'nsample': self.space.doe_init,
-                         'nrefine': resamp_size}
+                         'nrefine': resamp_size,
+                         'multifidelity': multifidelity}
             self.pod = Pod(**settings_)
-            self.pod.space.multifidelity = multifidelity
             self.pod.space.max_points_nb = self.space.max_points_nb
             self.pod.space.duplicate = duplicate
         else:

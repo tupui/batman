@@ -59,11 +59,12 @@ def tahiti():
     return sample
 
 
-def mascaret(multizone=False, file_name=['x_sampling.npy', 'y_sampling.npy']):
+def mascaret(multizone=False, fname=None):
     """Mascaret dataset.
 
     :param bool multizone: Use only one global Ks or 3 Ks.
-    :param list(str) file_name: Path to the file that contains input and output data.
+    :param list(str) fname: Path to the file that contains input and
+      output data. File format must be `npy`.
     """
     desc = ("Monte-Carlo sampling simulated using 1D MASCARET flow solver."
             " The Garonne river was used and the output consists in water"
@@ -177,19 +178,23 @@ def mascaret(multizone=False, file_name=['x_sampling.npy', 'y_sampling.npy']):
                    '61072.72727272728', '61177.272727272735', '61281.81818181819',
                    '61386.36363636365', '61490.9090909091', '61595.45454545456',
                    '61700.0', '61818.75', '61937.5', '62056.25', '62175.0']
-        
-        sample = Sample(plabels=['Ks1', 'Ks2', 'Ks3', 'Q'], flabels=flabels,
-                        pformat='npy', fformat='npy')
-        sample.read(space_fname=os.path.join(PATH, file_name[0]),
-                    data_fname=os.path.join(PATH, file_name[1]))
+
+        plabels = ['Ks1', 'Ks2', 'Ks3', 'Q']
     else:
         flabels = ['13150', '19450', '21825', '21925', '25775', '32000',
                    '36131.67', '36240', '36290', '38230.45', '44557.5', '51053.33',
                    '57550', '62175']
+        plabels = ['Ks', 'Q']
 
-        sample = Sample(plabels=['Ks', 'Q'], flabels=flabels, pformat='npy', fformat='npy')
-        sample.read(space_fname=os.path.join(PATH, 'input_mascaret.npy'),
-                    data_fname=os.path.join(PATH, 'output_mascaret.npy'))
+    if fname is None:
+        if multizone:
+            fname = ['x_sampling.npy', 'y_sampling.npy']
+        else:
+            fname = ['input_mascaret.npy', 'output_mascaret.npy']
+        fname = [os.path.join(PATH, p) for p in fname]
+
+    sample = Sample(plabels=plabels, flabels=flabels, pformat='npy', fformat='npy')
+    sample.read(space_fname=fname[0], data_fname=fname[1])
     sample.desc = desc
     return sample
 

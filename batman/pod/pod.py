@@ -50,7 +50,8 @@ class Pod(object):
     # File name for storing the points
     points_file_name = 'points.dat'
 
-    def __init__(self, corners, plabels, nsample, tolerance, dim_max, nrefine=0):
+    def __init__(self, corners, plabels, nsample, tolerance, dim_max,
+                 nrefine=0, multifidelity=None):
         """Initialize POD components.
 
         The decomposition of the snapshot matrix is stored as attributes:
@@ -65,16 +66,20 @@ class Pod(object):
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
         :param int/array_like sample: number of sample or list of sample of
           shape (n_samples, n_features).
-        :param int nrefine: number of point to use for refinement.
         :param float tolerance: basis modes filtering criteria.
         :param int dim_max: number of basis modes to keep.
+        :param int nrefine: number of point to use for refinement.
+        :param list(float) multifidelity: Whether to consider the first
+          parameter as the fidelity level. It is a list of ['cost_ratio',
+          'grand_cost'].
         """
         self.quality = None
         self.predictor = None
         self.leave_one_out_predictor = 'kriging'
         self.corners = corners
         self.plabels = plabels
-        self.space = Space(self.corners, plabels=plabels, sample=nsample, nrefine=nrefine)
+        self.space = Space(self.corners, plabels=plabels, sample=nsample,
+                           nrefine=nrefine, multifidelity=multifidelity)
 
         # POD computation related
         self.tolerance = tolerance

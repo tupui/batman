@@ -19,8 +19,7 @@ class db_Mascaret(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, file_name=['x_sampling.npy', 'y_sampling.npy'],
-                 multizone=False):
+    def __init__(self, fname=None, multizone=False):
         """Mascaret database function.
 
         From a given set of input parameters, it gets the closest point from
@@ -28,9 +27,9 @@ class db_Mascaret(object):
         463 H; and 1 Ks, 1 Q, 14 H.
 
         :param bool multizone: Use only one global Ks or 3 Ks.
-        :param list file_name: list of the input and the output file name
+        :param list fname: list of the input and the output file name.
         """
-        dataset = mascaret(multizone, file_name)
+        dataset = mascaret(multizone, fname)
         self.data_input, self.data_output = dataset.space, dataset.data
         self.data_input = np.array(self.data_input.tolist())
         self.data_output = np.array(self.data_output.tolist())
