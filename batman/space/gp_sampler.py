@@ -21,10 +21,10 @@ class GpSampler(object):
     ===============
 
     Computes instances of a d-dimensional Gaussian process (Gp) discretized
-    over a mesh (zero mean and parametric covariance), with d in {1,2,3}.
+    over a mesh with a parametric covariance and d in {1,2,3}.
 
     It can be decomposed into two steps (Steps 1 and 3' or 3'')
-    and two additional ones (Steps 2 and 4):
+    and two additional ones (Steps 2 and 4, available for d in {1, 2}):
 
     1. Compute the Karhunen Loeve decomposition (KLd) using :func:`__init__`.
     2. Plot the modes of the KLd into files using :func:`plot_modes`
@@ -106,7 +106,7 @@ class GpSampler(object):
         :param float threshold: the minimal relative amplitude of the
           eigenvalues to consider in the decomposition wrt the sum of the
           preceeding eigenvalues.
-        :param float std: Amplitude of the perturbation.
+        :param float std: standard deviation of the Gaussian process.
         """
         # Check if string (lenient for byte-strings on Py2):
         if isinstance(reference, basestring if PY2 else str):
@@ -116,11 +116,10 @@ class GpSampler(object):
         self.n_nodes = len(self.reference['indices'])
         self.n_dim = len(self.reference['indices'][0])
         self.kernel = kernel
-        self.std = std
         self.add = add
         self.threshold = threshold
         gp = GaussianProcessRegressor(kernel=bat.space.kernel_to_skl(self.kernel))
-        y = gp.sample_y(self.reference['indices'], 10000).T
+        y = gp.sample_y(self.reference['indices'], 10000, random_state=None).T
         self.pca = PCA(svd_solver="full")
         y_transform = self.pca.fit_transform(y)
 
@@ -132,8 +131,8 @@ class GpSampler(object):
         standard_deviation = np.std(y_transform, 0)
         self.n_modes = truncation_order((standard_deviation / np.sqrt(self.n_nodes)) ** 2)
         self.modes = self.pca.components_[:self.n_modes, :]
-        standard_deviation = standard_deviation[:self.n_modes] / np.sqrt(self.n_nodes)
-        self.scaled_modes = (self.modes.T * standard_deviation).T
+        self.standard_deviation = standard_deviation[:self.n_modes] / np.sqrt(self.n_nodes)
+        self.scaled_modes = (self.modes.T * self.standard_deviation).T
 
         def extract_coord(i):
             temp = np.array([[x[i]] for x in self.reference['indices']])
@@ -150,11 +149,12 @@ class GpSampler(object):
         summary = ("Gp sampler summary:\n"
                    "- Dimension = {}\n"
                    "- Kernel = {}\n"
+                   "- Standard deviation = {}\n"
                    "- Mesh size = {}\n"
                    "- Threshold for the KLd = {}\n"
                    "- Number of modes = {}")
 
-        format_ = [self.n_dim, self.kernel, self.n_nodes,
+        format_ = [self.n_dim, self.kernel, self.std, self.n_nodes,
                    self.threshold, self.n_modes]
 
         return summary.format(*format_)
@@ -175,20 +175,20 @@ class GpSampler(object):
             if kind == "mc":
                 weights = np.random.normal(size=(sample_size, self.n_modes))
             else:
-                doe = Doe(sample_size, [[-10] * self.n_modes, [10] * self.n_modes],
-                          kind, ['Normal(0., 1.)'], None)
+                doe = Doe(sample_size, [[-10.] * self.n_modes, [10.] * self.n_modes],
+                          kind, ['Normal(0., 1.)' for i in range(self.n_modes)], None)
                 weights = doe.generate()
         else:
             def pad(x):
                 x_n_modes = np.array(x[:self.n_modes])
                 n_non_modes = max(0, self.n_modes - len(x))
                 temp = np.pad(x_n_modes, (0, n_non_modes),
-                              'constant', constant_values=(0))
+                              'constant', constant_values=(0.))
                 return temp
 
             weights = np.array([pad(x) for x in coeff])
 
-        sample = weights.dot(self.scaled_modes) * self.std
+        sample = weights.dot(self.scaled_modes)*self.std
 
         if self.add:
             sample += self.reference['values']
