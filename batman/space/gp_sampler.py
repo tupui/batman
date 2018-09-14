@@ -93,7 +93,7 @@ class GpSampler(object):
     logger = logging.getLogger(__name__)
 
     def __init__(self, reference, kernel="Matern(0.5, nu=0.5)", add=True,
-                 threshold=0.01):
+                 threshold=0.01, std=1.):
         """From a reference function, define the Gp over an index set and
         compute its Karhunen Loeve decomposition.
 
@@ -106,6 +106,7 @@ class GpSampler(object):
         :param float threshold: the minimal relative amplitude of the
           eigenvalues to consider in the decomposition wrt the sum of the
           preceeding eigenvalues.
+        :param float std: Amplitude of the perturbation.
         """
         # Check if string (lenient for byte-strings on Py2):
         if isinstance(reference, basestring if PY2 else str):
@@ -115,6 +116,7 @@ class GpSampler(object):
         self.n_nodes = len(self.reference['indices'])
         self.n_dim = len(self.reference['indices'][0])
         self.kernel = kernel
+        self.std = std
         self.add = add
         self.threshold = threshold
         gp = GaussianProcessRegressor(kernel=bat.space.kernel_to_skl(self.kernel))
@@ -186,7 +188,7 @@ class GpSampler(object):
 
             weights = np.array([pad(x) for x in coeff])
 
-        sample = weights.dot(self.scaled_modes)
+        sample = weights.dot(self.scaled_modes) * self.std
 
         if self.add:
             sample += self.reference['values']
