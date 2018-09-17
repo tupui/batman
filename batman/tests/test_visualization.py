@@ -311,6 +311,7 @@ class TestSobol:
         plt.plot([0, 10], [0.5, 0.5])
         fig.show()
         sobol(indices, plabels=['x1', 't', 'y'], fname=os.path.join(tmp, 'sobol.pdf'))
+        sobol(indices, polar=True, conf=[[0.2, 0.1, 0.1], [0.1, 0.1, 0.1]])
 
     @patch("matplotlib.pyplot.show")
     def test_sobols_map(self, mock_show, tmp):

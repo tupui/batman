@@ -437,7 +437,6 @@ class UQ:
 
             # Write aggregated indices to file
             if self.fname is not None:
-                ind_total_first = np.array(aggregated[1:])  # .flatten('F')
                 i1 = np.array(aggregated[1])  # .flatten('F')
                 i2 = np.array(aggregated[2])  # .flatten('F')
                 if self.method_sobol != 'FAST':
@@ -454,11 +453,7 @@ class UQ:
                                                 'S_T_min_', 'S_T_', 'S_T_max_'],
                                                self.plabels)]
 
-                    conf1 = np.vstack((i1_min, i2_min))
-                    conf1 = np.ravel(ind_total_first - conf1, order='F')
-                    conf2 = np.vstack((i1_max, i2_max))
-                    conf2 = np.ravel(conf2 - ind_total_first, order='F')
-                    conf = np.vstack((conf1, conf2))
+                    conf = [(i1_max - i1_min) / 2, (i2_max - i2_min) / 2]
                 else:
                     conf = None
                     names = [i + str(p) for i, p in
