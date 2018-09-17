@@ -477,6 +477,9 @@ class UQ:
             plabels = [re.sub(r'(_)(.*)', r'\1{\2}', label) for label in self.plabels]
             visualization.sobol(full_indices, plabels=plabels, conf=conf,
                                 xdata=self.xdata, fname=path)
+            path = os.path.join(self.fname, 'sensitivity-polar.pdf')
+            visualization.sobol(full_indices, plabels=plabels, conf=conf,
+                                polar=True, xdata=self.xdata, fname=path)
             if self.mesh_kwargs.get('fname'):
                 path = os.path.join(self.fname, '1st_order_Sobol_map.pdf')
                 visualization.mesh_2D(var=full_indices[2], flabels=plabels,

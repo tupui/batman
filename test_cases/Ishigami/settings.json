@@ -5,7 +5,7 @@
             [3.1415, 3.1415, 3.1415]
         ],
         "sampling": {
-            "init_size": 4,
+            "init_size": 100,
             "method": "halton"
         },
         "resampling":{
