@@ -7,8 +7,9 @@ import numpy.testing as npt
 from scipy.io import wavfile
 import openturns as ot
 from mock import patch
-from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf, sobol,
-                                  reshow, response_surface, doe, corr_cov,
+from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf,
+                                  sensitivity_indices, corr_cov,
+                                  reshow, response_surface, doe, 
                                   mesh_2D, cusunoro, moment_independent)
 from batman.visualization.density import ecdf
 from batman.surrogate import SurrogateModel
@@ -300,26 +301,28 @@ class TestPdf:
             fname=os.path.join(tmp, 'pdf_dotplot.pdf'))
 
 
-class TestSobol:
+class TestSensitivity:
 
     @patch("matplotlib.pyplot.show")
     def test_sobols_aggregated(self, mock_show, tmp):
         fun = Ishigami()
         indices = [fun.s_first, fun.s_total]
-        fig = sobol(indices, conf=0.05)
+        fig = sensitivity_indices(indices, conf=0.05)
         fig = reshow(fig[0])
         plt.plot([0, 10], [0.5, 0.5])
         fig.show()
-        sobol(indices, plabels=['x1', 't', 'y'], fname=os.path.join(tmp, 'sobol.pdf'))
-        sobol(indices, polar=True, conf=[[0.2, 0.1, 0.1], [0.1, 0.1, 0.1]])
+        sensitivity_indices(indices, plabels=['x1', 't', 'y'],
+                            fname=os.path.join(tmp, 'sobol.pdf'))
+        sensitivity_indices(indices, polar=True, conf=[[0.2, 0.1, 0.1], [0.1, 0.1, 0.1]])
+        sensitivity_indices([indices[0]])
 
     @patch("matplotlib.pyplot.show")
     def test_sobols_map(self, mock_show, tmp):
         fun = db_Mascaret()
         indices = [fun.s_first, fun.s_total, fun.s_first_full, fun.s_total_full]
-        sobol(indices)
-        sobol(indices, plabels=['Ks', 'Q'],
-              xdata=fun.x, fname=os.path.join(tmp, 'sobol_map.pdf'))
+        sensitivity_indices(indices)
+        sensitivity_indices(indices, plabels=['Ks', 'Q'], xdata=fun.x,
+                            fname=os.path.join(tmp, 'sobol_map.pdf'))
 
 
 class TestResponseSurface:

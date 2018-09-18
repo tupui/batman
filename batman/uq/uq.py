@@ -437,13 +437,13 @@ class UQ:
 
             # Write aggregated indices to file
             if self.fname is not None:
-                i1 = np.array(aggregated[1])  # .flatten('F')
-                i2 = np.array(aggregated[2])  # .flatten('F')
+                i1 = np.array(aggregated[1])
+                i2 = np.array(aggregated[2])
                 if self.method_sobol != 'FAST':
-                    i1_min = np.array(indices_conf[0].getLowerBound())  # .flatten('F')
-                    i1_max = np.array(indices_conf[0].getUpperBound())  # .flatten('F')
-                    i2_min = np.array(indices_conf[1].getLowerBound())  # .flatten('F')
-                    i2_max = np.array(indices_conf[1].getUpperBound())  # .flatten('F')
+                    i1_min = np.array(indices_conf[0].getLowerBound())
+                    i1_max = np.array(indices_conf[0].getUpperBound())
+                    i2_min = np.array(indices_conf[1].getLowerBound())
+                    i2_max = np.array(indices_conf[1].getUpperBound())
 
                     # layout: [S_min_P1, S_min_P2, ..., S_P1, S_p2, ...]
                     data = np.array([i1_min, i1, i1_max, i2_min, i2, i2_max]).flatten()
@@ -474,12 +474,15 @@ class UQ:
         # Plot
         if self.fname:
             path = os.path.join(self.fname, 'sensitivity.pdf')
-            plabels = [re.sub(r'(_)(.*)', r'\1{\2}', label) for label in self.plabels]
-            visualization.sobol(full_indices, plabels=plabels, conf=conf,
-                                xdata=self.xdata, fname=path)
+            plabels = [re.sub(r'(_)(.*)', r'\1{\2}', label)
+                       for label in self.plabels]
+            visualization.sensitivity_indices(full_indices, plabels=plabels,
+                                              conf=conf, xdata=self.xdata,
+                                              fname=path)
             path = os.path.join(self.fname, 'sensitivity-polar.pdf')
-            visualization.sobol(full_indices, plabels=plabels, conf=conf,
-                                polar=True, xdata=self.xdata, fname=path)
+            visualization.sensitivity_indices(full_indices, plabels=plabels,
+                                              conf=conf, polar=True,
+                                              xdata=self.xdata, fname=path)
             if self.mesh_kwargs.get('fname'):
                 path = os.path.join(self.fname, '1st_order_Sobol_map.pdf')
                 visualization.mesh_2D(var=full_indices[2], flabels=plabels,

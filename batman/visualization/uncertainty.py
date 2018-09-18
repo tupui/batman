@@ -265,9 +265,9 @@ def _dotplot(data, pdf, ax, n_dots=20, n_bins=7):
     return [ax, ax2]
 
 
-def sobol(indices, conf=None, plabels=None, polar=False, xdata=None, xlabel='x',
-          fname=None):
-    """Plot Sobol' indices.
+def sensitivity_indices(indices, conf=None, plabels=None, polar=False,
+                        xdata=None, xlabel='x', fname=None):
+    """Plot Sensitivity indices.
 
     If `len(indices)>2` map indices are also plotted along with aggregated
     indices.
@@ -299,52 +299,52 @@ def sobol(indices, conf=None, plabels=None, polar=False, xdata=None, xlabel='x',
     x_pos = np.arange(p_len)
 
     figures = []
-    fig = plt.figure('Aggregated Indices')
+    fig, ax = plt.subplots(subplot_kw=dict(polar=polar))
     figures.append(fig)
 
     if not polar:
-        ax = fig.add_subplot(111)
-
-        # Total orders
-        ax.bar(x_pos, indices[1] - indices[0], capsize=4, ecolor='g', error_kw={'elinewidth': 3, 'capthick': 3},
-               yerr=conf[0], align='center', alpha=0.5, color='c', bottom=indices[0], label='Total order indices')
+        if len(indices) > 1:
+            # Total orders
+            ax.bar(x_pos, indices[1] - indices[0], capsize=4, ecolor='g',
+                   error_kw={'elinewidth': 3, 'capthick': 3}, yerr=conf[1],
+                   align='center', alpha=0.5, color='c', bottom=indices[0],
+                   label='Total order')
 
         # First orders
-        ax.bar(x_pos, indices[0], capsize=3,
-               yerr=conf[1], align='center', alpha=0.5, color='r', label='First order indices')
+        ax.bar(x_pos, indices[0], capsize=3, yerr=conf[0], align='center',
+               alpha=0.5, color='r', label='First order')
 
         ax.set_xticks(x_pos)
         ax.set_xticklabels(plabels)
-        ax.set_ylabel("Sobol' aggregated indices")
-        ax.set_xlabel("Input parameters")
-        plt.legend()
+        ax.set_ylabel('Sensitivity indices')
+        ax.set_xlabel('Input parameters')
     else:
 
         def _polar_caps(theta, radius, ax, color='k', linewidth=1):
             """Error bar caps in polar coordinates."""
             peri = np.pi * 1 / 180
-            for th,  _r in zip(theta, radius):
+            for th, _r in zip(theta, radius):
                 th_err = peri / _r
                 local_theta = np.linspace(-th_err / 2, th_err / 2, 10) + th
                 local_r = np.ones(10) * _r
                 ax.plot(local_theta, local_r, color=color, marker='',
-                        linewidth=linewidth)
+                        linewidth=linewidth, label=None)
             return ax
 
         theta = np.linspace(0.0, 2 * np.pi, p_len, endpoint=False)
-        radii_first = indices[0]
-        radii_total = indices[1] - indices[0]
 
-        ax = plt.subplot(111, projection='polar')
+        ax.bar(theta, indices[0], width=2 * np.pi / p_len,
+               alpha=0.5, tick_label=plabels, color='r', label='First order')
 
-        ax.bar(theta, radii_first, width=2 * np.pi / p_len,
-               alpha=0.5, tick_label=plabels, color='r')
-        ax.bar(theta, radii_total, width=2 * np.pi / p_len,
-               alpha=0.5, color='c', bottom=radii_first, ecolor='g')
+        if len(indices) > 1:
+            ax.bar(theta, indices[1] - indices[0], width=2 * np.pi / p_len,
+                   alpha=0.5, color='c', bottom=indices[0], ecolor='g',
+                   label='Total order')
 
         # Separators
         maxi = np.max([indices[0], indices[1]])
-        ax.plot([theta + np.pi / p_len, theta + np.pi / p_len], [[0] * p_len, [maxi] * p_len], c='gray')
+        ax.plot([theta + np.pi / p_len, theta + np.pi / p_len],
+                [[0] * p_len, [maxi] * p_len], c='gray', label=None)
 
         if conf[0] is not None:
             # Total orders errors caps
@@ -352,16 +352,18 @@ def sobol(indices, conf=None, plabels=None, polar=False, xdata=None, xlabel='x',
             _polar_caps(theta, indices[1] - conf[1], ax, color='g', linewidth=3)
             rad_ = np.array([indices[1] + conf[1], indices[1] - conf[1]])
             rad_[rad_ < 0] = 0
-            ax.plot([theta, theta], rad_, color='g', linewidth=3)
+            ax.plot([theta, theta], rad_, color='g', linewidth=3, label=None)
 
             # First orders errors caps
-            _polar_caps(theta, radii_first + conf[0], ax, color='k')
-            _polar_caps(theta, radii_first - conf[0], ax, color='k')
-            rad_ = np.array([radii_first + conf[0], radii_first - conf[0]])
+            _polar_caps(theta, indices[0] + conf[0], ax, color='k')
+            _polar_caps(theta, indices[0] - conf[0], ax, color='k')
+            rad_ = np.array([indices[0] + conf[0], indices[0] - conf[0]])
             rad_[rad_ < 0] = 0
-            ax.plot([theta, theta], rad_, color='k')
+            ax.plot([theta, theta], rad_, color='k', label=None)
 
         ax.set_rmin(0)
+
+    ax.legend()
 
     if len(indices) > 2:
         n_xdata = len(indices[3])
@@ -375,9 +377,9 @@ def sobol(indices, conf=None, plabels=None, polar=False, xdata=None, xlabel='x',
         for sobol, label in zip(indices, s_lst):
             ax.plot(xdata, sobol, linewidth=3, label=label)
         ax.set_xlabel(xlabel)
-        ax.set_ylabel(r"Indices")
+        ax.set_ylabel('Sensitivity ')
         ax.set_ylim(-0.1, 1.1)
-        ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+        ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left')
 
     bat.visualization.save_show(fname, figures)
 
