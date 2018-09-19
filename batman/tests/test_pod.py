@@ -105,7 +105,7 @@ def test_downsample(pod):
 
 
 def test_inverse(pod):
-    npt.assert_almost_equal(pod.VS()[0], [8.728, 0.599, -0.135], decimal=3)
+    npt.assert_almost_equal(pod.VS[0], [8.728, 0.599, -0.135], decimal=3)
 
     inv_modes = pod.inverse_transform([[4.602, -0.73, -0.592],
                                        [1.575, -3.615, 0.121]])

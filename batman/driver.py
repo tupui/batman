@@ -150,11 +150,7 @@ class Driver(object):
         if 'pod' in self.settings:
             settings_ = {'tolerance': self.settings['pod']['tolerance'],
                          'dim_max': self.settings['pod']['dim_max'],
-                         'corners': self.settings['space']['corners'],
-                         'plabels': self.settings['snapshot']['plabels'],
-                         'nsample': self.space.doe_init,
-                         'nrefine': resamp_size,
-                         'multifidelity': multifidelity}
+                         'corners': self.settings['space']['corners']}
             self.pod = Pod(**settings_)
         else:
             self.pod = None
@@ -230,7 +226,7 @@ class Driver(object):
                 self.pod.update(samples)
             else:
                 self.pod.fit(samples)
-            self.data = self.pod.VS()
+            self.data = self.pod.VS
             points = self.pod.space
 
         else:
@@ -407,7 +403,7 @@ class Driver(object):
             args['plabels'] = args['plabels'][1:]
 
         if self.pod is not None:
-            args['data'] = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
+            args['data'] = self.pod.inverse_transform(self.data)
         else:
             args['data'] = self.data
 
@@ -444,7 +440,7 @@ class Driver(object):
 
         # In case of POD, data need to be converted from modes to snapshots.
         if self.pod is not None:
-            data = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
+            data = self.pod.inverse_transform(self.data)
         else:
             data = self.data
 

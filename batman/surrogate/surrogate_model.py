@@ -149,7 +149,7 @@ class SurrogateModel(object):
         """
         if self.update:
             # pod has changed: update predictor
-            self.fit(self.pod.space, self.pod.VS())
+            self.fit(self.pod.space, self.pod.VS)
 
         try:
             points[0][0]

@@ -187,6 +187,7 @@ class Pod(object):
 
         self.logger.info('Read POD from %s', path)
 
+    @property
     def VS(self):
         """Compute V*S matrix product.
 
@@ -218,13 +219,12 @@ class Pod(object):
     def inverse_transform(self, samples):
         """Convert VS back into the original space.
 
-        :param samples: Samples VS to convert (n_samples, n_features).
+        :param samples: Samples VS to convert (n_samples, n_components).
         :return: Samples in the original space.
         :rtype: array_like (n_samples, n_features)
         """
-        pred = np.empty((len(samples), len(self.mean_snapshot)))
-        for i, s in enumerate(samples):
-            pred[i] = self.mean_snapshot + np.dot(self.U, s)
+        samples = np.asarray(samples)
+        pred = self.mean_snapshot + np.dot(self.U, samples.T).T
         return np.atleast_2d(pred)
 
     @staticmethod
