@@ -156,8 +156,6 @@ class Driver(object):
                          'nrefine': resamp_size,
                          'multifidelity': multifidelity}
             self.pod = Pod(**settings_)
-            self.pod.space.max_points_nb = self.space.max_points_nb
-            self.pod.space.duplicate = duplicate
         else:
             self.pod = None
             self.logger.info('No POD is computed.')
@@ -231,9 +229,9 @@ class Driver(object):
                 self.surrogate.space.empty()
                 self.pod.update(samples)
             else:
-                self.pod.decompose(samples)
+                self.pod.fit(samples)
             self.data = self.pod.VS()
-            points = self.pod.space.values
+            points = self.pod.space
 
         else:
             # [TODO] Über complicated pour rien ! --> révision du space + data

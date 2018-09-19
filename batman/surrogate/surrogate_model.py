@@ -170,11 +170,7 @@ class SurrogateModel(object):
         results = np.atleast_2d(results)
 
         if self.pod is not None:
-            pred = np.empty((len(results), len(self.pod.mean_snapshot)))
-            for i, s in enumerate(results):
-                pred[i] = self.pod.mean_snapshot + np.dot(self.pod.U, s)
-
-            results = np.atleast_2d(pred)
+            results = self.pod.inverse_transform(results)
 
         return results, sigma
 
