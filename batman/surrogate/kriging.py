@@ -144,8 +144,8 @@ class Kriging(object):
             results = [model_fitting(data)]
 
         # Gather results
-        self.data, self.hyperparameter = zip(*results)
-        self.logger.debug("Kernels:\n{}".format([gp.kernel_ for gp in self.data]))
+        self.gp_models, self.hyperparameter = zip(*results)
+        self.logger.debug("Kernels:\n{}".format([gp.kernel_ for gp in self.gp_models]))
 
     def _optim_evolution(self, obj_func, initial_theta, bounds):
         """Genetic optimization of the hyperparameters.
@@ -205,7 +205,7 @@ class Kriging(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             # Compute a prediction per predictor
-            for i, gp in enumerate(self.data):
+            for i, gp in enumerate(self.gp_models):
                 prediction[i], sigma[i] = gp.predict(point_array,
                                                      return_std=True,
                                                      return_cov=False)

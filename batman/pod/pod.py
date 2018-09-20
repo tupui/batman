@@ -180,7 +180,7 @@ class Pod(object):
 
         # basis
         lazy_data = np.load(os.path.join(path, self.pod_file_name))
-        self.space = lazy_data['space']
+        self.space = list(lazy_data['space'])
         self.S = lazy_data['modes']
         self.V = lazy_data['vectors_v']
         self.U = lazy_data['vectors_u']
@@ -371,18 +371,15 @@ class Pod(object):
             :rtype: array_like.
             """
             # Remove point from matrix
-            V_1 = np.delete(self.V, i, 0)
+            V_1 = np.delete(self.V, i, axis=0)
 
             (Urot, S_1, V_1) = self.downgrade(self.S, V_1)
             (Urot, S_1, V_1) = self.filtering(Urot, S_1, V_1,
                                               1.,
                                               len(self.S))
 
-            points_1 = points[:]
-            points_1.pop(i)
-
             new_pod = copy.deepcopy(self)
-            new_pod.space = points_1
+            new_pod.space = np.delete(points, i, axis=0)
             new_pod.V = V_1
             new_pod.S = S_1
 

@@ -328,7 +328,6 @@ class Driver(object):
             self.data = self.surrogate.data
         if self.pod is not None:
             self.pod.read(os.path.join(self.fname, self.fname_tree['pod']))
-            self.pod.space = self.space
             self.surrogate.pod = self.pod
         elif (self.pod is None) and (self.surrogate is None):
             path = os.path.join(self.fname, self.fname_tree['data'])

@@ -147,16 +147,7 @@ class SurrogateModel(object):
         :return: Standard deviation.
         :rtype: array_like (n_samples, n_features).
         """
-        if self.update:
-            # pod has changed: update predictor
-            self.fit(self.pod.space, self.pod.VS)
-
-        try:
-            points[0][0]
-        except (TypeError, IndexError):
-            points = [points]
-
-        points = np.array(points)
+        points = np.atleast_2d(points)
 
         if self.kind != 'pc':
             points = self.scaler.transform(points)

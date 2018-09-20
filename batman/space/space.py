@@ -176,7 +176,8 @@ class Space(Sample):
 
         if not hasattr(self, 'gp_samplers'):
             s = int(bool(self.multifidelity))
-            self.logger.info("Discrepancy is {}".format(self.discrepancy(self.values[:, s:], self.corners)))
+            self.logger.info("Discrepancy is {}"
+                             .format(self.discrepancy(self.values[:, s:], self.corners)))
 
         return self.values
 
