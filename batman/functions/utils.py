@@ -19,10 +19,12 @@ def multi_eval(fun):
         x_n = np.atleast_2d(x_n)
         shape_eval = (len(x_n), -1)
 
+        full = kwargs['full'] if 'full' in kwargs else False
+
         feval = [fun(self, x_i, *args, **kwargs) for x_i in x_n]
 
         if any(method in inspect.getmodule(fun).__name__
-               for method in ['kriging', 'multifidelity']):
+               for method in ['kriging', 'multifidelity']) or full:
             feval, sigma = zip(*feval)
             feval = np.array(feval).reshape(shape_eval)
             sigma = np.array(sigma).reshape(shape_eval)

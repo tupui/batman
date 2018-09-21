@@ -52,7 +52,7 @@ def test_block(mascaret_data, settings_ishigami):
 def test_cosi(ishigami_data):
     ishigami_data_ = copy.deepcopy(ishigami_data)
     ishigami_data_.space.max_points_nb = 5000
-    X = ishigami_data_.space.sampling(5000, 'lhsopt')
+    X = ishigami_data_.space.sampling(5000, 'olhs')
     Y = ishigami_data_.func(X).flatten()
 
     cosi_ = cosi(X, Y)

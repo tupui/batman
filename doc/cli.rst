@@ -86,7 +86,7 @@ First of all, we define the parameter space using an hypercube. Taking the minim
 
     * ``init_size``: define the initial number of snapshots,
     * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*,
-      *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *lhsopt* (optimized LHS), *saltelli*,
+      *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *olhs* (optimized LHS), *saltelli*,
     * [``distributions``]: A list of distributions. Ex for three input variables:
       ``["Uniform(15., 60.)", "GpSampler", "Normal(4035., 400.)"]``,
     * [``discrete``]: index of the parameter which is discrete.

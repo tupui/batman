@@ -6,6 +6,7 @@ Generic dataset
 import logging
 import numpy as np
 from scipy.spatial import distance
+from sklearn import preprocessing
 from .utils import multi_eval
 from ..space import Sample
 
@@ -37,23 +38,28 @@ class DbGeneric(object):
         self.d_out = self.data.shape[1]
         self.ns, self.d_in = self.space.shape
 
+        # Accomodate for discrepancy in parameters' ranges
+        self.scaler = preprocessing.MinMaxScaler()
+        self.scaler.fit(self.space)
+        self.sample_scaled = self.scaler.transform(self.space)
+
     def __repr__(self):
         return ("Generic dataset: N_s = {}, d_in = {} -> d_out = {}"
                 .format(self.ns, self.d_in, self.d_out))
 
     @multi_eval
-    def __call__(self, x):
+    def __call__(self, x, full=False):
         """Call function.
 
         :param array_like x: inputs (1, n_features).
         :return: f(x).
         :rtype: array_like (1, n_features).
         """
-        dists = distance.cdist([x, x], self.space, 'seuclidean')
-        idx = np.argmin(dists, axis=1)
-        idx = idx[0]
+        x_scaled = self.scaler.transform(np.array(x)[None, :])[0]
+        dists = distance.cdist([x_scaled, x_scaled], self.sample_scaled, 'seuclidean')
+        idx = np.argmin(dists, axis=1)[0]
 
         corresp = self.space[idx]
         self.logger.debug("Input: {} -> Database: {}".format(x, corresp))
 
-        return self.data[idx]
+        return (corresp, self.data[idx]) if full else self.data[idx]
