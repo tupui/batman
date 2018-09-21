@@ -3,8 +3,8 @@ import os
 import pytest
 from batman.functions import (SixHumpCamel, Branin, Michalewicz, Rosenbrock,
                               Rastrigin, Ishigami, G_Function, Forrester,
-                              ChemicalSpill, Manning, Channel_Flow, db_Mascaret,
-                              DbGeneric)
+                              ChemicalSpill, Manning, db_Mascaret, mascaret,
+                              Channel_Flow, DbGeneric)
 from scipy.optimize import differential_evolution
 import numpy as np
 import numpy.testing as npt
@@ -122,14 +122,16 @@ def test_ChemicalSpill():
 
 def test_DbGeneric():
     # From samples
-    f_ = db_Mascaret()
-    f = DbGeneric(space=f_.data_input, data=f_.data_output)
+    f_ = mascaret()
+    f = DbGeneric(space=f_.space, data=f_.data)
 
-    f_out = f([31.54645246710516560, 4237.025232805773157])
-    f_data_base = [2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
-                   2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
-                   1.7149e1, 1.446e1]
+    s_out, f_out = f([31.54645246710516560, 4237.025232805773157], full=True)
+    f_data_base = [[2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
+                    2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
+                    1.7149e1, 1.446e1]]
     npt.assert_almost_equal(f_out, f_data_base, decimal=2)
+    s_data_base = [[31.54645246710516560, 4237.025232805773157]]
+    npt.assert_almost_equal(s_out, s_data_base, decimal=2)
 
     # From paths
     PATH = os.path.dirname(os.path.realpath(__file__))
@@ -139,8 +141,7 @@ def test_DbGeneric():
     f = DbGeneric(fnames=fnames)
 
     f_out = f([31.54645246710516560, 4237.025232805773157])
-    f_data_base = [2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
-                   2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
-                   1.7149e1, 1.446e1]
+    f_data_base = [[2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
+                    2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
+                    1.7149e1, 1.446e1]]
     npt.assert_almost_equal(f_out, f_data_base, decimal=2)
-

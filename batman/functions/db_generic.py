@@ -8,7 +8,6 @@ import numpy as np
 from scipy.spatial import distance
 from sklearn import preprocessing
 from .utils import multi_eval
-from ..space import Sample
 
 
 class DbGeneric(object):
@@ -52,6 +51,7 @@ class DbGeneric(object):
         """Call function.
 
         :param array_like x: inputs (1, n_features).
+        :param bool full: Whether to return the sample from the database.
         :return: f(x).
         :rtype: array_like (1, n_features).
         """
