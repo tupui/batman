@@ -90,13 +90,13 @@ def test_Manning():
 def test_Mascaret():
     f = db_Mascaret()
     f_out = f([31.54645246710516560, 4237.025232805773157])
-    f_data_base = [2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
-                   2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
-                   1.7149e1, 1.446e1]
+    f_data_base = [[2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
+                    2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
+                    1.7149e1, 1.446e1]]
     npt.assert_almost_equal(f_out, f_data_base, decimal=2)
 
     f = db_Mascaret(multizone=True)
-    f_out = f([51.5625, 46.66, 27.6, 4135.007205626885])[:6]
+    f_out = f([51.5625, 46.66, 27.6, 4135.007205626885])[0, :6]
     f_data_base = [26.39, 26.36, 26.35, 26.34, 26.33, 26.32]
     npt.assert_almost_equal(f_out, f_data_base, decimal=2)
 
@@ -104,4 +104,4 @@ def test_Mascaret():
 def test_ChemicalSpill():
     f = ChemicalSpill()
     y = f([10, 0.07, 1.505, 30.1525])
-    assert y.shape == (1000,)
+    assert y.shape == (1, 1000)

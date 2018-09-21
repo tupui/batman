@@ -4,7 +4,10 @@ import numpy as np
 
 
 def multi_eval(fun):
-    """Detect space or unique point."""
+    """Detect space or unique point.
+
+    Return the evaluation with shape (n_samples, n_features).
+    """
     def wrapper_fun(self, x_n, *args, **kwargs):
         """Get evaluation from space or point.
 
@@ -13,12 +16,8 @@ def multi_eval(fun):
         :return: function evaluation(s) [sigma(s)]
         :rtype: np.array([n_eval], n_feature)
         """
-        try:
-            x_n[0][0]
-            shape_eval = (len(x_n), -1)
-        except (TypeError, IndexError):
-            x_n = [x_n]
-            shape_eval = (-1)
+        x_n = np.atleast_2d(x_n)
+        shape_eval = (len(x_n), -1)
 
         feval = [fun(self, x_i, *args, **kwargs) for x_i in x_n]
 
