@@ -1,8 +1,10 @@
 # coding: utf8
+import os
 import pytest
 from batman.functions import (SixHumpCamel, Branin, Michalewicz, Rosenbrock,
-                              Rastrigin, Ishigami, G_Function, Channel_Flow,
-                              Forrester, Manning, db_Mascaret, ChemicalSpill)
+                              Rastrigin, Ishigami, G_Function, Forrester,
+                              ChemicalSpill, Manning, Channel_Flow, db_Mascaret,
+                              DbGeneric)
 from scipy.optimize import differential_evolution
 import numpy as np
 import numpy.testing as npt
@@ -116,3 +118,29 @@ def test_ChemicalSpill():
     f = ChemicalSpill()
     y = f([10, 0.07, 1.505, 30.1525])
     assert y.shape == (1, 1000)
+
+
+def test_DbGeneric():
+    # From samples
+    f_ = db_Mascaret()
+    f = DbGeneric(space=f_.data_input, data=f_.data_output)
+
+    f_out = f([31.54645246710516560, 4237.025232805773157])
+    f_data_base = [2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
+                   2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
+                   1.7149e1, 1.446e1]
+    npt.assert_almost_equal(f_out, f_data_base, decimal=2)
+
+    # From paths
+    PATH = os.path.dirname(os.path.realpath(__file__))
+    fnames = ['input_mascaret.npy', 'output_mascaret.npy']
+    fnames = [os.path.join(PATH, '../functions/data/', p) for p in fnames]
+
+    f = DbGeneric(fnames=fnames)
+
+    f_out = f([31.54645246710516560, 4237.025232805773157])
+    f_data_base = [2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
+                   2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
+                   1.7149e1, 1.446e1]
+    npt.assert_almost_equal(f_out, f_data_base, decimal=2)
+
