@@ -2,6 +2,7 @@ import os
 import base64
 import json
 import tempfile
+import copy
 
 import dash
 from dash.dependencies import Input, State, Output
@@ -26,8 +27,8 @@ PARAMETERS_STYLES = {
 SETTINGS = {
     "space": {
         "corners": [
-            [0],
-            [1]
+            [None],
+            [None]
         ],
         "sampling": {
             "init_size": 10,
@@ -48,7 +49,7 @@ SETTINGS = {
     },
     "snapshot": {
         "max_workers": 10,
-        "plabels": ["x1"],
+        "plabels": [None],
         "flabels": ["F"],
         "provider": {
             "type": "function",
@@ -94,6 +95,8 @@ def space_layout(contents):
         print(f'Settings loaded: {settings}')
     except AttributeError:
         settings = contents
+
+    print(f'Settings used for form rendering:\n{settings}')
 
     kind = settings['space']['sampling']['method']
     ns = settings['space']['sampling']['init_size']
@@ -177,9 +180,21 @@ app.callback(Output('space', 'children'), [Input('upload-settings', 'contents')]
 layout = html.Div([
 
     html.Div([
-        html.H3('Load settings file'),
-        dcc.Upload(html.Button('Upload File'),
-                   id='upload-settings', accept='application/json'),
+        html.H3('Load Settings File'),
+
+        dcc.Upload([
+            'Drag and Drop or ',
+            html.A('Select a File')],
+            id='upload-settings', accept='application/json',
+            style={
+            'width': '30%',
+            'height': '60px',
+            'lineHeight': '60px',
+            'borderWidth': '1px',
+            'borderStyle': 'dashed',
+            'borderRadius': '5px',
+            'textAlign': 'center'
+        }),
 
         # Invisible Div storring settings dict
         html.Div(children=json.dumps(SETTINGS), id='settings', style={'display': 'none'})
@@ -210,11 +225,32 @@ for i in range(1, MAX_PARAMETERS + 1):
                              Input(f'parameter_{i}_min', 'value'),
                              Input(f'parameter_{i}_max', 'value')])
 
+
+@app.callback(Output('settings', 'children'), parameter_values)
+def update_settings(*parameter_values):
+    """Update settings from change in parameter values.
+
+    Values are stored in hidden Div settings.
+    """
+    kind = parameter_values[0]
+    ns = parameter_values[1]
+    n_parameters = parameter_values[2]
+
+    plabels = parameter_values[3::3][:n_parameters]
+    pmins = parameter_values[4::3][:n_parameters]
+    pmaxs = parameter_values[5::3][:n_parameters]
+
+    settings = copy.deepcopy(SETTINGS)
+    settings['space'] = {'samping': {'method': kind, 'init_size': ns},
+                         'corners': [pmins, pmaxs]}
+    settings['snapshot']['plabels'] = plabels
+
+    return json.dumps(settings)
+
+
 @app.callback(Output('visu_sample', 'children'), parameter_values)
 def update_space_visu(*parameter_values):
-
-    print(parameter_values)
-
+    """Generate DoE visualization from settings."""
     kind = parameter_values[0]
     ns = parameter_values[1]
     n_parameters = parameter_values[2]
