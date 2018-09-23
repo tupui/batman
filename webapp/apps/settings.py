@@ -1,5 +1,8 @@
 import os
 import base64
+import json
+import tempfile
+
 import dash
 from dash.dependencies import Input, State, Output
 import dash_core_components as dcc
@@ -9,6 +12,7 @@ import plotly.graph_objs as go
 import plotly.tools as tls
 from batman.space import Space
 from batman.visualization import doe
+from batman.misc import import_config
 
 from app import app
 
@@ -19,14 +23,67 @@ PARAMETERS_STYLES = {
     'margin-top': '1em',
 }
 
+SETTINGS = {
+    "space": {
+        "corners": [
+            [0],
+            [1]
+        ],
+        "sampling": {
+            "init_size": 4,
+            "method": "halton"
+        },
+        "resampling":{
+            "delta_space": 0.08,
+            "resamp_size": 0,
+            "method": "sigma",
+            "hybrid": [["sigma", 4], ["loo_sobol", 2]],
+            "q2_criteria": 0.9
+        }
+    },
+    "pod": {
+        "dim_max": 100,
+        "tolerance": 0.99,
+        "type": "static"
+    },
+    "snapshot": {
+        "max_workers": 10,
+        "plabels": ["x1"],
+        "flabels": ["F"],
+        "provider": {
+            "type": "function",
+            "module": "function",
+            "function": "f"
+        },
+        "io": {
+            "space_fname": "sample-space.json",
+            "space_format": "json",
+            "data_fname": "sample-data.npz",
+            "data_format": "npz"
+        }
+    },
+    "surrogate": {
+        "method": "kriging"
+    },
+    "uq": {
+        "sample": 1000,
+        "test": "Ishigami",
+        "pdf": ["Uniform(0, 1)"],
+        "type": "aggregated",
+        "method": "sobol"
+    }
+}
+
 layout = html.Div([
 
     html.Div([
         html.H3('Load settings file'),
         dcc.Upload(html.Button('Upload File'),
-                   id='upload-settings'),
-        html.Div(id='output-settings-upload'),
-    ]),
+                   id='upload-settings', accept='application/json'),
+
+        # Invisible Div storring settings dict
+        html.Div(children=json.dumps(SETTINGS), id='settings', style={'display': 'none'})
+    ], className='row'),
 
     html.H3('Space'),
 
@@ -37,7 +94,7 @@ layout = html.Div([
                 html.Label('Number of parameters:'),
                 dcc.Slider(
                     id='n_parameters',
-                    min=1, max=10, step=1, value=1,
+                    min=1, max=MAX_PARAMETERS, step=1, value=1,
                     marks = {i: i for i in range(1, MAX_PARAMETERS + 1)}
                 )
             ], style={'width': '50%'}),
@@ -77,7 +134,7 @@ layout = html.Div([
                     options=[
                         {'label': 'Sobol', 'value': 'sobol'},
                         {'label': 'Halton', 'value': 'halton'},
-                        {'label': 'Optimized Latin Hypercube', 'value': 'olhs'}
+                        {'label': 'Latin Hypercube', 'value': 'lhs'}
                     ],
                     value='sobol'
                 ),
@@ -89,12 +146,12 @@ layout = html.Div([
                 )
 
             ]),
-        ], className="seven columns"), 
+        ], className='seven columns'), 
 
-        html.Div(id='visu_sample', className="five columns",
+        html.Div(id='visu_sample', className='five columns',
                  style={'display': 'block'})
 
-    ], className="row")
+    ], className='row', id='space')
 ])
 
 
@@ -152,3 +209,23 @@ def update_sampling(*parameter_values):
                   html.Div('Fill in space settings to display parameter space...')]
 
     return [html.Label('Parameter space:'), *output]
+
+
+@app.callback(Output('settings', 'children'), [Input('upload-settings', 'contents')])
+def load_settings(contents):
+    content_type, content_string = contents.split(',')
+    settings = base64.b64decode(content_string).decode('utf-8')
+    settings = json.loads(settings)
+
+    _tmp = tempfile.TemporaryDirectory()
+    workdir = _tmp.name
+    with open(os.path.join(workdir, 'settings.json'), 'w') as fd:
+        json.dump(settings, fd)
+
+    path = os.path.dirname(os.path.realpath(__file__))
+    settings = import_config(os.path.join(workdir, 'settings.json'),
+                             os.path.join(path, 'schema.json'))
+
+    print(f'Settings loaded: {settings}')
+
+    return settings

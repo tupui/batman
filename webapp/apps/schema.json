@@ -1,0 +1,259 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "space": {
+      "type": "object",
+      "properties": {
+        "corners": {"type": "array", "items": {}},
+        "sampling": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "method": {
+                      "type": "string",
+                      "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc",
+                               "lhsopt", "faure", "uniform", "saltelli"],
+                      "default": "halton"
+                },
+                "distributions": {"type": "array", "items": {}},
+                "init_size": {"type": "integer", "default": 20, "minimum": 4},
+                "discrete": {"type": "integer", "minimum": 0}
+              },
+              "required": ["method", "init_size"]
+            },
+            {"type": "array", "items": {}}
+          ]
+        },
+        "resampling": {
+          "type": "object",
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": ["discrepancy", "ego_discrepancy",
+                       "sigma_discrepancy", "sigma", "loo_sigma", "loo_sobol",
+                       "extrema", "hybrid", "optimization"],
+              "default": "sigma"
+            },
+            "resamp_size": {"type": "integer", "default": 2, "minimum": 0},
+            "extremum": {"type": "string", "enum": ["min", "max"],
+                         "default": "min"},
+            "delta_space": {"type": "number", "default": 0.08, "minimum": 0},
+            "q2_criteria": {"type": "number", "default": 0.9,
+                            "minimum": 0, "exclusiveMinimum": true,
+                            "maximum": 1, "exclusiveMaximum": true},
+            "hybrid": {"type": "array", "items": {}}
+          },
+          "required": ["method", "resamp_size"]
+        }
+      },
+      "required": ["corners", "sampling"]
+    },
+    "pod": {
+      "type": "object",
+      "properties": {
+        "dim_max": {"type": "integer", "default": 100, "minimum": 1},
+        "tolerance": {"type": "number", "default": 0.99, "minimum": 0,
+                      "exclusiveMinimum": true, "maximum": 1,
+                      "exclusiveMaximum": true},
+        "type": {"type": "string", "default": "static",
+                 "enum": ["static", "dynamic"]}
+      },
+      "required": ["dim_max", "tolerance", "type"]
+    },
+    "snapshot": {
+      "type": "object",
+      "properties": {
+        "max_workers": {"type": "integer", "default": 2, "minimum": 1},
+        "plabels": {"type": "array", "items": {"type": "string"}},
+        "flabels": {"type": "array", "items": {"type": "string"}},
+        "psizes": {"type": "array", "items": {"type": "integer"}},
+        "fsizes": {"type": "array", "items": {"type": "integer"}},
+        "provider": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {"type": "string", "enum": ["function"]},
+                "module": {"type": "string"},
+                "function": {"type": "string"},
+                "discover": {"type": "string"}
+              },
+              "required": ["type", "module", "function"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {"type": "string", "enum": ["job"]},
+                "command": {"type": "string", "default": "bash script.sh"},
+                "context_directory": {"type": "string", "default": "data"},
+                "coupling_directory": {"type": "string", "default": "batman-coupling"},
+                "coupling": {
+                    "type": "object",
+                    "properties": {
+                        "coupling_directory": {"type": "string", "default": "batman-coupling"},
+                        "input_fname": {"type": "string", "default": "sample-space.json"},
+                        "input_format": {"type": "string", "default": "json"},
+                        "output_fname": {"type": "string", "default": "sample-data.json"},
+                        "output_format": {"type": "string", "default": "json"}
+                    }
+                },
+                "hosts": {"type": "array", "items": {
+                      "type": "object",
+                      "properties": {
+                          "hostname": {"type": "string"},
+                          "remote_root": {"type": "string"},
+                          "username": {"type": "string"},
+                          "password": {"type": "string"},
+                          "weight": {"type": "number"}
+                      },
+                      "required": ["hostname", "remote_root"]
+                  }
+                },
+                "clean": {"type": "boolean", "default": false},
+                "discover": {"type": "string"}
+              },
+              "required": ["type", "command", "context_directory"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {"type": "string", "enum": ["file"]},
+                "file_pairs": {
+                  "type": "array",
+                  "items": {"type": "array", "items": [{"type": "string"}, {"type": "string"}]}
+                },
+                "discover": {"type": "string"}
+              },
+              "required": ["type", "file_pairs"]
+            }
+          ]
+        },
+        "io": {
+          "type": "object",
+          "properties": {
+            "space_fname": {"type": "string", "default": "sample-space.json"},
+            "space_format": {"type": "string", "default": "json"},
+            "data_fname": {"type": "string", "default": "sample-data.json"},
+            "data_format": {"type": "string", "default": "json"}
+          }
+        }
+      },
+      "required": ["plabels", "flabels", "max_workers", "provider"]
+    },
+    "surrogate": {
+      "type": "object",
+      "properties": {
+        "predictions": {"type": "array", "items": {}},
+        "method": {"anyOf": [{
+                    "properties": {
+                     "type": "string", "default": "kriging",
+                     "enum": ["rbf", "kriging", "pc", "evofusion"]}},
+                    {"properties": {"type": "string"}}]},
+        "cost_ratio": {"type": "number", "default": 2.0, "minimum": 1,
+                       "exclusiveMinimum": true},
+        "grand_cost": {"type": "integer", "default": 30, "minimum": 4},
+        "strategy": {"type": "string", "default": "Quad",
+                   "enum": ["Quad", "LS", "SparseLS"]},
+        "degree": {"type": "integer", "default": 10, "minimum": 1},
+        "sparse_param": {"type": "object",
+                         "properties": {"max_considered_terms": {"type": "integer"},
+                                        "most_significant": {"type": "integer"},
+                                        "significance_factor": {"type": "number"},
+                                        "hyper_factor": {"type": "number"}}},
+        "kernel": {"type": "string"},
+        "noise": {"type": ["number", "boolean"], "default": false},
+        "global_optimizer": {"type": "boolean", "default": true}
+      },
+      "required": ["method"],
+      "oneOf": [
+        {
+          "properties": {"method": {"enum":["pc"]}},
+          "required": ["strategy", "degree"]
+        },
+        {
+          "properties": {"method": {"enum":["evofusion"]}},
+          "required": ["cost_ratio", "grand_cost"]
+        },
+        {
+          "properties": {"method": {"enum":["kriging"]}}
+        },
+        {
+          "properties": {"method": {"enum":["rbf"]}}
+        }
+      ]
+    },
+    "uq": {
+      "type": "object",
+      "properties": {
+        "sample": {"type": "integer", "default": 5000, "minimum": 10},
+        "test": {"type": "string"},
+        "pdf": {"type": "array", "items": {"type": "string"}},
+        "type": {"type": "string", "default": "aggregated",
+                 "enum": ["aggregated", "block"]},
+        "method": {"type": "string", "default": "sobol",
+                   "enum": ["sobol", "FAST"]}
+      },
+      "required": ["sample", "pdf", "type", "method"]
+    },
+    "visualization": {
+      "type": "object",
+      "properties": {
+        "bounds": {"type": "array", "maxItems": 2, "minItems": 2,
+                   "items": {"type": "array", "items":{"type": "number"}}},
+        "doe": {"type": "boolean", "default": true},
+        "resampling": {"type": "boolean", "default": true},
+        "xdata": {"type": "array", "items": {"type": "number"}},
+        "axis_disc": {"type": "array",
+                      "items": {"type": "integer", "maxItems": 4, "minimum": 2}},
+        "flabel": {"type": "string"},
+        "xlabel": {"type": "string"},
+        "plabels": {"type": "array",
+                    "items": {"type": "string", "maxItems": 4}},
+        "feat_order": {"type": "array",
+                       "items": {"type": "integer",
+                                 "maximum": 4, "maxItems": 4}},
+        "ticks_nbr": {"type": "integer", "minimum": 4, "maximum": 256},
+        "range_cbar": {"type": "array",
+                       "items": {"type": "number",
+                                 "minItems": 2, "maxItems": 2}},
+        "contours": {"type": "array",
+                     "items": {"type": "number", "maxItems": 10}},
+        "kiviat_fill": {"type": "boolean", "default": true},
+        "2D_mesh": {
+          "type": "object",
+          "properties": {
+            "fname": {"type": "string"},
+            "format": {"type": "string"},
+            "xlabel": {"type": "string"},
+            "ylabel": {"type": "string"},
+            "flabels": {"type": "array", "items": {"type": "string"}},
+            "vmins": {"type": "array", "items": {"type": "number"}}}
+        }
+      }
+    }
+  },
+  "required": ["space", "snapshot"],
+  "oneOf": [
+    {
+      "required": ["surrogate"],
+      "properties": {"surrogate": {"properties": {"method": {"enum":["pc"]}}},
+                     "space": {"properties":
+                      {"sampling": {"properties":
+                        {"distributions": {"type": "array", "items": {}}}},
+                       "resampling": {"properties":
+                        {"method": {"enum": ["discrepancy", "extrema"]}}}
+                      }
+                    }}
+    },
+    {
+      "required": ["surrogate"],
+      "properties": {"surrogate": {"properties": {"method": {"enum":["evofusion", "kriging", "rbf"]}}}}
+    },
+    {
+      "not": {"required": ["surrogate"]},
+      "properties": {"uq": {"properties": {"method": {"not" : {"enum":["FAST"]}}}}}
+    }
+  ]
+}
