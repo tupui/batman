@@ -50,7 +50,7 @@ def doe(sample, plabels=None, resampling=0, multifidelity=False, fname=None):
                     [0] * resampling, c='r', marker='^')
         plt.xlabel(plabels[0])
         plt.tick_params(axis='y', which='both',
-                        labelleft='off', left='off')
+                        labelleft=False, left=False)
     else:
         # num figs = ((n-1)**2+(n-1))/2 + diag
         plt.tick_params(axis='both', labelsize=8)
