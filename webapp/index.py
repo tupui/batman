@@ -27,7 +27,7 @@ app.layout = html.Div([
     html.Div([
         dcc.Tabs(
             id='tabs',
-            style={'width': '100%', 'height': '30',
+            style={'width': '100%', #'height': '30',
                    'margin-top': '1em', 'margin-bottom': '1em'},
             children=[
                 dcc.Tab(label='Settings', value='settings_tab'),

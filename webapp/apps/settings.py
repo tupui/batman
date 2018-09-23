@@ -30,8 +30,8 @@ SETTINGS = {
             [1]
         ],
         "sampling": {
-            "init_size": 4,
-            "method": "halton"
+            "init_size": 10,
+            "method": "sobol"
         },
         "resampling":{
             "delta_space": 0.08,
@@ -74,27 +74,40 @@ SETTINGS = {
     }
 }
 
-layout = html.Div([
 
-    html.Div([
-        html.H3('Load settings file'),
-        dcc.Upload(html.Button('Upload File'),
-                   id='upload-settings', accept='application/json'),
+def space_layout(contents):
+    """Generate form from settings."""
+    try:
+        content_type, content_string = contents.split(',')
+        settings = base64.b64decode(content_string).decode('utf-8')
+        settings = json.loads(settings)
 
-        # Invisible Div storring settings dict
-        html.Div(children=json.dumps(SETTINGS), id='settings', style={'display': 'none'})
-    ], className='row'),
+        _tmp = tempfile.TemporaryDirectory()
+        workdir = _tmp.name
+        with open(os.path.join(workdir, 'settings.json'), 'w') as fd:
+            json.dump(settings, fd)
 
-    html.H3('Space'),
+        path = os.path.dirname(os.path.realpath(__file__))
+        settings = import_config(os.path.join(workdir, 'settings.json'),
+                                 os.path.join(path, 'schema.json'))
 
-    html.Div([
+        print(f'Settings loaded: {settings}')
+    except AttributeError:
+        settings = contents
 
+    kind = settings['space']['sampling']['method']
+    ns = settings['space']['sampling']['init_size']
+    corners = settings['space']['corners']
+    plabels = settings['snapshot']['plabels']
+    n_parameters = len(plabels)
+
+    layout = [
         html.Div([
             html.Div([
                 html.Label('Number of parameters:'),
                 dcc.Slider(
                     id='n_parameters',
-                    min=1, max=MAX_PARAMETERS, step=1, value=1,
+                    min=1, max=MAX_PARAMETERS, step=1, value=n_parameters,
                     marks = {i: i for i in range(1, MAX_PARAMETERS + 1)}
                 )
             ], style={'width': '50%'}),
@@ -112,17 +125,20 @@ layout = html.Div([
                                 dcc.Input(
                                     id=f'parameter_{i}_name',
                                     placeholder='name...',
-                                    type='text'
+                                    type='text',
+                                    value=plabels[i - 1] if i - 1 < n_parameters else None
                                 ),
                                 dcc.Input(
                                     id=f'parameter_{i}_min',
                                     placeholder='min value...',
-                                    type='text'
+                                    type='text',
+                                    value=corners[0][i - 1] if i - 1 < n_parameters else None
                                 ),
                                 dcc.Input(
                                     id=f'parameter_{i}_max',
                                     placeholder='max value...',
-                                    type='text'
+                                    type='text',
+                                    value=corners[1][i - 1] if i - 1 < n_parameters else None
                                 )]
                             ),
                         ]) for i in range(1, MAX_PARAMETERS + 1)]),
@@ -136,13 +152,14 @@ layout = html.Div([
                         {'label': 'Halton', 'value': 'halton'},
                         {'label': 'Latin Hypercube', 'value': 'lhs'}
                     ],
-                    value='sobol'
+                    value=kind
                 ),
                 html.Label('Sampling size:'),
                 dcc.Input(
                     id='parameter_ns',
                     placeholder='n samples...',
-                    type='number'
+                    type='number',
+                    value=ns
                 )
 
             ]),
@@ -150,8 +167,26 @@ layout = html.Div([
 
         html.Div(id='visu_sample', className='five columns',
                  style={'display': 'block'})
+    ]
 
-    ], className='row', id='space')
+    return layout
+
+
+app.callback(Output('space', 'children'), [Input('upload-settings', 'contents')])(space_layout)
+
+layout = html.Div([
+
+    html.Div([
+        html.H3('Load settings file'),
+        dcc.Upload(html.Button('Upload File'),
+                   id='upload-settings', accept='application/json'),
+
+        # Invisible Div storring settings dict
+        html.Div(children=json.dumps(SETTINGS), id='settings', style={'display': 'none'})
+    ], className='row'),
+
+    html.H3('Space'),
+    html.Div(space_layout(SETTINGS), className='row', id='space')
 ])
 
 
@@ -176,7 +211,7 @@ for i in range(1, MAX_PARAMETERS + 1):
                              Input(f'parameter_{i}_max', 'value')])
 
 @app.callback(Output('visu_sample', 'children'), parameter_values)
-def update_sampling(*parameter_values):
+def update_space_visu(*parameter_values):
 
     print(parameter_values)
 
@@ -209,23 +244,3 @@ def update_sampling(*parameter_values):
                   html.Div('Fill in space settings to display parameter space...')]
 
     return [html.Label('Parameter space:'), *output]
-
-
-@app.callback(Output('settings', 'children'), [Input('upload-settings', 'contents')])
-def load_settings(contents):
-    content_type, content_string = contents.split(',')
-    settings = base64.b64decode(content_string).decode('utf-8')
-    settings = json.loads(settings)
-
-    _tmp = tempfile.TemporaryDirectory()
-    workdir = _tmp.name
-    with open(os.path.join(workdir, 'settings.json'), 'w') as fd:
-        json.dump(settings, fd)
-
-    path = os.path.dirname(os.path.realpath(__file__))
-    settings = import_config(os.path.join(workdir, 'settings.json'),
-                             os.path.join(path, 'schema.json'))
-
-    print(f'Settings loaded: {settings}')
-
-    return settings
