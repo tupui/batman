@@ -8,7 +8,7 @@ import plotly.graph_objs as go
 import plotly.tools as tls
 
 from app import app
-from apps import settings
+from apps import (settings, experiments)
 
 app.css.append_css({'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'})
 
@@ -51,7 +51,7 @@ def render_content(tab):
     if tab == 'settings_tab':
         return settings.layout
     elif tab == 'experiments_tab':
-        return 'Experiments'
+        return experiments.layout
     else:
         return 'Analysis'
 

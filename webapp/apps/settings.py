@@ -78,7 +78,7 @@ SETTINGS = {
 
 def space_layout(contents):
     """Generate form from settings."""
-    try:
+    try:  # load from file
         content_type, content_string = contents.split(',')
         settings = base64.b64decode(content_string).decode('utf-8')
         settings = json.loads(settings)
@@ -93,7 +93,7 @@ def space_layout(contents):
                                  os.path.join(path, 'schema.json'))
 
         print(f'Settings loaded: {settings}')
-    except AttributeError:
+    except AttributeError:  # load from dict
         settings = contents
 
     print(f'Settings used for form rendering:\n{settings}')
