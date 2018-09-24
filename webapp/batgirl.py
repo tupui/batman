@@ -1,4 +1,5 @@
-from dash.dependencies import Input, Output
+import uuid
+from dash.dependencies import (Input, Output)
 import dash_core_components as dcc
 import dash_html_components as html
 
@@ -6,7 +7,6 @@ from app import app
 from apps import (settings, experiments)
 
 app.css.append_css({'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'})
-
 STYLE_TABS = {'margin': '2% 3%'}
 
 app.layout = html.Div([
@@ -17,14 +17,18 @@ app.layout = html.Div([
                   className='app-title', style={'font-size': '3.0rem'}),
         html.Div(
             html.Img(src='/assets/BatmanLogo.png', height='100%'),
-            style={'float': 'right', 'height': '100%'})
-    ], className='row header', style={'height': '50'}),
+            style={'float': 'right', 'height': '100%'}),
+
+        # Unique identification of the session
+        html.Div(id='uuid', style={'display': 'none'})
+
+    ], id='header', className='row header', style={'height': '50'}),
 
     # tabs
     html.Div([
         dcc.Tabs(
             id='tabs',
-            style={'width': '100%',  #'height': '30',
+            style={'width': '100%',  # 'height': '30',
                    'margin-top': '1em', 'margin-bottom': '1em'},
             children=[
                 dcc.Tab(label='Settings', value='settings_tab'),
@@ -45,6 +49,11 @@ app.layout = html.Div([
              className='row', style={'display': 'none'}),
 
 ])
+
+
+@app.callback(Output('uuid', 'children'), [Input('header', 'children')])
+def uuid_session(*args):
+    return str(uuid.uuid4())
 
 
 @app.callback(Output('settings_tab', 'style'), [Input('tabs', 'value')])

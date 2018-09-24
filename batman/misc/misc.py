@@ -146,7 +146,7 @@ def import_config(path_config, path_schema):
     try:
         validator = jsonschema.Draft4Validator(schema)
         for error in sorted(validator.iter_errors(settings), key=str):
-            logger.error("Error: {}\n-> Origin: {}\n-> Schema: {}"
+            logger.debug("Error: {}\n-> Origin: {}\n-> Schema: {}"
                          .format(error.message, error.path,
                                  json.dumps(error.schema, indent=1)))
             error = True

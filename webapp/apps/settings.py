@@ -4,7 +4,7 @@ import json
 import tempfile
 import copy
 
-from dash.dependencies import Input, State, Output
+from dash.dependencies import (Input, Output)
 import dash_core_components as dcc
 import dash_html_components as html
 
@@ -74,21 +74,36 @@ SETTINGS = {
 }
 
 
+@app.callback(Output('settings_status', 'children'), [Input('settings', 'children')])
+def validate_settings(settings):
+    """Validate settings dict agains schema and update status."""
+    _tmp = tempfile.TemporaryDirectory()
+    workdir = _tmp.name
+    settings = json.loads(settings)
+
+    print(f'Settings being validated: {settings}')
+
+    with open(os.path.join(workdir, 'settings.json'), 'w') as fd:
+        json.dump(settings, fd)
+
+    path = os.path.dirname(os.path.realpath(__file__))
+
+    try:
+        settings = import_config(os.path.join(workdir, 'settings.json'),
+                                 os.path.join(path, 'schema.json'))
+        status = True
+    except SyntaxError:
+        status = False
+
+    return status
+
+
 def space_layout(contents):
     """Generate form from settings."""
     try:  # load from file
         content_type, content_string = contents.split(',')
         settings = base64.b64decode(content_string).decode('utf-8')
         settings = json.loads(settings)
-
-        _tmp = tempfile.TemporaryDirectory()
-        workdir = _tmp.name
-        with open(os.path.join(workdir, 'settings.json'), 'w') as fd:
-            json.dump(settings, fd)
-
-        path = os.path.dirname(os.path.realpath(__file__))
-        settings = import_config(os.path.join(workdir, 'settings.json'),
-                                 os.path.join(path, 'schema.json'))
 
         print(f'Settings loaded: {settings}')
     except AttributeError:  # load from dict
@@ -123,26 +138,32 @@ def space_layout(contents):
                             f'Parameter {i}:',
 
                             html.Div([
-                                dcc.Input(
-                                    id=f'parameter_{i}_name',
-                                    placeholder='name...',
-                                    type='text',
-                                    value=plabels[i - 1] if i - 1 < n_parameters else None
-                                ),
-                                dcc.Input(
-                                    id=f'parameter_{i}_min',
-                                    placeholder='min value...',
-                                    type='text',
-                                    value=corners[0][i - 1] if i - 1 < n_parameters else None
-                                ),
-                                dcc.Input(
-                                    id=f'parameter_{i}_max',
-                                    placeholder='max value...',
-                                    type='text',
-                                    value=corners[1][i - 1] if i - 1 < n_parameters else None
-                                )]
+                                html.Div(
+                                    dcc.Input(
+                                        id=f'parameter_{i}_name',
+                                        placeholder='name...',
+                                        type='text',
+                                        size=10,
+                                        value=plabels[i - 1] if i - 1 < n_parameters else None
+                                ), className='two columns'),
+                                html.Div(
+                                    dcc.Input(
+                                        id=f'parameter_{i}_min',
+                                        placeholder='min value...',
+                                        type='text',
+                                        size=10,
+                                        value=corners[0][i - 1] if i - 1 < n_parameters else None
+                                ), className='two columns'),
+                                html.Div(
+                                    dcc.Input(
+                                        id=f'parameter_{i}_max',
+                                        placeholder='max value...',
+                                        type='text',
+                                        size=10,
+                                        value=corners[1][i - 1] if i - 1 < n_parameters else None
+                                ), className='two columns')]
                             ),
-                        ]) for i in range(1, MAX_PARAMETERS + 1)]),
+                        ], className='row') for i in range(1, MAX_PARAMETERS + 1)]),
             html.Div([
                 html.Label('Sampling method:'),
                 dcc.Dropdown(
@@ -195,7 +216,8 @@ layout = html.Div([
         }),
 
         # Invisible Div storring settings dict
-        html.Div(children=json.dumps(SETTINGS), id='settings', style={'display': 'none'})
+        html.Div(children=json.dumps(SETTINGS), id='settings', style={'display': 'none'}),
+        html.Div(children=False, id='settings_status', style={'display': 'none'})
     ], className='row'),
 
     html.H3('Space'),
@@ -239,7 +261,7 @@ def update_settings(*parameter_values):
     pmaxs = parameter_values[5::3][:n_parameters]
 
     settings = copy.deepcopy(SETTINGS)
-    settings['space'] = {'samping': {'method': kind, 'init_size': ns},
+    settings['space'] = {'sampling': {'method': kind, 'init_size': ns},
                          'corners': [pmins, pmaxs]}
     settings['snapshot']['plabels'] = plabels
 

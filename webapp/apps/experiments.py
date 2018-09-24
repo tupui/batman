@@ -6,13 +6,12 @@ import tempfile
 import batman.ui
 from batman.misc import import_config
 
-from dash.dependencies import Input, State, Output
+from dash.dependencies import (Input, Output, State)
 import dash_core_components as dcc
 import dash_html_components as html
 
 from app import app
-
-# from .settings import layout as layout_settings
+from .settings import validate_settings
 
 # Check settings and paths before activating button
 # settings = json.loads(settings)
@@ -26,9 +25,13 @@ from app import app
 # settings = import_config(os.path.join(workdir, 'settings.json'),
 #                          os.path.join(path, 'schema.json'))
 
+STYLE_SETTINGS = {'border': 'none', 'color': 'white', 'cursor': 'default'}
+
 layout = html.Div([
-    html.H3('Settings Sanity Check'),
-    # html.Div([]),
+    html.H3('Settings Sanity Check', id='settings_check'),
+    html.Button('Settings Incomplete', id='settings_nogo'),
+    html.Button('Settings Complete', id='settings_go'),
+
     html.H3('Some Paths'),
     html.P('Enter absolute paths here.'),
     html.Div([
@@ -67,13 +70,10 @@ layout = html.Div([
             labelStyle={'display': 'inline-block', 'margin-right': '1em'}
         )
     ]),
-
     html.Div([
         html.H3('Launch BATMAN'),
         dcc.ConfirmDialogProvider(
-            children=html.Button(
-                'Simulate Experiments',
-            ),
+            children=html.Button('Simulate Experiments', id='launch_button', className='button-primary'),
             id='confirm_launch',
             message='Danger danger! Are you sure you want to continue?'
         ),
@@ -83,15 +83,42 @@ layout = html.Div([
 ])
 
 
+@app.callback(Output('settings_nogo', 'style'),
+              [Input('settings_status', 'children')])
+def settings_nogo(status):
+    STYLE_SETTINGS['display'] = 'block' if not status else 'none'
+    STYLE_SETTINGS['background-color'] = '#ff9800'
+    return STYLE_SETTINGS
+
+@app.callback(Output('settings_go', 'style'),
+              [Input('settings_status', 'children')],
+              [State('settings', 'children')])
+def settings_go(status, settings):
+    STYLE_SETTINGS['display'] = 'block' if status else 'none'
+    STYLE_SETTINGS['background-color'] = '#4CAF50'
+    return STYLE_SETTINGS
+
+
+@app.callback(Output('launch_button', 'disabled'),
+              [Input('settings_status', 'children')])
+def launch_button_state(on_off, *args):
+    return not on_off
+
+
+@app.callback(Output('launch_button', 'style'),
+              [Input('settings_status', 'children')])
+def launch_button_style(on_off):
+    if not on_off:
+        return {'opacity': '0.3',  'cursor': 'not-allowed'}#, 'pointer-events': 'none'}
+
 @app.callback(Output('launch_batman', 'children'),
-              [Input('confirm_launch', 'submit_n_clicks'),
-               Input('cli_options', 'values'),
-               Input('output_fname', 'value'),
-               Input('case_fname', 'value'),
-               # Input('settings', 'children'),
-               ])
+              [Input('confirm_launch', 'submit_n_clicks')],
+              [State('cli_options', 'values'),
+               State('output_fname', 'value'),
+               State('case_fname', 'value'),
+               State('settings', 'children')])
 def simulate_experiments(submit_n_clicks, options, output_fname, case_fname,
-                         *settings):
+                         settings):
     """Execture BATMAN using defined settings and options."""
     if submit_n_clicks is not None:
         if 'force' in options:
