@@ -100,23 +100,24 @@ def settings_go(status, settings):
 
 
 @app.callback(Output('launch_button', 'disabled'),
-              [Input('settings_status', 'children')])
-def launch_button_state(on_off, *args):
-    return not on_off
+              [Input('settings_status', 'children'),
+               Input('case_fname', 'value')])
+def launch_button_state(settings_status, case_fname):
+    return (not settings_status) or (not os.path.isdir(case_fname))
 
 
 @app.callback(Output('launch_button', 'style'),
-              [Input('settings_status', 'children')])
-def launch_button_style(on_off):
-    if not on_off:
-        return {'opacity': '0.3',  'cursor': 'not-allowed'}#, 'pointer-events': 'none'}
+              [Input('launch_button', 'disabled')])
+def launch_button_style(button_status):
+    if button_status:
+        return {'opacity': '0.3',  'cursor': 'not-allowed'}
 
 @app.callback(Output('launch_batman', 'children'),
-              [Input('confirm_launch', 'submit_n_clicks')],
-              [State('cli_options', 'values'),
-               State('output_fname', 'value'),
-               State('case_fname', 'value'),
-               State('settings', 'children')])
+              [Input('confirm_launch', 'submit_n_clicks'),
+               Input('cli_options', 'values'),
+               Input('output_fname', 'value'),
+               Input('case_fname', 'value')],
+              [State('settings', 'children')])
 def simulate_experiments(submit_n_clicks, options, output_fname, case_fname,
                          settings):
     """Execture BATMAN using defined settings and options."""
@@ -140,15 +141,15 @@ def simulate_experiments(submit_n_clicks, options, output_fname, case_fname,
         if 'restart' in options:
             sys.argv.append('-r')
 
-        print(sys.argv)
+        print(f'Launch options: {sys.argv}')
 
-        # os.chdir(case_fname)
+        os.chdir(case_fname)
         # with open('settings.json', 'w') as fd:
         #     json.dump(settings, fd)
 
         print(f'Settings feed to BATMAN:\n{settings}')
 
-        # calling BATMAN tu dudu du dudu
+        # calling BATMAAAAN tu dudu du dudu
         # batman.ui.main()
 
         # bat_log = dcc.Textarea(

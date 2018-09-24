@@ -53,6 +53,7 @@ app.layout = html.Div([
 
 @app.callback(Output('uuid', 'children'), [Input('header', 'children')])
 def uuid_session(*args):
+    """Create unique identifiant for each session."""
     return str(uuid.uuid4())
 
 
