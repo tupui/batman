@@ -2,12 +2,10 @@ import os
 import shutil
 import sys
 import json
-import re
-import copy
+import tempfile
 import batman.ui
-import batman.misc
+from batman.misc import import_config
 
-import dash
 from dash.dependencies import Input, State, Output
 import dash_core_components as dcc
 import dash_html_components as html

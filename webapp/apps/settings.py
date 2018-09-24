@@ -4,12 +4,10 @@ import json
 import tempfile
 import copy
 
-import dash
 from dash.dependencies import Input, State, Output
 import dash_core_components as dcc
 import dash_html_components as html
 
-import plotly.graph_objs as go
 import plotly.tools as tls
 from batman.space import Space
 from batman.visualization import doe
@@ -34,7 +32,7 @@ SETTINGS = {
             "init_size": 10,
             "method": "sobol"
         },
-        "resampling":{
+        "resampling": {
             "delta_space": 0.08,
             "resamp_size": 0,
             "method": "sigma",
@@ -111,11 +109,11 @@ def space_layout(contents):
                 dcc.Slider(
                     id='n_parameters',
                     min=1, max=MAX_PARAMETERS, step=1, value=n_parameters,
-                    marks = {i: i for i in range(1, MAX_PARAMETERS + 1)}
+                    marks={i: i for i in range(1, MAX_PARAMETERS + 1)}
                 )
             ], style={'width': '50%'}),
             html.Div(
-                style={'margin-bottom':'2em'},
+                style={'margin-bottom': '2em'},
                 children=[
                     # MAX_PARAMETERS Div are created but display set to none
                     html.Div(
@@ -166,7 +164,7 @@ def space_layout(contents):
                 )
 
             ]),
-        ], className='seven columns'), 
+        ], className='seven columns'),
 
         html.Div(id='visu_sample', className='five columns',
                  style={'display': 'block'})
@@ -208,7 +206,7 @@ layout = html.Div([
 # Space
 for n in range(1, MAX_PARAMETERS + 1):
     @app.callback(Output(f'parameter_{n}_container', 'style'),
-                 [Input('n_parameters', 'value')])
+                  [Input('n_parameters', 'value')])
     def callback(n_parameters, n=n):
         new_styles = {**PARAMETERS_STYLES}
         if n <= n_parameters:
@@ -264,8 +262,6 @@ def update_space_visu(*parameter_values):
     try:
         pmins = [float(p) for p in pmins]
         pmaxs = [float(p) for p in pmaxs]
-        space_settings = {'corners': [pmins, pmaxs], 'sample': ns,
-                          'plabels': plabels}
 
         space = Space(corners=[pmins, pmaxs], sample=ns, plabels=plabels)
         space.sampling(kind=kind)
