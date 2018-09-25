@@ -87,7 +87,7 @@ layout = html.Div([
               [Input('settings_status', 'children')])
 def settings_nogo(status):
     STYLE_SETTINGS['display'] = 'block' if not status else 'none'
-    STYLE_SETTINGS['background-color'] = '#ff9800'
+    STYLE_SETTINGS['background-color'] = '#FF851B'
     return STYLE_SETTINGS
 
 @app.callback(Output('settings_go', 'style'),
@@ -95,7 +95,7 @@ def settings_nogo(status):
               [State('settings', 'children')])
 def settings_go(status, settings):
     STYLE_SETTINGS['display'] = 'block' if status else 'none'
-    STYLE_SETTINGS['background-color'] = '#4CAF50'
+    STYLE_SETTINGS['background-color'] = '#2ECC40'
     return STYLE_SETTINGS
 
 

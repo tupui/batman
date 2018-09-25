@@ -13,32 +13,40 @@ app.layout = html.Div([
 
     # header
     html.Div([
-        html.Span('Uncertainty Quantification App using BATMAN API',
-                  className='app-title', style={'font-size': '3.0rem'}),
-        html.Div(
-            html.Img(src='/assets/BatmanLogo.png', height='100%'),
-            style={'float': 'right', 'height': '100%'}),
+        html.Div(html.Img(src='/assets/BatmanLogo.png', height='100%'),
+                 style={'float': 'left', 'height': '80%', 'margin-top': '5px',
+                        'margin-left': '5px'}),
+        html.Span('Batgirl', style={'color': '#FFDC00'}),
+        html.Span(' Uncertainty Quantification App using Batman API',
+                  style={'color': 'white'}),
+        html.Span(html.A(html.Button('View on GitLab', className='two columns',
+                                     style={'border-color': '#FFFFFF', 'color': '#FFFFFF', 'float': 'right', 'margin-right': '10px',
+                                            'margin-top': '10px',}),
+                         href='https://gitlab.com/cerfacs/batman'))
+    ], id='header', className="title"),
 
-        # Unique identification of the session
-        html.Div(id='uuid', style={'display': 'none'})
-
-    ], id='header', className='row header', style={'height': '50'}),
+    # Unique identification of the session
+    html.Div(id='uuid', style={'display': 'none'}),
 
     # tabs
     html.Div([
         dcc.Tabs(
             id='tabs',
-            style={'width': '100%',  # 'height': '30',
-                   'margin-top': '1em', 'margin-bottom': '1em'},
+            style={'width': '40%',
+                   'margin-bottom': '1em',
+                   'font-weight': 'bold',
+                   'font-size': '1.5rem',
+            },
+            colors={'primary': '#FFDC00', 'background': '#F9FAFB'},
             children=[
                 dcc.Tab(label='Settings', value='settings_tab'),
                 dcc.Tab(label='Experiments', value='experiments_tab'),
                 dcc.Tab(label='Analysis', value='analysis_tab'),
             ],
-            value='settings_tab',
+            value='settings_tab'
         )
 
-    ], className='row tabs_div'),
+    ], className='row'),
 
     # tabs content
     html.Div(settings.layout, id='settings_tab',

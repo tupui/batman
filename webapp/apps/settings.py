@@ -185,10 +185,8 @@ def space_layout(contents):
                 )
 
             ]),
-        ], className='seven columns'),
-
-        html.Div(id='visu_sample', className='five columns',
-                 style={'display': 'block'})
+        ], className='six columns'),
+        html.Div(id='visu_sample', className='six columns')
     ]
 
     return layout
@@ -199,20 +197,20 @@ app.callback(Output('space', 'children'), [Input('upload-settings', 'contents')]
 layout = html.Div([
 
     html.Div([
-        html.H3('Load Settings File'),
+        html.H6('SETTINGS FILE'),
 
         dcc.Upload([
             'Drag and Drop or ',
             html.A('Select a File')],
             id='upload-settings', accept='application/json',
             style={
-            'width': '30%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px',
-            'textAlign': 'center'
+                'width': '30%',
+                'height': '60px',
+                'lineHeight': '60px',
+                'borderWidth': '1px',
+                'borderStyle': 'dashed',
+                'borderRadius': '5px',
+                'textAlign': 'center'
         }),
 
         # Invisible Div storring settings dict
@@ -220,7 +218,7 @@ layout = html.Div([
         html.Div(children=False, id='settings_status', style={'display': 'none'})
     ], className='row'),
 
-    html.H3('Space'),
+    html.H6('SPACE'),
     html.Div(space_layout(SETTINGS), className='row', id='space')
 ])
 
@@ -294,7 +292,7 @@ def update_space_visu(*parameter_values):
         fig['layout']['height'] = 400
         output = [dcc.Graph(figure=fig)]
     except:  # Catching explicitly the exceptions causes crash...
-        output = [html.Img(src='/assets/loading.gif'),
-                  html.Div('Fill in space settings to display parameter space...')]
+        output = [html.Img(src='/assets/loading-cylon.svg', style={'width': '256', 'height': '32'}),  # loading.gif'),
+                  html.Div('Fill in space settings to display parameter space...', style={'color': '#AAAAAA'})]
 
-    return [html.Label('Parameter space:'), *output]
+    return [html.H6('Parameter space visualization'), *output]

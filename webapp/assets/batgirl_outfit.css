@@ -1,0 +1,19 @@
+body{
+    margin:0;
+    padding:0;
+    background-color:#FFFFFF;
+}
+
+.title {
+    vertical-align:center;
+    text-align:center;
+    background-color:#F012BE; /*#121316;*/
+    height:60px;
+    line-height:60px;
+    font-size:1.75rem;
+    margin:0;
+}
+
+._dash-undo-redo {
+  display: none;
+}

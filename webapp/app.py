@@ -1,6 +1,6 @@
 import dash
 
-app = dash.Dash(meta_tags=[
+app = dash.Dash(__name__, meta_tags=[
     {
         'name': 'description',
         'content': 'BATGIRL'
