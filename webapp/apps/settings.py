@@ -98,7 +98,7 @@ def validate_settings(settings):
     return status
 
 
-def space_layout(contents):
+def settings_layout(contents):
     """Generate form from settings."""
     try:  # load from file
         content_type, content_string = contents.split(',')
@@ -119,6 +119,7 @@ def space_layout(contents):
 
     layout = [
         html.Div([
+            html.H6('SPACE'),
             html.Div([
                 html.Label('Number of parameters:'),
                 dcc.Slider(
@@ -189,7 +190,7 @@ def space_layout(contents):
     return layout
 
 
-app.callback(Output('space', 'children'), [Input('upload-settings', 'contents')])(space_layout)
+app.callback(Output('settings_layout', 'children'), [Input('upload-settings', 'contents')])(settings_layout)
 
 layout = html.Div([
 
@@ -211,8 +212,7 @@ layout = html.Div([
         html.Div(children=False, id='settings_status', style={'display': 'none'})
     ], className='row'),
 
-    html.H6('SPACE'),
-    html.Div(space_layout(SETTINGS), className='row', id='space')
+    html.Div(settings_layout(SETTINGS), className='row', id='settings_layout')
 ])
 
 
