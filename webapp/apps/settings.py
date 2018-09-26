@@ -118,73 +118,133 @@ def settings_layout(contents):
     n_parameters = len(plabels)
 
     layout = [
+        html.H6('SPACE'),
+        html.Span([
+            html.Div([    
+                html.Div([
+                    html.Label('Number of parameters:'),
+                    dcc.Slider(
+                        id='n_parameters',
+                        min=1, max=MAX_PARAMETERS, step=1, value=n_parameters,
+                        marks={i: i for i in range(1, MAX_PARAMETERS + 1)}
+                    )
+                ], style={'width': '50%'}),
+                html.Div(
+                    style={'margin-bottom': '2em'},
+                    children=[
+                        # MAX_PARAMETERS Div are created but display set to none
+                        html.Div(
+                            id=f'parameter_{i}_container',
+                            style={**PARAMETERS_STYLES},
+                            children=[
+                                f'Parameter {i}:',
+
+                                html.Div([
+                                    html.Div(
+                                        dcc.Input(
+                                            id=f'parameter_{i}_name',
+                                            placeholder='name...',
+                                            type='text', size=10,
+                                            value=plabels[i - 1] if i - 1 < n_parameters else None
+                                        ), className='three columns'),
+                                    html.Div(
+                                        dcc.Input(
+                                            id=f'parameter_{i}_min',
+                                            placeholder='min value...',
+                                            type='text', size=10,
+                                            value=corners[0][i - 1] if i - 1 < n_parameters else None
+                                        ), className='three columns'),
+                                    html.Div(
+                                        dcc.Input(
+                                            id=f'parameter_{i}_max',
+                                            placeholder='max value...',
+                                            type='text', size=10,
+                                            value=corners[1][i - 1] if i - 1 < n_parameters else None
+                                        ), className='three columns')]
+                                ),
+                            ], className='row') for i in range(1, MAX_PARAMETERS + 1)]),
+                html.Div([
+                    html.Div([
+                        html.Label('Sampling method:'),
+                        dcc.Dropdown(
+                            id='parameter_method',
+                            # style={'width': '50%'},
+                            options=[
+                                {'label': 'Sobol', 'value': 'sobol'},
+                                {'label': 'Halton', 'value': 'halton'},
+                                {'label': 'Latin Hypercube', 'value': 'lhs'}
+                            ],
+                            value=kind),
+                    ], className='six columns'),
+                    html.Div([
+                        html.Label('Sampling size:'),
+                        dcc.Input(
+                            id='parameter_ns',
+                            placeholder='n samples...',
+                            type='number',
+                            value=ns)
+                    ], className='four columns')
+                ], className='row', id='ns_sampling_method'),
+            ], className='five columns'),
+            html.Div(id='visu_sample', className='seven columns'),
+        ], className='row'),
+
+        html.Hr(),
+
+        html.H6('POD'),
         html.Div([
-            html.H6('SPACE'),
-            html.Div([
-                html.Label('Number of parameters:'),
-                dcc.Slider(
-                    id='n_parameters',
-                    min=1, max=MAX_PARAMETERS, step=1, value=n_parameters,
-                    marks={i: i for i in range(1, MAX_PARAMETERS + 1)}
-                )
-            ], style={'width': '50%'}),
-            html.Div(
-                style={'margin-bottom': '2em'},
-                children=[
-                    # MAX_PARAMETERS Div are created but display set to none
-                    html.Div(
-                        id=f'parameter_{i}_container',
-                        style={**PARAMETERS_STYLES},
-                        children=[
-                            f'Parameter {i}:',
+            html.Div([html.Label('Max modes'),
+                      dcc.Input(
+                          id='pod_dim_max', size=10,
+                          placeholder='Max num modes...',
+                          type='number', value=100)], className='two columns'),
+            html.Div([html.Label('Filtering tolerance'),
+                      dcc.Slider(min=0, max=1, step=0.05, value=0.9,
+                                 marks={i / 100: i for i in range(0, 100, 20)},
+                                 id='pod_tolerance'),
+                      ], className='four columns'),
+            html.Div([html.Label('Update strategy'),
+                      dcc.Dropdown(
+                          options=[{'label': 'Static', 'value': 'static'},
+                                   {'label': 'Dynamic', 'value': 'dynamic'}],
+                          value='static', id='pod_type')],
+                     className='four columns'),
+        ], className='row', id='pod'),
 
-                            html.Div([
-                                html.Div(
-                                    dcc.Input(
-                                        id=f'parameter_{i}_name',
-                                        placeholder='name...',
-                                        type='text', size=10,
-                                        value=plabels[i - 1] if i - 1 < n_parameters else None
-                                    ), className='three columns'),
-                                html.Div(
-                                    dcc.Input(
-                                        id=f'parameter_{i}_min',
-                                        placeholder='min value...',
-                                        type='text', size=10,
-                                        value=corners[0][i - 1] if i - 1 < n_parameters else None
-                                    ), className='three columns'),
-                                html.Div(
-                                    dcc.Input(
-                                        id=f'parameter_{i}_max',
-                                        placeholder='max value...',
-                                        type='text', size=10,
-                                        value=corners[1][i - 1] if i - 1 < n_parameters else None
-                                    ), className='three columns')]
-                            ),
-                        ], className='row') for i in range(1, MAX_PARAMETERS + 1)]),
-            html.Div([
-                html.Label('Sampling method:'),
-                dcc.Dropdown(
-                    id='parameter_method',
-                    style={'width': '50%'},
-                    options=[
-                        {'label': 'Sobol', 'value': 'sobol'},
-                        {'label': 'Halton', 'value': 'halton'},
-                        {'label': 'Latin Hypercube', 'value': 'lhs'}
-                    ],
-                    value=kind
-                ),
-                html.Label('Sampling size:'),
-                dcc.Input(
-                    id='parameter_ns',
-                    placeholder='n samples...',
-                    type='number',
-                    value=ns
-                )
+        html.Hr(),
 
-            ]),
-        ], className='five columns'),
-        html.Div(id='visu_sample', className='seven columns')
+        html.H6('SNAPSHOT'),
+        html.Div([
+            html.Div([html.Label('Number of workers'),
+                      dcc.Input(
+                          id='max_workers', size=10,
+                          placeholder='Number of workers...',
+                          type='number', value=5)], className='two columns'),
+        ], className='row'),
+
+        html.Hr(),
+
+        html.H6('SURROGATE'),
+        html.Div(
+            html.Div([html.Label('Method'),
+                      dcc.Dropdown(
+                              options=[{'label': 'Gaussian Process', 'value': 'kriging'},
+                                       {'label': 'Polynomial Chaos', 'value': 'pc'}],
+                              value='kriging', id='surrogate_method')
+            ], className='three columns'), className='row'),
+        html.Div(id='surrogate_args'),
+
+        html.Hr(),
+
+        html.H6('VISUALIZATION'),
+        html.Div([
+        ], className='row'),
+
+        html.Hr(),
+
+        html.H6('UQ'),
+        html.Div([
+        ], className='row'),
     ]
 
     return layout
@@ -206,6 +266,8 @@ layout = html.Div([
                    'borderRadius': '5px', 'textAlign': 'center'},
             style_active={'borderColor': 'var(--bat-pink)'}
         ),
+
+        html.Hr(),
 
         # Invisible Div storring settings dict
         html.Div(children=json.dumps(SETTINGS), id='settings', style={'display': 'none'}),
@@ -293,3 +355,53 @@ def update_space_visu(*parameter_values):
                            style={'color': '#AAAAAA'})]
 
     return [html.H6('Parameter space visualization'), *output]
+
+
+# Surrogate
+@app.callback(Output('surrogate_args', 'children'),
+              [Input('surrogate_method', 'value')])
+def surrogate_args(surrogate_method):
+    if surrogate_method == 'kriging':
+        args = [html.Div([dcc.Checklist(
+                               options=[{'label': 'Noise', 'value': 'noise'},
+                                        {'label': 'Global optimizer', 'value': 'global_optimizer'}],
+                               values=[''], id='noise_optim')
+                         ], className='two columns'),
+                html.Div([html.Div([html.Label('Kernel'),
+                          dcc.Input(id='kernel',
+                                    placeholder="Kernel from OpenTURNS: 'Matern(length_scale=0.5, nu=0.5)'...",
+                                    type='text')], className='five columns'),
+                         ], className='four columns')]
+    elif surrogate_method == 'pc':
+        args = [
+            html.Div([
+                html.Div([html.Label('Strategy'),
+                          dcc.RadioItems(id='strategy',
+                             options=[{'label': 'Quadrature', 'value': 'Quad'},
+                                      {'label': 'Least square', 'value': 'LS'},
+                                      {'label': 'Sparse LS', 'value': 'SparseLS'}],
+                             value='Quad')], className='four columns'),
+                html.Div([html.Label('Degree'),
+                          dcc.Input(id='degree',
+                                    placeholder="Polynomial degree N=(p+1)^dim...",
+                                    type='number')], className='two columns'),
+            ], className='row'),
+            html.Div([
+                html.Label('Sparse parameters'),
+                html.Div([
+                    html.Div([html.Label('Maximum terms'),
+                              dcc.Input(id='max_considered_terms',
+                                        type='number')], className='two columns'),
+                    html.Div([html.Label('Most significant'),
+                              dcc.Input(id='most_significant',
+                                        type='number')], className='two columns'),
+                    html.Div([html.Label('Degree'),
+                              dcc.Input(id='significance_factor',
+                                        type='text')], className='two columns'),
+                    html.Div([html.Label('Hyperbolic factor'),
+                              dcc.Input(id='hyper_factor',
+                                        type='text')], className='two columns')])
+            ], className='row')
+        ]
+
+    return html.Div(args, className='row')
