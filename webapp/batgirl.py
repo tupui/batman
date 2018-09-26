@@ -7,6 +7,13 @@ from app import app
 from apps import (settings, experiments)
 
 app.css.append_css({'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'})
+
+# # Loading screen CSS
+# app.css.append_css({"external_url": "https://codepen.io/chriddyp/pen/brPBPO.css"})
+
+# Loading button CSS
+app.css.append_css({"external_url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"})
+
 STYLE_TABS = {'margin': '2% 3%'}
 
 app.layout = html.Div([
@@ -14,14 +21,12 @@ app.layout = html.Div([
     # header
     html.Div([
         html.Div(html.Img(src='/assets/BatmanLogo.png', height='100%'),
-                 style={'float': 'left', 'height': '80%', 'margin-top': '5px',
-                        'margin-left': '5px'}),
-        html.Span('Batgirl', style={'color': '#FFDC00'}),
+                 className='title-logo'),
+        html.Span('Batgirl', style={'color': 'var(--bat-yellow)'}),
         html.Span(' Uncertainty Quantification App using Batman API',
                   style={'color': 'white'}),
-        html.Span(html.A(html.Button('View on GitLab', className='two columns',
-                                     style={'border-color': '#FFFFFF', 'color': '#FFFFFF', 'float': 'right', 'margin-right': '10px',
-                                            'margin-top': '10px',}),
+        html.Span(html.A(html.Button('View on GitLab',
+                                     className='two columns title-button'),
                          href='https://gitlab.com/cerfacs/batman'))
     ], id='header', className="title"),
 
@@ -37,7 +42,7 @@ app.layout = html.Div([
                    'font-weight': 'bold',
                    'font-size': '1.5rem',
             },
-            colors={'primary': '#FFDC00', 'background': '#F9FAFB'},
+            colors={'primary': 'var(--bat-yellow)', 'background': '#F9FAFB'},
             children=[
                 dcc.Tab(label='Settings', value='settings_tab'),
                 dcc.Tab(label='Experiments', value='experiments_tab'),
@@ -55,6 +60,9 @@ app.layout = html.Div([
              className='row', style={'display': 'none'}),
     html.Div('Analysis', id='analysis_tab',
              className='row', style={'display': 'none'}),
+
+    # html.Div(['© Copyright 2018, CERFACS - CECILL-B Licensed.'],
+    #          style={'background-color':'#F012BE'})
 
 ])
 
@@ -87,4 +95,4 @@ def display_content_analysis(tab):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, threaded=False)
+    app.run_server(debug=True, processes=True)

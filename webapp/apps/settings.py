@@ -142,26 +142,23 @@ def space_layout(contents):
                                     dcc.Input(
                                         id=f'parameter_{i}_name',
                                         placeholder='name...',
-                                        type='text',
-                                        size=10,
+                                        type='text', size=10,
                                         value=plabels[i - 1] if i - 1 < n_parameters else None
-                                ), className='two columns'),
+                                    ), className='three columns'),
                                 html.Div(
                                     dcc.Input(
                                         id=f'parameter_{i}_min',
                                         placeholder='min value...',
-                                        type='text',
-                                        size=10,
+                                        type='text', size=10,
                                         value=corners[0][i - 1] if i - 1 < n_parameters else None
-                                ), className='two columns'),
+                                    ), className='three columns'),
                                 html.Div(
                                     dcc.Input(
                                         id=f'parameter_{i}_max',
                                         placeholder='max value...',
-                                        type='text',
-                                        size=10,
+                                        type='text', size=10,
                                         value=corners[1][i - 1] if i - 1 < n_parameters else None
-                                ), className='two columns')]
+                                    ), className='three columns')]
                             ),
                         ], className='row') for i in range(1, MAX_PARAMETERS + 1)]),
             html.Div([
@@ -185,8 +182,8 @@ def space_layout(contents):
                 )
 
             ]),
-        ], className='six columns'),
-        html.Div(id='visu_sample', className='six columns')
+        ], className='five columns'),
+        html.Div(id='visu_sample', className='seven columns')
     ]
 
     return layout
@@ -203,15 +200,11 @@ layout = html.Div([
             'Drag and Drop or ',
             html.A('Select a File')],
             id='upload-settings', accept='application/json',
-            style={
-                'width': '30%',
-                'height': '60px',
-                'lineHeight': '60px',
-                'borderWidth': '1px',
-                'borderStyle': 'dashed',
-                'borderRadius': '5px',
-                'textAlign': 'center'
-        }),
+            style={'width': '30%', 'height': '60px', 'lineHeight': '60px',
+                   'borderWidth': '1px', 'borderStyle': 'dashed',
+                   'borderRadius': '5px', 'textAlign': 'center'},
+            style_active={'borderColor': 'var(--bat-pink)'}
+        ),
 
         # Invisible Div storring settings dict
         html.Div(children=json.dumps(SETTINGS), id='settings', style={'display': 'none'}),
@@ -286,13 +279,17 @@ def update_space_visu(*parameter_values):
         space = Space(corners=[pmins, pmaxs], sample=ns, plabels=plabels)
         space.sampling(kind=kind)
 
-        fig, _ = doe(space, plabels=plabels, fname=os.path.join('.', 'DOE.pdf'))
+        _tmp = tempfile.TemporaryDirectory()
+        workdir = _tmp.name
+        fig, _ = doe(space, plabels=plabels, fname=os.path.join(workdir, 'DOE.pdf'))
         fig = tls.mpl_to_plotly(fig, resize=True)
-        fig['layout']['width'] = 400
-        fig['layout']['height'] = 400
-        output = [dcc.Graph(figure=fig)]
+        # fig['layout']['width'] = 500
+        # fig['layout']['height'] = 500
+        output = [dcc.Graph(figure=fig, style={'width': '80%', 'margin-right': '5%'})]
     except:  # Catching explicitly the exceptions causes crash...
-        output = [html.Img(src='/assets/loading-cylon.svg', style={'width': '256', 'height': '32'}),  # loading.gif'),
-                  html.Div('Fill in space settings to display parameter space...', style={'color': '#AAAAAA'})]
+        output = [html.Img(src='/assets/loading-cylon.svg',
+                           style={'width': '256', 'height': '32'}),  # loading.gif'),
+                  html.Div('Fill in space settings to display parameter space...',
+                           style={'color': '#AAAAAA'})]
 
     return [html.H6('Parameter space visualization'), *output]
