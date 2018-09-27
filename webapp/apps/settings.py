@@ -30,7 +30,8 @@ SETTINGS = {
         ],
         "sampling": {
             "init_size": 10,
-            "method": "sobol"
+            "method": "sobol",
+            "distribution": [None]
         },
         "resampling": {
             "delta_space": 0.08,
@@ -113,6 +114,7 @@ def settings_layout(contents):
 
     kind = settings['space']['sampling']['method']
     ns = settings['space']['sampling']['init_size']
+    dists = settings['space']['sampling']['distribution']
     corners = settings['space']['corners']
     plabels = settings['snapshot']['plabels']
     n_parameters = len(plabels)
@@ -144,35 +146,43 @@ def settings_layout(contents):
                                         dcc.Input(
                                             id=f'parameter_{i}_name',
                                             placeholder='name...',
-                                            type='text', size=10,
+                                            type='text', size=6,
                                             value=plabels[i - 1] if i - 1 < n_parameters else None
-                                        ), className='three columns'),
+                                        ), className='two columns'),
                                     html.Div(
                                         dcc.Input(
                                             id=f'parameter_{i}_min',
                                             placeholder='min value...',
-                                            type='text', size=10,
+                                            type='text', size=8,
                                             value=corners[0][i - 1] if i - 1 < n_parameters else None
-                                        ), className='three columns'),
+                                        ), className='two columns'),
                                     html.Div(
                                         dcc.Input(
                                             id=f'parameter_{i}_max',
                                             placeholder='max value...',
-                                            type='text', size=10,
+                                            type='text', size=8,
                                             value=corners[1][i - 1] if i - 1 < n_parameters else None
-                                        ), className='three columns')]
-                                ),
+                                        ), className='two columns'),
+                                    html.Div(
+                                        dcc.Input(
+                                            id=f'parameter_{i}_dist',
+                                            placeholder="distribution...",
+                                            type='text', size=20,
+                                            value=dists[i - 1] if i - 1 < n_parameters else None
+                                        ), className='three columns')
+                                ]),
                             ], className='row') for i in range(1, MAX_PARAMETERS + 1)]),
                 html.Div([
                     html.Div([
                         html.Label('Sampling method:'),
                         dcc.Dropdown(
                             id='parameter_method',
-                            # style={'width': '50%'},
                             options=[
                                 {'label': 'Sobol', 'value': 'sobol'},
                                 {'label': 'Halton', 'value': 'halton'},
-                                {'label': 'Latin Hypercube', 'value': 'lhs'}
+                                {'label': 'Latin Hypercube', 'value': 'lhs'},
+                                {'label': 'Optimized LHS', 'value': 'olhs'},
+                                {'label': 'Saltelli', 'value': 'saltelli'},
                             ],
                             value=kind),
                     ], className='six columns'),
@@ -185,8 +195,8 @@ def settings_layout(contents):
                             value=ns)
                     ], className='four columns')
                 ], className='row', id='ns_sampling_method'),
-            ], className='five columns'),
-            html.Div(id='visu_sample', className='seven columns'),
+            ], className='six columns'),
+            html.Div(id='visu_sample', className='six columns'),
         ], className='row'),
 
         html.Hr(),
@@ -290,56 +300,71 @@ for n in range(1, MAX_PARAMETERS + 1):
             new_styles['display'] = 'none'
         return new_styles
 
-parameter_values = [Input('parameter_method', 'value'),
-                    Input('parameter_ns', 'value'),
-                    Input('n_parameters', 'value')]
+space_values = [Input('parameter_method', 'value'),
+                Input('parameter_ns', 'value'),
+                Input('n_parameters', 'value')]
 for i in range(1, MAX_PARAMETERS + 1):
-    parameter_values.extend([Input(f'parameter_{i}_name', 'value'),
-                             Input(f'parameter_{i}_min', 'value'),
-                             Input(f'parameter_{i}_max', 'value')])
+    space_values.extend([Input(f'parameter_{i}_name', 'value'),
+                         Input(f'parameter_{i}_min', 'value'),
+                         Input(f'parameter_{i}_max', 'value'),
+                         Input(f'parameter_{i}_dist', 'value')])
+
+pod_values = []
+snapshot_values = []
+surrogate_values = []
+visualization_values = []
+uq_values = []
 
 
-@app.callback(Output('settings', 'children'), parameter_values)
-def update_settings(*parameter_values):
+@app.callback(Output('settings', 'children'), [*space_values])
+def update_settings(*settings_values):
     """Update settings from change in parameter values.
 
     Values are stored in hidden Div settings.
     """
-    kind = parameter_values[0]
-    ns = parameter_values[1]
-    n_parameters = parameter_values[2]
+    kind = settings_values[0]
+    ns = settings_values[1]
+    n_parameters = settings_values[2]
 
-    plabels = parameter_values[3::3][:n_parameters]
-    pmins = parameter_values[4::3][:n_parameters]
-    pmaxs = parameter_values[5::3][:n_parameters]
+    plabels = settings_values[3::4][:n_parameters]  # 4 parameters per parameters
+
+    pmins = settings_values[4::4][:n_parameters]
+
+    pmins = [float(p) for p in pmins if p is not None]
+    pmaxs = settings_values[5::4][:n_parameters]
+    pmaxs = [float(p) for p in pmaxs if p is not None]
+
+    dists_ = settings_values[6::4][:n_parameters]
+    dists = []
+    for dist, pmin, pmax in zip(dists_, pmins, pmaxs):
+        dists.append('Uniform(' + str(pmin) + ',' + str(pmax) + ')'
+                     if dist is None else dist)
 
     settings = copy.deepcopy(SETTINGS)
-    settings['space'] = {'sampling': {'method': kind, 'init_size': ns},
+    settings['space'] = {'sampling': {'method': kind, 'init_size': ns,
+                                      'distribution': dists},
                          'corners': [pmins, pmaxs]}
     settings['snapshot']['plabels'] = plabels
 
     return json.dumps(settings)
 
 
-@app.callback(Output('visu_sample', 'children'), parameter_values)
-def update_space_visu(*parameter_values):
+@app.callback(Output('visu_sample', 'children'), [Input('settings', 'children')])
+def update_space_visu(settings):
     """Generate DoE visualization from settings."""
-    kind = parameter_values[0]
-    ns = parameter_values[1]
-    n_parameters = parameter_values[2]
+    settings = json.loads(settings)
 
-    plabels = parameter_values[3::3][:n_parameters]
-    pmins = parameter_values[4::3][:n_parameters]
-    pmaxs = parameter_values[5::3][:n_parameters]
+    kind = settings['space']['sampling']['method']
+    ns = settings['space']['sampling']['init_size']
+    dists = settings['space']['sampling']['distribution']
+    plabels = settings['snapshot']['plabels']
+    corners = settings['space']['corners']
 
-    print(f'Labels: {plabels} - Ns = {ns} | Method: {kind} - Corners: {[pmins, pmaxs]}')
+    print(f'Labels: {plabels} - Ns = {ns} | Method: {kind} - Corners: {corners}')
 
     try:
-        pmins = [float(p) for p in pmins]
-        pmaxs = [float(p) for p in pmaxs]
-
-        space = Space(corners=[pmins, pmaxs], sample=ns, plabels=plabels)
-        space.sampling(kind=kind)
+        space = Space(corners=corners, sample=ns, plabels=plabels)
+        space.sampling(kind=kind, dists=dists)
 
         _tmp = tempfile.TemporaryDirectory()
         workdir = _tmp.name
@@ -350,7 +375,7 @@ def update_space_visu(*parameter_values):
         output = [dcc.Graph(figure=fig, style={'width': '80%', 'margin-right': '5%'})]
     except:  # Catching explicitly the exceptions causes crash...
         output = [html.Img(src='/assets/loading-cylon.svg',
-                           style={'width': '256', 'height': '32'}),  # loading.gif'),
+                           style={'width': '256', 'height': '42'}),
                   html.Div('Fill in space settings to display parameter space...',
                            style={'color': '#AAAAAA'})]
 
@@ -369,7 +394,7 @@ def surrogate_args(surrogate_method):
                          ], className='two columns'),
                 html.Div([html.Div([html.Label('Kernel'),
                           dcc.Input(id='kernel',
-                                    placeholder="Kernel from OpenTURNS: 'Matern(length_scale=0.5, nu=0.5)'...",
+                                    placeholder="kernel from OpenTURNS: 'Matern(length_scale=0.5, nu=0.5)'...",
                                     type='text')], className='five columns'),
                          ], className='four columns')]
     elif surrogate_method == 'pc':
