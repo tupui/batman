@@ -63,7 +63,9 @@ SETTINGS = {
         }
     },
     "surrogate": {
-        "method": "kriging"
+        "method": "kriging",
+        "degree": 5,
+
     },
     "uq": {
         "sample": 1000,
@@ -118,6 +120,9 @@ def settings_layout(contents):
     corners = settings['space']['corners']
     plabels = settings['snapshot']['plabels']
     n_parameters = len(plabels)
+    dim_max = settings['pod']['dim_max']
+    pod_tolerance = settings['pod']['tolerance']
+    pod_type = settings['pod']['type']
 
     layout = [
         html.H6('SPACE'),
@@ -201,15 +206,18 @@ def settings_layout(contents):
 
         html.Hr(),
 
-        html.H6('POD'),
+        html.H6([dcc.Checklist(options=[{'value': 'enabled_pod'}],
+                               values=['enabled_pod'], id='enabled_pod',
+                               className='one columns'),
+                 'POD'], className='row'),
         html.Div([
             html.Div([html.Label('Max modes'),
                       dcc.Input(
                           id='pod_dim_max', size=10,
                           placeholder='Max num modes...',
-                          type='number', value=100)], className='two columns'),
+                          type='number', value=dim_max)], className='two columns'),
             html.Div([html.Label('Filtering tolerance'),
-                      dcc.Slider(min=0, max=1, step=0.05, value=0.9,
+                      dcc.Slider(min=0, max=1, step=0.05, value=pod_tolerance,
                                  marks={i / 100: i for i in range(0, 100, 20)},
                                  id='pod_tolerance'),
                       ], className='four columns'),
@@ -217,7 +225,7 @@ def settings_layout(contents):
                       dcc.Dropdown(
                           options=[{'label': 'Static', 'value': 'static'},
                                    {'label': 'Dynamic', 'value': 'dynamic'}],
-                          value='static', id='pod_type')],
+                          value=pod_type, id='pod_type')],
                      className='four columns'),
         ], className='row', id='pod'),
 
@@ -234,7 +242,10 @@ def settings_layout(contents):
 
         html.Hr(),
 
-        html.H6('SURROGATE'),
+        html.H6([dcc.Checklist(options=[{'value': 'enabled_surrogate'}],
+                               values=['enabled_surrogate'], id='enabled_surrogate',
+                               className='one columns'),
+                 'SURROGATE'], className='row'),
         html.Div(
             html.Div([html.Label('Method'),
                       dcc.Dropdown(
@@ -309,14 +320,17 @@ for i in range(1, MAX_PARAMETERS + 1):
                          Input(f'parameter_{i}_max', 'value'),
                          Input(f'parameter_{i}_dist', 'value')])
 
-pod_values = []
-snapshot_values = []
-surrogate_values = []
+pod_values = [Input('pod_dim_max', 'value'), Input('pod_tolerance', 'value'),
+              Input('pod_type', 'value')]
+snapshot_values = [Input('max_workers', 'value')]
+surrogate_values = [Input('surrogate_method', 'value')]
 visualization_values = []
 uq_values = []
 
 
-@app.callback(Output('settings', 'children'), [*space_values])
+@app.callback(Output('settings', 'children'),
+              [*space_values, *pod_values, *snapshot_values,
+               *surrogate_values, *visualization_values, *uq_values])
 def update_settings(*settings_values):
     """Update settings from change in parameter values.
 
@@ -345,6 +359,20 @@ def update_settings(*settings_values):
                                       'distribution': dists},
                          'corners': [pmins, pmaxs]}
     settings['snapshot']['plabels'] = plabels
+
+    idx = MAX_PARAMETERS * 4 + 3  # skip all space values
+
+    settings['pod']['dim_max'] = settings_values[idx]
+    settings['pod']['tolerance'] = settings_values[idx + 1]
+    settings['pod']['type'] = settings_values[idx + 2]
+
+    idx += 3  # skip all pod values
+
+    settings['snapshot']['max_workers'] = settings_values[idx]
+
+    idx += 1  # skip all snapshot values
+
+    settings['surrogate']['method'] = settings_values[idx]
 
     return json.dumps(settings)
 
