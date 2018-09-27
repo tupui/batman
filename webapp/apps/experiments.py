@@ -46,7 +46,7 @@ SEMAPHORE = Semaphore()
 
 layout = html.Div([
     html.Button('Settings Incomplete',
-                style={'width' : '100%', 'background-color': '#FF851B',
+                style={'width': '100%', 'background-color': '#FF851B',
                        'border': 'none', 'border-radius': '0px',
                        'color': 'white', 'cursor': 'default'},
                 id='settings_check'),
@@ -110,9 +110,9 @@ layout = html.Div([
 @app.callback(Output('settings_check', 'style'),
               [Input('settings_status', 'children')],
               [State('settings_check', 'style')])
-def settings_check(ready, style):
-    if ready:
-        style['display'] = 'none'
+def settings_check_banner(ready, style):
+    """Display warning banner if settings are wrong."""
+    style['display'] = 'none' if ready else 'block'
     return style
 
 
