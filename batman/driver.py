@@ -228,7 +228,7 @@ class Driver(object):
         if points is None:
             points = self.to_compute_points
 
-        # Generate snapshots
+        # Generate snapshots        
         samples = self.provider.require_data(points)
         self.snapshot_counter += len(samples)  # still useless
 

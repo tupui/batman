@@ -79,7 +79,7 @@ class Pod(object):
         self.S = None
         self.V = None
 
-    def __str__(self):
+    def __repr__(self):
         """POD summary."""
         s = ("\nPOD summary:\n"
              "-> modes filtering tolerance: {}\n"

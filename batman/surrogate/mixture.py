@@ -89,7 +89,7 @@ class Mixture(object):
           http://scikit-learn.org/stable/supervised_learning.html
         """
         self.plabels = plabels
-        self.fsizes = fsizes
+        self.fsizes = fsizes[0]
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
         samples = self.scaler.transform(samples)
@@ -155,10 +155,10 @@ class Mixture(object):
             data_i = [data[j, :self.fsizes] for j in indices[i]]
             if pod is True:
                 from batman.pod import Pod
-                pod = Pod(corners, self.plabels, n_sample_i, tolerance, dim_max)
+                pod = Pod(corners, tolerance, dim_max)
                 snapshots = Sample(space=sample_i, data=data_i)
-                pod.decompose(snapshots)
-                data_i = pod.VS()
+                pod.fit(snapshots)
+                data_i = pod.VS
             from batman.surrogate import SurrogateModel
             if local_method is None:
                 self.model[k] = SurrogateModel('kriging', corners, plabels)
@@ -322,8 +322,8 @@ class Mixture(object):
         indice = []
         indice_clf = {}
         ind = []
-        result = np.array([]).reshape(0,self.fsizes)
-        sigma = np.array([]).reshape(0,self.fsizes)
+        result = np.array([]).reshape(0, self.fsizes)
+        sigma = np.array([]).reshape(0, self.fsizes)
         for i, k in enumerate(num_clust):
             ii = np.where(self.classif == k)[0]
             indice.append(list(ii))
@@ -333,8 +333,9 @@ class Mixture(object):
         for i, k in enumerate(indice_clf):
             clf_i = points[indice_clf[k]]
             result_i, sigma_i = self.model[k](clf_i)
-            result = np.vstack([result, result_i])
-            sigma = np.vstack([sigma, sigma_i])
+
+            result = np.concatenate([result, result_i])
+            sigma = np.concatenate([sigma, sigma_i])
             ind = np.concatenate((ind, indice_clf[k]))
 
         key = np.argsort(ind)

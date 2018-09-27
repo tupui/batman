@@ -52,7 +52,9 @@ class SampleCache(Sample):
             Supports UNIX shell wildcard expansion.
             See https://en.wikipedia.org/wiki/Glob_(programming)
         """
-        for dirpath in sorted(glob.iglob(directory_pattern)):
+        dirpaths = (dirpath for dirpath in sorted(glob.iglob(directory_pattern))
+                    if os.path.isdir(dirpath))
+        for dirpath in dirpaths:
             space_file = os.path.join(dirpath, self.space_file)
             data_file = os.path.join(dirpath, self.data_file)
             try:

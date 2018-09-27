@@ -166,6 +166,10 @@ class SurrogateModel(object):
 
         if self.pod is not None:
             results = self.pod.inverse_transform(results)
+            try:
+                sigma = self.pod.inverse_transform(sigma)
+            except TypeError:
+                pass
 
         return results, sigma
 

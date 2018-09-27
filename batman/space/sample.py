@@ -256,7 +256,7 @@ class Sample(object):
         :param list(str) flabels: labels in data file
           (if different from `self.flabels`)
         """
-        pd_sample = []
+        pd_sample = []        
         if self.plabels:
             if plabels is None:
                 plabels = self.plabels
@@ -314,7 +314,7 @@ class Sample(object):
         `len` function. Return the number of samples."""
         return len(self._dataframe)
 
-    def __str__(self):
+    def __repr__(self):
         """Python Data Model.
 
         `str` function. Underlying dataframe representation."""
