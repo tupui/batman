@@ -61,10 +61,10 @@ class Pod(object):
         - V: array_like(n_snapshots, n_snapshots),
           after filtering (n_snapshots, n_modes).
 
-        :param array_like corners: hypercube ([min, n_features],
+        :param array_like corners: Hypercube ([min, n_features],
           [max, n_features]).
-        :param float tolerance: basis modes filtering criteria.
-        :param int dim_max: number of basis modes to keep.
+        :param float tolerance: Basis modes filtering criteria.
+        :param int dim_max: Number of basis modes to keep.
         """
         self.quality = None
         self.space = []

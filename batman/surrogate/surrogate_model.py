@@ -48,7 +48,8 @@ class SurrogateModel(object):
 
         :param str kind: name of prediction method, one of:
           ['rbf', 'kriging', 'pc', 'evofusion', 'mixture', sklearn-regressor].
-        :param array_like corners: hypercube ([min, n_features], [max, n_features]).
+        :param array_like corners: hypercube ([min, n_features],
+          [max, n_features]).
         :param list(str) plabels: labels of sample points
         :param \**kwargs: See below
 
@@ -67,7 +68,8 @@ class SurrogateModel(object):
               basis.
 
                 - **max_considered_terms** (int) -- Maximum Considered Terms,
-                - **most_significant** (int), Most Siginificant number to retain,
+                - **most_significant** (int), Most Siginificant number to
+                  retain,
                 - **significance_factor** (float), Significance Factor,
                 - **hyper_factor** (float), factor for hyperbolic truncation
                   strategy.
@@ -79,6 +81,28 @@ class SurrogateModel(object):
             - **noise** (float/bool) -- noise level.
             - **global_optimizer** (bool) -- Whether to do global optimization
               or gradient based optimization to estimate hyperparameters.
+
+          For Mixture the following keywords are available
+
+            - **fsizes** (int) -- Number of components of output features.
+            - **pod** (dict) -- Whether to compute POD or not in local models.
+
+                - **tolerance** (float) -- Basis modes filtering criteria.
+                - **dim_max** (int) -- Number of basis modes to keep.
+
+            - **standard** (bool) -- Whether to standardize data before
+              clustering.
+            - **local_method** (lst(dict)) -- List of local surrrogate models
+              for clusters or None for Kriging local surrogate models.
+            - **pca_percentage** (float) -- Percentage of information kept for
+              PCA.
+            - **clusterer** (str) -- Clusterer from sklearn (unsupervised
+              machine learning).
+              http://scikit-learn.org/stable/modules/clustering.html#clustering
+            - **classifier** (str) -- Classifier from sklearn (supervised
+              machine learning).
+              http://scikit-learn.org/stable/supervised_learning.html
+
         """
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()

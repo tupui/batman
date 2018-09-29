@@ -3,10 +3,10 @@
 Mixture Class
 =============
 
-Mixture of expert using clustering machine learning to form local surrogate models.
+Mixture of expert using clustering machine learning to form local surrogate
+models.
 
 :Example:
-
 
 ::
 
@@ -42,7 +42,6 @@ from sklearn import preprocessing
 import pandas as pd
 from pandas.plotting import parallel_coordinates
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import Normalize
 import batman as bat
 from ..space import Sample
@@ -59,7 +58,8 @@ class Mixture(object):
 
     def __init__(self, samples, data, corners, fsizes, pod=None,
                  standard=True, local_method=None, pca_percentage=0.8,
-                 clusterer='cluster.KMeans(n_clusters=2)', classifier='svm.SVC()'):
+                 clusterer='cluster.KMeans(n_clusters=2)',
+                 classifier='gaussian_process.GaussianProcessClassifier()'):
         """Cluster data and fit local models.
 
         1. If :attr:`data` is not scalar, compute PCA on :attr:`data`.
@@ -68,27 +68,33 @@ class Mixture(object):
         4. Fit a classifier to handle new samples.
         5. A local model for each cluster is built.
 
+        If :attr:`local_method` is not None, set as list of dict with options.
+        Ex: `[{'kriging': {**args}}]`
+
         :param array_like sample: Sample of parameters of Shape
           (n_samples, n_params).
         :param array_like data: Sample of realization which corresponds to the
           sample of parameters :attr:`sample` (n_samples, n_features).
-        :param array_like corners: Hypercube ([min, n_features], [max, n_features]).
+        :param array_like corners: Hypercube ([min, n_features],
+          [max, n_features]).
         :param int fsizes: Number of components of output features.
-        :param str/bool pod: Whether to compute POD or not in local models.
-        :param float tolerance: Basis modes filtering criteria.
-        :param int dim_max: Number of basis modes to keep.
+        :param dict pod: Whether to compute POD or not in local models.
+
+            - **tolerance** (float) -- Basis modes filtering criteria.
+            - **dim_max** (int) -- Number of basis modes to keep.
+
         :param bool standard: Whether to standardize data before clustering.
-        :param str/dict local_method: Dictionnary of local surrrogate models
+        :param lst(dict) local_method: List of local surrrogate models
           for clusters or None for Kriging local surrogate models.
-        :param float pca_percentage: percentage of information kept for PCA.
-        :param str clusterer: Clusterer from scikit-learn (unsupervised machine
+        :param float pca_percentage: Percentage of information kept for PCA.
+        :param str clusterer: Clusterer from sklearn (unsupervised machine
           learning).
           http://scikit-learn.org/stable/modules/clustering.html#clustering
-        :param str classifier: Classifier from Scikit-learn (supervised machine
+        :param str classifier: Classifier from sklearn (supervised machine
           learning).
           http://scikit-learn.org/stable/supervised_learning.html
         """
-        self.fsizes = fsizes[0]
+        self.fsizes = fsizes
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
         samples = self.scaler.transform(samples)
@@ -106,8 +112,10 @@ class Mixture(object):
             pca = PCA(n_components=pca_percentage)
             pca.fit(clust.T)
             clust = pca.components_.T
-        else:
-            clust = clust
+
+        if standard is True:
+            scaler = preprocessing.StandardScaler()
+            clust = scaler.fit_transform(clust)
 
         # Acquisition of clusterer
         try:
@@ -130,46 +138,14 @@ class Mixture(object):
                               .format(clusterer.get_params()))
 
         # Clustering
-        if standard is True:
-            scaler = preprocessing.StandardScaler()
-            clust = scaler.fit_transform(clust)
-
-        self.clust = clust
         try:
-            self.label = clusterer.fit_predict(clust)
+            labels = clusterer.fit_predict(clust)
         except AttributeError:
             clusterer.fit(clust)
-            self.label = clusterer.predict(clust)
+            labels = clusterer.predict(clust)
 
-        self.logger.debug('Cluster of data :{}'.format(samples, self.label))
-        self.num_clust = np.unique(self.label)
-        indices = []
-        self.indice_clt = {}
-        self.model = {}
-
-        # Creation of local models
-        for i, k in enumerate(self.num_clust):
-            ii = np.where(self.label == k)[0]
-            indices.append(list(ii))
-            self.indice_clt[k] = indices[i]
-            sample_i = [samples[j] for j in indices[i]]
-            data_i = [data[j, :self.fsizes] for j in indices[i]]
-            if pod is True:
-                from batman.pod import Pod
-                pod = Pod(corners, pod[0], pod[1])
-                snapshots = Sample(space=sample_i, data=data_i)
-                pod.fit(snapshots)
-                data_i = pod.VS
-
-            from batman.surrogate import SurrogateModel
-            if local_method is None:
-                self.model[k] = SurrogateModel('kriging', corners, plabels=None)
-            else:
-                method = [*local_method[i]][0]
-                self.model[k] = SurrogateModel(method, corners, plabels=None,
-                                               **local_method[i][method])
-
-            self.model[k].fit(np.asarray(sample_i), np.asarray(data_i), pod=pod)
+        self.logger.debug('Cluster of data :{}'.format(samples, labels))
+        self.clusters_id = np.unique(labels)
 
         # Acqusition of Classifier
         try:
@@ -193,89 +169,104 @@ class Mixture(object):
             self.logger.debug('Classifier info:\n{}'
                               .format(classifier.get_params()))
 
+        # Classification
         self.classifier = classifier
-        self.classifier.fit(samples, self.label)
+        self.classifier.fit(samples, labels)
+
+        self.indice_clt = {}
+        self.local_models = {}
+
+        # Creation of local models
+        for i, k in enumerate(self.clusters_id):
+            idx = np.where(labels == k)[0]
+            self.indice_clt[k] = list(idx)
+            sample_ = [samples[j] for j in self.indice_clt[k]]
+            data_ = [data[j, :self.fsizes] for j in self.indice_clt[k]]
+
+            if pod is True:
+                from batman.pod import Pod
+                pod = Pod(corners, **pod)
+                snapshots = Sample(space=sample_, data=data_)
+                pod.fit(snapshots)
+                data_ = pod.VS
+
+            from batman.surrogate import SurrogateModel
+            if local_method is None:
+                self.local_models[k] = SurrogateModel('kriging', corners, plabels=None)
+            else:
+                method = [lm for lm in local_method[i]][0]
+                self.local_models[k] = SurrogateModel(method, corners, plabels=None,
+                                                      **local_method[i][method])
+
+            self.local_models[k].fit(np.asarray(sample_), np.asarray(data_), pod=pod)
 
     def boundaries(self, samples, plabels=None, fname=None):
-        """Plot the boundaries for cluster visualization.
+        """Boundaries of clusters in the parameter space.
 
-        Plot the boundaries for 2D and 3D hypercube or plot the parallel coordinates
-        for more than 3D to see the influence of sample variables on cluster affiliation.
+        Plot the boundaries for 2D and 3D hypercube or parallel coordinates
+        plot for more than 3D to see the influence of sample variables on
+        cluster affiliation.
 
         :param array_like samples: Sample features (n_samples, n_features).
         :param list(str) plabels: Names of each parameters (n_features).
-        :param str fname: whether to export to filename or display the figures.
+        :param str fname: Whether to export to filename or display the figures.
         :returns: figure.
         :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
         """
+        samples = np.asarray(samples)
+        samples_ = self.scaler.transform(samples)
+        classif_samples = self.classifier.predict(samples_)
+
         n_dim = samples.shape[1]
         plabels = ['x' + str(i) for i in range(n_dim)]\
             if plabels is None else plabels
 
-        resolution = 60
-        cm = plt.cm.Set1
-        scale = Normalize(clip=True)
+        resolution = 20
+        cmap = plt.cm.Set1
+        color_clt = Normalize(vmin=min(self.clusters_id),
+                              vmax=max(self.clusters_id), clip=True)
         markers = ['x', 'o', '+', 'h', '*', 's', 'p', '<', '>', '^', 'v']
         mins = samples.min(axis=0)
         maxs = samples.max(axis=0)
-        fig, ax = plt.subplots(1, 1)
+        fig, ax = plt.subplots()
 
-        if n_dim == 3:
-            xx, yy, zz = np.meshgrid(*[np.linspace(mins[i], maxs[i], resolution)
-                                       for i in range(n_dim)])
-            mesh = np.stack((xx.ravel(), yy.ravel(), zz.ravel()), axis=-1)
-            mesh = self.scaler.transform(mesh)
-            ax = Axes3D(fig)
+        if n_dim == 1:
+            xx = np.linspace(mins, maxs, resolution)[:, None]
+            mesh = self.scaler.transform(xx)
             classif = self.classifier.predict(mesh)
-            color_clf = cm(scale(classif))
-            color_clt = cm(scale(self.label))
-            ax.scatter(mesh[:, 0], mesh[:, 1], mesh[:, 2],
-                       alpha=0.3, edgecolors='none', c=color_clf)
-            for i, k in enumerate(self.num_clust):
-                ax.scatter(samples[:, 0][self.label == k], samples[:, 1][self.label == k],
-                           samples[:, 2][self.label == k], c=color_clt[self.label == k],
-                           edgecolors='none', marker=markers[i])
-            plt.xlabel(plabels[0])
-            plt.ylabel(plabels[1])
-            ax.set_zlabel(plabels[2])
+            ax.scatter(xx, np.zeros(resolution),
+                       alpha=0.3, c=cmap(color_clt(classif)))
+
+            for i, k in enumerate(self.clusters_id):
+                samples_ = samples[classif_samples == k]
+                ax.scatter(samples_, np.zeros(len(samples_)),
+                           c=cmap(color_clt(k)), marker=markers[i])
+            ax.set_xlabel(plabels[0])
         elif n_dim == 2:
-            xx, yy = np.meshgrid(*[np.linspace(mins[i], maxs[i], resolution)
-                                   for i in range(n_dim)])
+            xx, yy = np.meshgrid(np.linspace(mins[0], maxs[0], resolution),
+                                 np.linspace(mins[1], maxs[1], resolution))
             mesh = np.stack((xx.ravel(), yy.ravel()), axis=-1)
             mesh = self.scaler.transform(mesh)
             classif = self.classifier.predict(mesh)
-            classif = classif.reshape(resolution, resolution)
-            color_clt = cm(scale(self.label))
-            ax.contourf(xx, yy, classif,
-                        alpha=0.5, cmap=cm)
-            for i, k in enumerate(self.num_clust):
-                ax.scatter(samples[:, 0][self.label == k], samples[:, 1][self.label == k],
-                           edgecolors='none', c=color_clt[self.label == k], marker=markers[i])
-            plt.xlabel(plabels[0])
-            plt.ylabel(plabels[1])
-        elif n_dim == 1:
-            xx = np.meshgrid(*[np.linspace(mins[i], maxs[i], resolution)
-                               for i in range(n_dim)])
-            yy = np.zeros(samples.shape[0])
-            mesh = np.stack((xx.ravel(), yy.ravel()), axis=-1)
-            mesh = self.scaler.transform(mesh)
-            classif = self.classifier.predict(mesh)
-            color_clf = cm(scale(classif))
-            color_clt = cm(scale(self.label))
-            ax.scatter(mesh[:, 0], mesh[:, 1],
-                       alpha=0.3, edgecolors='none', c=color_clf)
-            for i, k in enumerate(self.num_clust):
-                ax.scatter(samples[self.label == k], c=color_clt[self.label == k],
-                           edgecolors='none', marker=markers[i])
-            plt.xlabel(plabels[0])
+
+            classif = classif.reshape(xx.shape)
+            ax.imshow(classif, extent=(xx.min(), xx.max(), yy.min(), yy.max()),
+                      aspect='auto', origin='lower', interpolation='gaussian')
+
+            for i, k in enumerate(self.clusters_id):
+                ax.scatter(samples[:, 0][classif_samples == k],
+                           samples[:, 1][classif_samples == k],
+                           c=cmap(color_clt(k)), marker=markers[i])
+            ax.set_xlabel(plabels[0])
+            ax.set_ylabel(plabels[1])
         else:
-            self.label = self.label.reshape(-1, 1)
-            samples = np.concatenate((samples, self.label), axis=-1)
+            classif_samples = classif_samples.reshape(-1, 1)
+            samples = np.concatenate((samples, classif_samples), axis=-1)
             plabels.append("cluster")
             df = pd.DataFrame(samples, columns=plabels)
             ax = parallel_coordinates(df, "cluster")
-            plt.xlabel('Parameters')
-            plt.ylabel('Parameters range')
+            ax.set_xlabel('Parameters')
+            ax.set_ylabel('Parameters range')
 
         bat.visualization.save_show(fname, [fig])
 
@@ -297,8 +288,8 @@ class Mixture(object):
         """
         q2 = {}
         point = {}
-        for k in self.num_clust:
-            q2[k], point[k] = self.model[k].estimate_quality()
+        for k in self.clusters_id:
+            q2[k], point[k] = self.local_models[k].estimate_quality()
 
         if multi_q2:
             output = q2, point
@@ -308,41 +299,40 @@ class Mixture(object):
 
         return output
 
-    def evaluate(self, points):
+    def evaluate(self, points, classification=False):
         """Predict new samples.
 
         Classify new samples then predict using the corresponding local model.
 
         :param array_like points: Samples to predict (n_samples,
           n_features).
+        :param bool classification: Whether to output classification info.
         :return: predict, sigma: Prediction and sigma of new samples.
         :rtype: array_like (n_samples, n_features), array_like (n_samples,
           n_features).
         """
         points = self.scaler.transform(points)
-        self.classif = self.classifier.predict(points)
-        num_clust = np.unique(self.classif)
-        indice = []
-        indice_clf = {}
-        ind = []
-        result = np.array([]).reshape(0, self.fsizes)
-        sigma = np.array([]).reshape(0, self.fsizes)
-        for i, k in enumerate(num_clust):
-            ii = np.where(self.classif == k)[0]
-            indice.append(list(ii))
-            indice_clf[k] = indice[i]
+        classif = self.classifier.predict(points)
+
+        # Indices points for each cluster
+        num_clust = np.unique(classif)
+        indice_clf = {k: list(np.where(classif == k)[0]) for k in num_clust}
+
+        # idx list of points sorted per cluster
+        idx = [item for ind in indice_clf.values() for item in ind]
 
         # Prediction of new points
-        for i, k in enumerate(indice_clf):
-            clf_i = points[indice_clf[k]]
-            result_i, sigma_i = self.model[k](clf_i)
+        result = np.array([]).reshape(0, self.fsizes)
+        sigma = np.array([]).reshape(0, self.fsizes)
+        for k in indice_clf:
+            clf_ = points[indice_clf[k]]
+            result_, sigma_ = self.local_models[k](clf_)
 
-            result = np.concatenate([result, result_i])
-            sigma = np.concatenate([sigma, sigma_i])
-            ind = np.concatenate((ind, indice_clf[k]))
+            result = np.concatenate([result, result_])
+            sigma = np.concatenate([sigma, sigma_])
 
-        key = np.argsort(ind)
-        result = result[key]
-        sigma = sigma[key]
+        idx = np.argsort(idx)
+        result = result[idx]
+        sigma = sigma[idx]
 
-        return result, sigma
+        return (result, sigma, classif) if classification else (result, sigma)

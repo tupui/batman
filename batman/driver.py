@@ -197,8 +197,8 @@ class Driver(object):
                 self.pod = None
 
                 if 'pod' in self.settings:
-                    pod_args = [self.settings['pod'].get('tolerance', 0.99),
-                                self.settings['pod'].get('dim_max', 100)]
+                    pod_args = {'tolerance': self.settings['pod'].get('tolerance', 0.99),
+                                'dim_max': self.settings['pod'].get('dim_max', 100)}
                 else:
                     pod_args = None
 
@@ -206,7 +206,7 @@ class Driver(object):
                     'pod': pod_args,
                     'plabels': self.settings['snapshot']['plabels'],
                     'corners': self.settings['space']['corners'],
-                    'fsizes': self.settings['snapshot'].get('fsizes'),
+                    'fsizes': self.settings['snapshot'].get('fsizes')[0],
                     'pca_percentage': self.settings['surrogate'].get('pca_percentage', 0.8),
                     'clusterer': self.settings['surrogate'].get('clusterer',
                                                                 'cluster.KMeans(n_clusters=2)'),
