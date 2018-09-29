@@ -49,37 +49,37 @@ from ..space import Sample
 
 
 class Mixture(object):
-    """Mixture of expert based on unsupervised machine learning and local
-    Kriging Models to predict new samples and their affiliations."""
+    """Mixture class.
+
+    Unsupervised machine learning separate the DoE into clusters, supervised
+    machine learning classify new sample to a cluster and local models
+    predict the new sample."""
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, samples, data, plabels, corners, fsizes, pod=None, tolerance=0.99,
-                 dim_max=100, standard=True, local_method=None, pca_percentage=0.8,
+    def __init__(self, samples, data, corners, fsizes, pod=None,
+                 standard=True, local_method=None, pca_percentage=0.8,
                  clusterer='cluster.KMeans(n_clusters=2)', classifier='svm.SVC()'):
-        """Compute PCA on datas to cluster and form local models used with
-        classification of new points to predict.
+        """Cluster data and fit local models.
 
-        Uses the data given to compute PCA from scikit-learn tools.
-        If the data is a scalar, no PCA is done.
-        Then, set the parameters for the clusterer used from scikit-learn.
-        The choosen clusterer and parameters will cluster datas and put a label
-        on these. These clusters are then separated to decide the affiliation
-        of each sample to its cluster.
-        Datas from each cluster are taken to form a local Kriging model
-        for each cluster.
+        1. If :attr:`data` is not scalar, compute PCA on :attr:`data`.
+        2. Cluster data.
+        3. Each sample is affiliated to a cluster.
+        4. Fit a classifier to handle new samples.
+        5. A local model for each cluster is built.
 
-        :param array_like samples: Sample features (n_samples, n_features).
-        :param array_like data: Observed data (n_samples, n_features).
-        :param list(str) plabels: Labels of sample points.
+        :param array_like sample: Sample of parameters of Shape
+          (n_samples, n_params).
+        :param array_like data: Sample of realization which corresponds to the
+          sample of parameters :attr:`sample` (n_samples, n_features).
         :param array_like corners: Hypercube ([min, n_features], [max, n_features]).
         :param int fsizes: Number of components of output features.
         :param str/bool pod: Whether to compute POD or not in local models.
         :param float tolerance: Basis modes filtering criteria.
         :param int dim_max: Number of basis modes to keep.
-        :param bool: Whether or not to standardize data before clustering phase.
-        :param str/dict local_method: Dictionnary of local surrrogate models for clusters
-          or None for Kriging local surrogate models.
+        :param bool standard: Whether to standardize data before clustering.
+        :param str/dict local_method: Dictionnary of local surrrogate models
+          for clusters or None for Kriging local surrogate models.
         :param float pca_percentage: percentage of information kept for PCA.
         :param str clusterer: Clusterer from scikit-learn (unsupervised machine
           learning).
@@ -88,24 +88,26 @@ class Mixture(object):
           learning).
           http://scikit-learn.org/stable/supervised_learning.html
         """
-        self.plabels = plabels
         self.fsizes = fsizes[0]
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
         samples = self.scaler.transform(samples)
         corners = [[0 for i in range(samples.shape[1])],
                    [1 for i in range(samples.shape[1])]]
+
+        # Only do the clustering on the sensor
         if data.shape[1] > self.fsizes:
-            clust = data[:, self.fsizes:].T
+            clust = data[:, self.fsizes:]
         else:
-            clust = data.T
-        # Computation of PCA
-        if clust.shape[0] > 1:
+            clust = data
+
+        # Computation of PCA for vector output
+        if clust.shape[1] > 1:
             pca = PCA(n_components=pca_percentage)
-            pca.fit(clust)
+            pca.fit(clust.T)
             clust = pca.components_.T
         else:
-            clust = clust.T
+            clust = clust
 
         # Acquisition of clusterer
         try:
@@ -120,7 +122,7 @@ class Mixture(object):
                                  {'sklearn': __import__('sklearn'),
                                   'sklearn.cluster': __import__('sklearn.cluster'),
                                   'sklearn.mixture': __import__('sklearn.mixture')
-                                 })
+                                  })
             except (TypeError, AttributeError):
                 raise AttributeError('Clusterer unknown from sklearn.')
 
@@ -151,25 +153,25 @@ class Mixture(object):
             indices.append(list(ii))
             self.indice_clt[k] = indices[i]
             sample_i = [samples[j] for j in indices[i]]
-            n_sample_i = len(sample_i)
             data_i = [data[j, :self.fsizes] for j in indices[i]]
             if pod is True:
                 from batman.pod import Pod
-                pod = Pod(corners, tolerance, dim_max)
+                pod = Pod(corners, pod[0], pod[1])
                 snapshots = Sample(space=sample_i, data=data_i)
                 pod.fit(snapshots)
                 data_i = pod.VS
+
             from batman.surrogate import SurrogateModel
             if local_method is None:
-                self.model[k] = SurrogateModel('kriging', corners, plabels)
+                self.model[k] = SurrogateModel('kriging', corners, plabels=None)
             else:
                 method = [*local_method[i]][0]
-                self.model[k] = SurrogateModel(method, corners, plabels,
+                self.model[k] = SurrogateModel(method, corners, plabels=None,
                                                **local_method[i][method])
 
             self.model[k].fit(np.asarray(sample_i), np.asarray(data_i), pod=pod)
 
-        #Acqusition of Classifier
+        # Acqusition of Classifier
         try:
             # Classifier is already a sklearn object
             self.logger.debug('Classifier info:\n{}'
@@ -185,7 +187,7 @@ class Mixture(object):
                                    'sklearn.gaussian_process': __import__('sklearn.gaussian_process'),
                                    'sklearn.neighbors': __import__('sklearn.neighbors'),
                                    'sklearn.ensemble': __import__('sklearn.ensemble')
-                                  })
+                                   })
             except (TypeError, AttributeError):
                 raise AttributeError('Classifier unknown from sklearn.')
             self.logger.debug('Classifier info:\n{}'
@@ -194,18 +196,22 @@ class Mixture(object):
         self.classifier = classifier
         self.classifier.fit(samples, self.label)
 
-    def boundaries(self, samples, fname=None):
+    def boundaries(self, samples, plabels=None, fname=None):
         """Plot the boundaries for cluster visualization.
 
         Plot the boundaries for 2D and 3D hypercube or plot the parallel coordinates
         for more than 3D to see the influence of sample variables on cluster affiliation.
 
         :param array_like samples: Sample features (n_samples, n_features).
+        :param list(str) plabels: Names of each parameters (n_features).
         :param str fname: whether to export to filename or display the figures.
         :returns: figure.
         :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
         """
         n_dim = samples.shape[1]
+        plabels = ['x' + str(i) for i in range(n_dim)]\
+            if plabels is None else plabels
+
         resolution = 60
         cm = plt.cm.Set1
         scale = Normalize(clip=True)
@@ -229,9 +235,9 @@ class Mixture(object):
                 ax.scatter(samples[:, 0][self.label == k], samples[:, 1][self.label == k],
                            samples[:, 2][self.label == k], c=color_clt[self.label == k],
                            edgecolors='none', marker=markers[i])
-            plt.xlabel(self.plabels[0])
-            plt.ylabel(self.plabels[1])
-            ax.set_zlabel(self.plabels[2])
+            plt.xlabel(plabels[0])
+            plt.ylabel(plabels[1])
+            ax.set_zlabel(plabels[2])
         elif n_dim == 2:
             xx, yy = np.meshgrid(*[np.linspace(mins[i], maxs[i], resolution)
                                    for i in range(n_dim)])
@@ -245,8 +251,8 @@ class Mixture(object):
             for i, k in enumerate(self.num_clust):
                 ax.scatter(samples[:, 0][self.label == k], samples[:, 1][self.label == k],
                            edgecolors='none', c=color_clt[self.label == k], marker=markers[i])
-            plt.xlabel(self.plabels[0])
-            plt.ylabel(self.plabels[1])
+            plt.xlabel(plabels[0])
+            plt.ylabel(plabels[1])
         elif n_dim == 1:
             xx = np.meshgrid(*[np.linspace(mins[i], maxs[i], resolution)
                                for i in range(n_dim)])
@@ -259,14 +265,14 @@ class Mixture(object):
             ax.scatter(mesh[:, 0], mesh[:, 1],
                        alpha=0.3, edgecolors='none', c=color_clf)
             for i, k in enumerate(self.num_clust):
-                ax.scatter(samples[self.label==k], c=color_clt[self.label == k],
+                ax.scatter(samples[self.label == k], c=color_clt[self.label == k],
                            edgecolors='none', marker=markers[i])
-            plt.xlabel(self.plabels[0])
+            plt.xlabel(plabels[0])
         else:
             self.label = self.label.reshape(-1, 1)
             samples = np.concatenate((samples, self.label), axis=-1)
-            self.plabels.append("cluster")
-            df = pd.DataFrame(samples, columns=self.plabels)
+            plabels.append("cluster")
+            df = pd.DataFrame(samples, columns=plabels)
             ax = parallel_coordinates(df, "cluster")
             plt.xlabel('Parameters')
             plt.ylabel('Parameters range')
@@ -294,7 +300,7 @@ class Mixture(object):
         for k in self.num_clust:
             q2[k], point[k] = self.model[k].estimate_quality()
 
-        if multi_q2 is True:
+        if multi_q2:
             output = q2, point
         else:
             ind = np.argmin(q2)
@@ -303,14 +309,11 @@ class Mixture(object):
         return output
 
     def evaluate(self, points):
-        """Classification of new samples based on Supervised Machine Learning
-        and predictions of new points.
+        """Predict new samples.
 
-        Classify new samples given by using the samples already trained and
-        a classifier from Scikit-learn tools then make predictions using
-        local models with new sample points.
+        Classify new samples then predict using the corresponding local model.
 
-        :param array_like points: Samples to classify (n_samples,
+        :param array_like points: Samples to predict (n_samples,
           n_features).
         :return: predict, sigma: Prediction and sigma of new samples.
         :rtype: array_like (n_samples, n_features), array_like (n_samples,

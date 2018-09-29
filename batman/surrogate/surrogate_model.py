@@ -99,7 +99,7 @@ class SurrogateModel(object):
         if self.kind == 'pc':
             self.predictor = PC(**self.settings)
         elif self.kind == 'mixture':
-            self.settings.update({'corners': corners, 'plabels': plabels})
+            self.settings.update({'corners': corners})
 
     def fit(self, sample, data, pod=None):
         """Construct the surrogate.

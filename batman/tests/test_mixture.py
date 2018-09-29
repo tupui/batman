@@ -12,27 +12,30 @@ corners = np.array([[1., 5.], [7., 5.]])
 data = np.array([[1.], [1.], [1.], [1.], [100.], [100.], [100.]], dtype=float)
 sample_new = np.array([[0., 5.], [1.5, 5.], [8., 5.], [2.5, 5.], [10, 5.]], dtype=float)
 plabels = ["x1", "x2"]
-fsizes = 1
+fsizes = [1]
+
 
 class TestMixture:
 
     @pytest.fixture(scope="session")
     def algo(self):
-        algo1 = Mixture(samples, data, plabels, corners, fsizes, classifier='svm.SVC(kernel="linear")')
-        algo = Mixture(samples, data, plabels, corners, fsizes)
+        algo1 = Mixture(samples, data, corners, fsizes, classifier='svm.SVC(kernel="linear")')
         assert algo1.classifier.get_params()['kernel'] == 'linear'
+        algo = Mixture(samples, data, corners, fsizes)
 
         return algo
 
     def test_init(self, algo, seed):
         indice_clt = {0: [0, 1, 2, 3], 1: [4, 5, 6]}
 
-        #Error Test
+        # Mixture(samples, data, corners, fsizes, local_method={})
+
+        # Error Test
         with pytest.raises(AttributeError):
-            Mixture(samples, data, plabels, corners, fsizes, clusterer='nimp')
+            Mixture(samples, data, corners, fsizes, clusterer='foo')
 
         with pytest.raises(AttributeError):
-            Mixture(samples, data, plabels, corners, fsizes, classifier='nimp')
+            Mixture(samples, data, corners, fsizes, classifier='foo')
 
         # Test with Gaussian Mixture
         assert algo.indice_clt == indice_clt
@@ -40,12 +43,13 @@ class TestMixture:
         assert predict == 1
         predict, sigma = algo.model[1](sample_new[-1])
         assert predict == 100
-        assert algo.clust.shape[1] == fsizes
+        assert algo.clust.shape[1] == fsizes[0]
 
     def test_evaluate(self, algo, seed):
         target_clf = np.array([0, 0, 1, 0, 1])
         target_predict = np.array([[1], [1], [100], [1], [100]])
-        target_sigma = np.array([[2.068e-05], [7.115e-06], [2.094e-05], [6.828e-06], [1.405e-05]])
+        target_sigma = np.array([[2.068e-05], [7.115e-06], [2.094e-05],
+                                 [6.828e-06], [1.405e-05]])
 
         predict, sigma = algo.evaluate(sample_new)
 

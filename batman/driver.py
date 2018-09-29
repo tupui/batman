@@ -195,13 +195,18 @@ class Driver(object):
                 })    
             elif self.settings['surrogate']['method'] == 'mixture':
                 self.pod = None
+
+                if 'pod' in self.settings:
+                    pod_args = [self.settings['pod'].get('tolerance', 0.99),
+                                self.settings['pod'].get('dim_max', 100)]
+                else:
+                    pod_args = None
+
                 settings_.update({
-                    'pod': True if 'pod' in self.settings else None,
+                    'pod': pod_args,
                     'plabels': self.settings['snapshot']['plabels'],
                     'corners': self.settings['space']['corners'],
                     'fsizes': self.settings['snapshot'].get('fsizes'),
-                    'tolerance': self.settings['pod'].get('tolerance', 0.99),
-                    'dim_max': self.settings['pod'].get('dim_max', 100),
                     'pca_percentage': self.settings['surrogate'].get('pca_percentage', 0.8),
                     'clusterer': self.settings['surrogate'].get('clusterer',
                                                                 'cluster.KMeans(n_clusters=2)'),

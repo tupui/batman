@@ -49,7 +49,7 @@ class Pod(object):
     # File name for storing the points
     points_file_name = 'points.dat'
 
-    def __init__(self, corners, tolerance, dim_max):
+    def __init__(self, corners, tolerance=0.99, dim_max=100):
         """Initialize POD components.
 
         The decomposition of the snapshot matrix is stored as attributes:
