@@ -9,7 +9,7 @@ import openturns as ot
 from mock import patch
 from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf,
                                   sensitivity_indices, corr_cov,
-                                  reshow, response_surface, doe, 
+                                  reshow, response_surface, doe,
                                   mesh_2D, cusunoro, moment_independent)
 from batman.visualization.density import ecdf
 from batman.surrogate import SurrogateModel
@@ -196,15 +196,13 @@ class TestHdr:
 
 class TestKiviat:
 
-    @patch("matplotlib.pyplot.show")
     @pytest.fixture(scope="session")
-    def kiviat_data(self, mock_show):
+    def kiviat_data(self):
         sample = [[30, 4000], [15, 5000]]
         data = [[12], [15]]
         plabels = ['Ks', 'Q', '-']
         bounds = [[15.0, 2500.0], [60.0, 6000.0]]
         kiviat = Kiviat3D(sample, data, bounds=bounds, plabels=plabels)
-        kiviat.plot()
 
         return kiviat
 

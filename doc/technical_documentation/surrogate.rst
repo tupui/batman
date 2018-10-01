@@ -478,9 +478,9 @@ Step 2: Application of Local Decomposition Method
 
 To help seperate our data into clusters, a physical-based sensor that can detects shocks can be used. In this case, the *Jameson Shock sensor* is used. It can detects discontinuities and nonlinearities:
 
-.. math:: \mu_i = \frac{\abs{P_{i+1}-2P_i + P_{i-1}}}{\eps + \abs{P_{i+1}} + 2\abs{P_i} + \abs{P_{i-1}}},
+.. math:: \nu_i = \frac{\mid P_{i+1}-2P_i + P_{i-1}\mid}{\epsilon + \mid P_{i+1}\mid + 2\mid P_i\mid + \mid P_{i-1}\mid},
 
-with :math:`P_i` the pressure along the wing and :math:`\eps` a constant to avoid ill posed problems. The sensor is computed for all samples. Its dimension is reduced by PCA to ease the clustering step. *KMeans* (unsupervised machine-learning) is used to separate the different regimes in the reduced space. In the end each set of input parameters is associated to a given cluster depending on the physics.
+with :math:`P_i` the pressure along the wing and :math:`\epsilon` a constant to avoid ill posed problems. The sensor is computed for all samples. Its dimension is reduced by PCA to ease the clustering step. *KMeans* (unsupervised machine-learning) is used to separate the different regimes in the reduced space. In the end each set of input parameters is associated to a given cluster depending on the physics.
 The position of the clusters in the DoE can be visualized:
 
 .. image:: ../fig/doe_rae.png

@@ -459,7 +459,7 @@ Using the PDF, *delta* indices are computed and with the ECDF *Kolmogorov*
 CUSUNORO
 --------
 
-CUSUNORO stands for: cumulative sums of normalized reordered output[Plischke2012]_.
+CUSUNORO stands for: cumulative sums of normalized reordered output [Plischke2012]_.
 The output is normalized and ordered in function of a given feature. Then, its
 cumulative sum vector is computed. In other words, this corresponds to the
 conditional ECDF after normalization. The more the curve is from the

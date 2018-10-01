@@ -26,7 +26,7 @@ from .sample_cache import SampleCache
 from ..space import Sample
 
 
-class ProviderJob(object):
+class ProviderJob:
     """Provides Snapshots built through a 3rd-party program."""
 
     logger = logging.getLogger(__name__)

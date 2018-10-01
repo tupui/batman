@@ -33,7 +33,7 @@ from ..misc import (NestedPool, cpu_system)
 from ..functions.utils import multi_eval
 
 
-class Kriging(object):
+class Kriging:
     """Kriging based on Gaussian Process."""
 
     logger = logging.getLogger(__name__)

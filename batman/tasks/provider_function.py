@@ -14,7 +14,7 @@ from .sample_cache import SampleCache
 from ..space import Sample
 
 
-class ProviderFunction(object):
+class ProviderFunction:
     """Provides Snapshots built through an external python function."""
 
     logger = logging.getLogger(__name__)

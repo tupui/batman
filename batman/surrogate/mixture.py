@@ -47,7 +47,7 @@ import batman as bat
 from ..space import Sample
 
 
-class Mixture(object):
+class Mixture:
     """Mixture class.
 
     Unsupervised machine learning separate the DoE into clusters, supervised
@@ -129,8 +129,7 @@ class Mixture(object):
                                  {'__builtins__': None},
                                  {'sklearn': __import__('sklearn'),
                                   'sklearn.cluster': __import__('sklearn.cluster'),
-                                  'sklearn.mixture': __import__('sklearn.mixture')
-                                  })
+                                  'sklearn.mixture': __import__('sklearn.mixture')})
             except (TypeError, AttributeError):
                 raise AttributeError('Clusterer unknown from sklearn.')
 
@@ -162,8 +161,7 @@ class Mixture(object):
                                    'sklearn.naive_bayes': __import__('sklearn.naive_bayes'),
                                    'sklearn.gaussian_process': __import__('sklearn.gaussian_process'),
                                    'sklearn.neighbors': __import__('sklearn.neighbors'),
-                                   'sklearn.ensemble': __import__('sklearn.ensemble')
-                                   })
+                                   'sklearn.ensemble': __import__('sklearn.ensemble')})
             except (TypeError, AttributeError):
                 raise AttributeError('Classifier unknown from sklearn.')
             self.logger.debug('Classifier info:\n{}'

@@ -35,7 +35,7 @@ from .visualization import (response_surface, Kiviat3D, mesh_2D)
 from .functions.utils import multi_eval
 
 
-class Driver(object):
+class Driver:
     """Driver class."""
 
     logger = logging.getLogger(__name__)
@@ -192,7 +192,7 @@ class Driver(object):
                 settings_.update({
                     'noise': self.settings['surrogate'].get('noise', False),
                     'global_optimizer': self.settings['surrogate'].get('global_optimizer', True)
-                })    
+                })
             elif self.settings['surrogate']['method'] == 'mixture':
                 self.pod = None
 
@@ -233,7 +233,7 @@ class Driver(object):
         if points is None:
             points = self.to_compute_points
 
-        # Generate snapshots        
+        # Generate snapshots
         samples = self.provider.require_data(points)
         self.snapshot_counter += len(samples)  # still useless
 

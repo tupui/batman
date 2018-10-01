@@ -84,7 +84,7 @@ from .sampling import Doe
 PY2 = sys.version_info.major == 2
 
 
-class GpSampler(object):
+class GpSampler:
     """GpSampler class."""
 
     logger = logging.getLogger(__name__)

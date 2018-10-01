@@ -256,7 +256,7 @@ class Sample(object):
         :param list(str) flabels: labels in data file
           (if different from `self.flabels`)
         """
-        pd_sample = []        
+        pd_sample = []
         if self.plabels:
             if plabels is None:
                 plabels = self.plabels

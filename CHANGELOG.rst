@@ -19,7 +19,7 @@ New features
     -  :mod:`visualization.density` for moment independant sensitivity
        measures, *by Pamphile Roy*,
     -  COSI indices :func:`uq.cosi`, *by Pamphile Roy*,
-    -  :class:`space.GpSampler` linked with ``settings.json``, *by Matthias De Lozzo*.
+    -  :class:`space.gp_sampler.GpSampler`, *by Matthias De Lozzo*.
     -  :class:`surrogate.Mixture` to construct mixture of expert models,
        by *Remi Macadre*,
     -  :class:`functions.DbGeneric` to sample from a generic dataset.
