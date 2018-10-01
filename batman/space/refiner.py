@@ -39,7 +39,7 @@ from .sampling import Doe
 from ..misc import optimization
 
 
-class Refiner(object):
+class Refiner:
     """Resampling the space of parameters."""
 
     logger = logging.getLogger(__name__)

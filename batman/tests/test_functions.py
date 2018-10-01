@@ -93,7 +93,7 @@ def test_Channel_Flow():
     f = Channel_Flow(dx=8000., length=40000., width=170., slope=2.8e-4, hinit=6.917)
     sample = [[11, 2000], [40, 4000]]
 
-    results = f(sample, full=True)
+    results = f(sample, h_nc=True)
     npt.assert_almost_equal(results,
                             [[12.65, 11.82, 11.21, 10.78, -4.28, 2.42, 12.12],
                              [6.23, 4.01, 2.02, 0.55, -4.28, 3.84, 8.46]],

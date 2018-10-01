@@ -38,7 +38,7 @@ from ..space import Space
 from ..misc import (ProgressBar, NestedPool, cpu_system)
 
 
-class SurrogateModel(object):
+class SurrogateModel:
     """Surrogate model."""
 
     logger = logging.getLogger(__name__)

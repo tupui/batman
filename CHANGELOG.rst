@@ -6,9 +6,42 @@
 Release history
 ===============
 
+Version 1.9 - Pennyworth
+========================
+
+New features
+------------
+
+    -  Sobol' indices on a 2D map with :func:`visualization.mesh_2D`, *by Robin Campet*,
+    -  Stacking and coloring option for :class:`visualization.Kiviat` with
+       keywords ``stack_order`` and ``cbar_order``, *by Pamphile Roy*,
+    -  MST criteria with :func:`space.Space.mst`, *by Pamphile Roy*,
+    -  :mod:`visualization.density` for moment independant sensitivity
+       measures, *by Pamphile Roy*,
+    -  COSI indices :func:`uq.cosi`, *by Pamphile Roy*,
+    -  :class:`space.gp_sampler.GpSampler`, *by Matthias De Lozzo*.
+    -  :class:`surrogate.Mixture` to construct mixture of expert models,
+       by *Remi Macadre*,
+    -  :class:`functions.DbGeneric` to sample from a generic dataset.
+
+Enhancements
+------------
+
+    -  Ensure sample/data pairs on reading, *by Pamphile Roy*,
+    -  :class:`surrogate.SurrogateModel` I/O consistency, *by Pamphile Roy*,
+    -  Different options for discrepancy computation (MD, WD), *by Pamphile Roy*,
+    -  Sobol' indices polar visualization with keyword ``polar``, *by Pamphile Roy*,
+    -  Refactor :class:`pod.Pod`, *by Pamphile Roy*.
+
+Bug fixes
+---------
+
+    - Driver with multifidelity, *by Pamphile Roy*,
+    - Hypercube for refinement, *by Pamphile Roy*,
+    - POD averaging, *by Pamphile Roy*.
+
 Version 1.8 - Falcone
 =====================
-
 
 New features
 ------------

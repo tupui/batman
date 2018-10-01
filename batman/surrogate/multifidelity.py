@@ -20,7 +20,7 @@ from .kriging import Kriging
 from ..functions.utils import multi_eval
 
 
-class Evofusion(object):
+class Evofusion:
     """Multifidelity algorithm using Evofusion."""
 
     logger = logging.getLogger(__name__)

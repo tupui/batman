@@ -9,7 +9,7 @@ from .TreeCut import Tree
 from ..functions.utils import multi_eval
 
 
-class RBFnet(object):
+class RBFnet:
     """RBF class."""
 
     def __init__(self, trainIn, trainOut, regparam=0., radius=1.5, regtree=0,

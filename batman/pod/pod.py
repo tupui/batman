@@ -32,7 +32,7 @@ from ..surrogate import SurrogateModel
 from ..misc import ProgressBar, NestedPool, cpu_system
 
 
-class Pod(object):
+class Pod:
     """POD class."""
 
     logger = logging.getLogger(__name__)

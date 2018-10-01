@@ -32,7 +32,7 @@ from ..functions.utils import multi_eval
 ot.ResourceMap.SetAsUnsignedInteger("DesignProxy-DefaultCacheSize", 0)
 
 
-class PC(object):
+class PC:
     """Polynomial Chaos class."""
 
     logger = logging.getLogger(__name__)

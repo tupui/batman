@@ -10,7 +10,7 @@ from batman.space import Space
 from batman.driver import Driver
 
 
-class Datatest(object):
+class Datatest:
     """Wrap results."""
 
     def __init__(self, kwds):

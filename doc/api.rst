@@ -20,6 +20,7 @@ specifications may not be enough to give full guidelines on their uses.
 
    space.Sample
    space.Space
+   space.gp_sampler.GpSampler
    space.Doe
    space.Refiner
 
@@ -39,6 +40,8 @@ specifications may not be enough to give full guidelines on their uses.
    surrogate.Kriging
    surrogate.PC
    surrogate.RBFnet
+   surrogate.SklearnRegressor
+   surrogate.Evofusion
    surrogate.Mixture
 
 .. py:module:: surrogate
@@ -54,6 +57,7 @@ specifications may not be enough to give full guidelines on their uses.
 .. autosummary::
 
    uq.UQ
+   uq.cosi
 
 .. py:module:: uq
 .. automodule:: batman.uq
@@ -72,13 +76,14 @@ specifications may not be enough to give full guidelines on their uses.
    visualization.HdrBoxplot
    visualization.doe
    visualization.response_surface
-   visualization.sobol
+   visualization.sensitivity_indices
+   visualization.cusunoro
+   visualization.moment_independent
    visualization.corr_cov
    visualization.pdf
    visualization.kernel_smoothing
    visualization.reshow
    visualization.mesh_2D
-   visualization.density
 
 .. py:module:: visualization
 .. automodule:: batman.visualization
@@ -107,6 +112,7 @@ specifications may not be enough to give full guidelines on their uses.
 .. autosummary::
 
    functions.data
+   functions.DbGeneric
    functions.analytical.SixHumpCamel
    functions.analytical.Branin
    functions.analytical.Michalewicz

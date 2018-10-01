@@ -245,7 +245,7 @@ def test_uq_no_surrogate(tmp, case='Ishigami'):
     options = batman.ui.parse_options()
     settings = batman.misc.import_config(options.settings, SCHEMA)
     settings['space']['sampling']['method'] = 'saltelli'
-    settings['space']['sampling']['init_size'] = 8
+    settings['space']['sampling']['init_size'] = 80
     settings['space'].pop('resampling')
     settings.pop('pod')
     settings.pop('surrogate')
