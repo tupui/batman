@@ -49,7 +49,7 @@ class Pod(object):
     # File name for storing the points
     points_file_name = 'points.dat'
 
-    def __init__(self, corners, tolerance, dim_max):
+    def __init__(self, corners, tolerance=0.99, dim_max=100):
         """Initialize POD components.
 
         The decomposition of the snapshot matrix is stored as attributes:
@@ -61,10 +61,10 @@ class Pod(object):
         - V: array_like(n_snapshots, n_snapshots),
           after filtering (n_snapshots, n_modes).
 
-        :param array_like corners: hypercube ([min, n_features],
+        :param array_like corners: Hypercube ([min, n_features],
           [max, n_features]).
-        :param float tolerance: basis modes filtering criteria.
-        :param int dim_max: number of basis modes to keep.
+        :param float tolerance: Basis modes filtering criteria.
+        :param int dim_max: Number of basis modes to keep.
         """
         self.quality = None
         self.space = []
@@ -79,7 +79,7 @@ class Pod(object):
         self.S = None
         self.V = None
 
-    def __str__(self):
+    def __repr__(self):
         """POD summary."""
         s = ("\nPOD summary:\n"
              "-> modes filtering tolerance: {}\n"

@@ -9,7 +9,7 @@ Generalities
 
 A common class is used to manage surrogate models. Hence, several kind of surrogate model strategies can be used::
 
-    predictor = batman.surrogate.SurrogateModel('kriging', corners, max_points_nb)
+    predictor = batman.surrogate.SurrogateModel('kriging', corners, labels)
     predictor.fit(space, target_space)
     predictor.save('.')
     points = [(12.5, 56.8), (2.2, 5.3)]
@@ -427,3 +427,65 @@ Using this cost relationship an setting a computational budget :math:`C`, it is 
           N_c &= \frac{C - N_e}{\alpha}.
 
 As the design being nested, the number of cheap experiments must be strictly superior to the number or expensive ones. Indeed, the opposite would result in no additional information to the system.
+
+Mixture of expert
+-----------------
+
+The prediction based on surrogate models can be false when a bifurcation occurs. In such case a solution is found with the Local Decomposition Method (LDM) [Dupuis2018]_. It seeks to find separate the input parameter space into sub-spaces depending on the physics.
+These sub-spaces are called clusters and are constructed using unsupervised machine learning techniques. Then, local surrogate models are computed on each sub-spaces. In order to predict a new sample points, a classifier constructed using supervised machine learning is used to determine to which cluster it belongs. The sample is then predicted using the right local surrogate model.
+
+Following is the LDM's algorithm: 
+
+1. Computation of PCA on data of higher dimensions than scalars. PCA helps the clusterer to find patterns in the data.
+2. Clustering using unsupervised machine learning.
+3. Formation of local surrogate models.
+4. Classification using supervised machine learning.
+5. Prediction of new points using the local models according to their cluster affiliations.
+
+Clustering using Unsupervised Machine Learning
+..............................................
+
+Unsupervised machine learning tools from Scikit-Learn are used to cluster data set according to parameters chosen by the user, especially the number of clusters (`clustering documentation <http://scikit-learn.org/stable/modules/clustering.html#clustering>`_). The objective of these methods is to put a label on each data according to their affiliation to a cluster. To cover the majority of possible data types, different methods are used. Among most used methods: `KMeans <http://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html#sklearn.cluster.KMeans>`_ is a distance based method which proposes a fast computation time and simple algorithm; `GaussianMixture <http://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html#sklearn.mixture.GaussianMixture>`_ uses a probabilistic approach (KDE); and `DBSCAN <http://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html#sklearn.cluster.DBSCAN>`_ is a density-based algorithm.
+
+Predictions using Supervised Machine Learning
+.............................................
+
+The label of each cluster and their data can be used to form local surrogate models for each of these clusters (`supervised learning <http://scikit-learn.org/stable/supervised_learning.html>`_).
+The construction of each local surrogate model is based on classical methods previously detailed can be used.
+
+To predict new samples, supervised machine learning tools from Scikit-Learn are used to affiliate each point to their clusters then use the corresponding local model to make a prediction. These classifiers use the previously clusterised data set along with the labels (from unsupervised machine learning) to classify new data points called training set by applying what they learnt with the previously clusterised data set called trained set. Again, there are numerous options depending on the nature of the data. `Support Vector Classification <http://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC>`_ is used as the default method.
+
+Example with RAE2822
+--------------------
+
+Step 1: CFD Runs
+................
+
+In this example, the code `elsA <http://elsa.onera.fr/>`_ co-developed at *ONERA* and *CERFACS* is used to run CFD simulations on a wing profile.
+The geometry used for this case is the *RAE2822* wing profile from the AS28G aircraft configuration: 
+
+.. image:: ../fig/shock_rae.pdf
+
+This test case is a basic wing profile used to study the interactions between boundary layers and shocks. These interactions can lead to the detachment of the boundary layer which imply lift loss. To control the detachment, we want the shock to be as far as possible on the wing to limit its influence on the pressure around the profile.
+
+Various inflow conditions are simulated in order to characterize the steady flow around the profile.
+Then, the DoE consists in a set of incidence angle of the inflow and a Mach number.
+
+These CFD runs being expensive, the construction of a surrogate model is required to do such analysis. However, these changes in inflow conditions can lead to the presence of a shock or not on the profile. This causes different regimes which are not governed by the same equations, a bifurcation. Thus, the LDM can be used.
+
+Step 2: Application of Local Decomposition Method
+.................................................
+
+To help seperate our data into clusters, a physical-based sensor that can detects shocks can be used. In this case, the *Jameson Shock sensor* is used. It can detects discontinuities and nonlinearities:
+
+.. math:: \mu_i = \frac{\abs{P_{i+1}-2P_i + P_{i-1}}}{\eps + \abs{P_{i+1}} + 2\abs{P_i} + \abs{P_{i-1}}},
+
+with :math:`P_i` the pressure along the wing and :math:`\eps` a constant to avoid ill posed problems. The sensor is computed for all samples. Its dimension is reduced by PCA to ease the clustering step. *KMeans* (unsupervised machine-learning) is used to separate the different regimes in the reduced space. In the end each set of input parameters is associated to a given cluster depending on the physics.
+The position of the clusters in the DoE can be visualized:
+
+.. image:: ../fig/doe_rae.png
+
+These 2 clusters are used to form 2 local surrogate models by *Gaussian Process*. The quality of these models is assessed by LOOCV. While a global model gives a quality of :math:`Q_2=0.60`, the LDM is able to acheave :math:`Q_2=0.84`.
+Indeed, the global model tried to model the bifurcation which lead to an overal drop of the quality.
+
+In order to predict new samples, *Support Vector Machine* (supervised machine-learning) is used to classify these new samples to a given cluster. Based on these associations, the corresponding local models are used to predict the samples.

@@ -30,6 +30,7 @@ from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import r2_score
 from .kriging import Kriging
 from .sk_interface import SklearnRegressor
+from .mixture import Mixture
 from .polynomial_chaos import PC
 from .RBFnet import RBFnet
 from .multifidelity import Evofusion
@@ -46,8 +47,9 @@ class SurrogateModel(object):
         r"""Init Surrogate model.
 
         :param str kind: name of prediction method, one of:
-          ['rbf', 'kriging', 'pc', 'evofusion', sklearn-regressor].
-        :param array_like corners: hypercube ([min, n_features], [max, n_features]).
+          ['rbf', 'kriging', 'pc', 'evofusion', 'mixture', sklearn-regressor].
+        :param array_like corners: hypercube ([min, n_features],
+          [max, n_features]).
         :param list(str) plabels: labels of sample points
         :param \**kwargs: See below
 
@@ -66,7 +68,8 @@ class SurrogateModel(object):
               basis.
 
                 - **max_considered_terms** (int) -- Maximum Considered Terms,
-                - **most_significant** (int), Most Siginificant number to retain,
+                - **most_significant** (int), Most Siginificant number to
+                  retain,
                 - **significance_factor** (float), Significance Factor,
                 - **hyper_factor** (float), factor for hyperbolic truncation
                   strategy.
@@ -78,6 +81,28 @@ class SurrogateModel(object):
             - **noise** (float/bool) -- noise level.
             - **global_optimizer** (bool) -- Whether to do global optimization
               or gradient based optimization to estimate hyperparameters.
+
+          For Mixture the following keywords are available
+
+            - **fsizes** (int) -- Number of components of output features.
+            - **pod** (dict) -- Whether to compute POD or not in local models.
+
+                - **tolerance** (float) -- Basis modes filtering criteria.
+                - **dim_max** (int) -- Number of basis modes to keep.
+
+            - **standard** (bool) -- Whether to standardize data before
+              clustering.
+            - **local_method** (lst(dict)) -- List of local surrrogate models
+              for clusters or None for Kriging local surrogate models.
+            - **pca_percentage** (float) -- Percentage of information kept for
+              PCA.
+            - **clusterer** (str) -- Clusterer from sklearn (unsupervised
+              machine learning).
+              http://scikit-learn.org/stable/modules/clustering.html#clustering
+            - **classifier** (str) -- Classifier from sklearn (supervised
+              machine learning).
+              http://scikit-learn.org/stable/supervised_learning.html
+
         """
         self.kind = kind
         self.scaler = preprocessing.MinMaxScaler()
@@ -97,6 +122,8 @@ class SurrogateModel(object):
 
         if self.kind == 'pc':
             self.predictor = PC(**self.settings)
+        elif self.kind == 'mixture':
+            self.settings.update({'corners': corners})
 
     def fit(self, sample, data, pod=None):
         """Construct the surrogate.
@@ -113,7 +140,6 @@ class SurrogateModel(object):
         else:
             sample_scaled = self.scaler.transform(sample[:, 1:])
             sample_scaled = np.hstack((sample[:, 0].reshape(-1, 1), sample_scaled))
-
         # predictor object
         self.logger.info('Creating predictor of kind {}...'.format(self.kind))
         if self.kind == 'rbf':
@@ -124,6 +150,8 @@ class SurrogateModel(object):
             self.predictor.fit(sample, data)
         elif self.kind == 'evofusion':
             self.predictor = Evofusion(sample_scaled, data)
+        elif self.kind == 'mixture':
+            self.predictor = Mixture(sample, data, **self.settings)
         else:
             self.predictor = SklearnRegressor(sample_scaled, data, self.kind)
 
@@ -152,7 +180,7 @@ class SurrogateModel(object):
         if self.kind != 'pc':
             points = self.scaler.transform(points)
 
-        if self.kind in ['kriging', 'evofusion']:
+        if self.kind in ['kriging', 'evofusion', 'mixture']:
             results, sigma = self.predictor.evaluate(points)
         else:
             results = self.predictor.evaluate(points)
@@ -162,6 +190,10 @@ class SurrogateModel(object):
 
         if self.pod is not None:
             results = self.pod.inverse_transform(results)
+            try:
+                sigma = self.pod.inverse_transform(sigma)
+            except TypeError:
+                pass
 
         return results, sigma
 
@@ -174,6 +206,9 @@ class SurrogateModel(object):
         :return: Max MSE point.
         :rtype: lst(float).
         """
+        if self.kind == 'mixture':
+            return self.predictor.estimate_quality()
+
         if self.pod is not None:
             return self.pod.estimate_quality()
 

@@ -157,7 +157,6 @@ class Driver(object):
             self.logger.info('No POD is computed.')
 
         self.data = None
-
         # Surrogate model
         if 'surrogate' in self.settings:
             settings_ = {'kind': self.settings['surrogate']['method'],
@@ -193,6 +192,25 @@ class Driver(object):
                 settings_.update({
                     'noise': self.settings['surrogate'].get('noise', False),
                     'global_optimizer': self.settings['surrogate'].get('global_optimizer', True)
+                })    
+            elif self.settings['surrogate']['method'] == 'mixture':
+                self.pod = None
+
+                if 'pod' in self.settings:
+                    pod_args = {'tolerance': self.settings['pod'].get('tolerance', 0.99),
+                                'dim_max': self.settings['pod'].get('dim_max', 100)}
+                else:
+                    pod_args = None
+
+                settings_.update({
+                    'pod': pod_args,
+                    'plabels': self.settings['snapshot']['plabels'],
+                    'corners': self.settings['space']['corners'],
+                    'fsizes': self.settings['snapshot'].get('fsizes')[0],
+                    'pca_percentage': self.settings['surrogate'].get('pca_percentage', 0.8),
+                    'clusterer': self.settings['surrogate'].get('clusterer',
+                                                                'cluster.KMeans(n_clusters=2)'),
+                    'classifier': self.settings['surrogate'].get('classifier', 'svm.SVC()')
                 })
 
             self.surrogate = SurrogateModel(**settings_)
@@ -215,7 +233,7 @@ class Driver(object):
         if points is None:
             points = self.to_compute_points
 
-        # Generate snapshots
+        # Generate snapshots        
         samples = self.provider.require_data(points)
         self.snapshot_counter += len(samples)  # still useless
 
@@ -239,7 +257,6 @@ class Driver(object):
                         self.space += samples.space
                 self.data = data
             points = self.space.values
-
         try:  # if surrogate
             self.surrogate.fit(points, self.data, pod=self.pod)
         except AttributeError:
@@ -386,6 +403,7 @@ class Driver(object):
                              psizes=self.settings['snapshot'].get('psizes'),
                              fsizes=self.settings['snapshot'].get('fsizes'))
             samples.write(space_fname, data_fname)
+
         return results, sigma
 
     def uq(self):

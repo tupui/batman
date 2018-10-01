@@ -39,6 +39,7 @@ specifications may not be enough to give full guidelines on their uses.
    surrogate.Kriging
    surrogate.PC
    surrogate.RBFnet
+   surrogate.Mixture
 
 .. py:module:: surrogate
 .. automodule:: batman.surrogate
