@@ -458,7 +458,7 @@ class TestDensity:
     def test_moment_independant(self, ishigami_data, tmp):
         ishigami_data_ = copy.deepcopy(ishigami_data)
         ishigami_data_.space.max_points_nb = 5000
-        X = ishigami_data_.space.sampling(5000, 'lhsopt')
+        X = ishigami_data_.space.sampling(5000, 'olhs')
         Y = ishigami_data_.func(X).flatten()
 
         momi = moment_independent(X, Y, plabels=['x1', 'x2', 'x3'],

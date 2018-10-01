@@ -135,7 +135,7 @@ def test_doe(seed):
     doe = Doe(n, bounds, 'sobolscramble', discrete=0)
     sample = doe.generate()
 
-    doe = Doe(n, bounds, 'lhsopt')
+    doe = Doe(n, bounds, 'olhs')
     sample = doe.generate()
     out = [[6.149, 2.343], [9.519, 3.497], [1.991, 4.058],
            [5.865, 4.995], [2.551, 2.737]]

@@ -2,19 +2,17 @@
 Mascaret module
 ===============
 
-This module use a database consituted of 100000 snapshots sampled using a
-Monte-Carlo and simulated using Mascaret flow solver. The Garonne river was
-used and the output consists in 14 water height observations.
+This module use two database consituted of snapshots simulated using Mascaret
+flow solver on the Garonne river.
 
 """
 import logging
 import numpy as np
-from scipy.spatial import distance
-from .utils import multi_eval
+from .db_generic import DbGeneric
 from .data import mascaret
 
 
-class db_Mascaret(object):
+class db_Mascaret(DbGeneric):
     """Mascaret class."""
 
     logger = logging.getLogger(__name__)
@@ -24,18 +22,14 @@ class db_Mascaret(object):
 
         From a given set of input parameters, it gets the closest point from
         the database. Two cases are available with respectively: 3 Ks, 1 Q,
-        463 H; and 1 Ks, 1 Q, 14 H.
+        463 H (5000 samples); and 1 Ks, 1 Q, 14 H (100000 samples).
 
         :param bool multizone: Use only one global Ks or 3 Ks.
         :param list fname: list of the input and the output file name.
         """
         dataset = mascaret(multizone, fname)
-        self.data_input, self.data_output = dataset.space, dataset.data
-        self.data_input = np.array(self.data_input.tolist())
-        self.data_output = np.array(self.data_output.tolist())
+        super(db_Mascaret, self).__init__(space=dataset.space, data=dataset.data)
         self.x = [float(label) for label in dataset.flabels]
-        self.d_out = self.data_output.shape[1]
-        self.d_in = self.data_input.shape[1]
 
         if self.d_in == 2:
             self.s_second_full = np.array([[[0., -0.03020037], [-0.03020037, 0.]],
@@ -84,23 +78,3 @@ class db_Mascaret(object):
             self.s_second = np.array([[0., 0.01882222], [0.01882222, 0.]])
             self.s_first = np.array([0.75228948, 0.21880863])
             self.s_total = np.array([0.76464851, 0.24115337])
-
-        self.logger.info("Using function Mascaret with d_in={}, d_out={}"
-                         .format(self.d_in, self.d_out))
-
-    @multi_eval
-    def __call__(self, x):
-        """Call function.
-
-        :param array_like x: inputs [Ks(1 or 3), Q].
-        :return: f(x).
-        :rtype: array_like 1D (1, (14 or 463)).
-        """
-        dists = distance.cdist([x, x], self.data_input, 'seuclidean')
-        idx = np.argmin(dists, axis=1)
-        idx = idx[0]
-
-        corresp = self.data_input[idx]
-        self.logger.debug("Input: {} -> Database: {}".format(x, corresp))
-
-        return self.data_output[idx]
