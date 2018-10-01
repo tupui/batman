@@ -1,7 +1,7 @@
 # coding: utf8
 import pytest
 from batman.functions import (SixHumpCamel, Branin, Michalewicz, Rosenbrock,
-                              Rastrigin, Ishigami, G_Function,
+                              Rastrigin, Ishigami, G_Function, Channel_Flow,
                               Forrester, Manning, db_Mascaret, ChemicalSpill)
 from scipy.optimize import differential_evolution
 import numpy as np
@@ -85,6 +85,17 @@ def test_Manning():
     assert f(25) == pytest.approx(5.64345405, 0.0001)
     f_2d = Manning(d=2)
     assert f_2d([25, 1200]) == pytest.approx(6.29584085, 0.0001)
+
+
+def test_Channel_Flow():
+    f = Channel_Flow(dx=8000., length=40000., width=170., slope=2.8e-4, hinit=6.917)
+    sample = [[11, 2000], [40, 4000]]
+
+    results = f(sample, full=True)
+    npt.assert_almost_equal(results,
+                            [[12.65, 11.82, 11.21, 10.78, -4.28, 2.42, 12.12],
+                             [6.23, 4.01, 2.02, 0.55, -4.28, 3.84, 8.46]],
+                            decimal=2)
 
 
 def test_Mascaret():

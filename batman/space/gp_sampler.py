@@ -2,6 +2,75 @@
 """
 Gaussian process sampler
 ------------------------
+
+Computes instances of a d-dimensional Gaussian process (Gp) discretized
+over a mesh with a parametric covariance and d in {1,2,3}.
+
+It can be decomposed into two steps (Steps 1 and 3' or 3'')
+and two additional ones (Steps 2 and 4, available for d in {1, 2}):
+
+1. Compute the Karhunen Loeve decomposition (KLd) using :func:`__init__`.
+2. Plot the modes of the KLd into files using :func:`plot_modes`
+3'. Build GP instances by sampling the weights of the KLd according to the
+   standard normal distribution using :func:`__call__` OR
+3''. Build a GP instance by setting the weights of the KLd to fixed values
+     using :func:`__call__`.
+4. Plot the GP instance(s) into files using :func:`plot_sample`.
+
+:Example:
+
+::
+
+    >> from batman.space.gp_sampler import GpSampler
+    >>
+    >> # Dimension 1 - Creation of the Gp sampler
+    >> n_nodes = 100
+    >> reference = {'indices': [[x/float(n_nodes)]
+    >>                          for x in range(n_nodes)],
+    >>              'values': [0 for x in range(n_nodes)]}
+    >> sampler = GpSampler(reference)
+    >> print(sampler)
+    >> sampler.plot_modes()
+    >> sampler.plot_modes("modes.pdf")
+    >>
+    >> # Dimension 1 - Selection of a Gp instance from KLd coefficients
+    >> coeff = [[0.2, 0.7, -0.4, 1.6, 0.2, 0.8]]
+    >> instance = sampler(coeff=coeff)
+    >> sampler.plot_sample(instance)
+    >> sampler.plot_sample(instance, "instance.pdf")
+    >>
+    >> # Dimension 1 - Sampling the Gp
+    >> sample_size = 10
+    >> sample = sampler(sample_size=sample_size)
+    >> sampler.plot_sample(sample)
+    >> sampler.plot_sample(sample, "sample.pdf")
+    >>
+    >> # Dimension 2 - Creation of the Gp sampler
+    >> n_nodes_by_dim = 10
+    >> n_nodes = n_nodes_by_dim**2
+    >> reference = {'indices': [[x/float(n_nodes_by_dim),
+    >>                           y/float(n_nodes_by_dim)]
+    >>                          for x in range(n_nodes_by_dim)
+    >>                          for y in range(n_nodes_by_dim)],
+    >>              'values': [0 for x in range(n_nodes)]}
+    >> sampler = GpSampler(reference,
+    >>                     "Matern([0.5, 0.5], nu=0.5)")
+    >> print(sampler)
+    >> sampler.plot_modes()
+    >> sampler.plot_modes("mode.pdf")
+    >>
+    >> # Dimension 2 - Selection of a Gp instance from KLd coefficients
+    >> coeff = [[0.2, 0.7, -0.4, 1.6, 0.2, 0.8]]
+    >> instance = sampler(coeff=coeff)
+    >> sampler.plot_sample(instance)
+    >> sampler.plot_sample(instance, "instance.pdf")
+    >>
+    >> # Dimension 2 - Sampling the Gp
+    >> sample_size = 10
+    >> sample = sampler(sample_size=sample_size)
+    >> sampler.plot_sample(sample)
+    >> sampler.plot_sample(sample, "instance.pdf")
+
 """
 import logging
 import os
@@ -16,79 +85,7 @@ PY2 = sys.version_info.major == 2
 
 
 class GpSampler(object):
-    """
-    GpSampler class
-    ===============
-
-    Computes instances of a d-dimensional Gaussian process (Gp) discretized
-    over a mesh (zero mean and parametric covariance), with d in {1,2,3}.
-
-    It can be decomposed into two steps (Steps 1 and 3' or 3'')
-    and two additional ones (Steps 2 and 4):
-
-    1. Compute the Karhunen Loeve decomposition (KLd) using :func:`__init__`.
-    2. Plot the modes of the KLd into files using :func:`plot_modes`
-    3'. Build GP instances by sampling the weights of the KLd according to the
-       standard normal distribution using :func:`__call__` OR
-    3''. Build a GP instance by setting the weights of the KLd to fixed values
-         using :func:`__call__`.
-    4. Plot the GP instance(s) into files using :func:`plot_sample`.
-
-    :Example:
-
-    ::
-
-        >> from batman.space.gp_sampler import GpSampler
-        >>
-        >> # Dimension 1 - Creation of the Gp sampler
-        >> n_nodes = 100
-        >> reference = {'indices': [[x/float(n_nodes)]
-        >>                          for x in range(n_nodes)],
-        >>              'values': [0 for x in range(n_nodes)]}
-        >> sampler = GpSampler(reference)
-        >> print(sampler)
-        >> sampler.plot_modes()
-        >> sampler.plot_modes("modes.pdf")
-        >>
-        >> # Dimension 1 - Selection of a Gp instance from KLd coefficients
-        >> coeff = [[0.2, 0.7, -0.4, 1.6, 0.2, 0.8]]
-        >> instance = sampler(coeff=coeff)
-        >> sampler.plot_sample(instance)
-        >> sampler.plot_sample(instance, "instance.pdf")
-        >>
-        >> # Dimension 1 - Sampling the Gp
-        >> sample_size = 10
-        >> sample = sampler(sample_size=sample_size)
-        >> sampler.plot_sample(sample)
-        >> sampler.plot_sample(sample, "sample.pdf")
-        >>
-        >> # Dimension 2 - Creation of the Gp sampler
-        >> n_nodes_by_dim = 10
-        >> n_nodes = n_nodes_by_dim**2
-        >> reference = {'indices': [[x/float(n_nodes_by_dim),
-        >>                           y/float(n_nodes_by_dim)]
-        >>                          for x in range(n_nodes_by_dim)
-        >>                          for y in range(n_nodes_by_dim)],
-        >>              'values': [0 for x in range(n_nodes)]}
-        >> sampler = GpSampler(reference,
-        >>                     "Matern([0.5, 0.5], nu=0.5)")
-        >> print(sampler)
-        >> sampler.plot_modes()
-        >> sampler.plot_modes("mode.pdf")
-        >>
-        >> # Dimension 2 - Selection of a Gp instance from KLd coefficients
-        >> coeff = [[0.2, 0.7, -0.4, 1.6, 0.2, 0.8]]
-        >> instance = sampler(coeff=coeff)
-        >> sampler.plot_sample(instance)
-        >> sampler.plot_sample(instance, "instance.pdf")
-        >>
-        >> # Dimension 2 - Sampling the Gp
-        >> sample_size = 10
-        >> sample = sampler(sample_size=sample_size)
-        >> sampler.plot_sample(sample)
-        >> sampler.plot_sample(sample, "instance.pdf")
-
-    """
+    """GpSampler class."""
 
     logger = logging.getLogger(__name__)
 
@@ -106,7 +103,7 @@ class GpSampler(object):
         :param float threshold: the minimal relative amplitude of the
           eigenvalues to consider in the decomposition wrt the sum of the
           preceeding eigenvalues.
-        :param float std: Amplitude of the perturbation.
+        :param float std: standard deviation of the Gaussian process.
         """
         # Check if string (lenient for byte-strings on Py2):
         if isinstance(reference, basestring if PY2 else str):
@@ -120,7 +117,7 @@ class GpSampler(object):
         self.add = add
         self.threshold = threshold
         gp = GaussianProcessRegressor(kernel=bat.space.kernel_to_skl(self.kernel))
-        y = gp.sample_y(self.reference['indices'], 10000).T
+        y = gp.sample_y(self.reference['indices'], 10000, random_state=None).T
         self.pca = PCA(svd_solver="full")
         y_transform = self.pca.fit_transform(y)
 
@@ -132,8 +129,8 @@ class GpSampler(object):
         standard_deviation = np.std(y_transform, 0)
         self.n_modes = truncation_order((standard_deviation / np.sqrt(self.n_nodes)) ** 2)
         self.modes = self.pca.components_[:self.n_modes, :]
-        standard_deviation = standard_deviation[:self.n_modes] / np.sqrt(self.n_nodes)
-        self.scaled_modes = (self.modes.T * standard_deviation).T
+        self.standard_deviation = standard_deviation[:self.n_modes] / np.sqrt(self.n_nodes)
+        self.scaled_modes = (self.modes.T * self.standard_deviation).T
 
         def extract_coord(i):
             temp = np.array([[x[i]] for x in self.reference['indices']])
@@ -145,16 +142,17 @@ class GpSampler(object):
         if self.n_dim > 2:
             self.z_coord = extract_coord(2)
 
-    def __str__(self):
+    def __repr__(self):
         """Summary of Gp and its Karhunen Loeve decomposition."""
         summary = ("Gp sampler summary:\n"
                    "- Dimension = {}\n"
                    "- Kernel = {}\n"
+                   "- Standard deviation = {}\n"
                    "- Mesh size = {}\n"
                    "- Threshold for the KLd = {}\n"
                    "- Number of modes = {}")
 
-        format_ = [self.n_dim, self.kernel, self.n_nodes,
+        format_ = [self.n_dim, self.kernel, self.std, self.n_nodes,
                    self.threshold, self.n_modes]
 
         return summary.format(*format_)
@@ -175,15 +173,15 @@ class GpSampler(object):
             if kind == "mc":
                 weights = np.random.normal(size=(sample_size, self.n_modes))
             else:
-                doe = Doe(sample_size, [[-10] * self.n_modes, [10] * self.n_modes],
-                          kind, ['Normal(0., 1.)'], None)
+                doe = Doe(sample_size, [[-10.] * self.n_modes, [10.] * self.n_modes],
+                          kind, ['Normal(0., 1.)' for i in range(self.n_modes)], None)
                 weights = doe.generate()
         else:
             def pad(x):
                 x_n_modes = np.array(x[:self.n_modes])
                 n_non_modes = max(0, self.n_modes - len(x))
                 temp = np.pad(x_n_modes, (0, n_non_modes),
-                              'constant', constant_values=(0))
+                              'constant', constant_values=(0.))
                 return temp
 
             weights = np.array([pad(x) for x in coeff])

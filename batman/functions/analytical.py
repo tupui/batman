@@ -416,15 +416,17 @@ class Channel_Flow(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, dx=8000., length=40000., width=500.):
+    def __init__(self, dx=8000., length=40000., width=500., slope=5e-4, hinit=10.):
         """Initialize the geometrical configuration.
 
-        :param float dx: discretization
-        :param float length: canal length
-        :param float width: canal width
+        :param float dx: discretization.
+        :param float length: Canal length.
+        :param float width: Canal width.
+        :param float slope: Canal slope.
+        :param float hinit: Downstream boundary condition.
         """
         self.w = width
-        self.I = 5e-4
+        self.slope = slope
         self.g = 9.8
         self.dx = dx
         self.length = length
@@ -432,8 +434,8 @@ class Channel_Flow(object):
         self.d_out = len(self.x)
         self.d_in = 2
         self.dl = int(self.length // self.dx)
-        self.hinit = 10.
-        self.zref = - self.x * self.I
+        self.hinit = hinit
+        self.zref = - self.x * self.slope
 
         # Sensitivity
         self.s_first = np.array([0.92925829, 0.05243018])
@@ -444,24 +446,27 @@ class Channel_Flow(object):
                          "width={}".format(dx, length, width))
 
     @multi_eval
-    def __call__(self, x):
+    def __call__(self, x, full=True):
         """Call function.
 
-        :param list x: inputs [Ks, Q]
-        :return: Water height along the channel
-        :rtype: np.array 1D
+        :param list x: inputs [Ks, Q].
+        :param bool full: Whether to return hc and hn.
+        :return: Water height along the channel.
+        :rtype: array_like (n_samples, n_features [+ 2])
         """
         ks, q = x
         hc = np.power((q ** 2) / (self.g * self.w ** 2), 1. / 3.)
-        hn = np.power((q ** 2) / (self.I * self.w ** 2 * ks ** 2), 3. / 10.)
+        hn = np.power((q ** 2) / (self.slope * self.w ** 2 * ks ** 2), 3. / 10.)
 
         h = self.hinit * np.ones(self.dl)
         for i in range(2, self.dl + 1):
-            h[self.dl - i] = h[self.dl - i + 1] - self.dx * self.I\
+            h[self.dl - i] = h[self.dl - i + 1] - self.dx * self.slope\
                 * ((1 - np.power(h[self.dl - i + 1] / hn, -10. / 3.))
                    / (1 - np.power(h[self.dl - i + 1] / hc, -3.)))
 
-        return self.zref + h
+        z_h = self.zref + h
+
+        return np.append(z_h, np.array([hc, hn])) if full else z_h
 
 
 class Manning(object):
