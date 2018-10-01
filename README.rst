@@ -128,7 +128,8 @@ To install batman through ``conda``::
     conda install -c conda-forge batman
 
 All the above dependencies are automatically handled by ``conda``, 
-except `Antares <http://www.cerfacs.fr/antares>`_.
+except `Antares <http://www.cerfacs.fr/antares>`_. For more information, refer
+to its `documentation <https://conda.io/docs/user-guide/getting-started.html>`_.
 
 From sources
 ............

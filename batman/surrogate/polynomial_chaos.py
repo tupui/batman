@@ -32,12 +32,12 @@ from ..functions.utils import multi_eval
 ot.ResourceMap.SetAsUnsignedInteger("DesignProxy-DefaultCacheSize", 0)
 
 
-class PC(object):
+class PC:
     """Polynomial Chaos class."""
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, strategy, degree, distributions, sample=None,
+    def __init__(self, strategy, degree, distributions, N_quad=None, sample=None,
                  stieltjes=True, sparse_param={}):
         """Generate truncature and projection strategies.
 
@@ -48,7 +48,8 @@ class PC(object):
         :param int degree: Polynomial degree.
         :param  distributions: Distributions of each input parameter.
         :type distributions: lst(:class:`openturns.Distribution`)
-        :param int sample: Samples for least square.
+        :param array_like sample: Samples for least square
+          (n_samples, n_features).
         :param bool stieltjes: Wether to use Stieltjes algorithm for the basis.
         :param dict sparse_param: Parameters for the Sparse Cleaning Truncation
           Strategy and/or hyperbolic truncation of the initial basis.
@@ -93,7 +94,11 @@ class PC(object):
             # by default: the marginal degree for each input random
             # variable is set to the total polynomial degree 'degree'+1
             measure = self.basis.getMeasure()
-            degrees = [degree + 1] * in_dim
+
+            if N_quad is not None:
+                degrees = [int(N_quad ** 0.25)] * in_dim
+            else:
+                degrees = [degree + 1] * in_dim
 
             self.proj_strategy = ot.IntegrationStrategy(
                 ot.GaussProductExperiment(measure, degrees))

@@ -277,7 +277,7 @@ The Python file ``function.py`` creates an instance of the class ``MascaretApi``
     import numpy as np
     import ctypes
     from batman.input_output import formater
-    from batman.functions import MascaretApi
+    from TelApy.tools.study_mascaret import MascaretApi
 
     study = MascaretApi('config_garonne_lnhe.json','config_garonne_lnhe_user.json')  
 
@@ -590,8 +590,7 @@ Source: ``./tests_cases/Mascaret/test_run.py``
 	import numpy as np
 	import os
 	from collections import OrderedDict 
-	from batman.functions import MascaretApi
-	from batman.functions.telemac_mascaret import print_statistics, histogram, plot_opt
+	from TelApy.tools.study_mascaret import MascaretApi
 
 5.2. Read the MascaretApi documentation
 '''''''''''''''''''''''''''''''''''''''
@@ -667,7 +666,6 @@ Source: ``./tests_cases/Mascaret/test_run.py``
 	else:
 	    for i, _ in enumerate(h):
 		print('The water level #{} computed with Ks = {} and Q = {} is {}.'.format(i, Ks, Q, h[i]))
-	plot_opt('ResultatsOpthyca.opt')
 
 5.7. Run the Mascaret model with values specified in the user settings file
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -682,4 +680,3 @@ Source: ``./tests_cases/Mascaret/test_run.py``
 	else:
 	    for i, _ in enumerate(h):
 		print('The water level #{} computed with json user defined values is {}.'.format(i, h[i]))
-	plot_opt('ResultatsOpthyca.opt')

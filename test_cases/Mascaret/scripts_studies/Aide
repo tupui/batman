@@ -1,0 +1,22 @@
+Scripts python pour l'utilisation de BATMAN : 
+
+Etude de convergence du modèle réduit : 
+    MA_ConvPC_canal.py
+    MA_ConvPC_garonne.py
+    
+    
+Utilisation des API's TELEMAC MASCARET pour UQ :
+    GaronneMA.py
+    GaronneTD2.py
+
+Run élémentaire de Mascaret :
+    test_run.py (Nouvelles API)
+    tes_run_old.py (Anciennes API)
+    
+Autre : 
+    readcsv.py
+    GP_sampling_examples.py
+    writecsv.py
+    optim_mascaret.py
+    
+

@@ -256,16 +256,17 @@ class Sample(object):
         :param list(str) flabels: labels in data file
           (if different from `self.flabels`)
         """
-        np_sample = []
+        pd_sample = []
         if self.plabels:
             if plabels is None:
                 plabels = self.plabels
             try:
                 np_space = self._pformater.read(space_fname, plabels)
             except (OSError, IOError):
-                pass  # file not found.
+                self.logger.error('Cannot read {} in {}'
+                                  .format(plabels, space_fname))
             else:
-                np_sample.append(np_space)
+                pd_sample.append(pd.DataFrame(np_space))
 
         if self.flabels:
             if flabels is None:
@@ -273,12 +274,20 @@ class Sample(object):
             try:
                 np_data = self._fformater.read(data_fname, flabels)
             except (OSError, IOError):
-                pass  # file not found.
+                self.logger.error('Cannot read {} in {}'
+                                  .format(plabels, data_fname))
             else:
-                np_sample.append(np_data)
+                pd_sample.append(pd.DataFrame(np_data))
 
-        if np_sample:
-            np_sample = np.concatenate(np_sample, axis=1)
+        if pd_sample:
+            concat = pd.concat(pd_sample, axis=1)
+            n_not_found = concat.isnull().values.sum()
+
+            if n_not_found:
+                self.logger.warning('Inconsistent number of sample/data:'
+                                    ' {} data not loaded'.format(n_not_found))
+
+            np_sample = pd.DataFrame.dropna(concat).values
             self.append(np_sample)
 
     def write(self, space_fname='sample-space.json', data_fname='sample-data.json'):
@@ -305,7 +314,7 @@ class Sample(object):
         `len` function. Return the number of samples."""
         return len(self._dataframe)
 
-    def __str__(self):
+    def __repr__(self):
         """Python Data Model.
 
         `str` function. Underlying dataframe representation."""

@@ -50,11 +50,18 @@
             [30.0, 3000.0],
             [55.0, 5500.0]
         ],
-        "doe": false,
+        "doe": true,
         "xdata": [1000, 2000, 2500, 3000, 4000],
         "xlabel": "s (km)",
         "ticks_nbr": 5,
-        "flabel": "F(Ks, Q)"
+        "flabel": "F(Ks, Q)",
+        "2D_mesh": {
+                 "fname": "dataTest.txt",
+                 "format": "csv",
+                 "xlabel": "W -- E",
+                 "ylabel": "S -- N",
+                 "flabels": ["Water level [m]"]
+        }
     },
     "uq": {
         "sample": 1000,

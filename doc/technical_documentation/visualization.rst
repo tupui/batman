@@ -29,6 +29,12 @@ there are several options implemented in the package.
 +----------------------------------+-----------+----------------+---------------------------------------+
 | :func:`sobol`                    | scalar    | scalar, vector | Sensitivity indices                   |
 +----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`mesh_2D`                  |           | vector         | Sensitivity analysis on a 2D mesh     |
++----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`moment_independent`       | vector    | scalar         | Density-based Sensitivity (CDF/PDF)   |
++----------------------------------+-----------+----------------+---------------------------------------+
+| :func:`cusunoro`                 | vector    | scalar         | Density-based Sensitivity (norm-CDF)  |
++----------------------------------+-----------+----------------+---------------------------------------+
 
 All options return a figure object that can be reuse using :func:`reshow`.
 This enables some modification of the graph. In most cases, the first parameter ``data`` is
@@ -246,17 +252,18 @@ colored by the value of the function.
 .. image::  ../fig/kiviat_2D.pdf
 
 To be able to get a whole set of sample, a 3D version of the Kiviat plot is
-used [Hackstadt1994]_. Thus, each sample corresponds to a 2D Kiviat plot::
+used [Hackstadt1994]_. Thus, each sample corresponds to a 2D Kiviat plot
+colored by value of the quantity of interest::
 
     import batman as bat
-    kiviat = bat.visualization.Kiviat3D(space, feval, bounds)
+    kiviat = bat.visualization.Kiviat3D(space, feval, bounds=bounds)
     kiviat.plot()
 
 .. image::  ../fig/kiviat_3D.pdf
 
-Note that only the DOE points are plotted in the Kiviat plot in order to
-limit the number of surfaces to visualize. Surrogate model is thus never used
-to predict the value of the function.
+.. note:: Only the DOE points are plotted in the Kiviat plot in order to
+          limit the number of surfaces to visualize. Surrogate model is thus
+          never used to predict the value of the function.
 
 Several visualization options used for the response surfaces generation can
 be used to create the Kiviat plot. Options working with Kiviat plot are
@@ -273,6 +280,16 @@ functional-HOPs-Kiviat with sound::
     hdr.sound()
 
 .. image::  ../fig/kiviat_3D.gif
+
+Another possibility is to take advantage of other stacking and color mapping
+strategies. One can stack samples using the quantity of interest and choose to
+color each stack by their distance from the median realization::
+
+    kiviat = bat.visualization.Kiviat3D(space, feval, bounds=bounds,
+                                        stack_order='qoi', cbar_order='hdr')
+    kiviat.plot()
+
+.. image::  ../fig/mascaret_kiviat_qoi_hdr.pdf
 
 Tree
 ====
@@ -338,20 +355,133 @@ The correlation and covariance matrices are also availlable::
 Once *Sobol'* indices are computed , it is easy to plot them with::
 
     import batman as bat
-    indices = [s_first, s_total]
-    bat.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'])
+    fun = bat.functions.Ishigami
+    indices = [fun.s_first, fun.s_total]
+    bat.visualization.sobol(indices, plabels=['x0', 'x1', 'x2'])
 
 .. image::  ../fig/sobol_aggregated.pdf
+
+There is an option to use a polar coordinates system as shown here::
+
+    bat.visualization.sobol(indices, polar=True)
+
+.. image::  ../fig/sobol_aggregated-polar.pdf
 
 In case of functionnal data [Roy2017b]_, both aggregated and map indices can be
 passed to the function and both plot are made::
 
     indices = [s_first, s_total, s_first_full, s_total_full]
-    bat.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'], xdata=x)
+    bat.visualization.sobol(indices, plabels=['Tu', r'$\alpha$'], xdata=x)
 
 .. image::  ../fig/sobol_map.pdf
+
+Sensitivity analysis on a 2D mesh
+=================================
+
+*Sobol'* indices can also be represented on a 2D mesh when dealing with functional
+inputs. If *Sobol'* indices are computed, the user can provide the coordinates of
+a 2D mesh corresponding to the coordinates of the functional input. Note that the
+mesh points and the dimension of the functional input should have the same length
+in order for the graph to be plotted.
+
+.. image:: ../fig/sobol_2Dmesh.pdf
+
+The first and second columns of the input file must represent the ``x`` and ``y``
+coordinates respectively. Note that if the provided input file contains more
+than 2 columns, additional columns are considered as fonctional outputs
+corresponding to the mesh coordinates and additional graphs are automatically plotted.
+
+Options
+-------
+
+Several display options can be set specifically for graph on provided 2D meshes.
+A block named ``2D_mesh`` can be added in the ``visualization`` block to specify
+display options related to those graphs. All the availavle options are listed in
+the following table:
+
++-------------+-------------------+-------------------+-----------------------------------------+
+| Option      || Dimensionality   || Default          ||              Description               |
++ name        +                   +                   +                                         +
++=============+===================+===================+=========================================+
+| fname       || String.          || None             || Name of the input file containing the  |
+|             |                   |                   || mesh coordinates. The file might       |
+|             |                   |                   || contain additional columns representing|
+|             |                   |                   || additional functional outputs to be    |
+|             |                   |                   || plotted. The number of mesh points must|
+|             |                   |                   || correspond to the size of the          |
+|             |                   |                   || functional input.                      |
++-------------+-------------------+-------------------+-----------------------------------------+
+| format      || String.          || "csv"            || Format of the input file to read.      |
++-------------+-------------------+-------------------+-----------------------------------------+
+| xlabel      || String.          || "X axis"         || Name of the x-axis to be plotted on the|
+|             |                   |                   || graph.                                 |
++-------------+-------------------+-------------------+-----------------------------------------+
+| ylabel      || String.          || "Y axis"         || Name of the y-axis to be plotted on the|
+|             |                   |                   || graph.                                 |
++-------------+-------------------+-------------------+-----------------------------------------+
+| flabels     || List(String).    || None             || Names of the variables of interest to  |
+|             |                   |                   ||  be plotted on the graph.              |
++-------------+-------------------+-------------------+-----------------------------------------+
+| vmins       || List(Float).     || None             || Values of the minimals output for data |
+|             |                   |                   || filtering. Per variable setup.         |
++-------------+-------------------+-------------------+-----------------------------------------+
+
+
+Density-based Sensitivity Analysis
+==================================
+
+The following are visual methods to assess sensitivity impact of the parameters
+on the quantity of interest. These methods are all density-based.
+
+.. seealso:: The personal website of `Elmar Plischke <https://artefakte.rz-housing.tu-clausthal.de/epl/work/GlobalSA/GlobalSensitivityIndexEstimators.html>`_
+  provides some detail explanations on the following methods.
+
+Moment independent
+------------------
+
+Based on the unconditional PDF, a conditional PDF per feature is computed.
+The more the conditional PDF deviates from the unconditional PDF, the more
+the feature has an impact on the quantity of interest. The same procedure is done
+using the Empirical Density Function (ECDF), respectively with the unconditional ECDF.
+
+In this example, the *Ishigami* function is used::
+
+    import batman as bat
+    bat.visualization.moment_independent(space, feval)
+
+.. image:: ../fig/moment_independent-ishigami.pdf
+
+Using the PDF, *delta* indices are computed and with the ECDF *Kolmogorov*
+    and *Kuiper* measures are computed. Based on the successive bins, *Sobol'*
+    indices are also given. All these measures are used to rank the
+    parameters.
+
+CUSUNORO
+--------
+
+CUSUNORO stands for: cumulative sums of normalized reordered output [Plischke2012]_.
+The output is normalized and ordered in function of a given feature. Then, its
+cumulative sum vector is computed. In other words, this corresponds to the
+conditional ECDF after normalization. The more the curve is from the
+unconditional ECDF (a flat line after normalization), the more the output
+is sensitive to the feature. 
+
+In this example, the *Ishigami* function is used::
+
+    import batman as bat
+    bat.visualization.cusunoro(space, feval)
+
+.. image:: ../fig/cusunoro-ishigami.pdf
+
+It can be seen from the figure (*left*) that first an second parameters deviate
+from a flat line. From the second figure (*right*), the third parameter shows some
+effects. To conclude, first and second parameters have a first order influence
+while third parameter has a second order influence on the quantity of interest.
+
 
 Acknowledgement
 ===============
 
 We are gratefull to the help and support on OpenTURNS Michaël Baudin has provided.
+We would like to thank Irene Witte (University of Hohenheim) for her help
+with density-based methods.

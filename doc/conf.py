@@ -38,9 +38,9 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
               'sphinx.ext.imgmath', 'sphinx.ext.viewcode',
               'sphinx.ext.intersphinx']
 
-intersphinx_mapping = {'openturns': ('http://doc.openturns.org/openturns-latest/sphinx/', None),
+intersphinx_mapping = {'openturns': ('http://doc.openturns.org/openturns/latest/', None),
                        'sklearn': ('http://scikit-learn.org/dev/', None),
-                       'python': ('https://docs.python.org', None)
+                       'python': ('https://docs.python.org/3/', None)
 }
 
 

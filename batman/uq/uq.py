@@ -60,6 +60,7 @@ for uncertainty quantification in simulation. 2015. ArXiv ID: 1501.05242
 import logging
 import os
 import itertools
+import re
 import numpy as np
 import openturns as ot
 from openturns.viewer import View
@@ -75,9 +76,10 @@ class UQ:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, surrogate, dists=None, nsample=5000, method='sobol',
+    def __init__(self, surrogate, dists=None, nsample=1000, method='sobol',
                  indices='aggregated', space=None, data=None, plabels=None,
-                 xlabel=None, flabel=None, xdata=None, fname=None, test=None):
+                 xlabel=None, flabel=None, xdata=None, fname=None, test=None,
+                 mesh={}):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -104,12 +106,24 @@ class UQ:
         :param array_like xdata: 1D discretization of the function (n_features,).
         :param str fname: folder output path.
         :param str test: Test function from class:`batman.functions`.
+
+        :param dict mesh: For 2D plots the following keywords are available
+
+            - **fname** (str) -- name of mesh file.
+            - **fformat** (str) -- format of the mesh file.
+            - **xlabel** (str) -- name of the x-axis.
+            - **ylabel** (str) -- name of the y-axis.
+            - **vmins** (lst(double)) -- value of the minimal output for data
+              filtering.
+
         """
         self.logger.info("\n----- UQ module -----")
         self.test = test
         self.fname = fname
         self.xlabel = xlabel
         self.flabel = flabel
+
+        self.mesh_kwargs = mesh
 
         if self.fname is not None:
             try:
@@ -423,14 +437,13 @@ class UQ:
 
             # Write aggregated indices to file
             if self.fname is not None:
-                ind_total_first = np.array(aggregated[1:])  # .flatten('F')
-                i1 = np.array(aggregated[1])  # .flatten('F')
-                i2 = np.array(aggregated[2])  # .flatten('F')
+                i1 = np.array(aggregated[1])
+                i2 = np.array(aggregated[2])
                 if self.method_sobol != 'FAST':
-                    i1_min = np.array(indices_conf[0].getLowerBound())  # .flatten('F')
-                    i1_max = np.array(indices_conf[0].getUpperBound())  # .flatten('F')
-                    i2_min = np.array(indices_conf[1].getLowerBound())  # .flatten('F')
-                    i2_max = np.array(indices_conf[1].getUpperBound())  # .flatten('F')
+                    i1_min = np.array(indices_conf[0].getLowerBound())
+                    i1_max = np.array(indices_conf[0].getUpperBound())
+                    i2_min = np.array(indices_conf[1].getLowerBound())
+                    i2_max = np.array(indices_conf[1].getUpperBound())
 
                     # layout: [S_min_P1, S_min_P2, ..., S_P1, S_p2, ...]
                     data = np.array([i1_min, i1, i1_max, i2_min, i2, i2_max]).flatten()
@@ -440,11 +453,7 @@ class UQ:
                                                 'S_T_min_', 'S_T_', 'S_T_max_'],
                                                self.plabels)]
 
-                    conf1 = np.vstack((i1_min, i2_min))
-                    conf1 = np.ravel(ind_total_first - conf1, order='F')
-                    conf2 = np.vstack((i1_max, i2_max))
-                    conf2 = np.ravel(conf2 - ind_total_first, order='F')
-                    conf = np.vstack((conf1, conf2))
+                    conf = [(i1_max - i1_min) / 2, (i2_max - i2_min) / 2]
                 else:
                     conf = None
                     names = [i + str(p) for i, p in
@@ -463,14 +472,28 @@ class UQ:
             self.xdata = None
 
         # Plot
-        if self.fname is not None:
+        if self.fname:
             path = os.path.join(self.fname, 'sensitivity.pdf')
-            visualization.sobol(full_indices, plabels=self.plabels, conf=conf,
-                                xdata=self.xdata, fname=path)
+            plabels = [re.sub(r'(_)(.*)', r'\1{\2}', label)
+                       for label in self.plabels]
+            visualization.sensitivity_indices(full_indices, plabels=plabels,
+                                              conf=conf, xdata=self.xdata,
+                                              fname=path)
+            path = os.path.join(self.fname, 'sensitivity-polar.pdf')
+            visualization.sensitivity_indices(full_indices, plabels=plabels,
+                                              conf=conf, polar=True,
+                                              xdata=self.xdata, fname=path)
+            if self.mesh_kwargs.get('fname'):
+                path = os.path.join(self.fname, '1st_order_Sobol_map.pdf')
+                visualization.mesh_2D(var=full_indices[2], flabels=plabels,
+                                      output_path=path, **self.mesh_kwargs)
+                path = os.path.join(self.fname, 'Total_order_Sobol_map.pdf')
+                visualization.mesh_2D(var=full_indices[3], flabels=plabels,
+                                      output_path=path, **self.mesh_kwargs)
 
         # Compute error of the POD with a known function
         if (self.type_indices in ['aggregated', 'block'])\
-                and (self.test is not None) and (self.surrogate is not None):
+                and (self.test) and (self.surrogate):
             self.error_model(aggregated, self.test)
 
         return aggregated

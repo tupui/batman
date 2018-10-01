@@ -10,8 +10,8 @@ Defines the methods to compute the POD.
 ::
 
     >> from pod import Pod
-    >> pod = Pod(tol, max, coners)
-    >> pod.decompose(snapshots)
+    >> pod = Pod(corners, tol, max)
+    >> pod.fit(snapshots)
     >> pod.write(path)
     >> pod.estimate_quality()
 
@@ -30,10 +30,9 @@ import copy
 import numpy as np
 from ..surrogate import SurrogateModel
 from ..misc import ProgressBar, NestedPool, cpu_system
-from ..space import Space
 
 
-class Pod(object):
+class Pod:
     """POD class."""
 
     logger = logging.getLogger(__name__)
@@ -50,7 +49,7 @@ class Pod(object):
     # File name for storing the points
     points_file_name = 'points.dat'
 
-    def __init__(self, corners, plabels, nsample, tolerance, dim_max, nrefine=0):
+    def __init__(self, corners, tolerance=0.99, dim_max=100):
         """Initialize POD components.
 
         The decomposition of the snapshot matrix is stored as attributes:
@@ -62,71 +61,64 @@ class Pod(object):
         - V: array_like(n_snapshots, n_snapshots),
           after filtering (n_snapshots, n_modes).
 
-        :param array_like corners: hypercube ([min, n_features], [max, n_features]).
-        :param int/array_like sample: number of sample or list of sample of
-          shape (n_samples, n_features).
-        :param int nrefine: number of point to use for refinement.
-        :param float tolerance: basis modes filtering criteria.
-        :param int dim_max: number of basis modes to keep.
+        :param array_like corners: Hypercube ([min, n_features],
+          [max, n_features]).
+        :param float tolerance: Basis modes filtering criteria.
+        :param int dim_max: Number of basis modes to keep.
         """
         self.quality = None
-        self.predictor = None
-        self.leave_one_out_predictor = 'kriging'
+        self.space = []
         self.corners = corners
-        self.plabels = plabels
-        self.space = Space(self.corners, plabels=plabels, sample=nsample, nrefine=nrefine)
 
         # POD computation related
         self.tolerance = tolerance
         self.dim_max = dim_max
 
         self.mean_snapshot = None
-
         self.U = None
         self.S = None
         self.V = None
 
-    def __str__(self):
+    def __repr__(self):
         """POD summary."""
         s = ("\nPOD summary:\n"
-             "modes filtering tolerance: {}\n"
-             "dimension of parameter space: {}\n"
-             "number of snapshots: {}\n"
-             "number of data per snapshot: {}\n"
-             "maximum number of modes: {}\n"
-             "number of modes: {}\n"
-             "modes: {}\n"
-             .format(self.tolerance, self.space.dim, len(self.space),
+             "-> modes filtering tolerance: {}\n"
+             "-> number of snapshots: {}\n"
+             "-> number of data per snapshot: {}\n"
+             "-> maximum number of modes: {}\n"
+             "-> number of modes: {}\n"
+             "-> modes: {}\n"
+             .format(self.tolerance, len(self.space),
                      self.mean_snapshot.shape[0], self.dim_max,
                      self.S.shape[0], self.S))
         return s
 
-    def decompose(self, snapshots):
-        """Create a POD from a set of snapshots.
+    def fit(self, samples):
+        """Create a POD from a set of samples.
 
-        :param lst(array) snapshots: snapshots matrix.
+        :param samples: Samples.
+        :type samples: :class:`batman.space.Sample`.
         """
         self.logger.info('Decomposing POD basis...')
 
-        matrix = np.transpose(snapshots.data)
-        # matrix = np.column_stack(tuple([s.data for s in snapshots]))
-        self._decompose(matrix)
+        # Samples' shape is (n_samples, n_features)
+        # but SVD requires (n_features, n_samples)
+        matrix = np.transpose(samples.data)
+        self._fit(matrix)
 
-        self.space += snapshots.space
-        # for s in snapshots:
-        #     self.space += s.point
+        self.space.extend(samples.space)
 
         self.logger.info('Computed POD basis with %g modes', self.S.shape[0])
 
     def update(self, samples):
         """Update POD with a new snapshot.
 
-        :param snapshots: new snapshots to update the POD with.
+        :param samples: new samples to update the POD with.
         """
         self.logger.info('Updating POD basis...')
         for snapshot in samples.data:
             self._update(snapshot)
-        self.space += samples.space
+        self.space.extend(samples.space)
         self.logger.info('Updated POD basis with snapshot at points {}'
                          .format(samples.space))
 
@@ -140,7 +132,7 @@ class Pod(object):
         """
         self.logger.info('Estimating POD quality...')
 
-        # Get rid of predictor creation messages
+        # Get rid of 'kriging' creation messages
         level_init = copy.copy(self.logger.getEffectiveLevel())
         logging.getLogger().setLevel(logging.WARNING)
 
@@ -169,12 +161,11 @@ class Pod(object):
         np.savetxt(path_snapshot, self.mean_snapshot)
 
         # basis
-        points = np.vstack(tuple(self.space))
         np.savez(os.path.join(path, self.pod_file_name),
-                 parameters=points,
-                 values=self.S,
-                 vectors=self.V,
-                 modes=self.U)
+                 space=self.space,
+                 modes=self.S,
+                 vectors_v=self.V,
+                 vectors_u=self.U)
 
         self.logger.info('Wrote POD to %s', path)
 
@@ -189,12 +180,14 @@ class Pod(object):
 
         # basis
         lazy_data = np.load(os.path.join(path, self.pod_file_name))
-        self.S = lazy_data['values']
-        self.V = lazy_data['vectors']
-        self.U = lazy_data['modes']
+        self.space = list(lazy_data['space'])
+        self.S = lazy_data['modes']
+        self.V = lazy_data['vectors_v']
+        self.U = lazy_data['vectors_u']
 
         self.logger.info('Read POD from %s', path)
 
+    @property
     def VS(self):
         """Compute V*S matrix product.
 
@@ -202,7 +195,7 @@ class Pod(object):
         """
         return self.V * self.S
 
-    def _decompose(self, snapshots):
+    def _fit(self, snapshots):
         """Perform the POD.
 
         The snapshot matrix consists in snapshots arranged in column.
@@ -214,17 +207,25 @@ class Pod(object):
         :param array_like snapshots: Snapshot matrix (nb of data per snapshot,
             nb of samples)
         """
-        # compute mean snapshot
+        # center snapshots using the mean snapshot
         self.mean_snapshot = np.average(snapshots, 1)
-
-        # center snapshots
-        for i in range(snapshots.shape[1]):
-            snapshots[:, i] -= self.mean_snapshot
+        snapshots -= self.mean_snapshot[:, None]
 
         self.U, self.S, self.V = np.linalg.svd(snapshots, full_matrices=False)
         self.V = self.V.T
         self.U, self.S, self.V = self.filtering(self.U, self.S, self.V,
                                                 self.tolerance, self.dim_max)
+
+    def inverse_transform(self, samples):
+        """Convert VS back into the original space.
+
+        :param samples: Samples VS to convert (n_samples, n_components).
+        :return: Samples in the original space.
+        :rtype: array_like (n_samples, n_features)
+        """
+        samples = np.asarray(samples)
+        pred = self.mean_snapshot + np.dot(self.U, samples.T).T
+        return np.atleast_2d(pred)
 
     @staticmethod
     def filtering(U, S, V, tolerance, dim_max):
@@ -243,14 +244,11 @@ class Pod(object):
         :rtype: array_like.
         """
         total_sum = np.sum(S)
+        s_cum_sum = np.cumsum(S)
 
-        for i in range(S.shape[0]):
-            dim = i+1
-
-            with np.errstate(divide='ignore', invalid='ignore'):
-                if np.sum(S[:i + 1]) / total_sum > tolerance:
-                    break
-
+        with np.errstate(divide='ignore', invalid='ignore'):
+            ratio_cum_cum = s_cum_sum / total_sum
+        dim = np.searchsorted(ratio_cum_cum, tolerance) + 1
         dim = min(dim, dim_max)
 
         # copy ensures an array is not a slice of a bigger memory zone
@@ -288,16 +286,8 @@ class Pod(object):
             snapshot -= mean_snapshot_copy
             s_proj = np.dot(self.U.T, snapshot)
 
-            # mpi.Allreduce(sendbuf=s_proj.copy(), recvbuf=s_proj, op=mpi.sum)
-
             h = snapshot - np.dot(self.U, s_proj)
             h_norm = np.linalg.norm(h)
-
-            # the whole block is effectless !
-            h_norm *= h_norm
-            h_norm = np.sum(h_norm)   # meaningless. h_norm is a scalar
-            # h_norm = mpi.allreduce(h_norm, op=mpi.sum)
-            h_norm = np.sqrt(h_norm)
 
             # St = |S   U^T s_proj|
             #      |0      norm(h)|
@@ -371,8 +361,7 @@ class Pod(object):
         snapshot_value = np.empty((points_nb, data_len))
         error_matrix = np.empty((points_nb, data_len))
         var_matrix = np.empty((points_nb, data_len))
-        surrogate = SurrogateModel(self.leave_one_out_predictor,
-                                   self.corners, points_nb, self.plabels)
+        surrogate = SurrogateModel('kriging', self.corners, plabels=None)
 
         def quality(i):
             """Error at a point.
@@ -382,18 +371,15 @@ class Pod(object):
             :rtype: array_like.
             """
             # Remove point from matrix
-            V_1 = np.delete(self.V, i, 0)
+            V_1 = np.delete(self.V, i, axis=0)
 
             (Urot, S_1, V_1) = self.downgrade(self.S, V_1)
             (Urot, S_1, V_1) = self.filtering(Urot, S_1, V_1,
                                               1.,
                                               len(self.S))
 
-            points_1 = points[:]
-            points_1.pop(i)
-
             new_pod = copy.deepcopy(self)
-            new_pod.space = points_1
+            new_pod.space = np.delete(points, i, axis=0)
             new_pod.V = V_1
             new_pod.S = S_1
 

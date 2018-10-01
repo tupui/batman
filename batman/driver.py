@@ -31,11 +31,11 @@ from .space import (Space, Sample, dists_to_ot)
 from .surrogate import SurrogateModel
 from .tasks import (ProviderFunction, ProviderFile, ProviderJob)
 from .uq import UQ
-from .visualization import (response_surface, Kiviat3D)
+from .visualization import (response_surface, Kiviat3D, mesh_2D)
 from .functions.utils import multi_eval
 
 
-class Driver(object):
+class Driver:
     """Driver class."""
 
     logger = logging.getLogger(__name__)
@@ -81,11 +81,24 @@ class Driver(object):
         except (KeyError, TypeError):
             duplicate = False
 
+        try:
+            multifidelity = [self.settings['surrogate'][key]
+                             for key in ['cost_ratio', 'grand_cost']]
+        except KeyError:
+            multifidelity = None
+
+        gp_samplers = self.settings['space'].get('gp_samplers')
+        psizes = self.settings['snapshot'].get('psizes')
+        plabels = self.settings['snapshot'].get('plabels')
+
         self.space = Space(self.settings['space']['corners'],
                            init_size,
                            nrefine=resamp_size,
-                           plabels=self.settings['snapshot']['plabels'],
-                           duplicate=duplicate)
+                           plabels=plabels,
+                           psizes=psizes,
+                           multifidelity=multifidelity,
+                           duplicate=duplicate,
+                           gp_samplers=gp_samplers)
 
         # Data Providers
         setting_provider = copy(settings['snapshot']['provider'])
@@ -137,33 +150,34 @@ class Driver(object):
         if 'pod' in self.settings:
             settings_ = {'tolerance': self.settings['pod']['tolerance'],
                          'dim_max': self.settings['pod']['dim_max'],
-                         'corners': self.settings['space']['corners'],
-                         'plabels': self.settings['snapshot']['plabels'],
-                         'nsample': self.space.doe_init,
-                         'nrefine': resamp_size}
+                         'corners': self.settings['space']['corners']}
             self.pod = Pod(**settings_)
-            self.pod.space.duplicate = duplicate
         else:
             self.pod = None
             self.logger.info('No POD is computed.')
 
         self.data = None
-
         # Surrogate model
         if 'surrogate' in self.settings:
-            settings_ = {}
+            settings_ = {'kind': self.settings['surrogate']['method'],
+                         'corners': self.settings['space']['corners'],
+                         'plabels': self.settings['snapshot']['plabels']}
             if self.settings['surrogate']['method'] == 'pc':
                 dists = self.settings['space']['sampling']['distributions']
                 dists = dists_to_ot(dists)
 
-                settings_ = {'strategy': self.settings['surrogate']['strategy'],
-                             'degree': self.settings['surrogate']['degree'],
-                             'distributions': dists,
-                             'sparse_param': self.settings['surrogate'].get('sparse_param', {}),
-                             'sample': self.space.values}
+                settings_.update({
+                    'strategy': self.settings['surrogate']['strategy'],
+                    'degree': self.settings['surrogate']['degree'],
+                    'distributions': dists,
+                    'sparse_param': self.settings['surrogate'].get('sparse_param', {}),
+                    'sample': self.space.values
+                })
             elif self.settings['surrogate']['method'] == 'evofusion':
-                settings_ = {'cost_ratio': self.settings['surrogate']['cost_ratio'],
-                             'grand_cost': self.settings['surrogate']['grand_cost']}
+                settings_.update({
+                    'cost_ratio': self.settings['surrogate']['cost_ratio'],
+                    'grand_cost': self.settings['surrogate']['grand_cost']
+                })
             elif self.settings['surrogate']['method'] == 'kriging':
                 if 'kernel' in self.settings['surrogate']:
                     kernel = self.settings['surrogate']['kernel']
@@ -173,18 +187,33 @@ class Driver(object):
                     except (TypeError, AttributeError):
                         self.logger.error('Scikit-Learn kernel unknown.')
                         raise SystemError
-                    settings_ = {'kernel': kernel}
+                    settings_.update({'kernel': kernel})
 
                 settings_.update({
                     'noise': self.settings['surrogate'].get('noise', False),
                     'global_optimizer': self.settings['surrogate'].get('global_optimizer', True)
                 })
+            elif self.settings['surrogate']['method'] == 'mixture':
+                self.pod = None
 
-            self.surrogate = SurrogateModel(self.settings['surrogate']['method'],
-                                            self.settings['space']['corners'],
-                                            max_points_nb=init_size + resamp_size,
-                                            plabels=self.settings['snapshot']['plabels'],
-                                            **settings_)
+                if 'pod' in self.settings:
+                    pod_args = {'tolerance': self.settings['pod'].get('tolerance', 0.99),
+                                'dim_max': self.settings['pod'].get('dim_max', 100)}
+                else:
+                    pod_args = None
+
+                settings_.update({
+                    'pod': pod_args,
+                    'plabels': self.settings['snapshot']['plabels'],
+                    'corners': self.settings['space']['corners'],
+                    'fsizes': self.settings['snapshot'].get('fsizes')[0],
+                    'pca_percentage': self.settings['surrogate'].get('pca_percentage', 0.8),
+                    'clusterer': self.settings['surrogate'].get('clusterer',
+                                                                'cluster.KMeans(n_clusters=2)'),
+                    'classifier': self.settings['surrogate'].get('classifier', 'svm.SVC()')
+                })
+
+            self.surrogate = SurrogateModel(**settings_)
             if self.settings['surrogate']['method'] == 'pc':
                 self.space.empty()
                 self.space += self.surrogate.predictor.sample
@@ -214,9 +243,9 @@ class Driver(object):
                 self.surrogate.space.empty()
                 self.pod.update(samples)
             else:
-                self.pod.decompose(samples)
-            self.data = self.pod.VS()
-            points = self.pod.space.values
+                self.pod.fit(samples)
+            self.data = self.pod.VS
+            points = self.pod.space
 
         else:
             # [TODO] Über complicated pour rien ! --> révision du space + data
@@ -228,7 +257,6 @@ class Driver(object):
                         self.space += samples.space
                 self.data = data
             points = self.space.values
-
         try:  # if surrogate
             self.surrogate.fit(points, self.data, pod=self.pod)
         except AttributeError:
@@ -317,7 +345,6 @@ class Driver(object):
             self.data = self.surrogate.data
         if self.pod is not None:
             self.pod.read(os.path.join(self.fname, self.fname_tree['pod']))
-            self.pod.space = self.space
             self.surrogate.pod = self.pod
         elif (self.pod is None) and (self.surrogate is None):
             path = os.path.join(self.fname, self.fname_tree['data'])
@@ -348,7 +375,8 @@ class Driver(object):
         """Perform a prediction.
 
         :param points: point(s) to predict.
-        :type points: :class:`space.point.Point` or array_like (n_samples, n_features).
+        :type points: :class:`space.point.Point` or array_like
+          (n_samples, n_features).
         :param bool write: whether to write snapshots.
         :return: Result.
         :rtype: array_like (n_samples, n_features).
@@ -365,12 +393,17 @@ class Driver(object):
             except OSError:
                 pass
             # better: surrogate could return a Sample
+            plabels = self.settings['snapshot']['plabels']
+            if self.space.multifidelity:
+                plabels = plabels[1:]
+
             samples = Sample(space=points, data=results,
-                             plabels=self.settings['snapshot']['plabels'],
+                             plabels=plabels,
                              flabels=self.settings['snapshot']['flabels'],
                              psizes=self.settings['snapshot'].get('psizes'),
                              fsizes=self.settings['snapshot'].get('fsizes'))
             samples.write(space_fname, data_fname)
+
         return results, sigma
 
     def uq(self):
@@ -383,8 +416,11 @@ class Driver(object):
         args['dists'] = self.settings['uq']['pdf']
         args['nsample'] = self.settings['uq']['sample']
 
+        if self.space.multifidelity:
+            args['plabels'] = args['plabels'][1:]
+
         if self.pod is not None:
-            args['data'] = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
+            args['data'] = self.pod.inverse_transform(self.data)
         else:
             args['data'] = self.data
 
@@ -393,13 +429,26 @@ class Driver(object):
         args['xlabel'] = self.settings.get('visualization', {}).get('xlabel')
         args['flabel'] = self.settings.get('visualization', {}).get('flabel')
 
-        analyse = UQ(self.surrogate, **args)
+        mesh = {}
+        mesh['fname'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('fname')
+        mesh['fformat'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('format', 'csv')
+        mesh['xlabel'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('xlabel', 'X axis')
+        mesh['ylabel'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('ylabel', 'Y axis')
+        mesh['vmins'] = self.settings.get('visualization', {}).get(
+            '2D_mesh', {}).get('vmins')
+
+        analyse = UQ(self.surrogate, mesh=mesh, **args)
 
         if self.surrogate is None:
             self.logger.warning("No surrogate model, be sure to have a "
                                 "statistically significant sample to trust "
                                 "following results.")
-        analyse.sobol()
+        if len(self.settings['space']['corners'][0]) > 1:
+            analyse.sobol()
         analyse.error_propagation()
 
     def visualization(self):
@@ -408,7 +457,7 @@ class Driver(object):
 
         # In case of POD, data need to be converted from modes to snapshots.
         if self.pod is not None:
-            data = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
+            data = self.pod.inverse_transform(self.data)
         else:
             data = self.data
 
@@ -416,6 +465,13 @@ class Driver(object):
 
         self.logger.info('Creating response surface...')
         args = {}
+
+        path = os.path.join(self.fname, self.fname_tree['visualization'])
+        try:
+            os.makedirs(path)
+        except OSError:
+            pass
+
         if 'visualization' in self.settings:
             # xdata for output with dim > 1
             if ('xdata' in self.settings['visualization']) and (output_len > 1):
@@ -435,10 +491,33 @@ class Driver(object):
             else:
                 args['resampling'] = 0
 
-            args['ticks_nbr'] = self.settings.get('visualization', {}).get('ticks_nbr', 10)
+            args['ticks_nbr'] = self.settings.get(
+                'visualization', {}).get('ticks_nbr', 10)
             args['contours'] = self.settings.get('visualization', {}).get('contours')
             args['range_cbar'] = self.settings.get('visualization', {}).get('range_cbar')
             args['axis_disc'] = self.settings.get('visualization', {}).get('axis_disc')
+
+            # Create the 2D mesh graph
+            if '2D_mesh' in self.settings['visualization']:
+                name_mesh = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('fname')
+                format_mesh = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('format', 'csv')
+                xlabel = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('xlabel', 'X axis')
+                ylabel = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('ylabel', 'Y axis')
+                outlabel = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('flabels')
+                vmins = self.settings.get('visualization', {}).get(
+                    '2D_mesh', {}).get('vmins')
+                if name_mesh:
+                    self.logger.info("Creating 2D statistic graph from mesh...")
+                    output_path = os.path.join(path, 'Mesh_graph.pdf')
+                    mesh_2D(fname=name_mesh, fformat=format_mesh,
+                            xlabel=xlabel, ylabel=ylabel, flabels=outlabel,
+                            vmins=vmins, output_path=output_path)
+
         else:
             args['xdata'] = np.linspace(0, 1, output_len) if output_len > 1 else None
 
@@ -464,18 +543,15 @@ class Driver(object):
             args['plabels'] = self.settings['visualization']['plabels']
         except KeyError:
             args['plabels'] = self.settings['snapshot']['plabels']
+        finally:
+            if self.space.multifidelity:
+                args['plabels'] = args['plabels'][1:]
 
         if len(self.settings['snapshot']['flabels']) < 2:
             try:
                 args['flabel'] = self.settings['visualization']['flabel']
             except KeyError:
                 args['flabel'] = self.settings['snapshot']['flabels'][0]
-
-        path = os.path.join(self.fname, self.fname_tree['visualization'])
-        try:
-            os.makedirs(path)
-        except OSError:
-            pass
 
         if p_len < 5:
             # Creation of the response surface(s)
@@ -493,8 +569,8 @@ class Driver(object):
                 args['ticks_nbr'] = 10
             if 'kiviat_fill' not in args:
                 args['kiviat_fill'] = True
-            kiviat = Kiviat3D(args['sample'], args['bounds'], args['data'],
-                              plabels=args['plabels'],
+            kiviat = Kiviat3D(args['sample'], data=args['data'],
+                              bounds=args['bounds'], plabels=args['plabels'],
                               range_cbar=args['range_cbar'])
             kiviat.plot(fname=args['fname'], flabel=args['flabel'],
                         ticks_nbr=args['ticks_nbr'], fill=args['kiviat_fill'])

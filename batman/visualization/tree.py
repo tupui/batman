@@ -39,7 +39,8 @@ class Tree(Kiviat3D):
         :param array_like range_cbar: Minimum and maximum values for output
           function (2 values).
         """
-        super(Tree, self).__init__(sample, data, bounds, plabels, range_cbar)
+        super(Tree, self).__init__(sample, data, bounds=bounds,
+                                   plabels=plabels, range_cbar=range_cbar)
 
         scaler = MinMaxScaler()
         self.sample = self.sample[:, :-1]

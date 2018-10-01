@@ -33,7 +33,7 @@ import openturns as ot
 import batman as bat
 
 
-class Doe():
+class Doe:
     """DOE class."""
 
     logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ class Doe():
         :param int n_samples: number of samples.
         :param array_like bounds: Space's corners [[min, n dim], [max, n dim]]
         :param str kind: Sampling Method if string can be one of
-          ['halton', 'sobol', 'faure', 'lhs[c]', 'sobolscramble', 'uniform',
+          ['halton', 'sobol', 'faure', '[o]lhs[c]', 'sobolscramble', 'uniform',
           'discrete'] otherwize can be a list of openturns distributions.
         :param lst(str) dists: List of valid openturns distributions as string.
         :param int discrete: Position of the discrete variable.
@@ -100,7 +100,7 @@ class Doe():
                                                              self.n_samples)
         elif (self.kind == 'lhs') or (self.kind == 'lhsc'):
             self.sequence_type = ot.LHSExperiment(distribution, self.n_samples)
-        elif self.kind == 'lhsopt':
+        elif self.kind == 'olhs':
             lhs = ot.LHSExperiment(distribution, self.n_samples)
             self.sequence_type = ot.SimulatedAnnealingLHS(lhs, ot.GeometricProfile(),
                                                           ot.SpaceFillingC2())
@@ -162,11 +162,7 @@ class Doe():
         # Generate sobol sequence
         self.sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(self.dim))
         samples = self.sequence_type.generate(self.n_samples)
-        r = np.empty([self.n_samples, self.dim])
-
-        for i, p in enumerate(samples):
-            for j in range(self.dim):
-                r[i, j] = p[j]
+        r = np.array(samples)
 
         # Scramble the sequence
         for col in range(self.dim):

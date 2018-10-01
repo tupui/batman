@@ -24,10 +24,14 @@ import itertools
 import numpy as np
 import pandas as pd
 from scipy.optimize import differential_evolution
+from scipy.sparse.csgraph import minimum_spanning_tree
+from scipy.spatial.distance import cdist
+import matplotlib.pyplot as plt
 from sklearn import preprocessing
 from .sampling import Doe
 from .sample import Sample
 from .refiner import Refiner
+from .gp_sampler import GpSampler
 from .. import visualization
 
 
@@ -37,7 +41,7 @@ class Space(Sample):
     logger = logging.getLogger(__name__)
 
     def __init__(self, corners, sample=np.inf, nrefine=0, plabels=None, psizes=None,
-                 multifidelity=None, duplicate=False, threshold=0.):
+                 multifidelity=None, duplicate=False, threshold=0., gp_samplers=None):
         """Generate a Space.
 
         :param array_like corners: hypercube ([min, n_features], [max, n_features]).
@@ -49,8 +53,9 @@ class Space(Sample):
         :param list(float) multifidelity: Whether to consider the first
           parameter as the fidelity level. It is a list of ['cost_ratio',
           'grand_cost'].
-        :param bool duplicate: Whether to allow duplicate points in space.
-        :param float threshold: minimal distance between 2 disctinct points.
+        :param bool duplicate: Whether to allow duplicate points in space,
+        :param float threshold: minimal distance between 2 disctinct points,
+        :param dict gp_samplers: Gaussian process samplers for functional inputs
         """
         try:
             self.doe_init = len(sample)
@@ -62,42 +67,60 @@ class Space(Sample):
             self.refiner = None
             self.hybrid = None
             self.max_points_nb += nrefine
-        self.refined_pod_points = []
+        self.refined_points = []
 
         self.dim = len(corners[0])
         self.multifidelity = multifidelity
         self.duplicate = duplicate
         self.threshold = threshold
 
+        # Gaussian process samplers for functional inputs
+        if gp_samplers:
+            self.nb_gp_samplers = len(gp_samplers['index'])
+            if 'thresholds' in gp_samplers.keys():
+                thresholds = [1 - gp_samplers['thresholds'][i]
+                              for i in range(self.nb_gp_samplers)]
+            else:
+                thresholds = [None] * self.nb_gp_samplers
+            self.gp_samplers = [GpSampler(gp_samplers['reference'][i],
+                                          gp_samplers['kernel'][i],
+                                          gp_samplers['add'][i],
+                                          thresholds[i])
+                                for i in range(self.nb_gp_samplers)]
+        else:
+            self.nb_gp_samplers = 0
+
         # Parameter names list
         if plabels is None:
             plabels = ['x{}'.format(i) for i in range(self.dim)]
         if psizes is None:
             psizes = [1] * self.dim
-        try:
-            pos = plabels.index('fidelity')
-        except ValueError:
-            pass
-        else:
-            plabels = list(np.delete(plabels, pos))
-            psizes = list(np.delete(psizes, pos))
+            if gp_samplers:
+                for i in range(self.nb_gp_samplers):
+                    index_i = gp_samplers['index'][i]
+                    n_modes_i = gp_samplers['n_nodes'][i]
+                    psizes[index_i] = n_modes_i
 
         # Multifidelity configuration
-        if multifidelity is not None:
+        psizes = [1] + psizes if multifidelity else psizes
+        if multifidelity and not isinstance(multifidelity, bool):
             self.doe_cheap = self._cheap_doe_from_expensive(self.doe_init)
-            plabels = ['fidelity'] + plabels
-            psizes = ['fidelity'] + psizes
             self.logger.info("Multifidelity with Ne: {} and Nc: {}"
                              .format(self.doe_init, self.doe_cheap))
 
         # Corner points
-        self.corners = np.array(corners)
+        self.corners = np.asarray(corners)
         if np.any(self.corners[0] == self.corners[1]):
             raise ValueError('corners coordinates at positions {} are equal'
                              .format(np.flatnonzero(self.corners[0] == self.corners[1])))
 
         # Initialize Sample container with empty space dataframe
-        super(Space, self).__init__(plabels=plabels)
+        super(Space, self).__init__(plabels=plabels, psizes=psizes)
+
+        try:
+            self += sample
+        except IndexError:
+            pass
 
     def sampling(self, n_samples=None, kind='halton', dists=None, discrete=None):
         """Create point samples in the parameter space.
@@ -117,8 +140,24 @@ class Space(Sample):
             n_samples = self.doe_init
         if self.multifidelity:
             n_samples = self._cheap_doe_from_expensive(n_samples)
-        doe = Doe(n_samples, self.corners, kind, dists, discrete)
+
+        # sample the inputs non GP-distributed
+        if dists is None:
+            dists_not_gp = None
+            corners_not_gp = self.corners
+        else:
+            not_gp = [dist != 'GpSampler' for dist in dists]
+            dists_not_gp = [dist for i, dist in enumerate(dists) if not_gp[i]]
+            corners_not_gp = np.array(self.corners)[:, not_gp]
+
+        doe = Doe(n_samples, corners_not_gp, kind, dists_not_gp, discrete)
         samples = doe.generate()
+
+        # sample the GP-distributed inputs and concatenate
+        if hasattr(self, 'gp_samplers'):
+            for i in range(self.nb_gp_samplers):
+                gp_samples_i = self.gp_samplers[i](n_samples, kind=kind)['Values']
+                samples = np.append(samples, gp_samples_i, axis=1)
 
         # concatenate cheap and expensive space, prepend identifier 0 or 1
         if self.multifidelity:
@@ -134,7 +173,12 @@ class Space(Sample):
 
         self.logger.info("Created {} samples with the {} method".format(len(self), kind))
         self.logger.debug("Points are:\n{}".format(samples))
-        self.logger.info("Discrepancy is {}".format(self.discrepancy()))
+
+        if not hasattr(self, 'gp_samplers'):
+            s = int(bool(self.multifidelity))
+            self.logger.info("Discrepancy is {}"
+                             .format(self.discrepancy(self.values[:, s:], self.corners)))
+
         return self.values
 
     def refine(self, surrogate, method, point_loo=None, delta_space=0.08,
@@ -163,7 +207,9 @@ class Space(Sample):
         if (self.refiner is None) and (method == 'hybrid'):
             strategy = [[m[0]] * m[1] for m in hybrid]
             self.hybrid = itertools.cycle(itertools.chain.from_iterable(strategy))
-        self.refiner = Refiner(surrogate, self.corners, delta_space, discrete)
+
+        pod = None if surrogate.pod is None else surrogate.pod
+        self.refiner = Refiner(surrogate, self.corners, delta_space, discrete, pod)
 
         if method == 'sigma':
             new_point = self.refiner.sigma()
@@ -174,12 +220,12 @@ class Space(Sample):
         elif method == 'loo_sobol':
             new_point = self.refiner.leave_one_out_sobol(point_loo, dists)
         elif method == 'extrema':
-            new_point, self.refined_pod_points = self.refiner.extrema(self.refined_pod_points)
+            new_point, self.refined_points = self.refiner.extrema(self.refined_points)
         elif method == 'hybrid':
-            new_point, self.refined_pod_points = self.refiner.hybrid(self.refined_pod_points,
-                                                                     point_loo,
-                                                                     next(self.hybrid),
-                                                                     dists)
+            new_point, self.refined_points = self.refiner.hybrid(self.refined_points,
+                                                                 point_loo,
+                                                                 next(self.hybrid),
+                                                                 dists)
         elif method == 'optimization':
             new_point = self.refiner.optimization(extremum=extremum)
         elif method == 'sigma_discrepancy':
@@ -190,7 +236,8 @@ class Space(Sample):
         new_points = self.append(points)
 
         self.logger.info('Refined sampling with new point: {}'.format(new_points))
-        self.logger.info("New discrepancy is {}".format(self.discrepancy()))
+        self.logger.info('New discrepancy is {}'
+                         .format(self.discrepancy(self.values, self.corners)))
         return new_points
 
     def optimization_results(self, extremum):
@@ -212,34 +259,104 @@ class Space(Sample):
         _x = results.x
         self.logger.info('Optimization with surrogate: f(x)={} for x={}'.format(_extremum, _x))
 
-    def discrepancy(self, sample=None):
-        """Compute the centered discrepancy.
+    @staticmethod
+    def discrepancy(sample, bounds=None, method='CD'):
+        """Compute the discrepancy.
 
-        :type sample: array_like
-        :return: Centered discrepancy.
+        Centered, wrap around or mixture discrepancy measures the uniformity
+        of the parameter space. The lowest the value, the uniform the design.
+
+        :param array_like sample: The sample to compute the discrepancy from
+          (n_samples, k_vars).
+        :param array_like bounds: Desired range of transformed data.
+          The transformation apply the bounds on the sample and not the
+          theoretical space, unit cube. Thus min and max values of the sample
+          will coincide with the bounds. ([min, k_vars], [max, k_vars]).
+        :param str method: Type of discrepancy. ['CD', 'WD', 'MD'].
+        :return: Discrepancy.
         :rtype: float.
         """
-        scaler = preprocessing.MinMaxScaler()
-        scaler.fit(self.corners)
-        if sample is None:
-            sample = scaler.transform(self.values)
-        else:
+        if bounds is not None:
+            scaler = preprocessing.MinMaxScaler()
+            scaler.fit(bounds)
             sample = scaler.transform(sample)
+        else:
+            sample = np.asarray(sample)
 
-        abs_ = abs(sample - 0.5)
-        disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
+        n_s, dim = sample.shape
 
-        prod_arr = 1
-        for i in range(self.dim):
-            s0 = sample[:, i]
-            prod_arr *= (1 +
-                         0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5) -
-                         0.5 * abs(s0[:, None] - s0))
-        disc2 = prod_arr.sum()
+        if method == 'CD':
+            abs_ = abs(sample - 0.5)
+            disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
 
-        n_s = len(sample)
-        c2 = (13.0 / 12.0) ** self.dim - 2.0 / n_s * disc1 + 1.0 / (n_s ** 2) * disc2
-        return c2
+            prod_arr = 1
+            for i in range(dim):
+                s0 = sample[:, i]
+                prod_arr *= (1 +
+                             0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5) -
+                             0.5 * abs(s0[:, None] - s0))
+            disc2 = prod_arr.sum()
+
+            disc = (13.0 / 12.0) ** dim - 2.0 / n_s * disc1 + 1.0 / (n_s ** 2) * disc2
+        elif method == 'WD':
+            prod_arr = 1
+            for i in range(dim):
+                s0 = sample[:, i]
+                x_kikj = abs(s0[:, None] - s0)
+                prod_arr *= 3.0 / 2.0 - x_kikj + x_kikj ** 2
+
+            disc = - (4.0 / 3.0) ** dim + 1.0 / (n_s ** 2) * prod_arr.sum()
+        elif method == 'MD':
+            abs_ = abs(sample - 0.5)
+            disc1 = np.sum(np.prod(5.0 / 3.0 - 0.25 * abs_ - 0.25 * abs_ ** 2, axis=1))
+
+            prod_arr = 1
+            for i in range(dim):
+                s0 = sample[:, i]
+                prod_arr *= (15.0 / 8.0 -
+                             0.25 * abs(s0[:, None] - 0.5) - 0.25 * abs(s0 - 0.5) -
+                             3.0 / 4.0 * abs(s0[:, None] - s0) +
+                             0.5 * abs(s0[:, None] - s0) ** 2)
+            disc2 = prod_arr.sum()
+
+            disc = (19.0 / 12.0) ** dim - 2.0 / n_s * disc1 + 1.0 / (n_s ** 2) * disc2
+        else:
+            raise ValueError('Method {} is not valid. Options are CD or WD'
+                             .format(method))
+
+        return disc
+
+    @staticmethod
+    def mst(sample, fname=None, plot=True):
+        """Minimum Spanning Tree.
+
+        MST is used here as a discrepancy criterion.
+        Comparing two different designs: the higher the mean,
+        the better the design is in terms of space filling.
+
+        :param array_like sample: The sample to compute the discrepancy from
+          (n_samples, k_vars).
+        :param str fname: whether to export to filename or display the figures.
+        :return: Mean, standard deviation and edges of the MST.
+        :rtypes: float, float, array_like (n_edges, 2 nodes indices).
+        """
+        sample = np.asarray(sample)
+
+        dist = cdist(sample, sample)
+        mst = minimum_spanning_tree(dist)
+
+        edges = np.where(mst.toarray() > 0)
+        edges = np.array(edges).T
+
+        if (sample.shape[1] == 2) and plot:
+            fig, ax = plt.subplots()
+            for edge in edges:
+                ax.plot(sample[edge, 0], sample[edge, 1], c='k')
+            ax.scatter(sample[:, 0], sample[:, 1])
+
+            visualization.save_show(fname, [fig])
+
+        return mst.data.mean(), mst.data.std(), edges
 
     def _cheap_doe_from_expensive(self, n):
         """Compute the number of points required for the cheap DOE.
@@ -264,8 +381,8 @@ class Space(Sample):
 
         Ignore any point that already exists or that would exceed space capacity.
 
-        :param array_like points: point(s) to add to space (n_samples, n_features)
-        :return: Added points
+        :param array_like points: Point(s) to add to space (n_samples, n_features)
+        :return: Added points.
         :rtype: :class:`numpy.ndarray`
         """
         # avoid unnecessary operations
@@ -290,7 +407,10 @@ class Space(Sample):
         points = points.reshape(-1, points.shape[-1])
 
         # select only points in the space boundaries
-        mask = np.logical_and(points >= self.corners[0], points <= self.corners[1]).all(axis=1)
+        s = int(bool(self.multifidelity))  # drop 1st column during test if multifidelity
+        dim = self.dim-self.nb_gp_samplers
+        mask = np.logical_and(points[:, s:dim] >= self.corners[0][0:dim],
+                              points[:, s:dim] <= self.corners[1][0:dim]).all(axis=1)
         if not np.all(mask):
             drop = np.logical_not(mask)
             self.logger.warning("Ignoring Points - Out of Space - {}".format(points[drop, :]))
@@ -298,7 +418,6 @@ class Space(Sample):
 
         # find new points to append
         if (not self.duplicate) and (len(self) > 0):
-            s = int(bool(self.multifidelity))  # drop 1st column during test if multifidelity
             existing_points = self.values[:, s:]
             test_points = points[:, s:]
             new_idx = []
@@ -331,20 +450,22 @@ class Space(Sample):
         super(Space, self).read(space_fname=path)
         self.logger.debug('Space read from {}'.format(path))
 
-    def write(self, path='.', fname='space.dat'):
+    def write(self, path='.', fname='space.dat', doe=True):
         """Write space to file `path`, then plot it."""
         space_file = os.path.join(path, fname)
         super(Space, self).write(space_fname=space_file)
-        resampling = len(self) - self.doe_init
-        visualization.doe(self, plabels=self.plabels, resampling=resampling,
-                          multifidelity=self.multifidelity,
-                          fname=os.path.join(path, 'DOE.pdf'))
+
+        if doe:
+            resampling = len(self) - self.doe_init
+            visualization.doe(self, plabels=self.plabels, resampling=resampling,
+                              multifidelity=self.multifidelity,
+                              fname=os.path.join(path, 'DOE.pdf'))
         self.logger.debug('Space wrote to {}'.format(space_file))
 
-    def __str__(self):
+    def __repr__(self):
         """Python Data Model. `str` function. Space string representation."""
         msg = ('Space summary:\n'
                'Hypercube points: {}\n'
                'Number of points: {}\n'
                'Max number of points: {}\n').format(self.corners, len(self), self.max_points_nb)
-        return msg + super(Space, self).__str__()
+        return msg + super(Space, self).__repr__()

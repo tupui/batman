@@ -44,7 +44,7 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
     :param int ticks_nbr: number of color isolines for response surfaces.
     :param array_like range_cbar: min and max values for colorbar range (2).
     :param array_like contours: isocontour values to plot on response surface.
-    :param str fname: wether to export to filename or display the figures.
+    :param str fname: whether to export to filename or display the figures.
     :returns: figure.
     :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
     """

@@ -23,7 +23,7 @@ It implements the following classes:
 - :class:`Manning`,
 - :class:`ChemicalSpill`.
 
-In each case, Sobol' indices are declared.
+In most case, Sobol' indices are pre-computed and storred as attributes.
 
 References
 ----------
@@ -58,7 +58,7 @@ import numpy as np
 from .utils import multi_eval
 
 
-class SixHumpCamel(object):
+class SixHumpCamel:
     r"""SixHumpCamel class [Molga2005]_.
 
     .. math:: \left(4-2.1x_1^2+\frac{x_1^4}{3}\right)x_1^2+x_1x_2+
@@ -95,7 +95,7 @@ class SixHumpCamel(object):
         return f
 
 
-class Branin(object):
+class Branin:
     r"""Branin class [Forrester2008]_.
 
     .. math:: f(x) = \left( x_2 - \frac{5.1}{4\pi^2}x_1^2 + \frac{5}{\pi}x_1 - 6
@@ -134,7 +134,7 @@ class Branin(object):
         return f
 
 
-class Michalewicz(object):
+class Michalewicz:
     r"""Michalewicz class [Molga2005]_.
 
     It is a multimodal *d*-dimensional function which has :math:`d!`
@@ -179,7 +179,7 @@ class Michalewicz(object):
         return -f
 
 
-class Rosenbrock(object):
+class Rosenbrock:
     r"""Rosenbrock class [Dixon1978]_.
 
     .. math:: f(x)=\sum_{i=1}^{d-1}[100(x_{i+1}-x_i^2)^2+(x_i-1)^2]
@@ -218,7 +218,7 @@ class Rosenbrock(object):
         return f
 
 
-class Rastrigin(object):
+class Rastrigin:
     r"""Rastrigin class [Molga2005]_.
 
     It is a multimodal *d*-dimensional function which has regularly distributed
@@ -257,7 +257,7 @@ class Rastrigin(object):
         return f
 
 
-class Ishigami(object):
+class Ishigami:
     r"""Ishigami class [Ishigami1990]_.
 
     .. math:: F = \sin(x_1)+7\sin(x_2)^2+0.1x_3^4\sin(x_1), x\in [-\pi, \pi]^3
@@ -311,7 +311,7 @@ class Ishigami(object):
         return f
 
 
-class G_Function(object):
+class G_Function:
     r"""G_Function class [Saltelli2000]_.
 
     .. math:: F = \Pi_{i=1}^d \frac{\lvert 4x_i - 2\rvert + a_i}{1 + a_i}
@@ -361,7 +361,7 @@ class G_Function(object):
         return f
 
 
-class Forrester(object):
+class Forrester:
     r"""Forrester class [Forrester2007]_.
 
     .. math:: F_{e}(x) = (6x-2)^2\sin(12x-4), \\
@@ -407,7 +407,7 @@ class Forrester(object):
         return f
 
 
-class Channel_Flow(object):
+class Channel_Flow:
     r"""Channel Flow class.
 
     .. math:: \frac{dh}{ds}=\mathcal{F}(h)=I\frac{1-(h/h_n)^{-10/3}}{1-(h/h_c)^{-3}}\\
@@ -416,15 +416,17 @@ class Channel_Flow(object):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, dx=8000., length=40000., width=500.):
+    def __init__(self, dx=8000., length=40000., width=500., slope=5e-4, hinit=10.):
         """Initialize the geometrical configuration.
 
-        :param float dx: discretization
-        :param float length: canal length
-        :param float width: canal width
+        :param float dx: discretization.
+        :param float length: Canal length.
+        :param float width: Canal width.
+        :param float slope: Canal slope.
+        :param float hinit: Downstream boundary condition.
         """
         self.w = width
-        self.I = 5e-4
+        self.slope = slope
         self.g = 9.8
         self.dx = dx
         self.length = length
@@ -432,8 +434,8 @@ class Channel_Flow(object):
         self.d_out = len(self.x)
         self.d_in = 2
         self.dl = int(self.length // self.dx)
-        self.hinit = 10.
-        self.zref = - self.x * self.I
+        self.hinit = hinit
+        self.zref = - self.x * self.slope
 
         # Sensitivity
         self.s_first = np.array([0.92925829, 0.05243018])
@@ -444,27 +446,30 @@ class Channel_Flow(object):
                          "width={}".format(dx, length, width))
 
     @multi_eval
-    def __call__(self, x):
+    def __call__(self, x, h_nc=False):
         """Call function.
 
-        :param list x: inputs [Ks, Q]
-        :return: Water height along the channel
-        :rtype: np.array 1D
+        :param list x: inputs [Ks, Q].
+        :param bool h_nc: Whether to return hc and hn.
+        :return: Water height along the channel.
+        :rtype: array_like (n_samples, n_features [+ 2])
         """
         ks, q = x
         hc = np.power((q ** 2) / (self.g * self.w ** 2), 1. / 3.)
-        hn = np.power((q ** 2) / (self.I * self.w ** 2 * ks ** 2), 3. / 10.)
+        hn = np.power((q ** 2) / (self.slope * self.w ** 2 * ks ** 2), 3. / 10.)
 
         h = self.hinit * np.ones(self.dl)
         for i in range(2, self.dl + 1):
-            h[self.dl - i] = h[self.dl - i + 1] - self.dx * self.I\
+            h[self.dl - i] = h[self.dl - i + 1] - self.dx * self.slope\
                 * ((1 - np.power(h[self.dl - i + 1] / hn, -10. / 3.))
                    / (1 - np.power(h[self.dl - i + 1] / hc, -3.)))
 
-        return self.zref + h
+        z_h = self.zref + h
+
+        return np.append(z_h, np.array([hc, hn])) if h_nc else z_h
 
 
-class Manning(object):
+class Manning:
     """Manning equation for rectangular channel class."""
 
     logger = logging.getLogger(__name__)
@@ -507,7 +512,7 @@ class Manning(object):
         return h
 
 
-class ChemicalSpill(object):
+class ChemicalSpill:
     r"""Environmental Model class [Bliznyuk2008]_.
 
     Model a pollutant spill caused by a chemical accident.

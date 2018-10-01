@@ -60,8 +60,15 @@ First of all, we define the parameter space using an hypercube. Taking the minim
         "sampling": {
             "init_size": 4,
             "method": "halton",
-            "distributions": ["Uniform(15., 60.)", "BetaMuSigma(4035, 400, 2500, 6000).getDistribution()"],
+            "distributions": ["Uniform(15., 60.)", "GpSampler", "BetaMuSigma(4035, 400, 2500, 6000).getDistribution()"],
             "discrete": 0
+        },
+        "gp_samplers": {
+            "index": [1],
+            "reference": ["reference.npy"],
+            "add": [true],
+            "kernel": ["AbsoluteExponential([0.5], [1.0])"],
+            "thresholds": [0.99]
         },
         "resampling":{
             "delta_space": 0.08,
@@ -79,10 +86,19 @@ First of all, we define the parameter space using an hypercube. Taking the minim
 
     * ``init_size``: define the initial number of snapshots,
     * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*,
-      *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *lhsopt* (optimized LHS), *saltelli*,
-    * [``distributions``]: A list of distributions. Ex for two input variables:
-      ``["Uniform(15., 60.)", "Normal(4035., 400.)"]``,
+      *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *olhs* (optimized LHS), *saltelli*,
+    * [``distributions``]: A list of distributions. Ex for three input variables:
+      ``["Uniform(15., 60.)", "GpSampler", "Normal(4035., 400.)"]``,
     * [``discrete``]: index of the parameter which is discrete.
+
++ [``gp_samplers``]: define the Gaussian processes for vectorial parameters whose ``distributions`` are  ``GpSampler`` with the following:
+
+    * ``index``: list of the indices corresponding to the vectorial parameters whose distributions are Gaussian processes,
+    * ``reference``: list of the reference vectorial parameters from which Gaussian process realizations are created,
+      each element being a dictionnary made of ``indices`` representing a list of the index values of the parameter values (e.g. ``t``) and ``values`` representing a list of reference parameter values (e.g. ``reference(t)``),
+    * [``kernel``]: list of kernels,
+    * [``add``]: list of boolean variables, True when Gaussian process realizations are added to the reference parameters, and False if not.
+    * [``thresholds``]: list of thresholds corresponding to the minimal relative amplitude of the eigenvalues to consider in the Karhunen-Loeve decomposition of the Gaussian process wrt the sum of the preceeding eigenvalues.
 
 + [``resampling``]: to do resampling, fill this dictionary
 
@@ -101,11 +117,13 @@ All *faure*, *halton* and *sobol* methods are low discrepancy sequences with
 good filling properties. *saltelli* is particular as it will create a DoE for
 the computation of *Sobol'* indices using *Saltelli*'s formulation.
 
-When *distribution* is set, a join distribution is built an is used to perform
+When *distribution* is set, a join distribution is built and is used to perform
 an inverse transformation (inverse CDF) on the sample. This allows to have a
-low discrepancy sample will still following some distribution.
+low discrepancy sample will still following some distribution. For vectorial 
+parameters whose distributions are ``GpSampler``, users has to add a block 
+``gp_samplers`` in order to define this distributions.
 
-Regarding the resampling, all methods need a good initial sample. Meanning that the quality is about :math:`Q_2\sim0.5`. ``loo_sigma, loo_sobol`` work better than ``sigma`` in high dimentionnal cases (>2).
+Regarding the resampling, all methods need a good initial sample. Meaning that the quality is about :math:`Q_2\sim0.5`. ``loo_sigma, loo_sobol`` work better than ``sigma`` in high dimentionnal cases (>2).
 
 .. warning:: If using a PC surrogate model, the only possibilities are ``discrepancy`` and ``extrema``. Furthermore, sampling ``method`` must be set as a list of distributions.
 
@@ -202,23 +220,34 @@ In case of expensive program, the snapshots can be send to an external host.
 .. code-block:: python
 
     "provider": {
-        "type": "job",
-        "command": "bash script.sh",
-        "context_directory": "data",
-        "coupling": {
-            "coupling_directory": "batman-coupling",
-            "input_fname": "sample-space.npy",
-            "input_format": "npy",
-            "output_fname": "sample-data.npz",
-            "output_format": "npz"
-        "clean": false,
-        "discover": "some/*/snapshot/directories",
-        "host": {
+    "type": "job",
+    "command": "bash script.sh",
+    "context_directory": "data",
+    "coupling": {
+        "coupling_directory": "batman-coupling",
+        "input_fname": "sample-space.npy",
+        "input_format": "npy",
+        "output_fname": "sample-data.npz",
+        "output_format": "npz"
+    }
+    "clean": false,
+    "discover": "some/*/snapshot/directories",
+    "hosts": [
+            {
                 "hostname": "nemo",
                 "remote_root": "TOTO",
-                "username": "batman"
-                "password": "Iron man sucks!"
+                "username": "batman",
+                "password": "Iron man sucks!",
+                "weight": 0.2
+            },
+            {
+                "hostname": "occigen",
+                "remote_root": "TATA",
+                "username": "batman",
+                "password": "Iron man sucks!",
+                "weight": 0.8
             }
+        ]
     }
 
 + ``type``: type of provider. Must be set to ``job``.
@@ -234,11 +263,12 @@ In case of expensive program, the snapshots can be send to an external host.
 
 + [``clean``]: delete after run working directories.
 + [``discover``]: UNIX-style pattern matching path to directories carrying snapshot files.
-+ [``hosts``]: list of different remote host to connect to with the following options:
++ [``hosts``]: list of different remote hosts to connect to with the following options:
     * ``hostname``: Remote host to connect to.
     * ``remote_root``: Remote folder to create and store data in.
     * [``username``]: username.
     * [``password``]: password.
+    * [``weight``]: load balancing between hosts. Can use any units. Ex. with two hosts: 0.2, 0.8 or 20, 80 are equivalent.
 
   This functionality is based on *ssh* and *sftp*. So user configuration in ``~/.ssh/config`` is used by default.
   Also, private keys are used if located in default folder.
@@ -297,6 +327,11 @@ For *evofusion* the following extra attributes **must** be set:
 
 .. note:: We can fill *directly* the number of points into the brackets or *indirectly* using the script ``prediction.py`` located in ``test_cases/Snippets``.
 
+For *mixture* the following extra attributes *can* be set:
+
++ ``pca_percentage``: (float) The percentage of information desired for the computation of PCA for clustering purposes. The number of components desire can also be given.
++ ``clusterer``: (str) Clusterer from Scikit-Learn for clustering purposes. Here all methods from the modules *cluster* and *mixture* of Scikit-Learn can be used. Ex: ``mixture.GaussianMixture(n_components=3, n_init=10)``.
++ ``classifier``: (str) Classifier from Scikit-Learn for classification purposes. Here all methods from the modules *naive_bayes*, *gaussian_process*, *neighbors*, *svm* and *ensemble* of Scikit-Learn can be used. Ex: ``gaussian_process.GaussianProcessClassifier()``.
 
 Optionnal Block 4 - UQ
 ----------------------
@@ -313,11 +348,10 @@ Uncertainty Quantification (UQ), see :ref:`UQ <uq>`.
         "type": "aggregated",
     }
 
-+ ``test``: use a test method for indices comparison and quality calculation. Use one of: *Rosenbrock*, *Michalewicz*, *Ishigami*, *G_Function*, *Channel_Flow*,
++ [``test``]: use a test method for indices comparison and quality calculation. Use one of: *Rosenbrock*, *Michalewicz*, *Ishigami*, *G_Function*, *Channel_Flow*,
 + ``sample``: number of points per sample to use for SA,
 + ``method``: type of Sobol analysis: *sobol*, *FAST* (Fourier Amplitude Sensitivity Testing). If FAST, no second-order indices are computed and defining a surrogate model is mandatory.
 + ``type``: type of indices: *aggregated* or *block*.
-
 + ``pdf`` *Probability density function* for uncertainty propagation. Enter the PDF of the inputs,
   as list of openturns distributions. Ex: x1-Normal(mu, sigma), x2-Uniform(inf, sup)
   => ``["Uniform(15., 60.)", "Normal(4035., 400.)"]``
@@ -364,21 +398,37 @@ Set up for the visualization options. Batman creates a response function (1 inpu
         "ticks_nbr": 14,
         "range_cbar": [0.0, 2.3],
         "contours": [0.5, 1.0, 1.5],
-        "kiviat_fill": true
+        "kiviat_fill": true,
+        "2D_mesh": {
+                 "fname": "mesh_file.csv",
+                 "format": "csv",
+                 "xlabel": "x label",
+                 "ylabel": "y label",
+                 "flabel": ["Variable of interest"],
+                 "vmins" = [0.1]
+        }
      }
 
-+ ``bounds``: Floats. Response surface boundaries. Those boundaries should be included inside the space corners defined in the Space of Parameters block. Default values are the space corners,
-+ ``doe``: Boolean. If *true*, the Design of Experiment is represented on the response surface by black dots. Default value is *false*,
-+ ``resampling``: Boolean. If *true*, Design of Experiment corresponding to the resampling points are displayed in a different color. Such points are represented by red triangles. Only activates if doe is *true*,
-+ ``axis_disc``: Integers. Discretisation of each axis. Indicated value for the x and the y axis modify the surface resolution, while values corresponding the the 3rd and 4th parameters impact the frame number per movie and the movie number,
-+ ``flabel``: String. Name of the cost function,
-+ ``xlabel``: String. Name of the abscissa,
-+ ``plabels``: Strings. Name of the input parameters to be plotted on each axis,
-+ ``feat_order``: Integers. Associate each input parameter to an axis, the first indicated number corresponding to the parameter to be plotted on the x-axis, etc... A size equal to the input parameter number is expected, all integers from 1 to the parameter number should be used. Default is *[1, 2, 3, 4]*,
-+ ``ticks_nbr``: Integer. Number of ticks on the colorbar (Display n-1 colors). Default is *10*,
-+ ``range_cbar``: Floats. Minimum and maximum values on the colorbar,
-+ ``contours``: Floats. Values of the iso-contours to be plotted on the response surface,
-+ ``kiviat_fill``: Boolean. If *true*, will fill the surface of the Kiviat plot.
++ [``bounds``]: Floats. Response surface boundaries. Those boundaries should be included inside the space corners defined in the Space of Parameters block. Default values are the space corners,
++ [``doe``]: Boolean. If *true*, the Design of Experiment is represented on the response surface by black dots. Default value is *false*,
++ [``resampling``]: Boolean. If *true*, Design of Experiment corresponding to the resampling points are displayed in a different color. Such points are represented by red triangles. Only activates if doe is *true*,
++ [``axis_disc``]: Integers. Discretisation of each axis. Indicated value for the x and the y axis modify the surface resolution, while values corresponding the the 3rd and 4th parameters impact the frame number per movie and the movie number,
++ [``flabel``]: String. Name of the cost function,
++ [``xlabel``]: String. Name of the abscissa,
++ [``ylabel``]: String. Name of the ordinate,
++ [``plabels``]: Strings. Name of the input parameters to be plotted on each axis,
++ [``feat_order``]: Integers. Associate each input parameter to an axis, the first indicated number corresponding to the parameter to be plotted on the x-axis, etc... A size equal to the input parameter number is expected, all integers from 1 to the parameter number should be used. Default is *[1, 2, 3, 4]*,
++ [``ticks_nbr``]: Integer. Number of ticks on the colorbar (Display n-1 colors). Default is *10*,
++ [``range_cbar``]: Floats. Minimum and maximum values on the colorbar,
++ [``contours``]: Floats. Values of the iso-contours to be plotted on the response surface,
++ [``kiviat_fill``]: Boolean. If *true*, will fill the surface of the Kiviat plot,
++ [``2D_mesh``]: Block containing all options related to representation of statistical variable of interest on a 2D mesh provided by the user. Possible options are:
+        + ``fname``: String. Name of the input file containing the mesh coordinates,
+        + ``format``: String. Format of the input file,
+        + ``xlabel``: String. Name of the abscissa,
+        + ``ylabel``: String. Name of the ordinates,
+        + ``flabels``: List(String). Names of the variables of interest,
+        + ``vmins``: List(Float). Minimum values of the variables of interest to be plotted for data filtering.
 
 
 .. py:module:: driver

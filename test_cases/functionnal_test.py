@@ -130,19 +130,15 @@ def test_restart_pod(tmp, case='Michalewicz'):
     batman.ui.run(settings, options)
     assert os.path.isdir(os.path.join(tmp, 'snapshots/4'))
 
-    init_case(tmp, case, force=True)
-    # Restart from snapshots
-    batman.ui.run(settings, options)
-
-    init_case(tmp, case, force=True)
-    # Restart from 4 and add 2 points continuing the DOE sequence
-    settings['space']['resampling']['resamp_size'] = 0
+    # Restart from 5 and add 2 points continuing the DOE sequence
+    # DoE from 4 to 6 so max points is 7
+    ns = 12 if case == 'G_Function' else 6
     try:
-        settings['space']['sampling']['init_size'] = 6
+        settings['space']['sampling']['init_size'] = ns
     except TypeError:  # Case with list instead of dict
-        settings['space']['sampling'] = {'init_size': 6, 'method': 'halton'}
+        settings['space']['sampling'] = {'init_size': ns, 'method': 'halton'}
     batman.ui.run(settings, options)
-    assert os.path.isdir(os.path.join(tmp, 'snapshots/5'))
+    assert os.path.isdir(os.path.join(tmp, 'snapshots/6'))
 
 
 def test_resampling(tmp, case='Michalewicz'):
@@ -170,12 +166,14 @@ def test_resampling(tmp, case='Michalewicz'):
     ('G_Function'),
     ('Basic_function'),
     ('Channel_Flow'),
+    ('Multifidelity'),
 ])
 def test_cases(tmp, name):
     test_init(tmp, case=name)
-    test_quality(tmp, case=name)
+    if name != 'Multifidelity':
+        test_quality(tmp, case=name)
     test_uq(tmp, case=name)
-    if name != 'Channel_Flow':
+    if name not in ['Channel_Flow', 'Multifidelity']:
         test_restart_pod(tmp, case=name)
 
 
@@ -219,14 +217,12 @@ def test_only_surrogate(tmp, case='Michalewicz'):
     check_output(tmp)
 
 
-@pytest.mark.xfail(raises=ValueError, reason='Flat response, no contour possible')
-def test_only_surrogate_settings(tmp, case='Ishigami'):
+def test_only_surrogate_settings(tmp, case='Basic_function'):
     os.chdir(os.path.join(PATH, case))
     sys.argv = ['batman', 'settings.json', '-o', tmp]
     options = batman.ui.parse_options()
     settings = batman.misc.import_config(options.settings, SCHEMA)
     settings['space'].pop('resampling')
-    settings.pop('pod')
     settings.pop('uq')
     # Kriging settings
     settings['surrogate'].update({
@@ -249,7 +245,7 @@ def test_uq_no_surrogate(tmp, case='Ishigami'):
     options = batman.ui.parse_options()
     settings = batman.misc.import_config(options.settings, SCHEMA)
     settings['space']['sampling']['method'] = 'saltelli'
-    settings['space']['sampling']['init_size'] = 8
+    settings['space']['sampling']['init_size'] = 80
     settings['space'].pop('resampling')
     settings.pop('pod')
     settings.pop('surrogate')

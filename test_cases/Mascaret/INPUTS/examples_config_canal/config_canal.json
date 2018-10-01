@@ -1,0 +1,13 @@
+{
+ "files": {
+        "xcas": "mascaret0.xcas",
+        "geo": "mascaret0.geo",
+        "res": "ResultatsOpthyca.opt",
+        "listing": "ResultatsListing.lis",
+        "damocle": "listing.damoc",
+        "lig": "LigneEauInitiale.lig",
+        "loi": [
+            "mascaret0_0.loi",
+            "mascaret0_1.loi"
+        ]
+ }

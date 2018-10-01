@@ -2,6 +2,7 @@
 High Density Region Boxplot
 ---------------------------
 """
+from tempfile import mkstemp
 import logging
 from itertools import compress
 try:
@@ -119,8 +120,8 @@ class HdrBoxplot:
         self.n_alpha = len(self.alpha)
 
         # Compute PDF values associated to each quantile
-        self.pdf_r = np.exp(self.ks_gaussian.score_samples(self.data_r)).flatten()
-        self.pvalues = np.array([np.percentile(self.pdf_r, (1 - self.alpha[i]) * 100,
+        pdf_r = np.exp(self.ks_gaussian.score_samples(self.data_r)).flatten()
+        self.pvalues = np.array([np.percentile(pdf_r, (1 - self.alpha[i]) * 100,
                                                interpolation='linear')
                                  for i in range(self.n_alpha)])
 
@@ -133,7 +134,7 @@ class HdrBoxplot:
         # Find mean, quantiles and outliers curves
         median = differential_evolution(pdf, bounds=self.bounds, maxiter=5).x
 
-        self.outliers = self.find_outliers(data=self.data, samples=self.pdf_r,
+        self.outliers = self.find_outliers(data=self.data, data_r=self.data_r,
                                            method=self.outliers_method,
                                            threshold=self.threshold)
 
@@ -221,7 +222,7 @@ class HdrBoxplot:
         return (self.pca.inverse_transform(max_.x)[idx],
                 self.pca.inverse_transform(min_.x)[idx])
 
-    def find_outliers(self, data, samples, method='kde', threshold=0.95):
+    def find_outliers(self, data, data_r=None, method='kde', threshold=0.95):
         """Detect outliers.
 
         The *Isolation forrest* method requires additional computations to find
@@ -231,22 +232,22 @@ class HdrBoxplot:
 
         :param array_like data: data from which to extract outliers
           (n_samples, n_features).
-        :param array_like samples: samples values to examine
+        :param array_like data_r: data_r values corresponding to data
           (n_samples, n_features/n_components).
         :param str method: detection method ['kde', 'forest'].
         :param float threshold: detection sensitivity.
         :return: Outliers.
         :rtype: array_like (n_outliers, n_features)
         """
+        if data_r is None:
+            data_r = self.pca.transform(data)
+
         if method == 'kde':
-            outliers = np.where(samples < self.pvalues[self.alpha.index(threshold)])
+            pdf_r = np.exp(self.ks_gaussian.score_samples(data_r))
+            outliers = np.where(pdf_r < self.pvalues[self.alpha.index(threshold)])
             outliers = data[outliers]
         elif method == 'forest':
             try:
-                try:
-                    data_r = self.pca.transform(data)
-                except ValueError:
-                    data_r = data
                 outliers = np.where(self.detector.predict(data_r) == -1)
             except AttributeError:
                 forrest = IsolationForest(contamination=(1 - threshold),
@@ -261,7 +262,7 @@ class HdrBoxplot:
         return outliers
 
     def plot(self, samples=None, fname=None, x_common=None, labels=None,
-             xlabel='t', flabel='F'):
+             xlabel='t', flabel='F', dataset=True):
         """Functional plot and n-variate space.
 
         If :attr:`self.n_components` is 2, an additional contour plot is done.
@@ -269,20 +270,23 @@ class HdrBoxplot:
         otherwize the given sample is used.
 
         :param array_like: samples to plot (n_samples, n_features).
-        :param str fname: wether to export to filename or display the figures.
+        :param str fname: whether to export to filename or display the figures.
         :param array_like x_common: abscissa (1, n_features).
         :param list(str) labels: labels for each curve.
         :param str xlabel: label for x axis.
         :param str flabel: label for y axis.
+        :param bool dataset: Show dataset or hide it.
         :returns: figures and all axis.
         :rtype: Matplotlib figure instances, Matplotlib AxesSubplot instances.
         """
         figures, axs = [], []
 
+        pre_outliers = False  # Flag to compute or not
         if samples is None:
             data = self.data
             data_r = self.data_r
             n_samples = self.n_samples
+            pre_outliers = True
         elif isinstance(samples, int):
             data_r = self.ks_gaussian.sample(n_samples=samples)
             data = self.pca.inverse_transform(data_r)
@@ -291,6 +295,13 @@ class HdrBoxplot:
             data = samples
             data_r = self.pca.transform(data)
             n_samples = len(data)
+
+        if pre_outliers:
+            outliers = self.outliers
+        else:
+            outliers = self.find_outliers(data=data, data_r=data_r,
+                                          method=self.outliers_method,
+                                          threshold=self.threshold)
 
         if self.n_components == 2:
             n_contours = 50
@@ -319,10 +330,11 @@ class HdrBoxplot:
             plt.tight_layout()
 
         # Bivariate space
-        fig, sub_ax = doe(data_r, plabels=[str(i + 1)
-                                           for i in range(self.n_components)])
+        fig, ax = doe(data_r, plabels=[str(i + 1)
+                                       for i in range(self.n_components)],
+                      fname=mkstemp()[1])
         figures.append(fig)
-        axs.append(sub_ax)
+        axs.append(ax)
 
         # Time serie
         fig, ax = plt.subplots()
@@ -330,9 +342,10 @@ class HdrBoxplot:
         axs.append(ax)
         if x_common is None:
             x_common = np.linspace(0, 1, self.dim)
-        plt.plot(np.array([x_common] * n_samples).T, data.T,
-                 c='c', alpha=.1, label='dataset')
-        plt.plot(x_common, self.median, c='k', label='Median')
+
+        if dataset:
+            plt.plot(np.array([x_common] * n_samples).T, data.T,
+                     c='c', alpha=.1, label='dataset')
         plt.fill_between(x_common, *self.hdr_50,
                          color='gray', alpha=.4, label='50% HDR')
         plt.fill_between(x_common, *self.hdr_90,
@@ -343,17 +356,19 @@ class HdrBoxplot:
                      np.array(self.extra_quantiles).T,
                      c='y', ls='-.', alpha=.4, label='Extra quantiles')
 
-        if len(self.outliers) != 0:
+        if len(outliers) != 0:
             if labels is not None:
-                labels_pos = np.all(np.isin(self.data, self.outliers), axis=1)
+                labels_pos = np.all(np.isin(self.data, outliers), axis=1)
                 labels = list(compress(labels, labels_pos))
 
-            for ii, outlier in enumerate(self.outliers):
+            for ii, outlier in enumerate(outliers):
                 label = str(labels[ii]) if labels is not None else 'Outliers'
                 plt.plot(x_common, outlier,
                          ls='--', alpha=0.7, label=label)
         else:
             self.logger.debug('It seems that there are no outliers...')
+
+        plt.plot(x_common, self.median, c='k', label='Median')
 
         plt.xlabel(xlabel)
         plt.ylabel(flabel)
@@ -414,21 +429,18 @@ class HdrBoxplot:
 
         if samples is None:
             data_r = self.data_r
-            pdf_r = self.pdf_r
             data = self.data
         elif isinstance(samples, int):
             data_r = self.ks_gaussian.sample(n_samples=samples)
             data = self.pca.inverse_transform(data_r)
-            pdf_r = np.exp(self.ks_gaussian.score_samples(data_r))
         else:
             data = samples
             data_r = self.pca.transform(data)
-            pdf_r = np.exp(self.ks_gaussian.score_samples(data_r))
 
         with writer.saving(fig, fname, dpi=200):
-            for i, (pdf, curve_r, curve) in enumerate(zip(pdf_r, data_r, data)):
+            for i, (curve_r, curve) in enumerate(zip(data_r, data)):
                 curve_r = np.atleast_2d(curve_r)
-                outlier = self.find_outliers(data=curve_r, samples=pdf,
+                outlier = self.find_outliers(data=curve, data_r=curve_r,
                                              method=self.outliers_method,
                                              threshold=self.threshold)
 

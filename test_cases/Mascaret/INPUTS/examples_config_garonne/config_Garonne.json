@@ -1,0 +1,17 @@
+{
+    "files": {
+        "xcas": "ParametresMascaret.xcas",
+        "geo": "geometrie.geo",
+        "res": "ResultatsOpthyca.opt",
+        "listing": "ResultatsListing.lis",
+        "damocle": "listing.damoc",
+        "lig": "LigneEauInitiale.lig",
+        "loi": [
+            "Hydro_Tonneins.loi",
+            "CT_LaReole.loi"
+        ]
+    },
+    "boundary_conditions": [{"type": "discharge", "index": 0, "value": 2345.0}],
+    "friction_coefficients": [{"type": "zone", "index": 2, "value": 32.0}],
+    "output": {"node": 220}    
+}

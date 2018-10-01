@@ -25,6 +25,23 @@ As stated before, the golden standard would be to perform a *Monte Carlo* sampli
 
 In Damblin et al. [Damblin2013]_ a comprehensive analysis of most common DOE is found. In the end, the *Sobol'* or *Halton* DOE are sufficient when dealing with a small number of parameters (<5). With an increasing number of parameters, patterns start to appear and optimized LHS are required.
 
+Parameters whose distributions are Gaussian samplers are treated independently of the other variables, using the class ``space.gp_sampler.GpSampler``.
+
+Gaussian process sampler
+------------------------
+
+Let :math:`x(t)` be a real parameter indexed by :math:`t\in\mathbf{R}^d` with :math:`d\in\{1,2,3\}`. :math:`t` can represent a time point (:math:`d=1`), a space point (:math:`d=1` or :math:`d=2`) or a time-space point (:math:`d=1`, :math:`d=2` or :math:`d=3`).
+
+This parameter is observed at many index values:
+  
+    reference = {'indices': [[t_11, ..., t_1d], ..., [t_n1, ..., t_nd]], 'values': [v_1, ..., v_n]}
+    
+and this parameter ``reference`` can be either an object of type ``list`` or a .npy file storing this object.
+    
+A Gaussian process with zero mean is built from ``reference`` and a kernel function. The Gaussian process information can be compressed by thresholding the Karhunen Loeve Decomposition (KLD) involved in the Gaussian process sampling. This threshold corresponds to the minimal relative amplitude of the eigenvalues to consider in the Karhunen-Loeve decomposition of the Gaussian process wrt the sum of the preceeding eigenvalues.
+
+Lastly, Gaussian process realizations can either be added to the reference values [v_1, ..., v_n] and the totals become inputs of the output provider, or directly become inputs of the ouput provider.
+
 Resampling the parameters space
 -------------------------------
 

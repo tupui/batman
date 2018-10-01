@@ -9,7 +9,7 @@ import logging
 import numpy as np
 
 
-class AntaresFormater(object):
+class AntaresFormater:
     """Wrapper class for using antares reader and writers."""
 
     def __init__(self, format_name):

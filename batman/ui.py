@@ -79,8 +79,8 @@ def run(settings, options):
             logger.debug('cleaning : {}'.format(options.output))
 
     elif options.restart and os.path.isdir(root) and\
-        ('discover' not in settings['snapshot']['provider']):
-        # auto-discovery of existing snapshots        
+            ('discover' not in settings['snapshot']['provider']):
+        # auto-discovery of existing snapshots
         settings['snapshot']['provider']['discover'] = os.path.join(root, '*', '*')
 
     driver = Driver(settings, options.output)
@@ -180,7 +180,7 @@ def parse_options():
         '-r', '--restart',
         action='store_true',
         default=False,
-        help='restart pod, [default: %(default)s]')
+        help='restart, [default: %(default)s]')
 
     parser.add_argument(
         '-n', '--no-surrogate',

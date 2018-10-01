@@ -27,7 +27,7 @@ from ..misc import (NestedPool, cpu_system)
 from ..functions.utils import multi_eval
 
 
-class SklearnRegressor(object):
+class SklearnRegressor:
     """Interface to Scikit-learn regressors."""
 
     logger = logging.getLogger(__name__)

@@ -1,15 +1,20 @@
 # coding: utf8
 import os
+import copy
 import pytest
 import numpy as np
 import numpy.testing as npt
 from scipy.io import wavfile
 import openturns as ot
 from mock import patch
-from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf, sobol,
-                                  reshow, response_surface, doe, corr_cov)
+from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf,
+                                  sensitivity_indices, corr_cov,
+                                  reshow, response_surface, doe,
+                                  mesh_2D, cusunoro, moment_independent)
+from batman.visualization.density import ecdf
 from batman.surrogate import SurrogateModel
-from batman.functions import (Ishigami, Mascaret, el_nino)
+from batman.space import Space
+from batman.functions import (Ishigami, db_Mascaret, el_nino)
 import matplotlib.pyplot as plt
 
 try:
@@ -30,10 +35,11 @@ class TestHdr:
 
     @pytest.fixture(scope="session")
     def hdr(self):
+        np.random.seed(123456)
+        ot.RandomGenerator.SetSeed(123456)
         return HdrBoxplot(data)
 
-    @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
-    def test_hdr_basic(self, hdr, tmp):
+    def test_hdr_basic(self, hdr, tmp, seed):
         print('Data shape: ', data.shape)
 
         assert len(hdr.extra_quantiles) == 0
@@ -81,7 +87,7 @@ class TestHdr:
 
     @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
     @patch("matplotlib.pyplot.show")
-    def test_hdr_alpha(self, mock_show):
+    def test_hdr_alpha(self, mock_show, seed):
         hdr = HdrBoxplot(data, alpha=[0.7])
         extra_quant_t = np.vstack([[25.1, 26.4, 26.9, 26.3, 25.2, 23.9,
                                     22.7, 21.8, 21.5, 21.8, 22.5, 23.7],
@@ -93,37 +99,28 @@ class TestHdr:
 
     @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
     @patch("matplotlib.pyplot.show")
-    def test_hdr_multiple_alpha(self, mock_show):
+    def test_hdr_multiple_alpha(self, mock_show, seed):
         hdr = HdrBoxplot(data, alpha=[0.4, 0.92])
-        extra_quant_t = [[25.712, 27.052, 27.711, 27.200,
-                          26.162, 24.833, 23.639, 22.378,
-                          22.250, 22.640, 23.472, 24.649],
-                         [22.973, 24.526, 24.608, 23.343,
-                          21.908, 20.655, 19.750, 19.046,
-                          18.812, 18.989, 19.520, 20.685],
-                         [24.667, 26.033, 26.416, 25.584,
-                          24.308, 22.849, 21.684, 20.948,
-                          20.483, 21.019, 21.751, 22.890],
-                         [23.873, 25.371, 25.667, 24.644,
-                          23.177, 21.923, 20.791, 20.015,
-                          19.697, 19.951, 20.622, 21.858]]
+        extra_quant_t = [[26., 27., 28., 27., 26., 25., 24., 23., 22., 23., 23., 25.],
+                         [23., 25., 25., 23., 22., 21., 20., 19., 19., 19., 20., 21.],
+                         [25., 26., 26., 26., 24., 23., 22., 21., 21., 21., 22., 23.],
+                         [24., 25., 26., 25., 23., 22., 21., 20., 20., 23., 21., 25.]]
         npt.assert_almost_equal(hdr.extra_quantiles, np.vstack(extra_quant_t), decimal=0)
         hdr.plot()
 
-    def test_hdr_threshold(self, ):
+    def test_hdr_threshold(self, seed):
         hdr = HdrBoxplot(data, alpha=[0.8], threshold=0.93)
         labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)
         outliers = labels[labels_pos]
         npt.assert_equal([[1982], [1983], [1997], [1998]], outliers)
 
-    @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
-    def test_hdr_outliers_method(self, ):
+    def test_hdr_outliers_method(self, seed):
         hdr = HdrBoxplot(data, threshold=0.93, outliers_method='forest')
         labels_pos = np.all(np.isin(data, hdr.outliers), axis=1)
         outliers = labels[labels_pos]
         npt.assert_equal([[1982], [1983], [1997], [1998]], outliers)
 
-    def test_hdr_optimize_bw(self, ):
+    def test_hdr_optimize_bw(self, seed):
         hdr = HdrBoxplot(data, optimize=True)
         median_t = [24.27, 25.67, 25.98, 25.05, 23.76, 22.40,
                     21.31, 20.43, 20.20, 20.47, 21.17, 22.37]
@@ -199,15 +196,13 @@ class TestHdr:
 
 class TestKiviat:
 
-    @patch("matplotlib.pyplot.show")
     @pytest.fixture(scope="session")
-    def kiviat_data(self, mock_show):
+    def kiviat_data(self):
         sample = [[30, 4000], [15, 5000]]
         data = [[12], [15]]
         plabels = ['Ks', 'Q', '-']
         bounds = [[15.0, 2500.0], [60.0, 6000.0]]
-        kiviat = Kiviat3D(sample, data, bounds, plabels=plabels)
-        kiviat.plot()
+        kiviat = Kiviat3D(sample, data, bounds=bounds, plabels=plabels)
 
         return kiviat
 
@@ -224,6 +219,11 @@ class TestKiviat:
         kiviat.plot(fill=False, ticks_nbr=12)
 
         kiviat = Kiviat3D(sample, functional_data)
+        kiviat = Kiviat3D(sample, functional_data, stack_order='qoi', cbar_order='hdr')
+        kiviat = Kiviat3D(sample, functional_data, stack_order='hdr', cbar_order='qoi')
+        kiviat = Kiviat3D(sample, functional_data, stack_order=1, cbar_order='hdr')
+        kiviat = Kiviat3D(sample, functional_data, idx=1, cbar_order='hdr',
+                          range_cbar=[0, 1])
         kiviat.plot(fname=os.path.join(tmp, 'kiviat.pdf'))
 
     @pytest.mark.skipif(not have_ffmpeg, reason='ffmpeg not available')
@@ -269,10 +269,8 @@ class TestPdf:
     @patch("matplotlib.pyplot.show")
     def test_pdf_surrogate(self, mock_show, ishigami_data):
         dist = ot.ComposedDistribution(ishigami_data.dists)
-        space = np.array(ishigami_data.space)
-        max_points_nb = space.shape[0]
         surrogate = SurrogateModel('rbf', ishigami_data.space.corners,
-                                   max_points_nb, ishigami_data.space.plabels)
+                                   ishigami_data.space.plabels)
         surrogate.fit(ishigami_data.space, ishigami_data.target_space)
         settings = {
             "dist": dist,
@@ -301,25 +299,28 @@ class TestPdf:
             fname=os.path.join(tmp, 'pdf_dotplot.pdf'))
 
 
-class TestSobol:
+class TestSensitivity:
 
     @patch("matplotlib.pyplot.show")
     def test_sobols_aggregated(self, mock_show, tmp):
         fun = Ishigami()
         indices = [fun.s_first, fun.s_total]
-        fig = sobol(indices, conf=0.05)
+        fig = sensitivity_indices(indices, conf=0.05)
         fig = reshow(fig[0])
         plt.plot([0, 10], [0.5, 0.5])
         fig.show()
-        sobol(indices, plabels=['x1', 't', 'y'], fname=os.path.join(tmp, 'sobol.pdf'))
+        sensitivity_indices(indices, plabels=['x1', 't', 'y'],
+                            fname=os.path.join(tmp, 'sobol.pdf'))
+        sensitivity_indices(indices, polar=True, conf=[[0.2, 0.1, 0.1], [0.1, 0.1, 0.1]])
+        sensitivity_indices([indices[0]])
 
     @patch("matplotlib.pyplot.show")
     def test_sobols_map(self, mock_show, tmp):
-        fun = Mascaret()
+        fun = db_Mascaret()
         indices = [fun.s_first, fun.s_total, fun.s_first_full, fun.s_total_full]
-        sobol(indices)
-        sobol(indices, plabels=['Ks', 'Q'],
-              xdata=fun.x, fname=os.path.join(tmp, 'sobol_map.pdf'))
+        sensitivity_indices(indices)
+        sensitivity_indices(indices, plabels=['Ks', 'Q'], xdata=fun.x,
+                            fname=os.path.join(tmp, 'sobol_map.pdf'))
 
 
 class TestResponseSurface:
@@ -343,7 +344,7 @@ class TestResponseSurface:
 
     @pytest.mark.xfail(raises=ValueError)
     @patch("matplotlib.pyplot.show")
-    def test_response_surface_2D_scalar(self, mock_show, tmp, branin_data):
+    def test_response_surface_2D_scalar(self, mock_show, tmp, branin_data, seed):
         space = branin_data.space
         bounds = [[-7, 0], [10, 15]]
         path = os.path.join(tmp, 'rs_2D_vector.pdf')
@@ -384,6 +385,30 @@ class TestResponseSurface:
                          axis_disc=[2, 15, 15, 15], fname=path, feat_order=order)
 
 
+class Test2Dmesh:
+
+    def test_2D_mesh(self, tmp):
+        datadir = os.path.join(os.path.dirname(__file__), 'data')
+        fname = os.path.join(datadir, 'data_Garonne.csv')
+        path = os.path.join(tmp, 'garonne_2D.pdf')
+        vmin = 2.5
+        mesh_2D(fname=fname, fformat='csv', xlabel='x label',
+                flabels=['Variable'], vmins=[vmin], output_path=path)
+
+    def test_2D_mesh_add_var(self, tmp, mascaret_data):
+        datadir = os.path.join(os.path.dirname(__file__), 'data')
+        fname = os.path.join(datadir, 'data_2D_mesh.csv')
+        var_sobol = [[0.1, 0.2], [0.3, 0.2], [0.88, 0.2], [0.9, 1.0], [0.1, 0.12]]
+        path = os.path.join(tmp, 'data_2D.pdf')
+        flabels = ['Ks', 'Q']
+        mesh_2D(fname=fname, fformat='csv', xlabel='x label', var=var_sobol,
+                flabels=flabels, output_path=path)
+
+        var_sobol = [[0.1, 0.2], [0.3, 0.2], [0.88, 0.2], [0.9, 1.0]]
+        with pytest.raises(ValueError):
+            mesh_2D(fname=fname, var=var_sobol)
+
+
 class TestDoe:
 
     @patch("matplotlib.pyplot.show")
@@ -410,3 +435,45 @@ def test_corr_cov(mock_show, mascaret_data, tmp):
     data = func(sample)
     corr_cov(data, sample, func.x, interpolation='lanczos', plabels=['Ks', 'Q'])
     corr_cov(data, sample, func.x, fname=os.path.join(tmp, 'corr_cov.pdf'))
+
+
+class TestDensity:
+
+    def test_cusunoro(self, ishigami_data, tmp):
+        Y = ishigami_data.target_space.flatten()
+        X = ishigami_data.space
+        cuso = cusunoro(X, Y, plabels=['x1', 'x2', 'x3'],
+                        fname=os.path.join(tmp, 'cusunoro.pdf'))
+
+        npt.assert_almost_equal(cuso[2], [0.328, 0.353, 0.018], decimal=3)
+
+    def test_ecdf(self):
+        data = np.array([1, 3, 6, 10, 2])
+        xs, ys = ecdf(data)
+        npt.assert_equal(xs, [1, 2, 3, 6, 10])
+        npt.assert_equal(ys, [0, 0.25, 0.5, 0.75, 1.])
+
+    def test_moment_independant(self, ishigami_data, tmp):
+        ishigami_data_ = copy.deepcopy(ishigami_data)
+        ishigami_data_.space.max_points_nb = 5000
+        X = ishigami_data_.space.sampling(5000, 'olhs')
+        Y = ishigami_data_.func(X).flatten()
+
+        momi = moment_independent(X, Y, plabels=['x1', 'x2', 'x3'],
+                                  fname=os.path.join(tmp, 'moment_independent.pdf'))
+
+        npt.assert_almost_equal(momi[2]['Kolmogorov'], [0.236, 0.377, 0.107], decimal=2)
+        npt.assert_almost_equal(momi[2]['Kuiper'], [0.257, 0.407, 0.199], decimal=2)
+        npt.assert_almost_equal(momi[2]['Delta'], [0.211, 0.347, 0.162], decimal=2)
+        npt.assert_almost_equal(momi[2]['Sobol'], [0.31, 0.421, 0.002], decimal=2)
+
+        # Cramer
+        space = Space(corners=[[-5, -5], [5, 5]], sample=5000)
+        space.sampling(dists=['Normal(0, 1)', 'Normal(0, 1)'])
+        Y = [np.exp(x_i[0] + 2 * x_i[1]) for x_i in space]
+        X = np.array(space)
+
+        momi = moment_independent(X, Y,
+                                  fname=os.path.join(tmp, 'moment_independent.pdf'))
+
+        npt.assert_almost_equal(momi[2]['Cramer'], [0.113, 0.572], decimal=2)

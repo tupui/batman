@@ -1,0 +1,26 @@
+{
+  "files": {
+        "xcas": "ParametresMascaret.xcas",
+        "geo": "geometrie.geo",
+        "casier": "GeometrieCasiers.casier",
+        "res": "ResultatsOpthyca.opt",
+        "res_casier": "Resultats.res_casier",
+        "res_liaison": "Resultats.res_liaison",
+        "listing": "ResultatsListing.lis",
+        "listing_casier": "ResultatsListing.listing_casier",
+        "listing_liaison": "ResultatsListing.listing_liaison",
+        "damocle": "listing.damoc",
+        "lig": "LigneEauInitiale.lig",
+        "loi": [
+            "Hydro_Tonneins.loi",
+            "CT_LaReole.loi"]},
+ 
+ "boundary_conditions": [{"type": "discharge", "index": 1, "value": 3000},
+                         {"type": "discharge", "index": 2, "value": 1500}
+                        ],
+ 
+ "friction_coefficients": [{"type": "zone", "index": 1, "value": 35},
+                          {"type": "node", "index": 1, "value": 35}
+                         ],
+ 
+ }

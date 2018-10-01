@@ -13,7 +13,7 @@ import numpy as np
 from .sample_cache import SampleCache
 
 
-class ProviderFile(object):
+class ProviderFile:
     """Provides Snapshots loaded from a list of files."""
 
     logger = logging.getLogger(__name__)

@@ -8,5 +8,5 @@ ln -s data_garonne_lnhe_casier/LigneEauInitiale.lig LigneEauInitiale.lig
 ln -s data_garonne_lnhe_casier/Hydro_Tonneins.loi Hydro_Tonneins.loi
 ln -s data_garonne_lnhe_casier/CT_LaReole.loi CT_LaReole.loi
 ln -s data_garonne_lnhe_casier/config_garonne_lnhe_casier.json config_garonne_lnhe_casier.json
-ln -s data_garonne_lnhe_casier/config_garonne_lnhe_user_casier.json config_garonne_lnhe_user_casier.json
+
 

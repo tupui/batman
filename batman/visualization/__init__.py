@@ -8,19 +8,21 @@ import matplotlib.backends.backend_pdf
 from .kiviat import Kiviat3D
 from .tree import Tree
 from .hdr import HdrBoxplot
-from .uncertainty import (kernel_smoothing, pdf, sobol, corr_cov)
+from .uncertainty import (kernel_smoothing, pdf, sensitivity_indices, corr_cov)
+from .density import (cusunoro, moment_independent)
 from .doe import doe
 from .response_surface import response_surface
+from .mesh_2D import mesh_2D
 
 __all__ = ['Kiviat3D', 'Tree', 'HdrBoxplot', 'kernel_smoothing', 'pdf',
-           'sobol', 'corr_cov', 'reshow', 'save_show', 'response_surface',
-           'doe']
+           'sensitivity_indices', 'corr_cov', 'cusunoro', 'moment_independent',
+           'reshow', 'save_show', 'response_surface', 'doe', 'mesh_2D']
 
 
 def reshow(fig):
     """Create a dummy figure and use its manager to display :attr:`fig`.
 
-    :param fig: Matplotlib figure instance
+    :param fig: Matplotlib figure instance.
     """
     dummy = plt.figure()
     new_manager = dummy.canvas.manager
@@ -29,22 +31,26 @@ def reshow(fig):
     return dummy
 
 
-def save_show(fname, figures):
+def save_show(fname, figures, **kwargs):
     """Either show or save the figure[s].
 
     If :attr:`fname` is `None` the figure will show.
 
-    :param str fname: wether to export to filename or display the figures.
+    :param str fname: whether to export to filename or display the figures.
     :param list(Matplotlib figure instance) figures: Figures to handle.
     """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        plt.tight_layout()
+        for fig in figures:
+            try:
+                fig.tight_layout()
+            except ValueError:
+                pass
 
     if fname is not None:
         pdf = matplotlib.backends.backend_pdf.PdfPages(fname)
         for fig in figures:
-            pdf.savefig(fig, transparent=True, bbox_inches='tight')
+            pdf.savefig(fig, transparent=True, bbox_inches='tight', **kwargs)
         pdf.close()
     else:
         plt.show()

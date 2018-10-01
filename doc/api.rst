@@ -20,6 +20,7 @@ specifications may not be enough to give full guidelines on their uses.
 
    space.Sample
    space.Space
+   space.gp_sampler.GpSampler
    space.Doe
    space.Refiner
 
@@ -39,6 +40,9 @@ specifications may not be enough to give full guidelines on their uses.
    surrogate.Kriging
    surrogate.PC
    surrogate.RBFnet
+   surrogate.SklearnRegressor
+   surrogate.Evofusion
+   surrogate.Mixture
 
 .. py:module:: surrogate
 .. automodule:: batman.surrogate
@@ -53,6 +57,7 @@ specifications may not be enough to give full guidelines on their uses.
 .. autosummary::
 
    uq.UQ
+   uq.cosi
 
 .. py:module:: uq
 .. automodule:: batman.uq
@@ -71,11 +76,14 @@ specifications may not be enough to give full guidelines on their uses.
    visualization.HdrBoxplot
    visualization.doe
    visualization.response_surface
-   visualization.sobol
+   visualization.sensitivity_indices
+   visualization.cusunoro
+   visualization.moment_independent
    visualization.corr_cov
    visualization.pdf
    visualization.kernel_smoothing
    visualization.reshow
+   visualization.mesh_2D
 
 .. py:module:: visualization
 .. automodule:: batman.visualization
@@ -104,6 +112,7 @@ specifications may not be enough to give full guidelines on their uses.
 .. autosummary::
 
    functions.data
+   functions.DbGeneric
    functions.analytical.SixHumpCamel
    functions.analytical.Branin
    functions.analytical.Michalewicz
@@ -114,8 +123,7 @@ specifications may not be enough to give full guidelines on their uses.
    functions.analytical.ChemicalSpill
    functions.analytical.Channel_Flow
    functions.analytical.Manning
-   functions.telemac_mascaret.Mascaret
-   functions.telemac_mascaret.MascaretApi
+   functions.db_Mascaret
    functions.utils.multi_eval
    functions.utils.output_to_sequence
 
@@ -128,7 +136,7 @@ specifications may not be enough to give full guidelines on their uses.
    :members:
    :undoc-members:
 
-.. automodule:: batman.functions.telemac_mascaret
+.. automodule:: batman.functions.db_Mascaret
    :members:
    :undoc-members:
 

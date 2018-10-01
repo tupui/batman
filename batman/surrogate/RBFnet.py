@@ -9,7 +9,7 @@ from .TreeCut import Tree
 from ..functions.utils import multi_eval
 
 
-class RBFnet(object):
+class RBFnet:
     """RBF class."""
 
     def __init__(self, trainIn, trainOut, regparam=0., radius=1.5, regtree=0,
@@ -49,7 +49,7 @@ class RBFnet(object):
             self.rfunction = default_function
         else:
             self.rfunction = function
-        print(self.trainIn.shape, self.trainOut.shape)
+
         if self.trainIn.shape[0] != self.trainOut.shape[0]:
             raise ValueError('Incoherent number of samples I/O')
 
