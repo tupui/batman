@@ -115,7 +115,7 @@ def find_version(*file_paths):
 
 
 setup(
-    name='batman',
+    name='ot-batman',
     keywords=("surrogate model, uncertainty quantification,statistical analysis,"
               "design of experiments, uncertainty visualization"),
     version=find_version("batman", "__init__.py"),
@@ -153,8 +153,5 @@ setup(
     include_package_data=True,
     zip_safe=False,
     license="CECILL-B",
-    url=["https://gitlab.com/cerfacs/batman",
-         "http://batman.readthedocs.io",
-         "https://batman-cerfacs.zulipchat.com",
-         "https://cerfacs.fr"],
+    url="https://gitlab.com/cerfacs/batman",
 )
