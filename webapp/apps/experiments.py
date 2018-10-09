@@ -211,7 +211,7 @@ def simulate_experiments(submit_n_clicks, options, output_fname, case_fname, set
 @app.callback(Output('batman_running', 'children'),
               [Input('interval-component', 'n_intervals'),
                Input('confirm_launch', 'submit_n_clicks')])
-def running_status(n , submit_n_clicks):
+def running_status(n, submit_n_clicks):
     """Running status."""
     try:
         running = SEMAPHORE.is_locked()

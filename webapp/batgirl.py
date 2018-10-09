@@ -41,7 +41,7 @@ app.layout = html.Div([
                    'margin-bottom': '1em',
                    'font-weight': 'bold',
                    'font-size': '1.5rem',
-            },
+                   },
             colors={'primary': 'var(--bat-yellow)', 'background': '#F9FAFB'},
             children=[
                 dcc.Tab(label='Settings', value='settings_tab'),

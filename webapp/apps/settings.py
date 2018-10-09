@@ -127,7 +127,7 @@ def settings_layout(contents):
     layout = [
         html.H6('SPACE'),
         html.Span([
-            html.Div([    
+            html.Div([
                 html.Div([
                     html.Label('Number of parameters:'),
                     dcc.Slider(
@@ -249,9 +249,11 @@ def settings_layout(contents):
         html.Div(
             html.Div([html.Label('Method'),
                       dcc.Dropdown(
-                              options=[{'label': 'Gaussian Process', 'value': 'kriging'},
-                                       {'label': 'Polynomial Chaos', 'value': 'pc'}],
-                              value='kriging', id='surrogate_method')
+                options=[{'label': 'Gaussian Process', 'value': 'kriging'},
+                         {'label': 'Polynomial Chaos', 'value': 'pc'},
+                         {'label': 'Multifidelity', 'value': 'evofusion'},
+                         {'label': 'Mixture of Experts', 'value': 'mixture'}],
+                value='kriging', id='surrogate_method')
             ], className='three columns'), className='row'),
         html.Div(id='surrogate_args'),
 
@@ -271,7 +273,8 @@ def settings_layout(contents):
     return layout
 
 
-app.callback(Output('settings_layout', 'children'), [Input('upload-settings', 'contents')])(settings_layout)
+app.callback(Output('settings_layout', 'children'), [
+             Input('upload-settings', 'contents')])(settings_layout)
 
 layout = html.Div([
 
@@ -323,7 +326,16 @@ for i in range(1, MAX_PARAMETERS + 1):
 pod_values = [Input('pod_dim_max', 'value'), Input('pod_tolerance', 'value'),
               Input('pod_type', 'value')]
 snapshot_values = [Input('max_workers', 'value')]
-surrogate_values = [Input('surrogate_method', 'value')]
+surrogate_values = [Input('surrogate_method', 'value'),
+                    Input('kernel', 'value'), Input('noise_optim', 'value'),
+                    Input('strategy', 'value'), Input('degree', 'value'),
+                    Input('most_significant', 'value'),
+                    Input('max_considered_terms', 'value'),
+                    Input('significance_factor', 'value'),
+                    Input('hyper_factor', 'value'),
+                    Input('cost_ratio', 'value'), Input('grand_cost', 'value'),
+                    Input('clusterer', 'value'), Input('classifier', 'value'),
+                    Input('pca_percentage', 'value')]
 visualization_values = []
 uq_values = []
 
@@ -362,9 +374,9 @@ def update_settings(*settings_values):
 
     idx = MAX_PARAMETERS * 4 + 3  # skip all space values
 
-    settings['pod']['dim_max'] = settings_values[idx]
-    settings['pod']['tolerance'] = settings_values[idx + 1]
-    settings['pod']['type'] = settings_values[idx + 2]
+    settings['pod'].update({'dim_max': settings_values[idx],
+                            'tolerance': settings_values[idx + 1],
+                            'type': settings_values[idx + 2]})
 
     idx += 3  # skip all pod values
 
@@ -372,7 +384,27 @@ def update_settings(*settings_values):
 
     idx += 1  # skip all snapshot values
 
-    settings['surrogate']['method'] = settings_values[idx]
+    noise = True if 'noise' in settings_values[idx + 2] else False
+    global_optimizer = True if 'global_optimizer' in settings_values[idx + 2] else False
+    sparse_param = {'most_significant': settings_values[idx + 5],
+                    'max_considered_terms': settings_values[idx + 6],
+                    'significance_factor': settings_values[idx + 7],
+                    'hyper_factor': settings_values[idx + 8]}
+
+    settings['surrogate'].update({'method': settings_values[idx],
+                                  'kernel': settings_values[idx + 1],
+                                  'noise': noise,
+                                  'global_optimizer': global_optimizer,
+                                  'strategy': settings_values[idx + 3],
+                                  'degree': settings_values[idx + 4],
+                                  'sparse_param': sparse_param,
+                                  'cost_ratio': settings_values[idx + 9],
+                                  'grand_cost': settings_values[idx + 10],
+                                  'clusterer': settings_values[idx + 11],
+                                  'classifier': settings_values[idx + 12],
+                                  'pca_percentage': settings_values[idx + 13]})
+
+    # idx += ...  # skip all surrogate values
 
     return json.dumps(settings)
 
@@ -416,24 +448,24 @@ def update_space_visu(settings):
 def surrogate_args(surrogate_method):
     if surrogate_method == 'kriging':
         args = [html.Div([dcc.Checklist(
-                               options=[{'label': 'Noise', 'value': 'noise'},
-                                        {'label': 'Global optimizer', 'value': 'global_optimizer'}],
-                               values=[''], id='noise_optim')
-                         ], className='two columns'),
-                html.Div([html.Div([html.Label('Kernel'),
-                          dcc.Input(id='kernel',
-                                    placeholder="kernel from OpenTURNS: 'Matern(length_scale=0.5, nu=0.5)'...",
-                                    type='text')], className='five columns'),
-                         ], className='four columns')]
+            options=[{'label': 'Noise', 'value': 'noise'},
+                     {'label': 'Global optimizer', 'value': 'global_optimizer'}],
+            values=[''], id='noise_optim')
+        ], className='two columns'),
+            html.Div([html.Div([html.Label('Kernel'),
+                                dcc.Input(id='kernel',
+                                          placeholder="kernel from OpenTURNS: 'Matern(length_scale=0.5, nu=0.5)'...",
+                                          type='text')], className='five columns'),
+                      ], className='four columns')]
     elif surrogate_method == 'pc':
         args = [
             html.Div([
                 html.Div([html.Label('Strategy'),
                           dcc.RadioItems(id='strategy',
-                             options=[{'label': 'Quadrature', 'value': 'Quad'},
-                                      {'label': 'Least square', 'value': 'LS'},
-                                      {'label': 'Sparse LS', 'value': 'SparseLS'}],
-                             value='Quad')], className='four columns'),
+                                         options=[{'label': 'Quadrature', 'value': 'Quad'},
+                                                  {'label': 'Least square', 'value': 'LS'},
+                                                  {'label': 'Sparse LS', 'value': 'SparseLS'}],
+                                         value='Quad')], className='four columns'),
                 html.Div([html.Label('Degree'),
                           dcc.Input(id='degree',
                                     placeholder="Polynomial degree N=(p+1)^dim...",
@@ -454,6 +486,32 @@ def surrogate_args(surrogate_method):
                     html.Div([html.Label('Hyperbolic factor'),
                               dcc.Input(id='hyper_factor',
                                         type='text')], className='two columns')])
+            ], className='row')
+        ]
+    elif surrogate_method == 'evofusion':
+        args = [
+            html.Div([
+                html.Div([html.Label('Cost ratio'),
+                          dcc.Input(id='cost_ratio',
+                                    type='text')], className='two columns'),
+                html.Div([html.Label('Grand cost'),
+                          dcc.Input(id='grand_cost',
+                                    type='number')], className='two columns'),
+            ], className='row')
+        ]
+    elif surrogate_method == 'mixture':
+        args = [
+            html.Div([
+                html.Div([html.Label('Custerer'),
+                          dcc.Input(id='clusterer',
+                                    type='text')], className='two columns'),
+                html.Div([html.Label('Classifier'),
+                          dcc.Input(id='classifier',
+                                    type='text')], className='two columns'),
+                html.Div([html.Label('Filtering tolerance'),
+                          dcc.Slider(min=0, max=1, step=0.05, value=0.99,
+                                     marks={i / 100: i for i in range(0, 100, 20)},
+                                     id='pca_percentage')], className='two columns'),
             ], className='row')
         ]
 
