@@ -84,30 +84,30 @@ class Doe:
             dists.insert(discrete, disc_dist)
 
         # Join distribution
-        distribution = ot.ComposedDistribution(dists)
+        self.distribution = ot.ComposedDistribution(dists)
 
         if self.kind == 'halton':
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.HaltonSequence(),
-                                                             distribution,
+                                                             self.distribution,
                                                              self.n_samples)
         elif self.kind == 'sobol':
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.SobolSequence(),
-                                                             distribution,
+                                                             self.distribution,
                                                              self.n_samples)
         elif self.kind == 'faure':
             self.sequence_type = ot.LowDiscrepancyExperiment(ot.FaureSequence(),
-                                                             distribution,
+                                                             self.distribution,
                                                              self.n_samples)
         elif (self.kind == 'lhs') or (self.kind == 'lhsc'):
-            self.sequence_type = ot.LHSExperiment(distribution, self.n_samples)
+            self.sequence_type = ot.LHSExperiment(self.distribution, self.n_samples)
         elif self.kind == 'olhs':
-            lhs = ot.LHSExperiment(distribution, self.n_samples)
+            lhs = ot.LHSExperiment(self.distribution, self.n_samples)
             self.sequence_type = ot.SimulatedAnnealingLHS(lhs, ot.GeometricProfile(),
                                                           ot.SpaceFillingC2())
         elif self.kind == 'saltelli':
             # Only relevant for computation of Sobol' indices
             size = self.n_samples // (2 * self.dim + 2)  # N(2*dim + 2)
-            self.sequence_type = ot.SobolIndicesExperiment(distribution,
+            self.sequence_type = ot.SobolIndicesExperiment(self.distribution,
                                                            size, True).generate()
 
     def generate(self):
@@ -117,7 +117,7 @@ class Doe:
         :rtype: array_like (n_samples, n_features).
         """
         if self.kind == 'sobolscramble':
-            sample = self.scrambled_sobol_generate()
+            return self.scrambled_sobol_generate()
         elif self.kind == 'uniform':
             sample = self.uniform()
         elif self.kind == 'lhsc':
@@ -160,9 +160,10 @@ class Doe:
         Scramble function as in Owen (1997).
         """
         # Generate sobol sequence
-        self.sequence_type = ot.LowDiscrepancySequence(ot.SobolSequence(self.dim))
-        samples = self.sequence_type.generate(self.n_samples)
-        r = np.array(samples)
+        samples = ot.LowDiscrepancyExperiment(ot.SobolSequence(),
+                                              self.distribution,
+                                              self.n_samples)
+        r = np.array(samples.generate())
 
         # Scramble the sequence
         for col in range(self.dim):

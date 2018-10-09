@@ -56,7 +56,7 @@ class Mixture:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, samples, data, corners, fsizes, pod=None,
+    def __init__(self, samples, data, corners, fsizes=None, pod=None,
                  standard=True, local_method=None, pca_percentage=0.8,
                  clusterer='cluster.KMeans(n_clusters=2)',
                  classifier='gaussian_process.GaussianProcessClassifier()'):
@@ -94,7 +94,6 @@ class Mixture:
           learning).
           http://scikit-learn.org/stable/supervised_learning.html
         """
-        self.fsizes = fsizes
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
         samples = self.scaler.transform(samples)
@@ -102,6 +101,11 @@ class Mixture:
                    [1 for i in range(samples.shape[1])]]
 
         # Only do the clustering on the sensor
+        if fsizes is None:
+            self.fsizes = data.shape[1]
+        else:
+            self.fsizes = fsizes
+
         if data.shape[1] > self.fsizes:
             clust = data[:, self.fsizes:]
         else:
@@ -115,7 +119,7 @@ class Mixture:
 
         if standard is True:
             scaler = preprocessing.StandardScaler()
-            clust = scaler.fit_transform(clust)
+            # clust = scaler.fit_transform(clust)
 
         # Acquisition of clusterer
         try:
@@ -181,12 +185,12 @@ class Mixture:
             sample_ = [samples[j] for j in self.indice_clt[k]]
             data_ = [data[j, :self.fsizes] for j in self.indice_clt[k]]
 
-            if pod is True:
+            if pod is not None:
                 from batman.pod import Pod
-                pod = Pod(corners, **pod)
+                local_pod = Pod(corners, **pod)
                 snapshots = Sample(space=sample_, data=data_)
-                pod.fit(snapshots)
-                data_ = pod.VS
+                local_pod.fit(snapshots)
+                data_ = local_pod.VS
 
             from batman.surrogate import SurrogateModel
             if local_method is None:
@@ -196,7 +200,7 @@ class Mixture:
                 self.local_models[k] = SurrogateModel(method, corners, plabels=None,
                                                       **local_method[i][method])
 
-            self.local_models[k].fit(np.asarray(sample_), np.asarray(data_), pod=pod)
+            self.local_models[k].fit(np.asarray(sample_), np.asarray(data_), pod=local_pod)
 
     def boundaries(self, samples, plabels=None, fname=None):
         """Boundaries of clusters in the parameter space.
