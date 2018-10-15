@@ -44,6 +44,7 @@ from pandas.plotting import parallel_coordinates
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 import batman as bat
+from batman.visualization import Kiviat3D
 from ..space import Sample
 
 
@@ -119,7 +120,7 @@ class Mixture:
 
         if standard is True:
             scaler = preprocessing.StandardScaler()
-            # clust = scaler.fit_transform(clust)
+            clust = scaler.fit_transform(clust)
 
         # Acquisition of clusterer
         try:
@@ -263,12 +264,15 @@ class Mixture:
             ax.set_ylabel(plabels[1])
         else:
             classif_samples = classif_samples.reshape(-1, 1)
-            samples = np.concatenate((samples, classif_samples), axis=-1)
-            plabels.append("cluster")
-            df = pd.DataFrame(samples, columns=plabels)
+
+            samples_ = np.concatenate((samples_, classif_samples), axis=-1)
+            df = pd.DataFrame(samples_, columns=plabels + ["cluster"])
             ax = parallel_coordinates(df, "cluster")
             ax.set_xlabel('Parameters')
             ax.set_ylabel('Parameters range')
+
+            kiviat = Kiviat3D(samples, classif_samples)
+            kiviat.plot(fname)
 
         bat.visualization.save_show(fname, [fig])
 
@@ -331,10 +335,16 @@ class Mixture:
             result_, sigma_ = self.local_models[k](clf_)
 
             result = np.concatenate([result, result_])
-            sigma = np.concatenate([sigma, sigma_])
+            try:
+                sigma = np.concatenate([sigma, sigma_])
+            except ValueError:
+                sigma = None
 
         idx = np.argsort(idx)
         result = result[idx]
-        sigma = sigma[idx]
+        try:
+            sigma = sigma[idx]
+        except TypeError:
+            sigma = None
 
         return (result, sigma, classif) if classification else (result, sigma)
