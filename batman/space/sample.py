@@ -314,7 +314,7 @@ class Sample(object):
         `len` function. Return the number of samples."""
         return len(self._dataframe)
 
-    def __str__(self):
+    def __repr__(self):
         """Python Data Model.
 
         `str` function. Underlying dataframe representation."""

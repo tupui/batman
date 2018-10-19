@@ -86,7 +86,7 @@ First of all, we define the parameter space using an hypercube. Taking the minim
 
     * ``init_size``: define the initial number of snapshots,
     * ``method``: method to create the DoE, can be *uniform*, *faure*, *halton*,
-      *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *lhsopt* (optimized LHS), *saltelli*,
+      *sobol*, *sobolscramble*, *lhs* (Latin Hypercube Sampling), *lhsc* (Latin Hypercube  Sampling Centered) or *olhs* (optimized LHS), *saltelli*,
     * [``distributions``]: A list of distributions. Ex for three input variables:
       ``["Uniform(15., 60.)", "GpSampler", "Normal(4035., 400.)"]``,
     * [``discrete``]: index of the parameter which is discrete.
@@ -327,6 +327,11 @@ For *evofusion* the following extra attributes **must** be set:
 
 .. note:: We can fill *directly* the number of points into the brackets or *indirectly* using the script ``prediction.py`` located in ``test_cases/Snippets``.
 
+For *mixture* the following extra attributes *can* be set:
+
++ ``pca_percentage``: (float) The percentage of information desired for the computation of PCA for clustering purposes. The number of components desire can also be given.
++ ``clusterer``: (str) Clusterer from Scikit-Learn for clustering purposes. Here all methods from the modules *cluster* and *mixture* of Scikit-Learn can be used. Ex: ``mixture.GaussianMixture(n_components=3, n_init=10)``.
++ ``classifier``: (str) Classifier from Scikit-Learn for classification purposes. Here all methods from the modules *naive_bayes*, *gaussian_process*, *neighbors*, *svm* and *ensemble* of Scikit-Learn can be used. Ex: ``gaussian_process.GaussianProcessClassifier()``.
 
 Optionnal Block 4 - UQ
 ----------------------

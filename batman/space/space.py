@@ -176,7 +176,8 @@ class Space(Sample):
 
         if not hasattr(self, 'gp_samplers'):
             s = int(bool(self.multifidelity))
-            self.logger.info("Discrepancy is {}".format(self.discrepancy(self.values[:, s:], self.corners)))
+            self.logger.info("Discrepancy is {}"
+                             .format(self.discrepancy(self.values[:, s:], self.corners)))
 
         return self.values
 
@@ -461,10 +462,10 @@ class Space(Sample):
                               fname=os.path.join(path, 'DOE.pdf'))
         self.logger.debug('Space wrote to {}'.format(space_file))
 
-    def __str__(self):
+    def __repr__(self):
         """Python Data Model. `str` function. Space string representation."""
         msg = ('Space summary:\n'
                'Hypercube points: {}\n'
                'Number of points: {}\n'
                'Max number of points: {}\n').format(self.corners, len(self), self.max_points_nb)
-        return msg + super(Space, self).__str__()
+        return msg + super(Space, self).__repr__()

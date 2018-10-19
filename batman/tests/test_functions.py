@@ -1,8 +1,10 @@
 # coding: utf8
+import os
 import pytest
 from batman.functions import (SixHumpCamel, Branin, Michalewicz, Rosenbrock,
-                              Rastrigin, Ishigami, G_Function,
-                              Forrester, Manning, db_Mascaret, ChemicalSpill)
+                              Rastrigin, Ishigami, G_Function, Forrester,
+                              ChemicalSpill, Manning, db_Mascaret, mascaret,
+                              Channel_Flow, DbGeneric)
 from scipy.optimize import differential_evolution
 import numpy as np
 import numpy.testing as npt
@@ -87,16 +89,27 @@ def test_Manning():
     assert f_2d([25, 1200]) == pytest.approx(6.29584085, 0.0001)
 
 
+def test_Channel_Flow():
+    f = Channel_Flow(dx=8000., length=40000., width=170., slope=2.8e-4, hinit=6.917)
+    sample = [[11, 2000], [40, 4000]]
+
+    results = f(sample, h_nc=True)
+    npt.assert_almost_equal(results,
+                            [[12.65, 11.82, 11.21, 10.78, -4.28, 2.42, 12.12],
+                             [6.23, 4.01, 2.02, 0.55, -4.28, 3.84, 8.46]],
+                            decimal=2)
+
+
 def test_Mascaret():
     f = db_Mascaret()
     f_out = f([31.54645246710516560, 4237.025232805773157])
-    f_data_base = [2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
-                   2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
-                   1.7149e1, 1.446e1]
+    f_data_base = [[2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
+                    2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
+                    1.7149e1, 1.446e1]]
     npt.assert_almost_equal(f_out, f_data_base, decimal=2)
 
     f = db_Mascaret(multizone=True)
-    f_out = f([51.5625, 46.66, 27.6, 4135.007205626885])[:6]
+    f_out = f([51.5625, 46.66, 27.6, 4135.007205626885])[0, :6]
     f_data_base = [26.39, 26.36, 26.35, 26.34, 26.33, 26.32]
     npt.assert_almost_equal(f_out, f_data_base, decimal=2)
 
@@ -104,4 +117,31 @@ def test_Mascaret():
 def test_ChemicalSpill():
     f = ChemicalSpill()
     y = f([10, 0.07, 1.505, 30.1525])
-    assert y.shape == (1000,)
+    assert y.shape == (1, 1000)
+
+
+def test_DbGeneric():
+    # From samples
+    f_ = mascaret()
+    f = DbGeneric(space=f_.space, data=f_.data)
+
+    s_out, f_out = f([31.54645246710516560, 4237.025232805773157], full=True)
+    f_data_base = [[2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
+                    2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
+                    1.7149e1, 1.446e1]]
+    npt.assert_almost_equal(f_out, f_data_base, decimal=2)
+    s_data_base = [[31.54645246710516560, 4237.025232805773157]]
+    npt.assert_almost_equal(s_out, s_data_base, decimal=2)
+
+    # From paths
+    PATH = os.path.dirname(os.path.realpath(__file__))
+    fnames = ['input_mascaret.npy', 'output_mascaret.npy']
+    fnames = [os.path.join(PATH, '../functions/data/', p) for p in fnames]
+
+    f = DbGeneric(fnames=fnames)
+
+    f_out = f([31.54645246710516560, 4237.025232805773157])
+    f_data_base = [[2.747e1, 2.635e1, 2.5815e1, 2.5794e1, 2.4539e1, 2.2319e1,
+                    2.132e1, 2.1313e1, 2.1336e1, 2.0952e1, 1.962e1, 1.8312e1,
+                    1.7149e1, 1.446e1]]
+    npt.assert_almost_equal(f_out, f_data_base, decimal=2)

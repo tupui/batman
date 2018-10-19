@@ -219,7 +219,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     surrogate.fit(input_, output)
     pred, sigma = surrogate(ishigami_data.point)
     assert sigma is None
-    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.5)
+    assert pred == pytest.approx(ishigami_data.target_point, 0.5)
     surrogate.write(path)
     assert os.path.isfile(os.path.join(path, 'surrogate.dat'))
 
@@ -238,7 +238,7 @@ def test_SurrogateModel_class(tmp, ishigami_data, settings_ishigami):
     npt.assert_array_equal(surrogate.space.values, ishigami_data.space.values)
 
     pred, _ = surrogate(ishigami_data.point)
-    assert pred[0] == pytest.approx(ishigami_data.target_point, 0.2)
+    assert pred == pytest.approx(ishigami_data.target_point, 0.2)
 
 
 def test_quality(mufi_data):

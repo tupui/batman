@@ -14,17 +14,7 @@ This is an open-source project, thus its development strategy is also open-sourc
 * CI is provided by *Gitlab CI* using custom made Docker images. Relative configuration
   and definition files are located under ``.gitlab/continuous_integration``.
   Two images are available on `Docker cloud <https://cloud.docker.com>`_ at:
-  ``tupui/bat_ci_2`` and ``tupui/bat_ci_3``::
-
-    docker build -t tupui/bat_ci_[2,3] -f Dockerfile_python_[2,3] .
-
-    docker login -u tupui -p xxx
-    docker push tupui/bat_ci_[2,3]
-
-    docker login registry.gitlab.com -u tupui -p xxx
-    docker tag tupui/bat_ci_3 registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3
-    docker push registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3
-
+  ``tupui/bat_ci_2`` and ``tupui/bat_ci_3``.
 
 Making a release
 ................
@@ -39,8 +29,23 @@ here are some additionnal points:
 4. Update the docs configuration file (credit).
 5. Compile documentation.
 6. Ensure that all deprecations have been taken care of.
-7. Update Docker images and upload the python 3 image on Gitlab registry.
-8. Make sure that both python 2 and python 3 `tests <https://gitlab.com/cerfacs/batman/pipelines>`_ pass on master.
-9. Tag master with X.X-*ReleaseName* (use ``git tag -a`` to annotate the tag).
-10. Update ``conda`` `recipe <https://github.com/conda-forge/batman-feedstock>`_.
-11. Share the info on the `chat <https://batman-cerfacs.zulipchat.com>`_.
+7. Update Docker images and upload the python 3 image on Gitlab registry::
+   
+    docker build -t tupui/bat_ci_[2,3] -f Dockerfile_python_[2,3] .
+
+    docker login -u tupui -p xxx
+    docker push tupui/bat_ci_[2,3]
+
+    docker login registry.gitlab.com -u tupui -p xxx
+    docker tag tupui/bat_ci_3 registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3
+    docker push registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3
+
+9. Make sure that both python 2 and python 3 `tests <https://gitlab.com/cerfacs/batman/pipelines>`_ pass on master.
+10. Tag master with X.X-*ReleaseName* (use ``git tag -a`` to annotate the tag).
+11. Update ``conda`` `recipe <https://github.com/conda-forge/batman-feedstock>`_ (version and commit patch).
+12. Update ``pip`` package::
+
+    python setup.py sdist bdist_wheel
+    twine upload dist/*
+
+12. Share the info on the `chat <https://batman-cerfacs.zulipchat.com>`_.

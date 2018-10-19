@@ -69,7 +69,7 @@ def doe(sample, plabels=None, resampling=0, multifidelity=False, fname=None):
                 ax.plot(x_plot, pdf)
                 ax.hist(sample_, 30, fc='gray', histtype='stepfilled',
                         alpha=0.2, density=True)
-                ax.set_ylim(ymin=0)
+                ax.set_ylim(bottom=0)
             elif i < j:  # lower corners
                 ax.scatter(sample[0:len_sampling, i],
                            sample[0:len_sampling, j], s=5, c='k', marker='o')

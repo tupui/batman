@@ -14,7 +14,7 @@
                 "method": {
                       "type": "string",
                       "enum": ["halton", "sobol", "sobolscramble", "lhs", "lhsc",
-                               "lhsopt", "faure", "uniform", "saltelli"],
+                               "olhs", "faure", "uniform", "saltelli"],
                       "default": "halton"
                 },
                 "distributions": {"type": "array", "items": {}},
@@ -149,7 +149,7 @@
         "method": {"anyOf": [{
                     "properties": {
                      "type": "string", "default": "kriging",
-                     "enum": ["rbf", "kriging", "pc", "evofusion"]}},
+                     "enum": ["rbf", "kriging", "pc", "evofusion", "mixture"]}},
                     {"properties": {"type": "string"}}]},
         "cost_ratio": {"type": "number", "default": 2.0, "minimum": 1,
                        "exclusiveMinimum": true},
@@ -164,7 +164,11 @@
                                         "hyper_factor": {"type": "number"}}},
         "kernel": {"type": "string"},
         "noise": {"type": ["number", "boolean"], "default": false},
-        "global_optimizer": {"type": "boolean", "default": true}
+        "global_optimizer": {"type": "boolean", "default": true},
+        "clusterer": {"type": "string", "default": "cluster.KMeans(n_clusters=2)"},
+        "classifier": {"type": "string", "default": "svm.SVC()"},
+        "pca_percentage": {"type": "number", "default": 0.8, "minimum": 0,
+                      "maximum": 1}
       },
       "required": ["method"],
       "oneOf": [
@@ -181,6 +185,9 @@
         },
         {
           "properties": {"method": {"enum":["rbf"]}}
+        },
+        {
+          "properties": {"method": {"enum":["mixture"]}}
         }
       ]
     },
@@ -249,7 +256,7 @@
     },
     {
       "required": ["surrogate"],
-      "properties": {"surrogate": {"properties": {"method": {"enum":["evofusion", "kriging", "rbf"]}}}}
+      "properties": {"surrogate": {"properties": {"method": {"enum":["evofusion", "kriging", "rbf", "mixture"]}}}}
     },
     {
       "not": {"required": ["surrogate"]},

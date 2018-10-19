@@ -355,16 +355,23 @@ The correlation and covariance matrices are also availlable::
 Once *Sobol'* indices are computed , it is easy to plot them with::
 
     import batman as bat
-    indices = [s_first, s_total]
-    bat.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'])
+    fun = bat.functions.Ishigami
+    indices = [fun.s_first, fun.s_total]
+    bat.visualization.sobol(indices, plabels=['x0', 'x1', 'x2'])
 
 .. image::  ../fig/sobol_aggregated.pdf
+
+There is an option to use a polar coordinates system as shown here::
+
+    bat.visualization.sobol(indices, polar=True)
+
+.. image::  ../fig/sobol_aggregated-polar.pdf
 
 In case of functionnal data [Roy2017b]_, both aggregated and map indices can be
 passed to the function and both plot are made::
 
     indices = [s_first, s_total, s_first_full, s_total_full]
-    bat.visualization.sobol(indices, p_lst=['Tu', r'$\alpha$'], xdata=x)
+    bat.visualization.sobol(indices, plabels=['Tu', r'$\alpha$'], xdata=x)
 
 .. image::  ../fig/sobol_map.pdf
 
@@ -452,7 +459,7 @@ Using the PDF, *delta* indices are computed and with the ECDF *Kolmogorov*
 CUSUNORO
 --------
 
-CUSUNORO stands for: cumulative sums of normalized reordered output[Plischke2012]_.
+CUSUNORO stands for: cumulative sums of normalized reordered output [Plischke2012]_.
 The output is normalized and ordered in function of a given feature. Then, its
 cumulative sum vector is computed. In other words, this corresponds to the
 conditional ECDF after normalization. The more the curve is from the

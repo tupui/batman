@@ -39,3 +39,4 @@ Bibliography
 .. [Xiu2010] Xiu, D., *Numerical Methods for Stochastic Computations: A Spectral Method Approach*, Princeton University Press, 2010.
 .. [Xiu2002] Xiu, D. and Karniadakis, G.E., *The Wiener--Askey Polynomial Chaos for Stochastic Differential Equations*, SIAM Journal on Scientific Computing, 24 (2), pp. 619-644, 2002.
 .. [Plischke2012] Plischke, E., *An adaptive correlation ratio method using the cumulative sum of the reordered output*, Reliability Engineering & System Safety, vol. 107, pp. 149–156, 2012.
+.. [Dupuis2018] Dupuis, R., *Aerodynamic Data Predictions for Transonic Flows via a Machine-Learning-based Surrogate Model*, 2018 AIAA/ASCE/AHS/ASC Structures, Structural Dynamics, and Materials Conference. 2018. DOI: 10.2514/6.2018-1905

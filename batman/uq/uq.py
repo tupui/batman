@@ -437,14 +437,13 @@ class UQ:
 
             # Write aggregated indices to file
             if self.fname is not None:
-                ind_total_first = np.array(aggregated[1:])  # .flatten('F')
-                i1 = np.array(aggregated[1])  # .flatten('F')
-                i2 = np.array(aggregated[2])  # .flatten('F')
+                i1 = np.array(aggregated[1])
+                i2 = np.array(aggregated[2])
                 if self.method_sobol != 'FAST':
-                    i1_min = np.array(indices_conf[0].getLowerBound())  # .flatten('F')
-                    i1_max = np.array(indices_conf[0].getUpperBound())  # .flatten('F')
-                    i2_min = np.array(indices_conf[1].getLowerBound())  # .flatten('F')
-                    i2_max = np.array(indices_conf[1].getUpperBound())  # .flatten('F')
+                    i1_min = np.array(indices_conf[0].getLowerBound())
+                    i1_max = np.array(indices_conf[0].getUpperBound())
+                    i2_min = np.array(indices_conf[1].getLowerBound())
+                    i2_max = np.array(indices_conf[1].getUpperBound())
 
                     # layout: [S_min_P1, S_min_P2, ..., S_P1, S_p2, ...]
                     data = np.array([i1_min, i1, i1_max, i2_min, i2, i2_max]).flatten()
@@ -454,11 +453,7 @@ class UQ:
                                                 'S_T_min_', 'S_T_', 'S_T_max_'],
                                                self.plabels)]
 
-                    conf1 = np.vstack((i1_min, i2_min))
-                    conf1 = np.ravel(ind_total_first - conf1, order='F')
-                    conf2 = np.vstack((i1_max, i2_max))
-                    conf2 = np.ravel(conf2 - ind_total_first, order='F')
-                    conf = np.vstack((conf1, conf2))
+                    conf = [(i1_max - i1_min) / 2, (i2_max - i2_min) / 2]
                 else:
                     conf = None
                     names = [i + str(p) for i, p in
@@ -479,9 +474,15 @@ class UQ:
         # Plot
         if self.fname:
             path = os.path.join(self.fname, 'sensitivity.pdf')
-            plabels = [re.sub(r'(_)(.*)', r'\1{\2}', label) for label in self.plabels]
-            visualization.sobol(full_indices, plabels=plabels, conf=conf,
-                                xdata=self.xdata, fname=path)
+            plabels = [re.sub(r'(_)(.*)', r'\1{\2}', label)
+                       for label in self.plabels]
+            visualization.sensitivity_indices(full_indices, plabels=plabels,
+                                              conf=conf, xdata=self.xdata,
+                                              fname=path)
+            path = os.path.join(self.fname, 'sensitivity-polar.pdf')
+            visualization.sensitivity_indices(full_indices, plabels=plabels,
+                                              conf=conf, polar=True,
+                                              xdata=self.xdata, fname=path)
             if self.mesh_kwargs.get('fname'):
                 path = os.path.join(self.fname, '1st_order_Sobol_map.pdf')
                 visualization.mesh_2D(var=full_indices[2], flabels=plabels,

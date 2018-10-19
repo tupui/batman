@@ -35,7 +35,7 @@ from .visualization import (response_surface, Kiviat3D, mesh_2D)
 from .functions.utils import multi_eval
 
 
-class Driver(object):
+class Driver:
     """Driver class."""
 
     logger = logging.getLogger(__name__)
@@ -150,20 +150,13 @@ class Driver(object):
         if 'pod' in self.settings:
             settings_ = {'tolerance': self.settings['pod']['tolerance'],
                          'dim_max': self.settings['pod']['dim_max'],
-                         'corners': self.settings['space']['corners'],
-                         'plabels': self.settings['snapshot']['plabels'],
-                         'nsample': self.space.doe_init,
-                         'nrefine': resamp_size,
-                         'multifidelity': multifidelity}
+                         'corners': self.settings['space']['corners']}
             self.pod = Pod(**settings_)
-            self.pod.space.max_points_nb = self.space.max_points_nb
-            self.pod.space.duplicate = duplicate
         else:
             self.pod = None
             self.logger.info('No POD is computed.')
 
         self.data = None
-
         # Surrogate model
         if 'surrogate' in self.settings:
             settings_ = {'kind': self.settings['surrogate']['method'],
@@ -200,6 +193,25 @@ class Driver(object):
                     'noise': self.settings['surrogate'].get('noise', False),
                     'global_optimizer': self.settings['surrogate'].get('global_optimizer', True)
                 })
+            elif self.settings['surrogate']['method'] == 'mixture':
+                self.pod = None
+
+                if 'pod' in self.settings:
+                    pod_args = {'tolerance': self.settings['pod'].get('tolerance', 0.99),
+                                'dim_max': self.settings['pod'].get('dim_max', 100)}
+                else:
+                    pod_args = None
+
+                settings_.update({
+                    'pod': pod_args,
+                    'plabels': self.settings['snapshot']['plabels'],
+                    'corners': self.settings['space']['corners'],
+                    'fsizes': self.settings['snapshot'].get('fsizes')[0],
+                    'pca_percentage': self.settings['surrogate'].get('pca_percentage', 0.8),
+                    'clusterer': self.settings['surrogate'].get('clusterer',
+                                                                'cluster.KMeans(n_clusters=2)'),
+                    'classifier': self.settings['surrogate'].get('classifier', 'svm.SVC()')
+                })
 
             self.surrogate = SurrogateModel(**settings_)
             if self.settings['surrogate']['method'] == 'pc':
@@ -231,9 +243,9 @@ class Driver(object):
                 self.surrogate.space.empty()
                 self.pod.update(samples)
             else:
-                self.pod.decompose(samples)
-            self.data = self.pod.VS()
-            points = self.pod.space.values
+                self.pod.fit(samples)
+            self.data = self.pod.VS
+            points = self.pod.space
 
         else:
             # [TODO] Über complicated pour rien ! --> révision du space + data
@@ -245,7 +257,6 @@ class Driver(object):
                         self.space += samples.space
                 self.data = data
             points = self.space.values
-
         try:  # if surrogate
             self.surrogate.fit(points, self.data, pod=self.pod)
         except AttributeError:
@@ -334,7 +345,6 @@ class Driver(object):
             self.data = self.surrogate.data
         if self.pod is not None:
             self.pod.read(os.path.join(self.fname, self.fname_tree['pod']))
-            self.pod.space = self.space
             self.surrogate.pod = self.pod
         elif (self.pod is None) and (self.surrogate is None):
             path = os.path.join(self.fname, self.fname_tree['data'])
@@ -393,6 +403,7 @@ class Driver(object):
                              psizes=self.settings['snapshot'].get('psizes'),
                              fsizes=self.settings['snapshot'].get('fsizes'))
             samples.write(space_fname, data_fname)
+
         return results, sigma
 
     def uq(self):
@@ -409,7 +420,7 @@ class Driver(object):
             args['plabels'] = args['plabels'][1:]
 
         if self.pod is not None:
-            args['data'] = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
+            args['data'] = self.pod.inverse_transform(self.data)
         else:
             args['data'] = self.data
 
@@ -446,7 +457,7 @@ class Driver(object):
 
         # In case of POD, data need to be converted from modes to snapshots.
         if self.pod is not None:
-            data = self.pod.mean_snapshot + np.dot(self.pod.U, self.data.T).T
+            data = self.pod.inverse_transform(self.data)
         else:
             data = self.data
 
