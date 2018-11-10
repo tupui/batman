@@ -19,7 +19,6 @@ import os
 import sys
 import subprocess
 from setuptools import (setup, find_packages, Command)
-from distutils.version import LooseVersion
 
 cmdclasses = {}
 
@@ -45,15 +44,6 @@ class BuildSphinx(Command):
 cmdclasses['build_sphinx'] = BuildSphinx
 
 # Check some import before starting build process.
-OPENTURNS_MIN_VERSION = LooseVersion('1.10')
-try:
-    import openturns
-    if LooseVersion(openturns.__version__) < OPENTURNS_MIN_VERSION:
-        raise ImportError('Found OpenTurns {}'.format(openturns.__version__))
-except ImportError as e:
-    msg = '{}{}You need to install OpenTURNS >= {}'
-    raise ImportError(msg.format(e, os.linesep, OPENTURNS_MIN_VERSION))
-
 try:
     import scipy
 except ImportError:
@@ -67,6 +57,7 @@ setup_requires = ['pytest-runner']
 tests_require = ['pytest', 'mock', 'coverage', 'pylint']
 install_requires = ['scipy>=0.15',
                     'numpy>=1.13',
+                    'openturns>=1.10',
                     'pandas>=0.22.0',
                     'paramiko>=2',
                     'jsonschema',
@@ -146,6 +137,7 @@ setup(
                  'Programming Language :: Python :: 3.4',
                  'Programming Language :: Python :: 3.5',
                  'Programming Language :: Python :: 3.6',
+                 'Programming Language :: Python :: 3.7',
                  'Topic :: Documentation :: Sphinx',
                  'Topic :: Software Development',
                  'Topic :: Scientific/Engineering',

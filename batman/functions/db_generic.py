@@ -55,9 +55,9 @@ class DbGeneric(object):
         :return: f(x).
         :rtype: array_like (1, n_features).
         """
-        x_scaled = self.scaler.transform(np.array(x)[None, :])[0]
-        dists = distance.cdist([x_scaled, x_scaled], self.sample_scaled, 'seuclidean')
-        idx = np.argmin(dists, axis=1)[0]
+        x_scaled = self.scaler.transform(np.array(x)[None, :])
+        dists = distance.cdist(x_scaled, self.sample_scaled, 'seuclidean')
+        idx = np.argmin(dists, axis=1)
 
         corresp = self.space[idx]
         self.logger.debug("Input: {} -> Database: {}".format(x, corresp))
