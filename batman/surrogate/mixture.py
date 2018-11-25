@@ -192,6 +192,8 @@ class Mixture:
                 snapshots = Sample(space=sample_, data=data_)
                 local_pod.fit(snapshots)
                 data_ = local_pod.VS
+            else:
+                local_pod = None
 
             from batman.surrogate import SurrogateModel
             if local_method is None:

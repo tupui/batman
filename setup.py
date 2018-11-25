@@ -3,7 +3,7 @@
 Setup script for BATMAN
 =======================
 
-This script allows to install jpod within the python environment.
+This script allows to install BATMAN within the python environment.
 
 Usage
 -----
