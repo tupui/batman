@@ -44,6 +44,7 @@ from pandas.plotting import parallel_coordinates
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 import batman as bat
+from batman.visualization import Kiviat3D
 from ..space import Sample
 
 
@@ -56,7 +57,7 @@ class Mixture:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, samples, data, corners, fsizes, pod=None,
+    def __init__(self, samples, data, corners, fsizes=None, pod=None,
                  standard=True, local_method=None, pca_percentage=0.8,
                  clusterer='cluster.KMeans(n_clusters=2)',
                  classifier='gaussian_process.GaussianProcessClassifier()'):
@@ -94,7 +95,6 @@ class Mixture:
           learning).
           http://scikit-learn.org/stable/supervised_learning.html
         """
-        self.fsizes = fsizes
         self.scaler = preprocessing.MinMaxScaler()
         self.scaler.fit(np.array(corners))
         samples = self.scaler.transform(samples)
@@ -102,6 +102,11 @@ class Mixture:
                    [1 for i in range(samples.shape[1])]]
 
         # Only do the clustering on the sensor
+        if fsizes is None:
+            self.fsizes = data.shape[1]
+        else:
+            self.fsizes = fsizes
+
         if data.shape[1] > self.fsizes:
             clust = data[:, self.fsizes:]
         else:
@@ -181,12 +186,14 @@ class Mixture:
             sample_ = [samples[j] for j in self.indice_clt[k]]
             data_ = [data[j, :self.fsizes] for j in self.indice_clt[k]]
 
-            if pod is True:
+            if pod is not None:
                 from batman.pod import Pod
-                pod = Pod(corners, **pod)
+                local_pod = Pod(corners, **pod)
                 snapshots = Sample(space=sample_, data=data_)
-                pod.fit(snapshots)
-                data_ = pod.VS
+                local_pod.fit(snapshots)
+                data_ = local_pod.VS
+            else:
+                local_pod = None
 
             from batman.surrogate import SurrogateModel
             if local_method is None:
@@ -196,7 +203,7 @@ class Mixture:
                 self.local_models[k] = SurrogateModel(method, corners, plabels=None,
                                                       **local_method[i][method])
 
-            self.local_models[k].fit(np.asarray(sample_), np.asarray(data_), pod=pod)
+            self.local_models[k].fit(np.asarray(sample_), np.asarray(data_), pod=local_pod)
 
     def boundaries(self, samples, plabels=None, fname=None):
         """Boundaries of clusters in the parameter space.
@@ -259,12 +266,15 @@ class Mixture:
             ax.set_ylabel(plabels[1])
         else:
             classif_samples = classif_samples.reshape(-1, 1)
-            samples = np.concatenate((samples, classif_samples), axis=-1)
-            plabels.append("cluster")
-            df = pd.DataFrame(samples, columns=plabels)
+
+            samples_ = np.concatenate((samples_, classif_samples), axis=-1)
+            df = pd.DataFrame(samples_, columns=plabels + ["cluster"])
             ax = parallel_coordinates(df, "cluster")
             ax.set_xlabel('Parameters')
             ax.set_ylabel('Parameters range')
+
+            kiviat = Kiviat3D(samples, classif_samples)
+            kiviat.plot(fname)
 
         bat.visualization.save_show(fname, [fig])
 
@@ -327,10 +337,16 @@ class Mixture:
             result_, sigma_ = self.local_models[k](clf_)
 
             result = np.concatenate([result, result_])
-            sigma = np.concatenate([sigma, sigma_])
+            try:
+                sigma = np.concatenate([sigma, sigma_])
+            except ValueError:
+                sigma = None
 
         idx = np.argsort(idx)
         result = result[idx]
-        sigma = sigma[idx]
+        try:
+            sigma = sigma[idx]
+        except TypeError:
+            sigma = None
 
         return (result, sigma, classif) if classification else (result, sigma)

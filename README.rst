@@ -6,7 +6,7 @@
 .. |Codecov| image:: https://gitlab.com/cerfacs/batman/badges/develop/coverage.svg
 .. _Codecov: https://gitlab.com/cerfacs/batman/pipelines
 
-.. |Python| image:: https://img.shields.io/badge/python-2.7,_3.6-blue.svg
+.. |Python| image:: https://img.shields.io/badge/python-2.7,_3.7-blue.svg
 .. _Python: https://python.org
 
 .. |License| image:: https://img.shields.io/badge/license-CECILL--B_License-blue.svg
@@ -95,9 +95,9 @@ To install conda::
     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
     bash Miniconda3-latest-Linux-x86_64.sh
 
-To install batman through ``conda``::
+To create a new environment and install batman through ``conda``::
 
-    conda install -c conda-forge batman
+    conda create -n bat_env -c conda-forge batman
 
 All the above dependencies are automatically handled by ``conda``, 
 except `Antares <http://www.cerfacs.fr/antares>`_. For more information, refer
@@ -130,7 +130,7 @@ If batman has been correctly installed, you should be able to call it simply::
     installation folders. It is recommanded that you leave your ``PYTHONPATH`` empty.
 
 Dependencies
-............
+````````````
 
 The required dependencies are: 
 
