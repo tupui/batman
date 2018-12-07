@@ -9,7 +9,7 @@ import openturns as ot
 from mock import patch
 from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf,
                                   sensitivity_indices, corr_cov,
-                                  reshow, response_surface, doe,
+                                  reshow, response_surface, doe, pairplot,
                                   mesh_2D, cusunoro, moment_independent)
 from batman.visualization.density import ecdf
 from batman.surrogate import SurrogateModel
@@ -425,6 +425,11 @@ class TestDoe:
     def test_doe_mufi(self, ishigami_data, tmp):
         doe(ishigami_data.space, multifidelity=True,
             fname=os.path.join(tmp, 'DOE_mufi.pdf'))
+
+    def test_pairplot(self, ishigami_data, tmp):
+        pairplot(ishigami_data.space, ishigami_data.target_space,
+                 plabels=['x1', 'x2', 'x3'],
+                 fname=os.path.join(tmp, 'pairplot.pdf'))
 
 
 @patch("matplotlib.pyplot.show")

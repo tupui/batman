@@ -86,3 +86,33 @@ def doe(sample, plabels=None, resampling=0, multifidelity=False, fname=None):
     bat.visualization.save_show(fname, [fig])
 
     return fig, sub_ax
+
+
+def pairplot(sample, data, plabels=None, flabel=None, fname=None):
+    """Output function of the input parameter space.
+
+    A n-variate plot is constructed with all couple of variables - output.
+
+    :param array_like sample: sample (n_samples, n_featrues).
+    :param array_like data: data (n_samples, 1).
+    :param list(str) plabels: parameters' names.
+    :param str flabel: label for y axis.
+    :param str fname: whether to export to filename or display the figures.
+    :returns: figure.
+    :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instances.
+    """
+    n_dim = sample.shape[1]
+
+    if plabels is None:
+        plabels = ['x' + str(i) for i in range(n_dim)]
+
+    fig, axs = plt.subplots(1, n_dim)
+    for i in range(n_dim):
+        axs[i].scatter(sample[:, i], data, marker='+')
+        axs[i].set_xlabel(plabels[i])
+
+    axs[0].set_ylabel('F' if flabel is None else flabel)
+
+    bat.visualization.save_show(fname, [fig])
+
+    return fig, axs
