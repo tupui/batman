@@ -212,7 +212,7 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
     return fig
 
 
-def _dotplot(data, pdf, ax, n_dots=20, n_bins=7):
+def _dotplot(data, pdf, ax, n_dots=50, n_bins=7):
     """Quantile dotplot.
 
     Based on R code from https://github.com/mjskay/when-ish-is-my-bus.
@@ -244,7 +244,11 @@ def _dotplot(data, pdf, ax, n_dots=20, n_bins=7):
     for i in range(n_bins):
         x_bin = (edges[i + 1] + edges[i]) / 2
         y_bins = [(i + 1) * (radius * 2) for i in range(bins[i])]
-        max_y = max(y_bins) if max(y_bins) > max_y else max_y
+
+        try:
+            max_y = max(y_bins) if max(y_bins) > max_y else max_y
+        except ValueError:  # deals with empty bins
+            break
 
         for _, y_bin in enumerate(y_bins):
             circle = Circle((x_bin, y_bin), radius)
@@ -258,7 +262,6 @@ def _dotplot(data, pdf, ax, n_dots=20, n_bins=7):
     ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x / y_scale))
     ax2.yaxis.set_major_formatter(ticks_y)
     ax2.set_yticklabels([])
-    ax2.set_ylim([- radius, (max_y + radius)])
     ax2.autoscale_view()
     ax2.set_aspect('equal')
 

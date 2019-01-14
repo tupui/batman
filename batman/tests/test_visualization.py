@@ -8,8 +8,8 @@ from scipy.io import wavfile
 import openturns as ot
 from mock import patch
 from batman.visualization import (HdrBoxplot, Kiviat3D, Tree, pdf,
-                                  sensitivity_indices, corr_cov,
-                                  reshow, response_surface, doe, pairplot,
+                                  sensitivity_indices, corr_cov, reshow,
+                                  response_surface, doe, doe_ascii, pairplot,
                                   mesh_2D, cusunoro, moment_independent)
 from batman.visualization.density import ecdf
 from batman.surrogate import SurrogateModel
@@ -425,6 +425,12 @@ class TestDoe:
     def test_doe_mufi(self, ishigami_data, tmp):
         doe(ishigami_data.space, multifidelity=True,
             fname=os.path.join(tmp, 'DOE_mufi.pdf'))
+
+    def test_doe_ascii(self, ishigami_data, tmp):
+        doe_ascii(ishigami_data.space, plabels=['a', 'b', 'c'],
+                  bounds=[[-np.pi, -np.pi, -np.pi], [np.pi, np.pi, np.pi]])
+
+        doe_ascii([[0.2, 0.8], [0.3, 0.7]], fname=os.path.join(tmp, 'DOE_ascii.pdf'))
 
     def test_pairplot(self, ishigami_data, tmp):
         pairplot(ishigami_data.space, ishigami_data.target_space,
