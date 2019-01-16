@@ -25,6 +25,7 @@ Interpolation using Polynomial Chaos method.
 
 """
 import logging
+from itertools import product
 import openturns as ot
 import numpy as np
 from ..functions.utils import multi_eval
@@ -61,14 +62,14 @@ class PC:
               strategy.
         """
         # distributions
-        in_dim = len(distributions)
+        self.in_dim = len(distributions)
         self.dist = ot.ComposedDistribution(distributions)
         self.sparse_param = sparse_param
 
         if 'hyper_factor' in self.sparse_param:
-            enumerateFunction = ot.EnumerateFunction(in_dim, self.sparse_param['hyper_factor'])
+            enumerateFunction = ot.EnumerateFunction(self.in_dim, self.sparse_param['hyper_factor'])
         else:
-            enumerateFunction = ot.EnumerateFunction(in_dim)
+            enumerateFunction = ot.EnumerateFunction(self.in_dim)
 
         if stieltjes:
             # Tend to result in performance issue
@@ -89,16 +90,16 @@ class PC:
             self.sample = sample
         else:  # integration method
             # redefinition of sample size
-            # n_samples = (degree + 1) ** in_dim
+            # n_samples = (degree + 1) ** self.in_dim
             # marginal degree definition
             # by default: the marginal degree for each input random
             # variable is set to the total polynomial degree 'degree'+1
             measure = self.basis.getMeasure()
 
             if N_quad is not None:
-                degrees = [int(N_quad ** 0.25)] * in_dim
+                degrees = [int(N_quad ** 0.25)] * self.in_dim
             else:
-                degrees = [degree + 1] * in_dim
+                degrees = [degree + 1] * self.in_dim
 
             self.proj_strategy = ot.IntegrationStrategy(
                 ot.GaussProductExperiment(measure, degrees))
@@ -106,7 +107,7 @@ class PC:
 
             if not stieltjes:
                 transformation = ot.Function(ot.MarginalTransformationEvaluation(
-                    [measure.getMarginal(i) for i in range(in_dim)],
+                    [measure.getMarginal(i) for i in range(self.in_dim)],
                     distributions, False))
                 self.sample = transformation(self.sample)
 
@@ -117,7 +118,9 @@ class PC:
         """Create the predictor.
 
         The result of the Polynomial Chaos is stored as :attr:`pc_result` and
-        the surrogate is stored as :attr:`pc`.
+        the surrogate is stored as :attr:`pc`. It exposes :attr:`self.weights`,
+        :attr:`self.coefficients` and Sobol' indices :attr:`self.s_first` and
+        :attr:`self.s_total`.
 
         :param array_like sample: The sample used to generate the data
           (n_samples, n_features).
@@ -127,12 +130,12 @@ class PC:
 
         if self.strategy == 'LS':  # least-squares method
             proj_strategy = ot.LeastSquaresStrategy(sample, data)
-            _, weights = proj_strategy.getExperiment().generateWithWeights()
+            _, self.weights = proj_strategy.getExperiment().generateWithWeights()
 
         elif self.strategy == 'SparseLS':
             app = ot.LeastSquaresMetaModelSelectionFactory(ot.LARS(), ot.CorrectedLeaveOneOut())
             proj_strategy = ot.LeastSquaresStrategy(sample, data, app)
-            _, weights = proj_strategy.getExperiment().generateWithWeights()
+            _, self.weights = proj_strategy.getExperiment().generateWithWeights()
 
             max_considered_terms = self.sparse_param.get('max_considered_terms', 120)
             most_significant = self.sparse_param.get('most_significant', 30)
@@ -147,18 +150,29 @@ class PC:
             sample_ = np.zeros_like(self.sample)
             sample_[:len(sample)] = sample
             sample_arg = np.all(np.isin(sample_, self.sample), axis=1)
-            weights = np.array(self.weights)[sample_arg]
+            self.weights = np.array(self.weights)[sample_arg]
 
-        pc_algo = ot.FunctionalChaosAlgorithm(sample, weights, data,
+        # PC fitting
+        pc_algo = ot.FunctionalChaosAlgorithm(sample, self.weights, data,
                                               self.dist, trunc_strategy)
         pc_algo.setProjectionStrategy(proj_strategy)
-
         ot.Log.Show(ot.Log.ERROR)
         pc_algo.run()
+
+        # Accessors
         self.pc_result = pc_algo.getResult()
         self.pc = self.pc_result.getMetaModel()
+        self.coefficients = self.pc_result.getCoefficients()
 
-        self.pc, self.pc_result
+        # sensitivity indices
+        sobol = ot.FunctionalChaosSobolIndices(self.pc_result)
+        self.s_first, self.s_total = [], []
+        for i, j in product(range(self.in_dim), range(np.array(data).shape[1])):
+            self.s_first.append(sobol.getSobolIndex(i, j))
+            self.s_total.append(sobol.getSobolTotalIndex(i, j))
+
+        self.s_first = np.array(self.s_first).reshape(self.in_dim, -1).T
+        self.s_total = np.array(self.s_total).reshape(self.in_dim, -1).T
 
     @multi_eval
     def evaluate(self, point):
