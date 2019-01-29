@@ -108,7 +108,7 @@ def ecdf(data):
     return xs, ys
 
 
-def moment_independent(sample, data, plabels=None, fname=None):
+def moment_independent(sample, data, plabels=None, scale_plt=True, fname=None):
     """Moment independent measures.
 
     Use both PDF and ECDF to cumpute moment independent measures. The following
@@ -125,8 +125,9 @@ def moment_independent(sample, data, plabels=None, fname=None):
     :param array_like data: Sample of realization which corresponds to the
       sample of parameters :attr:`sample` (n_samples, ).
     :param list(str) plabels: Names of each parameters (n_features).
-    :param str fname: whether to export to filename or display the figures.
-    :returns: figure, axis and sensitivity indices.
+    :param bool scale_plt: Whether to scale y-axes between figures.
+    :param str fname: Whether to export to filename or display the figures.
+    :returns: Figure, axis and sensitivity indices.
     :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instances,
       dict(['Kolmogorov', 'Kuiper', 'Delta', 'Sobol'], n_features).
     """
@@ -153,9 +154,14 @@ def moment_independent(sample, data, plabels=None, fname=None):
     # Unconditional ECDF
     ecdf_u = ecdf(data)
 
-    fig, axs = plt.subplots(2, dim)
+    fig, axs = [], []
+    pdf_max = 0
 
     for d in range(dim):
+        fig_, axs_ = plt.subplots(2, 1)
+        fig.append(fig_)
+        axs.append(axs_)
+
         # Sensitivity indices
         ks = []
         kui = []
@@ -171,11 +177,15 @@ def moment_independent(sample, data, plabels=None, fname=None):
             # Conditional PDF
             data_ = data_r[int(i * len_part):int((i + 1) * len_part)]
             pdf_c = gaussian_kde(data_, bw_method="silverman")(xs)
-            axs[0][d].plot(xs, pdf_c, alpha=.3)
+            axs_[0].plot(xs, pdf_c, alpha=.3)
+
+            # sup-ylim for plotting
+            max_ = max(pdf_c)
+            pdf_max = max_ if max_ > pdf_max else pdf_max
 
             # Conditional ECDF
             ecdf_c = ecdf(data_)
-            axs[1][d].plot(ecdf_c[0], ecdf_c[1], alpha=.3)
+            axs_[1].plot(ecdf_c[0], ecdf_c[1], alpha=.3)
 
             # Metrics
             data_all = np.concatenate([ecdf_u[0], ecdf_c[0]])
@@ -192,21 +202,27 @@ def moment_independent(sample, data, plabels=None, fname=None):
             cramer += (len_part / ns) * simps((cdf_diff) ** 2, xs_cdf)\
                 / np.trapz((cdf1 * (1 - cdf1)), xs_cdf)
 
+        # Metrics
         s_indices['Kolmogorov'].append(np.mean(ks))
         s_indices['Kuiper'].append(np.mean(kui))
         s_indices['Delta'].append(delta)
         s_indices['Cramer'].append(cramer)
         s_indices['Sobol'].append(var_d / var_t)
 
-        axs[0][d].plot(xs, pdf_u, c='k', linewidth=2)
+        # Plots
+        axs_[0].plot(xs, pdf_u, c='k', linewidth=2)
+        axs_[0].set_ylabel('PDF')
 
-        axs[1][d].plot(ecdf_u[0], ecdf_u[1], c='k', linewidth=2)
-        axs[1][d].set_xlabel('Y|' + plabels[d])
+        axs_[1].plot(ecdf_u[0], ecdf_u[1], c='k', linewidth=2)
+        axs_[1].set_ylabel('CDF')
 
-        if d == 0:
-            axs[0][d].set_ylabel('PDF')
-            axs[1][d].set_ylabel('CDF')
+        axs_[1].set_xlabel('Y|' + plabels[d])
 
-    bat.visualization.save_show(fname, [fig])
+    if scale_plt:
+        for i in range(dim):
+            axs[i][0].set_ylim([0, 1.05 * pdf_max])
+            axs[i][1].set_ylim([0, 1])
+
+    bat.visualization.save_show(fname, fig)
 
     return fig, axs, s_indices
