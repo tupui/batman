@@ -116,10 +116,10 @@ def settings_layout(contents):
 
     kind = settings['space']['sampling']['method']
     ns = settings['space']['sampling']['init_size']
-    dists = settings['space']['sampling']['distribution']
     corners = settings['space']['corners']
     plabels = settings['snapshot']['plabels']
     n_parameters = len(plabels)
+    dists = settings['space']['sampling'].get('distribution', [None] * n_parameters)
     dim_max = settings['pod']['dim_max']
     pod_tolerance = settings['pod']['tolerance']
     pod_type = settings['pod']['type']
