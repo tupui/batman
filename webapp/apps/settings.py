@@ -63,9 +63,7 @@ SETTINGS = {
         }
     },
     "surrogate": {
-        "method": "kriging",
-        "degree": 5,
-
+        "method": "kriging"
     },
     "uq": {
         "sample": 1000,
@@ -255,7 +253,81 @@ def settings_layout(contents):
                          {'label': 'Mixture of Experts', 'value': 'mixture'}],
                 value='kriging', id='surrogate_method')
             ], className='three columns'), className='row'),
-        html.Div(id='surrogate_args'),
+
+        # Different surrogates
+        # Kriging
+        html.Div([
+            html.Div([dcc.Checklist(
+                          options=[{'label': 'Noise', 'value': 'noise'},
+                                   {'label': 'Global optimizer', 'value': 'global_optimizer'}],
+                          values=[], id='noise_optim')
+                      ], className='two columns'),
+            html.Div([html.Div([html.Label('Kernel'),
+                                dcc.Input(id='kernel',
+                                          placeholder="kernel from OpenTURNS: 'Matern(length_scale=0.5, nu=0.5)'...",
+                                          type='text')], className='five columns'),
+                      ], className='four columns')], className='row', id='surrogate_kriging', style={'display': 'none'}),
+        # PC
+        html.Div([
+            html.Div([
+                html.Div([html.Label('Strategy'),
+                          dcc.RadioItems(id='strategy',
+                                         options=[{'label': 'Quadrature', 'value': 'Quad'},
+                                                  {'label': 'Least square', 'value': 'LS'},
+                                                  {'label': 'Sparse LS', 'value': 'SparseLS'}],
+                                         value='Quad')], className='four columns'),
+                html.Div([html.Label('Degree'),
+                          dcc.Input(id='degree',
+                                    placeholder="Polynomial degree N=(p+1)^dim...",
+                                    type='number')], className='two columns'),
+            ], className='row'),
+            html.Div([
+                html.Label('Sparse parameters'),
+                html.Div([
+                    html.Div([html.Label('Maximum terms'),
+                              dcc.Input(id='max_considered_terms',
+                                        type='number')], className='two columns'),
+                    html.Div([html.Label('Most significant'),
+                              dcc.Input(id='most_significant',
+                                        type='number')], className='two columns'),
+                    html.Div([html.Label('Degree'),
+                              dcc.Input(id='significance_factor',
+                                        type='text')], className='two columns'),
+                    html.Div([html.Label('Hyperbolic factor'),
+                              dcc.Input(id='hyper_factor',
+                                        type='text')], className='two columns')])
+            ], className='row')
+        ], id='surrogate_pc', style={'display': 'none'}),
+
+        # Evofusion
+        html.Div([
+            html.Div([
+                html.Div([html.Label('Cost ratio'),
+                          dcc.Input(id='cost_ratio',
+                                    type='text')], className='two columns'),
+                html.Div([html.Label('Grand cost'),
+                          dcc.Input(id='grand_cost',
+                                    type='number')], className='two columns'),
+            ], className='row')
+        ], id='surrogate_evofusion', style={'display': 'none'}),
+
+        # Mixture
+        html.Div([
+
+            html.Div([
+                html.Div([html.Label('Custerer'),
+                          dcc.Input(id='clusterer',
+                                    type='text')], className='two columns'),
+                html.Div([html.Label('Classifier'),
+                          dcc.Input(id='classifier',
+                                    type='text')], className='two columns'),
+                html.Div([html.Label('Filtering tolerance'),
+                          dcc.Slider(min=0, max=1, step=0.05, value=0.99,
+                                     marks={i / 100: i for i in range(0, 100, 20)},
+                                     id='pca_percentage')], className='two columns'),
+            ], className='row')
+
+        ], id='surrogate_mixture', style={'display': 'none'}),
 
         html.Hr(),
 
@@ -327,7 +399,7 @@ pod_values = [Input('pod_dim_max', 'value'), Input('pod_tolerance', 'value'),
               Input('pod_type', 'value')]
 snapshot_values = [Input('max_workers', 'value')]
 surrogate_values = [Input('surrogate_method', 'value'),
-                    Input('kernel', 'value'), Input('noise_optim', 'value'),
+                    Input('kernel', 'value'), Input('noise_optim', 'values'),
                     Input('strategy', 'value'), Input('degree', 'value'),
                     Input('most_significant', 'value'),
                     Input('max_considered_terms', 'value'),
@@ -348,6 +420,7 @@ def update_settings(*settings_values):
 
     Values are stored in hidden Div settings.
     """
+    print(f'Updating settings from:\n{settings_values}')
     kind = settings_values[0]
     ns = settings_values[1]
     n_parameters = settings_values[2]
@@ -391,18 +464,27 @@ def update_settings(*settings_values):
                     'significance_factor': settings_values[idx + 7],
                     'hyper_factor': settings_values[idx + 8]}
 
-    settings['surrogate'].update({'method': settings_values[idx],
-                                  'kernel': settings_values[idx + 1],
-                                  'noise': noise,
-                                  'global_optimizer': global_optimizer,
-                                  'strategy': settings_values[idx + 3],
-                                  'degree': settings_values[idx + 4],
-                                  'sparse_param': sparse_param,
-                                  'cost_ratio': settings_values[idx + 9],
-                                  'grand_cost': settings_values[idx + 10],
-                                  'clusterer': settings_values[idx + 11],
-                                  'classifier': settings_values[idx + 12],
-                                  'pca_percentage': settings_values[idx + 13]})
+    settings['surrogate']['method'] = settings_values[idx]
+    if settings['surrogate']['method'] == 'kriging':
+        args = {'noise': noise,
+                'global_optimizer': global_optimizer}
+        kernel = settings_values[idx + 1]
+        if kernel is not None:
+            args['kernel'] = kernel
+
+    elif settings['surrogate']['method'] == 'pc':
+        args = {'strategy': settings_values[idx + 3],
+                'degree': settings_values[idx + 4],
+                'sparse_param': sparse_param}
+    elif settings['surrogate']['method'] == 'evofusion':
+        args = {'cost_ratio': settings_values[idx + 9],
+                'grand_cost': settings_values[idx + 10]}
+    elif settings['surrogate']['method'] == 'mixture':
+        args = {'clusterer': settings_values[idx + 11],
+                'classifier': settings_values[idx + 12],
+                'pca_percentage': settings_values[idx + 13]}
+
+    settings['surrogate'].update(args)
 
     # idx += ...  # skip all surrogate values
 
@@ -443,76 +525,37 @@ def update_space_visu(settings):
 
 
 # Surrogate
-@app.callback(Output('surrogate_args', 'children'),
+@app.callback(Output('surrogate_kriging', 'style'),
               [Input('surrogate_method', 'value')])
-def surrogate_args(surrogate_method):
+def surrogate_kriging(surrogate_method):
     if surrogate_method == 'kriging':
-        args = [html.Div([dcc.Checklist(
-            options=[{'label': 'Noise', 'value': 'noise'},
-                     {'label': 'Global optimizer', 'value': 'global_optimizer'}],
-            values=[''], id='noise_optim')
-        ], className='two columns'),
-            html.Div([html.Div([html.Label('Kernel'),
-                                dcc.Input(id='kernel',
-                                          placeholder="kernel from OpenTURNS: 'Matern(length_scale=0.5, nu=0.5)'...",
-                                          type='text')], className='five columns'),
-                      ], className='four columns')]
-    elif surrogate_method == 'pc':
-        args = [
-            html.Div([
-                html.Div([html.Label('Strategy'),
-                          dcc.RadioItems(id='strategy',
-                                         options=[{'label': 'Quadrature', 'value': 'Quad'},
-                                                  {'label': 'Least square', 'value': 'LS'},
-                                                  {'label': 'Sparse LS', 'value': 'SparseLS'}],
-                                         value='Quad')], className='four columns'),
-                html.Div([html.Label('Degree'),
-                          dcc.Input(id='degree',
-                                    placeholder="Polynomial degree N=(p+1)^dim...",
-                                    type='number')], className='two columns'),
-            ], className='row'),
-            html.Div([
-                html.Label('Sparse parameters'),
-                html.Div([
-                    html.Div([html.Label('Maximum terms'),
-                              dcc.Input(id='max_considered_terms',
-                                        type='number')], className='two columns'),
-                    html.Div([html.Label('Most significant'),
-                              dcc.Input(id='most_significant',
-                                        type='number')], className='two columns'),
-                    html.Div([html.Label('Degree'),
-                              dcc.Input(id='significance_factor',
-                                        type='text')], className='two columns'),
-                    html.Div([html.Label('Hyperbolic factor'),
-                              dcc.Input(id='hyper_factor',
-                                        type='text')], className='two columns')])
-            ], className='row')
-        ]
-    elif surrogate_method == 'evofusion':
-        args = [
-            html.Div([
-                html.Div([html.Label('Cost ratio'),
-                          dcc.Input(id='cost_ratio',
-                                    type='text')], className='two columns'),
-                html.Div([html.Label('Grand cost'),
-                          dcc.Input(id='grand_cost',
-                                    type='number')], className='two columns'),
-            ], className='row')
-        ]
-    elif surrogate_method == 'mixture':
-        args = [
-            html.Div([
-                html.Div([html.Label('Custerer'),
-                          dcc.Input(id='clusterer',
-                                    type='text')], className='two columns'),
-                html.Div([html.Label('Classifier'),
-                          dcc.Input(id='classifier',
-                                    type='text')], className='two columns'),
-                html.Div([html.Label('Filtering tolerance'),
-                          dcc.Slider(min=0, max=1, step=0.05, value=0.99,
-                                     marks={i / 100: i for i in range(0, 100, 20)},
-                                     id='pca_percentage')], className='two columns'),
-            ], className='row')
-        ]
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
 
-    return html.Div(args, className='row')
+
+@app.callback(Output('surrogate_pc', 'style'),
+              [Input('surrogate_method', 'value')])
+def surrogate_pc(surrogate_method):
+    if surrogate_method == 'pc':
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
+
+
+@app.callback(Output('surrogate_evofusion', 'style'),
+              [Input('surrogate_method', 'value')])
+def surrogate_evofusion(surrogate_method):
+    if surrogate_method == 'evofusion':
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
+
+
+@app.callback(Output('surrogate_mixture', 'style'),
+              [Input('surrogate_method', 'value')])
+def surrogate_mixture(surrogate_method):
+    if surrogate_method == 'mixture':
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
