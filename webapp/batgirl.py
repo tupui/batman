@@ -4,7 +4,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 
 from app import app
-from apps import (settings, experiments)
+from apps import (settings, experiments, analysis)
 
 app.css.append_css({'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'})
 
@@ -58,7 +58,7 @@ app.layout = html.Div([
              className='row', style={'display': 'block'}),
     html.Div(experiments.layout, id='experiments_tab',
              className='row', style={'display': 'none'}),
-    html.Div('Analysis', id='analysis_tab',
+    html.Div(analysis.layout, id='analysis_tab',
              className='row', style={'display': 'none'}),
 
     # html.Div(['© Copyright 2018, CERFACS - CECILL-B Licensed.'],
