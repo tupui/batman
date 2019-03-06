@@ -15,7 +15,7 @@ import openturns as ot
 from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KernelDensity
 from sklearn.model_selection import GridSearchCV
-from scipy.optimize import differential_evolution
+from scipy.optimize import fmin
 from matplotlib import cm
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
@@ -37,9 +37,9 @@ def kernel_smoothing(data, optimize=False):
     :rtype: :class:`sklearn.neighbors.KernelDensity`.
     """
     n_samples, dim = data.shape
-    cv = n_samples if n_samples < 50 else 50
+    cv = n_samples if n_samples < 5 else 5
     var = np.std(data, ddof=1)
-    scott = n_samples ** (-1. / (dim + 4)) * var
+    scott = 1.06 * n_samples ** (-1. / (dim + 4)) * var
 
     if optimize:
         def bw_score(bw):
@@ -48,9 +48,9 @@ def kernel_smoothing(data, optimize=False):
                                     data, cv=cv, n_jobs=-1)
             return - score.mean()
 
-        bounds = [(0.1 * var, 5. * var)]
-        results = differential_evolution(bw_score, bounds, maxiter=5)
-        bw = results.x
+        bw = fmin(bw_score, x0=scott, maxiter=1e3, maxfun=1e3, xtol=1e-3, disp=0)
+        bw[bw < 0] = 1e-10
+
         ks_gaussian = KernelDensity(bandwidth=bw)
         ks_gaussian.fit(data)
     else:
@@ -479,7 +479,7 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
         data = np.append(x_2d_xy, [y_2d_xy, cov_matrix_xy])
         names = ['x', 'y', 'Correlation-XY']
         sizes = [np.size(x_2d_xy), np.size(y_2d_xy), np.size(cov_matrix_xy)]
-        io.write(filename + '-correlation_XY.dat', data, names, sizes)
+        io.write(filename + '-correlation_XY.json', data, names, sizes)
 
     bat.visualization.save_show(fname, figures)
 
