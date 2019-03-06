@@ -57,7 +57,7 @@ setup_requires = ['pytest-runner']
 tests_require = ['pytest', 'mock', 'coverage', 'pylint']
 install_requires = ['scipy>=0.15',
                     'numpy>=1.13',
-                    'openturns>=1.10',
+                    'openturns',
                     'pandas>=0.22.0',
                     'paramiko>=2',
                     'jsonschema',

@@ -30,7 +30,7 @@ here are some additionnal points:
 5. Compile documentation.
 6. Ensure that all deprecations have been taken care of.
 7. Update Docker images and upload the python 3 image on Gitlab registry::
-   
+
     docker build -t tupui/bat_ci_[2,3] -f Dockerfile_python_[2,3] .
 
     docker login -u tupui -p xxx
@@ -45,7 +45,7 @@ here are some additionnal points:
 11. Update ``conda`` `recipe <https://github.com/conda-forge/batman-feedstock>`_ (version and commit patch).
 12. Update ``pip`` package::
 
-    python setup.py sdist bdist_wheel
-    twine upload dist/*
+     python setup.py sdist bdist_wheel
+     twine upload dist/*
 
 12. Share the info on the `chat <https://batman-cerfacs.zulipchat.com>`_.

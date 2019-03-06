@@ -24,7 +24,6 @@ dependencies:
 - gettext
 - gmp
 - gnutls
-- hmat-oss
 - icu
 - idna
 - imagesize
@@ -50,7 +49,7 @@ dependencies:
 - numpy
 - openblas
 - openssl
-- openturns
+- openturns==1.12
 - packaging
 - pandas
 - paramiko

@@ -44,12 +44,13 @@ def kernel_smoothing(data, optimize=False):
     if optimize:
         def bw_score(bw):
             """Get the cross validation score for a given bandwidth."""
+            bw[bw <= 0] = 1e-10
             score = cross_val_score(KernelDensity(bandwidth=bw),
                                     data, cv=cv, n_jobs=-1)
             return - score.mean()
 
         bw = fmin(bw_score, x0=scott, maxiter=1e3, maxfun=1e3, xtol=1e-3, disp=0)
-        bw[bw < 0] = 1e-10
+        bw[bw <= 0] = 1e-10
 
         ks_gaussian = KernelDensity(bandwidth=bw)
         ks_gaussian.fit(data)
