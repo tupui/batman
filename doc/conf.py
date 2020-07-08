@@ -38,23 +38,10 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
               'sphinx.ext.imgmath', 'sphinx.ext.viewcode',
               'sphinx.ext.intersphinx']
 
-intersphinx_mapping = {'openturns': ('http://openturns.github.io/openturns/latest', None),
+intersphinx_mapping = {'openturns': ('http://doc.openturns.org/openturns-latest/sphinx/', None),
                        'sklearn': ('http://scikit-learn.org/dev/', None),
-                       'python': ('https://docs.python.org/3/', None)
+                       'python': ('https://docs.python.org/', None)
 }
-
-
-# Mock fortran
-if os.environ.get("READTHEDOCS") == "True":
-    from mock import Mock as MagicMock
-
-    class Mock(MagicMock):
-        @classmethod
-        def __getattr__(cls, name):
-                return MagicMock()
-
-    MOCK_MODULES = ['batman.input_output._tecplot']
-    sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
 def skip(app, what, name, obj, skip, options):
@@ -72,7 +59,7 @@ def setup(app):
 autosummary_generate = True
 # autoclass_content = 'both'
 
-autodoc_mock_imports = ["antares"]
+# autodoc_mock_imports = ["..."]
 
 # mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML'
 # mathjax_path = 'MathJax-master/MathJax.js'
@@ -96,7 +83,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'BATMAN'
-copyright = '2019, CERFACS - CECILL-B Licensed'
+copyright = '2020 - BSD 3-Clause License'
 author = 'Pamphile ROY'
 
 # The version info for the project you're documenting, acts as replacement for

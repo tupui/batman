@@ -16,13 +16,13 @@ class NoDaemonProcess(multiprocess.Process):
     The ``daemon`` attribute always returns False.
     """
 
-    def _get_daemon(self):
+    @property
+    def daemon(self):
         return False
 
-    def _set_daemon(self, value):
+    @daemon.setter
+    def daemon(self, value):
         pass
-
-    daemon = property(_get_daemon, _set_daemon)
 
 
 class NestedPool(pathos.multiprocessing.Pool):
@@ -32,4 +32,9 @@ class NestedPool(pathos.multiprocessing.Pool):
     Enable nested process pool.
     """
 
-    Process = NoDaemonProcess
+    def Process(self, *args, **kwds):
+        proc = pathos.multiprocessing.Pool.Process(*args, **kwds)
+        proc.__class__ = NoDaemonProcess
+
+        return proc
+

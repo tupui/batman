@@ -10,7 +10,7 @@ from batman.surrogate import Mixture
 sample = np.array([[1., 5.], [2., 5.], [3., 5.],
                    [4., 5.], [5., 5.], [6., 5.], [7., 5.]])
 corners = np.array([[1., 5.], [7., 5.]])
-data = np.array([[1.], [1.], [1.], [1.], [100.], [100.], [100.]])
+data = np.array([[1.], [1.2], [0.9], [1.], [100.], [100.1], [102.]])
 sample_new = np.array([[0., 5.], [1.5, 5.], [8., 5.], [2.5, 5.], [10, 5.]])
 plabels = ["x1", "x2"]
 fsizes = 1
@@ -45,9 +45,9 @@ class TestMixture:
         indice_clt = {0: [0, 1, 2, 3], 1: [4, 5, 6]}
         assert algo.indice_clt == indice_clt
         predict, sigma = algo.local_models[0](sample_new[0])
-        assert predict == 1
+        assert predict == 1.025
         predict, sigma = algo.local_models[1](sample_new[-1])
-        assert predict == 100
+        assert predict == 100.7
 
     def test_sensor(self, seed):
         data_shuffled = copy.deepcopy(data)

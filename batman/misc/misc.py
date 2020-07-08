@@ -40,10 +40,7 @@ def check_yes_no(prompt, default):
     logger = logging.getLogger('User checking')
     while True:
         try:
-            try:
-                value = raw_input(prompt)  # safe python 2
-            except NameError:
-                value = input(prompt)
+            value = input(prompt)
         except ValueError:
             logger.error("Sorry, I didn't understand that.")
             continue
@@ -75,10 +72,7 @@ def ask_path(prompt, default, root):
     logger = logging.getLogger('User checking')
     while True:
         try:
-            try:
-                path = raw_input(prompt)
-            except NameError:
-                path = input(prompt)
+            path = input(prompt)
         except ValueError:
             logger.error("Sorry, I didn't understand that.")
             continue

@@ -140,8 +140,6 @@ def moment_independent(sample, data, plabels=None, scale_plt=True, fname=None):
     ns = float(ns)
     if plabels is None:
         plabels = ['x' + str(i) for i in range(dim)]
-    else:
-        plabels = plabels
 
     s_indices = {'Kolmogorov': [], 'Kuiper': [], 'Delta': [], 'Cramer': [], 'Sobol': []}
     n_parts = int(min(np.ceil(ns ** (2 / (7 + np.tanh((1500 - ns) / 500)))), 48))

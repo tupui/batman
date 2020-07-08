@@ -16,7 +16,7 @@ def test_SixHumpCamel():
     assert f_2d([-0.0898, 0.7126]) == pytest.approx(-1.0316, 0.01)
 
     bounds = [[-3, 3], [-2, 2]]
-    results = differential_evolution(f_2d, bounds, tol=0.001, popsize=20)
+    results = differential_evolution(lambda x: f_2d(x)[0], bounds, tol=0.001, popsize=20)
     f_obj = results.fun
     assert f_obj == pytest.approx(-1.0316, 0.05)
 
@@ -26,7 +26,7 @@ def test_Branin():
     assert f([2.20, 1.57]) == pytest.approx(17.76357802, 0.0001)
 
     bounds = [[-5, 10], [0, 15]]
-    results = differential_evolution(f, bounds, tol=0.001, popsize=20)
+    results = differential_evolution(lambda x: f(x)[0], bounds, tol=0.001, popsize=20)
     assert results.fun == pytest.approx(-16.64402157, 0.05)
     x_target = [-3.68928528, 13.62998774]
     npt.assert_almost_equal(results.x, x_target, decimal=2)
@@ -38,7 +38,7 @@ def test_Michalewicz(seed):
 
     f_5d = Michalewicz(d=5)
     bounds = [[0., np.pi]] * 5
-    results = differential_evolution(f_5d, bounds, tol=0.001, popsize=20)
+    results = differential_evolution(lambda x: f_5d(x)[0], bounds, tol=0.001, popsize=20)
     f_obj_5d = results.fun
     assert f_obj_5d == pytest.approx(-4.687, 0.1)
 

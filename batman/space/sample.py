@@ -98,7 +98,7 @@ class Sample(object):
         except KeyError:
             return []
         else:
-            uniq, pos = np.unique(index.labels[0], return_index=True)
+            uniq, pos = np.unique(index.codes[0], return_index=True)
             uniq = uniq[np.argsort(pos)]
             return list(index.levels[0][uniq])
 
@@ -114,7 +114,7 @@ class Sample(object):
         except KeyError:
             return []
         else:
-            uniq, pos = np.unique(index.labels[0], return_index=True)
+            uniq, pos = np.unique(index.codes[0], return_index=True)
             uniq = uniq[np.argsort(pos)]
             return list(index.levels[0][uniq])
 
@@ -130,7 +130,7 @@ class Sample(object):
         except KeyError:
             return []
         else:
-            _, sizes = np.unique(index.labels[0], return_counts=True)
+            _, sizes = np.unique(index.codes[0], return_counts=True)
             return list(sizes)
 
     @property
@@ -145,7 +145,7 @@ class Sample(object):
         except KeyError:
             return []
         else:
-            _, sizes = np.unique(index.labels[0], return_counts=True)
+            _, sizes = np.unique(index.codes[0], return_counts=True)
             return list(sizes)
 
     @property
@@ -400,7 +400,7 @@ def create_dataframe(dataset, clabel='space', flabels=None, fsizes=None):
         # get multilevel index
         idx = pd.MultiIndex.from_tuples([np.atleast_1d(c) for c in dataset.columns.values])
         idx_levels = idx.levels
-        idx_labels = idx.labels
+        idx_labels = idx.codes
         # prepend level 'clabel' if missing
         if not np.array_equal([clabel], idx.levels[0]):
             idx_levels = [[clabel]] + idx_levels

@@ -237,6 +237,7 @@ class Mixture:
 
         if n_dim == 1:
             xx = np.linspace(mins, maxs, resolution)[:, None]
+            xx = np.concatenate(xx, axis=0)
             mesh = self.scaler.transform(xx)
             classif = self.classifier.predict(mesh)
             ax.scatter(xx, np.zeros(resolution),

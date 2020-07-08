@@ -338,7 +338,7 @@ class UQ:
                 output_design = self.output
                 size = len(self.space) // (2 * self.p_len + 2)
             # Martinez, Saltelli, MauntzKucherenko, Jansen
-            ot.ResourceMap.SetAsBool('MartinezSensitivityAlgorithm-UseAsmpytoticInterval', True)
+            ot.ResourceMap.SetAsBool('SobolIndicesAlgorithm-DefaultUseAsymptoticDistribution', True)
             sobol = ot.SaltelliSensitivityAlgorithm(input_design,
                                                     output_design, size)
 

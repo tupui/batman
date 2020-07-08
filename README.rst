@@ -1,4 +1,7 @@
-|Python|_ |License|_ |Joss|_
+|CI|_ |Python|_ |License|_ |Joss|_
+
+.. |CI| image:: https://circleci.com/gh/tupui/otsensitivity.svg?style=svg
+.. _CI: https://circleci.com/gh/tupui/otsensitivity
 
 .. |Python| image:: https://img.shields.io/badge/python-3.8-blue.svg
 .. _Python: https://python.org
@@ -13,8 +16,7 @@ Batman
 ======
 
 **Batman** stands for Bayesian Analysis Tool for Modelling and uncertAinty
-quaNtification. It is a Python module distributed under the open-source
-CECILL-B license (MIT/BSD compatible).
+quaNtification. It is an open-source Python module.
 
 *batman* seamlessly allows to do statistical analysis (sensitivity analysis,
 Uncertainty Quantification, moments) based on non-intrusive ensemble experiment
