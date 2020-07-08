@@ -81,7 +81,7 @@ class Space(Sample):
                 thresholds = [1 - gp_samplers['thresholds'][i]
                               for i in range(self.nb_gp_samplers)]
             else:
-                thresholds = [None] * self.nb_gp_samplers
+                thresholds = [0.01] * self.nb_gp_samplers
             self.gp_samplers = [GpSampler(gp_samplers['reference'][i],
                                           gp_samplers['kernel'][i],
                                           gp_samplers['add'][i],

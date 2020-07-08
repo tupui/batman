@@ -38,7 +38,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
               'sphinx.ext.imgmath', 'sphinx.ext.viewcode',
               'sphinx.ext.intersphinx']
 
-intersphinx_mapping = {'openturns': ('http://doc.openturns.org/openturns/latest/', None),
+intersphinx_mapping = {'openturns': ('http://openturns.github.io/openturns/latest', None),
                        'sklearn': ('http://scikit-learn.org/dev/', None),
                        'python': ('https://docs.python.org/3/', None)
 }
@@ -96,7 +96,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'BATMAN'
-copyright = '2018, CERFACS - CECILL-B Licensed'
+copyright = '2019, CERFACS - CECILL-B Licensed'
 author = 'Pamphile ROY'
 
 # The version info for the project you're documenting, acts as replacement for

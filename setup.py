@@ -3,7 +3,7 @@
 Setup script for BATMAN
 =======================
 
-This script allows to install jpod within the python environment.
+This script allows to install BATMAN within the python environment.
 
 Usage
 -----
@@ -19,7 +19,6 @@ import os
 import sys
 import subprocess
 from setuptools import (setup, find_packages, Command)
-from distutils.version import LooseVersion
 
 cmdclasses = {}
 
@@ -103,7 +102,7 @@ def find_version(*file_paths):
 
 
 setup(
-    name='batman',
+    name='ot-batman',
     keywords=("surrogate model, uncertainty quantification,statistical analysis,"
               "design of experiments, uncertainty visualization"),
     version=find_version("batman", "__init__.py"),
@@ -129,12 +128,13 @@ setup(
                  'Natural Language :: English',
                  'Operating System :: Unix',
                  'Programming Language :: Python :: 3.6',
+                 'Programming Language :: Python :: 3.7',
                  'Topic :: Documentation :: Sphinx',
                  'Topic :: Software Development',
                  'Topic :: Scientific/Engineering',
                  ],
     include_package_data=True,
     zip_safe=False,
-    license="MIT",
+    license="BSD",
     url=["https://github.com/tupui/batman", ]
 )

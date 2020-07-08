@@ -62,6 +62,9 @@ def response_surface(bounds, sample=None, data=None, fun=None, doe=None,
         n_samples = 50625
     n_samples = int(np.floor(np.power(n_samples, 1.0 / dim)))
 
+    if doe is not None:
+        n_samples = n_samples if len(doe) < n_samples else len(doe)
+
     # If axis discretisation is not given through option axis_disc,
     # apply default discretisation (same discretisation for every dimension).
     if axis_disc is None:

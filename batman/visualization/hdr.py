@@ -139,7 +139,8 @@ class HdrBoxplot:
                                            threshold=self.threshold)
 
         extra_alpha = [i for i in self.alpha
-                       if i != 0.5 and i != 0.9 and i != threshold]
+                       if i not in (0.5, 0.9, threshold)]
+
         if extra_alpha != []:
             self.extra_quantiles = [y for x in extra_alpha
                                     for y in self.band_quantiles([x])]

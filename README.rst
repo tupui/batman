@@ -9,10 +9,10 @@
 .. |Joss| image:: https://joss.theoj.org/papers/a1c4bddc33a1d8ab55fce1a3596196d8/status.svg
 .. _Joss: https://joss.theoj.org/papers/a1c4bddc33a1d8ab55fce1a3596196d8
 
-BATMAN
+Batman
 ======
 
-**BATMAN** stands for Bayesian Analysis Tool for Modelling and uncertAinty
+**Batman** stands for Bayesian Analysis Tool for Modelling and uncertAinty
 quaNtification. It is a Python module distributed under the open-source
 CECILL-B license (MIT/BSD compatible).
 
@@ -51,7 +51,7 @@ Shoud you be interested by batman's implementation, consider
 reading the `technical documentation <http://batman.readthedocs.io/en/latest/technical.html>`_.
 
 If you encounter a bug (or have a feature request), please report it via
-`GitLab <https://gitlab.com/cerfacs/batman/issues>`_. Or it might be you
+`GitLab <https://github.com/tupui/batman/issues>`_. Or it might be you
 falling but "Why do we fall sir? So we can learn to pick ourselves up".
 
 Last but not least, if you consider contributing check-out
@@ -100,23 +100,6 @@ Extra testing flavours:
 .. note:: OpenTURNS and ffmpeg are available on *conda* through
     the *conda-forge* channel.
 
-Latest release
-..............
-
-batman is distributed through ``conda``, on the ``conda-forge`` channel.
-
-To install conda::
-
-    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-    bash Miniconda3-latest-Linux-x86_64.sh
-
-To install batman through ``conda``::
-
-    conda install -c conda-forge batman
-
-All the above dependencies are automatically handled by ``conda``, 
-except `Antares <http://www.cerfacs.fr/antares>`_. For more information, refer
-to its `documentation <https://conda.io/docs/user-guide/getting-started.html>`_.
 
 From sources
 ............
@@ -133,7 +116,7 @@ The latter is optionnal as it build the documentation. The testing part is also
 optionnal but is recommanded. (<30mins depending on your configuration).
 
 .. note:: If you don't have install priviledge, add ``--user`` option after install.
-    But the simplest way might be to use a conda environment.
+    But the simplest way might be to use pip or a conda environment.
 
 If batman has been correctly installed, you should be able to call it simply::
 
@@ -143,6 +126,7 @@ If batman has been correctly installed, you should be able to call it simply::
     ``export PATH=$PATH:~/.local/bin``. Care to be taken with both your ``PATH``
     and ``PYTHONPATH`` environment variables. Make sure you do not call different
     installation folders. It is recommanded that you leave your ``PYTHONPATH`` empty.
+
 
 Help and Support
 ----------------

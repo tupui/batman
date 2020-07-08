@@ -177,7 +177,7 @@ class SurrogateModel:
         """
         points = np.atleast_2d(points)
 
-        if self.kind != 'pc':
+        if self.kind not in ['pc', 'mixture']:
             points = self.scaler.transform(points)
 
         if self.kind in ['kriging', 'evofusion', 'mixture']:

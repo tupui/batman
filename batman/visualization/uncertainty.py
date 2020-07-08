@@ -15,7 +15,7 @@ import openturns as ot
 from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KernelDensity
 from sklearn.model_selection import GridSearchCV
-from scipy.optimize import differential_evolution
+from scipy.optimize import fmin
 from matplotlib import cm
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
@@ -37,20 +37,21 @@ def kernel_smoothing(data, optimize=False):
     :rtype: :class:`sklearn.neighbors.KernelDensity`.
     """
     n_samples, dim = data.shape
-    cv = n_samples if n_samples < 50 else 50
+    cv = n_samples if n_samples < 5 else 5
     var = np.std(data, ddof=1)
-    scott = n_samples ** (-1. / (dim + 4)) * var
+    scott = 1.06 * n_samples ** (-1. / (dim + 4)) * var
 
     if optimize:
         def bw_score(bw):
             """Get the cross validation score for a given bandwidth."""
+            bw[bw <= 0] = 1e-10
             score = cross_val_score(KernelDensity(bandwidth=bw),
                                     data, cv=cv, n_jobs=-1)
             return - score.mean()
 
-        bounds = [(0.1 * var, 5. * var)]
-        results = differential_evolution(bw_score, bounds, maxiter=5)
-        bw = results.x
+        bw = fmin(bw_score, x0=scott, maxiter=1e3, maxfun=1e3, xtol=1e-3, disp=0)
+        bw[bw <= 0] = 1e-10
+
         ks_gaussian = KernelDensity(bandwidth=bw)
         ks_gaussian.fit(data)
     else:
@@ -212,7 +213,7 @@ def pdf(data, xdata=None, xlabel=None, flabel=None, moments=False,
     return fig
 
 
-def _dotplot(data, pdf, ax, n_dots=20, n_bins=7):
+def _dotplot(data, pdf, ax, n_dots=50, n_bins=7):
     """Quantile dotplot.
 
     Based on R code from https://github.com/mjskay/when-ish-is-my-bus.
@@ -244,7 +245,11 @@ def _dotplot(data, pdf, ax, n_dots=20, n_bins=7):
     for i in range(n_bins):
         x_bin = (edges[i + 1] + edges[i]) / 2
         y_bins = [(i + 1) * (radius * 2) for i in range(bins[i])]
-        max_y = max(y_bins) if max(y_bins) > max_y else max_y
+
+        try:
+            max_y = max(y_bins) if max(y_bins) > max_y else max_y
+        except ValueError:  # deals with empty bins
+            break
 
         for _, y_bin in enumerate(y_bins):
             circle = Circle((x_bin, y_bin), radius)
@@ -258,7 +263,6 @@ def _dotplot(data, pdf, ax, n_dots=20, n_bins=7):
     ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x / y_scale))
     ax2.yaxis.set_major_formatter(ticks_y)
     ax2.set_yticklabels([])
-    ax2.set_ylim([- radius, (max_y + radius)])
     ax2.autoscale_view()
     ax2.set_aspect('equal')
 
@@ -476,7 +480,7 @@ def corr_cov(data, sample, xdata, xlabel='x', plabels=None, interpolation=None,
         data = np.append(x_2d_xy, [y_2d_xy, cov_matrix_xy])
         names = ['x', 'y', 'Correlation-XY']
         sizes = [np.size(x_2d_xy), np.size(y_2d_xy), np.size(cov_matrix_xy)]
-        io.write(filename + '-correlation_XY.dat', data, names, sizes)
+        io.write(filename + '-correlation_XY.json', data, names, sizes)
 
     bat.visualization.save_show(fname, figures)
 

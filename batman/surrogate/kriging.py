@@ -107,8 +107,9 @@ class Kriging:
 
         # Define the CPU multi-threading/processing strategy
         n_cpu_system = cpu_system()
-        self.n_cpu = self.model_len
-        if n_cpu_system // (self.n_restart * self.model_len) < 1:
+        self.n_cpu = self.n_restart * self.model_len
+        if (n_cpu_system // (self.n_restart * self.model_len) < 1)\
+                or (self.n_cpu > n_cpu_system // self.n_restart):
             self.n_cpu = n_cpu_system // self.n_restart
 
         self.n_cpu = 1 if self.n_cpu == 0 else self.n_cpu

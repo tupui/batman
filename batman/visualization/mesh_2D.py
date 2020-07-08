@@ -41,7 +41,7 @@ def mesh_2D(fname, var=None, flabels=None, fformat='csv', xlabel='X axis',
     io = formater(fformat)
     mesh = io.read(fname)
 
-    if var:
+    if var is not None:
         var = np.asarray(var)
     else:
         var = mesh[:, 2:]

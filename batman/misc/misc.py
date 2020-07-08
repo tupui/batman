@@ -229,12 +229,17 @@ class ProgressBar:
 
 
 def cpu_system():
-    """Number of CPU of system."""
+    """Number of physical CPU of system."""
     try:
-        n_cpu_system = cpu_count()
+        try:
+            import psutil
+            n_cpu_system = psutil.cpu_count(logical=False)
+        except ImportError:
+            n_cpu_system = cpu_count()
     except NotImplementedError:
         n_cpu_system = os.sysconf('SC_NPROCESSORS_ONLN')
-    return 1 if n_cpu_system == 0 or n_cpu_system is None else n_cpu_system
+
+    return 1 if (n_cpu_system == 0) or (n_cpu_system is None) else n_cpu_system
 
 
 def optimization(bounds, discrete=None):

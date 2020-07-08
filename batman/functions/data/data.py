@@ -68,11 +68,11 @@ def mascaret(multizone=False, fname=None):
     """
     desc = ("Monte-Carlo sampling simulated using 1D MASCARET flow solver."
             " The Garonne river was used and the output consists in water"
-            " height observations. There are two dataset: (i) multizone with"
-            " 3 different friction coefficients Ks(1,2,3)~U(15, 60)"
-            " discretized on 463 points along the channel;"
-            " (ii) single zone with Ks~U(15, 60). In both cases the mass flow"
-            " rate Q~N(4035, 400) discretized in 14.")
+            " height observations. There are two dataset: (i) 5000 samples,"
+            " multizone with 3 different friction coefficients"
+            " Ks(1,2,3)~U(15, 60) discretized on 463 points along the channel;"
+            " (ii) 100000 samples, single zone with Ks~U(15, 60)  discretized"
+            " in 14. In both cases the mass flow rate Q~N(4035, 400).")
 
     if multizone:
         flabels = ['13150.0', '13250.0', '13350.0', '13450.0', '13550.0',

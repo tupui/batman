@@ -2,12 +2,15 @@
 Design of experiments
 ---------------------
 
-Define function related to design of experiments.
+Define function related to Design of Experiments.
 
 * :func:`doe`,
+* :func:`doe_ascii`,
+* :func:`pairplot`.
 """
 from itertools import combinations_with_replacement
 import numpy as np
+from sklearn import preprocessing
 import matplotlib.pyplot as plt
 import batman as bat
 from .uncertainty import kernel_smoothing
@@ -86,3 +89,89 @@ def doe(sample, plabels=None, resampling=0, multifidelity=False, fname=None):
     bat.visualization.save_show(fname, [fig])
 
     return fig, sub_ax
+
+
+def doe_ascii(sample, bounds=None, plabels=None, fname=None):
+    """Plot the space of parameters 2d-by-2d in ASCII.
+
+    :param array_like sample: sample (n_samples, n_featrues).
+    :param array_like bounds: Desired range of transformed data.
+          The transformation apply the bounds on the sample and not the
+          theoretical space, unit cube. Thus min and max values of the sample
+          will coincide with the bounds. ([min, k_vars], [max, k_vars]).
+    :param list(str) plabels: parameters' names.
+    :param str fname: whether to export to filename or display on console.
+    """
+    if bounds is not None:
+        scaler = preprocessing.MinMaxScaler()
+        scaler.fit(bounds)
+        sample = scaler.transform(sample)
+    else:
+        sample = np.asarray(sample)
+
+    print(sample)
+
+    n_dim = sample.shape[1]
+
+    if plabels is None:
+        plabels = ['x' + str(i) for i in range(n_dim)]
+
+    console = ''
+
+    n_lines = 30
+    n_cols = 80
+    for i in range(n_dim):
+        for j in range(i+1, n_dim):
+            console += '\n\nCoordinates ({}, {})\n'.format(plabels[i], plabels[j])
+            console += '-' * (n_cols + 2) + '\n'  # top border
+            tab = [[' ' for _ in range(n_cols)] for _ in range(n_lines)]
+            for s in sample:
+                x = int(s[i] * n_lines)
+                y = int(s[j] * n_cols)
+                tab[x][y] = '*'
+
+            # side border
+            tab = np.array(tab)
+            tab = np.column_stack([['|'] * n_lines, tab, ['|'] * n_lines])
+
+            for t in tab:
+                console += ''.join(t) + '\n'
+
+            console += '-' * (n_cols + 2) + '\n'  # bottom border
+
+    if fname is None:
+        print(console)
+    else:
+        with open(fname, 'w') as f:
+            f.write(console)
+
+
+def pairplot(sample, data, plabels=None, flabel=None, fname=None):
+    """Output function of the input parameter space.
+
+    A n-variate plot is constructed with all couple of variables - output.
+
+    :param array_like sample: sample (n_samples, n_featrues).
+    :param array_like data: data (n_samples, 1).
+    :param list(str) plabels: parameters' names.
+    :param str flabel: label for y axis.
+    :param str fname: whether to export to filename or display the figures.
+    :returns: figure.
+    :rtype: Matplotlib figure instance, Matplotlib AxesSubplot instances.
+    """
+    sample = np.asarray(sample)
+    n_dim = sample.shape[1]
+
+    if plabels is None:
+        plabels = ['x' + str(i) for i in range(n_dim)]
+
+    fig, axs = plt.subplots(1, n_dim)
+    for i in range(n_dim):
+        axs[i].scatter(sample[:, i], data, marker='+')
+        axs[i].set_xlabel(plabels[i])
+
+    axs[0].set_ylabel('F' if flabel is None else flabel)
+
+    bat.visualization.save_show(fname, [fig])
+
+    return fig, axs
