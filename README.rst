@@ -1,16 +1,10 @@
-|Python|_ |License|_ |Zulip|_ |Joss|_
+|Python|_ |License|_ |Joss|_
 
-.. |Python| image:: https://img.shields.io/badge/python-2.7,_3.6-blue.svg
+.. |Python| image:: https://img.shields.io/badge/python-3.8-blue.svg
 .. _Python: https://python.org
 
-.. |License| image:: https://img.shields.io/badge/license-CECILL--B_License-blue.svg
-.. _License: http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
-
-.. |Zulip| image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
-.. _Zulip: https://batman-cerfacs.zulipchat.com
-
-.. |Conda| image:: https://img.shields.io/badge/Install_with-conda-brightgreen.svg
-.. _Conda: https://conda.anaconda.org/conda-forge/batman
+.. |License| image:: https://img.shields.io/badge/license-BSD_License-blue.svg
+.. _License: https://github.com/tupui/batman/blob/master/LICENSE
 
 .. |Joss| image:: https://joss.theoj.org/papers/a1c4bddc33a1d8ab55fce1a3596196d8/status.svg
 .. _Joss: https://joss.theoj.org/papers/a1c4bddc33a1d8ab55fce1a3596196d8
@@ -70,14 +64,14 @@ How to install BATMAN?
 
 The sources are located on *GitLab*: 
 
-    https://gitlab.com/cerfacs/batman
+    https://github.com/tupui/batman
 
 Dependencies
 ............
 
 The required dependencies are: 
 
-- `Python <https://python.org>`_ >= 2.7 or >= 3.4
+- `Python <https://python.org>`_ >= 3.6
 - `OpenTURNS <http://www.openturns.org>`_ >= 1.10
 - `scikit-learn <http://scikit-learn.org>`_ >= 0.18
 - `numpy <http://www.numpy.org>`_ >= 1.13
@@ -90,7 +84,6 @@ The required dependencies are:
 Appart from OpenTURNS, required dependencies are satisfied by the installer.
 Optionnal dependencies are: 
 
-- `Antares <http://www.cerfacs.fr/antares>`_ for extra IO options
 - `sphinx <http://www.sphinx-doc.org>`_ >= 1.4 for documentation
 - `ffmpeg <https://www.ffmpeg.org>`_ for movie visualizations (*n_features* > 2)
 
@@ -130,7 +123,7 @@ From sources
 
 Using the latest python version is prefered! Then to install::
 
-    git clone git@gitlab.com:cerfacs/batman.git
+    git clone git@github.com/tupui/batman.git
     cd batman
     python setup.py install
     python setup.py test

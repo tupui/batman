@@ -38,17 +38,6 @@ python_3_feature_branch:
     - master
     - develop
 
-python_2:
-  stage: test
-  dependencies: []
-  image: "tupui/bat_ci_2"
-  only:
-    - master
-    - develop
-  script:
-    - scriptdir=.gitlab/continuous_integration
-    - bash $scriptdir/CI.sh
-
 .template_doc: &template_doc
   stage: doc
   image: "registry.gitlab.com/cerfacs/batman/tupui/bat_ci_3"

@@ -45,28 +45,20 @@ class BuildSphinx(Command):
 cmdclasses['build_sphinx'] = BuildSphinx
 
 # Check some import before starting build process.
-OPENTURNS_MIN_VERSION = LooseVersion('1.10')
-try:
-    import openturns
-    if LooseVersion(openturns.__version__) < OPENTURNS_MIN_VERSION:
-        raise ImportError('Found OpenTurns {}'.format(openturns.__version__))
-except ImportError as e:
-    msg = '{}{}You need to install OpenTURNS >= {}'
-    raise ImportError(msg.format(e, os.linesep, OPENTURNS_MIN_VERSION))
-
 try:
     import scipy
 except ImportError:
-    import pip
+    from pip._internal import main as pip
     try:
-        pip.main(['install', 'scipy'])
+        pip(['install', 'scipy'])
     except OSError:
-        pip.main(['install', 'scipy', '--user'])
+        pip(['install', 'scipy', '--user'])
 
 setup_requires = ['pytest-runner']
 tests_require = ['pytest', 'mock', 'coverage', 'pylint']
 install_requires = ['scipy>=0.15',
                     'numpy>=1.13',
+                    'openturns>=1.10',
                     'pandas>=0.22.0',
                     'paramiko>=2',
                     'jsonschema',
@@ -75,10 +67,6 @@ install_requires = ['scipy>=0.15',
                     'scikit-learn>=0.18']
 extras_require = {'doc': ['sphinx_rtd_theme', 'sphinx>=1.4'],
                   'movie': ['ffmpeg']}
-
-if sys.version_info <= (3, 4):
-    install_requires.append('futures')
-    install_requires.append('backports.tempfile')
 
 
 def find_version(*file_paths):
@@ -121,7 +109,7 @@ setup(
     version=find_version("batman", "__init__.py"),
     packages=find_packages(exclude=['test_cases', 'doc']),
     entry_points={'console_scripts': ['batman=batman.ui:main']},
-    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
+    python_requires='>=3.6',
     # Package requirements
     setup_requires=setup_requires,
     tests_require=tests_require,
@@ -130,7 +118,7 @@ setup(
     cmdclass=cmdclasses,
     # metadata
     maintainer="Pamphile ROY",
-    maintainer_email="roy@cerfacs.fr",
+    maintainer_email="roy.pamphile@gmail.com",
     description="BATMAN: Statistical analysis for expensive computer codes made easy",
     long_description=open('./README.rst').read(),
     classifiers=['Development Status :: 5 - Production/Stable',
@@ -140,11 +128,6 @@ setup(
                  'Intended Audience :: Developers',
                  'Natural Language :: English',
                  'Operating System :: Unix',
-                 'Programming Language :: Python :: 2',
-                 'Programming Language :: Python :: 2.7',
-                 'Programming Language :: Python :: 3',
-                 'Programming Language :: Python :: 3.4',
-                 'Programming Language :: Python :: 3.5',
                  'Programming Language :: Python :: 3.6',
                  'Topic :: Documentation :: Sphinx',
                  'Topic :: Software Development',
@@ -152,9 +135,6 @@ setup(
                  ],
     include_package_data=True,
     zip_safe=False,
-    license="CECILL-B",
-    url=["https://gitlab.com/cerfacs/batman",
-         "http://batman.readthedocs.io",
-         "https://batman-cerfacs.zulipchat.com",
-         "https://cerfacs.fr"],
+    license="MIT",
+    url=["https://github.com/tupui/batman", ]
 )

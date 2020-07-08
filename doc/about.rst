@@ -33,20 +33,18 @@ citations to the following paper:
 
 If you want to cite batman for an application, you may also want to consider:
 
-  `Comparison of Polynomial Chaos and Gaussian Process surrogates for
-  uncertainty quantification and correlation estimation of spatially
-  distributed open-channel steady flows <https://link.springer.com/epdf/10.1007/s00477-017-1470-4?author_access_token=XBNaFnnCWhRl5oX5e9CLgPe4RwlQNchNByi7wbcMAY7coqT3Mk_h1e4GygimcLwigpeWIwUsV7du_nq1vrCwHQP6_L5S-8PfGv8UX8Dr8y4_L8vinGM-_hEjOOMxosx5i0Sk1xY3WyNEa071PwZ7rQ%3D%3D>`_, Roy, P.T.
-  *et al.*, SERRA, 2017.
+  `Design optimization of an heat exchanger using Gaussian process <https://doi.org/10.1016/j.ijheatmasstransfer.2019.119264>`_, Campet, R.
+  *et al.*, IJHMT, 2020.
 
   Bibtex entry::
 
     @article{batman_appli,
-     title={Comparison of Polynomial Chaos and Gaussian Process surrogates for
-     uncertainty quantification and correlation estimation of spatially
-     distributed open-channel steady flows},
-     author={Roy, P.T. and El Moçaïd, N. and Ricci, S. and Jouhaud, J.-C. and
-     Goutal, N. and De Lozzo, M. and Rochoux M.C.},
-     journal={Stochastic Environmental Research and Risk Assessment},
-     doi={10.1007/s00477-017-1470-4},
-     year={2017}
+     title = "Design optimization of an heat exchanger using Gaussian process",
+     author = "Robin Campet and Pamphile T. Roy and Bénédicte Cuenot and Éléonore Riber and Jean-Christophe Jouhaud",
+     journal = "International Journal of Heat and Mass Transfer",
+     volume = "150",
+     pages = "119264",
+     year = "2020",
+     issn = "0017-9310",
+     doi = "10.1016/j.ijheatmasstransfer.2019.119264",
     }

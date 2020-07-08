@@ -74,14 +74,12 @@ and two additional ones (Steps 2 and 4, available for d in {1, 2}):
 """
 import logging
 import os
-import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.decomposition import PCA
 import batman as bat
 from .sampling import Doe
-PY2 = sys.version_info.major == 2
 
 
 class GpSampler:
@@ -105,8 +103,8 @@ class GpSampler:
           preceeding eigenvalues.
         :param float std: standard deviation of the Gaussian process.
         """
-        # Check if string (lenient for byte-strings on Py2):
-        if isinstance(reference, basestring if PY2 else str):
+        # Check if string:
+        if isinstance(reference, str):
             self.reference = np.atleast_1d(np.load(reference))[0]
         else:
             self.reference = reference
