@@ -13,3 +13,7 @@ dist/
 .idea
 batman/__init__.py
 .cache
+venv/*
+batman.log*
+batman/tests/*.pdf
+batman/tests/*.vtk

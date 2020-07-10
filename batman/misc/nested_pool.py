@@ -37,4 +37,3 @@ class NestedPool(pathos.multiprocessing.Pool):
         proc.__class__ = NoDaemonProcess
 
         return proc
-

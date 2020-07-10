@@ -53,7 +53,6 @@ except ImportError:
     except OSError:
         pip(['install', 'scipy', '--user'])
 
-setup_requires = ['pytest-runner']
 tests_require = ['pytest', 'mock', 'coverage', 'pylint']
 install_requires = ['scipy>=1.5',
                     'numpy>=1.19',
@@ -110,7 +109,6 @@ setup(
     entry_points={'console_scripts': ['batman=batman.ui:main']},
     python_requires='>=3.6',
     # Package requirements
-    setup_requires=setup_requires,
     tests_require=tests_require,
     install_requires=install_requires,
     extras_require=extras_require,
