@@ -3,6 +3,12 @@ version: 2.1
 orbs:
   python: circleci/python@volatile
 
+executors:
+  my-executor:
+    docker:
+      - image: circleci/python:latest
+    working_directory: ~/batman
+
 workflows:
   main:
     jobs:
@@ -16,15 +22,15 @@ workflows:
 
 jobs:
   dependencies:
-    executor: python/default
+    executor: my-executor
     steps:
       - checkout
-      - python/load-cache
+#      - python/load-cache
       - python/install-deps
       - python/save-cache
 
   linter:
-    executor: python/default
+    executor: my-executor
     steps:
       - checkout
       - python/load-cache
@@ -41,7 +47,7 @@ jobs:
 
   test:
     parallelism: 4
-    executor: python/default
+    executor: my-executor
     steps:
       - checkout
       - python/load-cache
