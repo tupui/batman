@@ -402,9 +402,7 @@ class Forrester:
         if self.fidelity == 'e':
             return f_e
         else:
-            f = 0.5 * f_e + 10 * (x - 0.5) - 5
-
-        return f
+            return 0.5 * f_e + 10 * (x - 0.5) - 5
 
 
 class Channel_Flow:

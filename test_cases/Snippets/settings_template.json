@@ -67,9 +67,8 @@
             # Shape per variable and per file.
             "shapes": {"0": [[1]]},
             # File format
-            # format: "npz", "fmt_tp_fortran" (BATMAN) or all Antares formats
-            # if installed
-            "format": "fmt_tp_fortran",
+            # format: "npz", "json", etc.
+            "format": "npz",
             # Names of the variables contained in a snapshot
             # format: list of strings
             "variables": ["F"],

@@ -488,7 +488,7 @@ class HdrBoxplot:
         duration = frame_rate / 1000.0
         amp = amplitude
         rate = 44100
-        t = np.linspace(0.0, duration, duration * rate)
+        t = np.linspace(0.0, duration, int(duration * rate))
 
         def note(freq):
             """Generate a sinusoidal note.

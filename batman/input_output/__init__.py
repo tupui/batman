@@ -22,15 +22,10 @@ Every formaters have the same interface, exposing the two methods **read** and *
 
 """
 from copy import copy
-from .formater import FORMATER as BUILTIN_FORMATER
-from .antares_wrappers import ANTARES_FORMATER
+from .formater import FORMATER
 
 
 __all__ = ['formater', 'available_formats']
-
-
-FORMATER = copy(ANTARES_FORMATER)
-FORMATER.update(BUILTIN_FORMATER)  # highest priority to built-in formaters
 
 
 def available_formats():

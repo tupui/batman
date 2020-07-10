@@ -55,15 +55,15 @@ except ImportError:
 
 setup_requires = ['pytest-runner']
 tests_require = ['pytest', 'mock', 'coverage', 'pylint']
-install_requires = ['scipy>=0.15',
-                    'numpy>=1.13',
-                    'openturns>=1.10',
-                    'pandas>=0.22.0',
-                    'paramiko>=2',
+install_requires = ['scipy>=1.5',
+                    'numpy>=1.19',
+                    'openturns>=1.15',
+                    'pandas>=1.0.5',
+                    'paramiko>=2.7',
                     'jsonschema',
                     'pathos>=0.2',
-                    'matplotlib>=2.1',
-                    'scikit-learn>=0.18']
+                    'matplotlib>=3.3',
+                    'scikit-learn>=0.23']
 extras_require = {'doc': ['sphinx_rtd_theme', 'sphinx>=1.4'],
                   'movie': ['ffmpeg']}
 

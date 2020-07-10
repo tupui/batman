@@ -1,7 +1,7 @@
 |CI|_ |Python|_ |License|_ |Joss|_
 
-.. |CI| image:: https://circleci.com/gh/tupui/otsensitivity.svg?style=svg
-.. _CI: https://circleci.com/gh/tupui/otsensitivity
+.. |CI| image:: https://circleci.com/gh/tupui/batman.svg?style=svg
+.. _CI: https://circleci.com/gh/tupui/batman
 
 .. |Python| image:: https://img.shields.io/badge/python-3.8-blue.svg
 .. _Python: https://python.org

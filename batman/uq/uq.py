@@ -131,7 +131,7 @@ class UQ:
             except OSError:
                 self.logger.debug("Output folder already exists.")
             finally:
-                self.io = formater('json')  # IOFormatSelector('fmt_tp_fortran')
+                self.io = formater('json')
         else:
             self.logger.debug("Not using output folder.")
 
