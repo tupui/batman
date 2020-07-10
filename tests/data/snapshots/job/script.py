@@ -1,7 +1,7 @@
 # encoding: utf-8
 import os
 from batman.input_output import formater
-from batman.tests.plugins import f_snapshot
+from tests.plugins import f_snapshot
 
 coupling = 'coupling-dir'
 

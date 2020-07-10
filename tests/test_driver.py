@@ -3,7 +3,7 @@ import os
 import copy
 import pytest
 from batman.driver import Driver
-from batman.tests.conftest import sklearn_q2
+from tests.conftest import sklearn_q2
 
 
 def test_driver_init(driver_init):

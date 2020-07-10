@@ -60,7 +60,7 @@ def settings_ishigami():
             "flabels": ["F"],
             "provider": {
                 "type": "function",
-                "module": "batman.tests.plugins",
+                "module": "tests.plugins",
                 "function": "f_ishigami"
             },
             "io": {

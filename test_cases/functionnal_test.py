@@ -9,7 +9,6 @@ import pytest
 import mock
 import batman.ui
 import batman.misc
-from batman.tests.conftest import tmp
 
 PATH = os.path.dirname(os.path.realpath(__file__))
 SCHEMA = os.path.join(PATH, '../batman/misc/schema.json')

@@ -7,10 +7,9 @@ import numpy.testing as npt
 from sklearn import preprocessing
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import (Matern, ConstantKernel)
-from batman.space import Doe
 from batman.surrogate import (PC, Kriging, SklearnRegressor, RBFnet, Evofusion,
                               SurrogateModel)
-from batman.tests.conftest import sklearn_q2
+from tests.conftest import sklearn_q2
 
 
 class Test1d:

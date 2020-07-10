@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs:
-  python: circleci/python@volatile
-
 executors:
   my-executor:
     docker:
@@ -26,16 +23,38 @@ jobs:
     steps:
       - checkout
 #      - python/load-cache
-      - python/install-deps
-      - python/save-cache
+#      - python/install-deps
+#      - python/save-cache
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+
+      - run:
+          name: install dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
 
   linter:
     executor: my-executor
     steps:
       - checkout
-      - python/load-cache
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
       - run:
           command: |
+            . venv/bin/activate
             pycodestyle --max-line-length=120 --exclude=function*,TreeCut*,RBFnet* batman > pycodestyle.log || echo 0
             cat pycodestyle.log
             pylint batman --rcfile=setup.cfg --ignore-patterns='RBFnet.py','TreeCut.py' > linter.log || echo 0
@@ -50,7 +69,11 @@ jobs:
     executor: my-executor
     steps:
       - checkout
-      - python/load-cache
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
       - run:
           name: Test
           command: bash .github/continuous_integration/CI.sh

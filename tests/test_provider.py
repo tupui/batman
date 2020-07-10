@@ -83,7 +83,7 @@ def test_provider_function(tmp, sample_spec):
     flabels = sample_spec['flabels']
     datadir = os.path.join(os.path.dirname(__file__), 'data', 'snapshots')
 
-    provider = ProviderFunction(module='batman.tests.plugins', function='f_snapshot',
+    provider = ProviderFunction(module='tests.plugins', function='f_snapshot',
                                 discover_pattern=os.path.join(datadir, '*'),
                                 **sample_spec)
 
