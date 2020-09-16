@@ -1,4 +1,3 @@
-# coding: utf8
 """
 Kriging Class
 =============
@@ -32,7 +31,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import (WhiteKernel, Matern, ConstantKernel)
 from joblib import delayed, Parallel
 
-from ..misc import (NestedPool, cpu_system)
+from ..misc import cpu_system
 from ..functions.utils import multi_eval
 
 
@@ -42,7 +41,7 @@ class Kriging:
     logger = logging.getLogger(__name__)
 
     def __init__(self, sample, data, kernel=None, noise=False,
-                 global_optimizer=True):
+                 global_optimizer=False):
         r"""Create the predictor.
 
         Uses sample and data to construct a predictor using Gaussian Process.
@@ -169,7 +168,8 @@ class Kriging:
         def fork_optimizer(i):
             """Optimize hyperparameters."""
             results = differential_evolution(func, bounds,
-                                             tol=0.001, popsize=15+i)
+                                             #tol=0.001, popsize=15+i
+                                             )
             theta_opt = results.x
             func_min = results.fun
             return theta_opt, func_min

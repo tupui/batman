@@ -38,7 +38,7 @@ from .polynomial_chaos import PC
 from .RBFnet import RBFnet
 from .multifidelity import Evofusion
 from ..space import Space
-from ..misc import (ProgressBar, NestedPool, cpu_system)
+from ..misc import cpu_system
 
 
 class SurrogateModel:

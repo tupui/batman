@@ -14,10 +14,9 @@ Implements functions:
 import os
 import sys
 import logging
-import re
 import json
 import time
-import jsonschema
+
 import numpy as np
 from pathos.multiprocessing import cpu_count
 from scipy.optimize import differential_evolution
@@ -96,66 +95,12 @@ def abs_path(value):
     return os.path.abspath(value)
 
 
-def import_config(path_config, path_schema):
+def import_config(fname):
     """Import a configuration file."""
-    logger = logging.getLogger('Settings Validation')
+    with open(fname) as json_file:
+        settings = json.load(json_file)
 
-    def minify_comments(file, **kwargs):
-        """Minify comments in JSON file.
-
-        Deserialize `file` to a Python object using
-        `commentjson <https://pypi.python.org/pypi/commentjson>`_ package.
-
-        :param file: serialized JSON string with or without comments.
-        :param kwargs: all the arguments that `json.loads <http://docs.python.org/
-                       2/library/json.html#json.loads>`_ accepts.
-        :raises: Parsing Exception from ``json.loads``.
-        :returns: dict or list.
-        """
-        file = file.read().decode('utf8')
-        regex = r'\s*(#|\/{2}).*$'
-        regex_inline = r'(:?(?:\s)*([A-Za-z\d\.{}]*)|((?<=\").*\"),?)(?:\s)*(((#|(\/{2})).*)|)$'
-        lines = file.split('\n')
-
-        for index, line in enumerate(lines):
-            if re.search(regex, line):
-                if re.search(r'^' + regex, line, re.IGNORECASE):
-                    lines[index] = ""
-                elif re.search(regex_inline, line):
-                    lines[index] = re.sub(regex_inline, r'\1', line)
-
-        try:
-            return json.loads('\n'.join(lines),
-                              encoding="utf-8", **kwargs)
-        except Exception as tb:
-            logger.exception("JSON error, cannot load configuration file: {}"
-                             .format(tb))
-            raise SyntaxError
-
-    with open(path_config, 'rb') as file:
-        settings = minify_comments(file)
-
-    with open(path_schema, 'rb') as file:
-        schema = json.loads(file.read().decode('utf8'))
-
-    error = False
-    try:
-        validator = jsonschema.Draft4Validator(schema)
-        for error in sorted(validator.iter_errors(settings), key=str):
-            logger.error("Error: {}\n-> Origin: {}\n-> Schema: {}"
-                         .format(error.message, error.path,
-                                 json.dumps(error.schema, indent=1)))
-            error = True
-    except jsonschema.ValidationError as e:
-        logger.exception(e.message)
-
-    if not error:
-        logger.info('Settings successfully imported and checked')
-    else:
-        logger.error('Error were found in configuration file: JSON syntax...')
-        raise SyntaxError
-
-    return settings
+    return Settings(**settings)
 
 
 class ProgressBar:

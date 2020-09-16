@@ -10,7 +10,7 @@ Defines all methods used to interact with other classes.
 ::
 
     >> from batman import Driver
-    >> driver = Driver(settings, script_path, output_path)
+    >> driver = Driver(settings, output_path)
     >> driver.sampling_pod(update=False)
     >> driver.write_pod()
     >> driver.prediction(write=True)
@@ -26,6 +26,8 @@ from copy import copy
 from concurrent import futures
 import numpy as np
 import sklearn.gaussian_process.kernels as kernels
+
+from .misc.schema import Settings, Sampling
 from .pod import Pod
 from .space import (Space, Sample, dists_to_ot)
 from .surrogate import SurrogateModel
@@ -51,106 +53,88 @@ class Driver:
         'visualization': 'visualization',
     }
 
-    def __init__(self, settings, fname):
+    def __init__(self, settings: Settings, fname: str):
         """Initialize Driver.
 
         From settings, init snapshot, space [POD, surrogate].
 
-        :param dict settings: settings.
+        :param settings: settings.
+        :param fname: output folder path.
 
-        :param str fname: output folder path.
         """
         self.settings = settings
         self.fname = fname
-        try:
-            os.makedirs(self.fname)
-        except OSError:
-            pass  # directory exists already
+        os.makedirs(self.fname, exist_ok=True)
 
-        # Space
-        if 'resampling' in self.settings['space']:
-            resamp_size = self.settings['space']['resampling']['resamp_size']
+        # Space preprocessing
+        try:
+            init_size = self.settings.space.sampling.init_size
+        except AttributeError:  # when providing DoE as a list
+            init_size = self.settings.space.sampling
+
+        duplicate = True if self.settings.space.sampling == 'saltelli' else False
+
+        if self.settings.surrogate.multifidelity:
+            multifidelity = [self.settings.surrogate.cost_ratio,
+                             self.settings.surrogate.grand_cost]
         else:
-            resamp_size = 0
-        if 'init_size' in self.settings['space']['sampling']:
-            init_size = self.settings['space']['sampling']['init_size']
-        else:  # when providing DoE as a list
-            init_size = self.settings['space']['sampling']
-        try:
-            duplicate = self.settings['space']['sampling']['method'] == 'saltelli'
-        except (KeyError, TypeError):
-            duplicate = False
-
-        try:
-            multifidelity = [self.settings['surrogate'][key]
-                             for key in ['cost_ratio', 'grand_cost']]
-        except KeyError:
             multifidelity = None
 
-        gp_samplers = self.settings['space'].get('gp_samplers')
-        psizes = self.settings['snapshot'].get('psizes')
-        plabels = self.settings['snapshot'].get('plabels')
-
-        self.space = Space(self.settings['space']['corners'],
+        self.space = Space(self.settings.space.corners,
                            init_size,
-                           nrefine=resamp_size,
-                           plabels=plabels,
-                           psizes=psizes,
+                           nrefine=self.settings.space.resampling.resamp_size,
+                           plabels=self.settings.snapshot.plabels,
+                           psizes=self.settings.snapshot.psizes,
                            multifidelity=multifidelity,
                            duplicate=duplicate,
-                           gp_samplers=gp_samplers)
+                           gp_samplers=None)
 
         # Data Providers
-        setting_provider = copy(settings['snapshot']['provider'])
+        setting_provider = self.settings.snapshot.provider.dict()
         provider_type = setting_provider.pop('type')
         args = {'discover_pattern': setting_provider.pop('discover', None)}
         self.logger.info('Select data provider type "{}"'.format(provider_type))
         if provider_type == 'function':
-            ProviderClass = ProviderFunction
-            args.update(setting_provider)
+            provider = ProviderFunction
         elif provider_type == 'file':
-            ProviderClass = ProviderFile
-            args.update(setting_provider)
-        elif provider_type == 'job':
-            ProviderClass = ProviderJob
+            provider = ProviderFile
+        else:  # provider_type == 'job':
+            provider = ProviderJob
             args['save_dir'] = os.path.join(self.fname, self.fname_tree['snapshots'])
             args['pool'] = futures.ThreadPoolExecutor(
-                max_workers=settings['snapshot']['max_workers'])
-            args.update(setting_provider)
+                max_workers=self.settings.snapshot.max_workers)
 
-        args.update(settings['snapshot'].get('io', {}))
+        args.update(setting_provider)
+        args.update(self.settings.snapshot.io)
 
-        self.provider = ProviderClass(plabels=settings['snapshot']['plabels'],
-                                      flabels=settings['snapshot']['flabels'],
-                                      psizes=settings['snapshot'].get('psizes'),
-                                      fsizes=settings['snapshot'].get('fsizes'),
-                                      **args)
-        self.snapshot_counter = 0  # [TODO] make it useless
+        self.provider = provider(plabels=self.settings.snapshot.plabels,
+                                 flabels=self.settings.snapshot.flabels,
+                                 psizes=self.settings.snapshot.psizes,
+                                 fsizes=self.settings.snapshot.fsizes,
+                                 **args)
+        self.snapshot_counter = 0  # TODO make it useless
 
         # Fill space
-        space_provider = self.settings['space']['sampling']
-        if isinstance(space_provider, list):
+        if isinstance(self.settings.space.sampling, list):
             # a list of points is provided
             self.logger.info('Reading list of points from the settings.')
-            self.space += space_provider
+            self.space += self.settings.space.sampling
         elif provider_type == 'file':
             self.space += self.provider._cache.space
-        elif isinstance(space_provider, dict):
+        elif isinstance(self.settings.space.sampling, Sampling):
             # use sampling method
-            distributions = space_provider.get('distributions')
-            discrete = self.settings['space']['sampling'].get('discrete')
-            self.space.sampling(space_provider['init_size'],
-                                space_provider['method'],
-                                distributions,
-                                discrete)
+            self.space.sampling(self.settings.space.sampling.init_size,
+                                self.settings.space.sampling.method,
+                                self.settings.space.sampling.distributions,
+                                self.settings.space.sampling.discrete)
 
         self.to_compute_points = self.space.values
 
         # Pod
-        if 'pod' in self.settings:
-            settings_ = {'tolerance': self.settings['pod']['tolerance'],
-                         'dim_max': self.settings['pod']['dim_max'],
-                         'corners': self.settings['space']['corners']}
+        if self.settings.pod is not None:
+            settings_ = {'tolerance': self.settings.pod.tolerance,
+                         'dim_max': self.settings.pod.dim_max,
+                         'corners': self.settings.space.corners}
             self.pod = Pod(**settings_)
         else:
             self.pod = None
@@ -158,29 +142,29 @@ class Driver:
 
         self.data = None
         # Surrogate model
-        if 'surrogate' in self.settings:
-            settings_ = {'kind': self.settings['surrogate']['method'],
-                         'corners': self.settings['space']['corners'],
-                         'plabels': self.settings['snapshot']['plabels']}
-            if self.settings['surrogate']['method'] == 'pc':
-                dists = self.settings['space']['sampling']['distributions']
+        if self.settings.surrogate is not None:
+            settings_ = {'kind': self.settings.surrogate.method,
+                         'corners': self.settings.space.corners,
+                         'plabels': self.settings.snapshot.plabels}
+            if self.settings.surrogate.method == 'pc':
+                dists = self.settings.space.sampling.distributions
                 dists = dists_to_ot(dists)
 
                 settings_.update({
-                    'strategy': self.settings['surrogate']['strategy'],
-                    'degree': self.settings['surrogate']['degree'],
+                    'strategy': self.settings.surrogate.strategy,
+                    'degree': self.settings.surrogate.degree,
                     'distributions': dists,
-                    'sparse_param': self.settings['surrogate'].get('sparse_param', {}),
+                    'sparse_param': self.settings.surrogate.sparse_param,
                     'sample': self.space.values
                 })
-            elif self.settings['surrogate']['method'] == 'evofusion':
+            elif self.settings.surrogate.method == 'evofusion':
                 settings_.update({
-                    'cost_ratio': self.settings['surrogate']['cost_ratio'],
-                    'grand_cost': self.settings['surrogate']['grand_cost']
+                    'cost_ratio': self.settings.surrogate.cost_ratio,
+                    'grand_cost': self.settings.surrogate.grand_cost
                 })
-            elif self.settings['surrogate']['method'] == 'kriging':
-                if 'kernel' in self.settings['surrogate']:
-                    kernel = self.settings['surrogate']['kernel']
+            elif self.settings.surrogate.method == 'kriging':
+                if self.settings.surrogate.kernel is not None:
+                    kernel = self.settings.surrogate.kernel
                     try:
                         kernel = eval(kernel, {'__builtins__': None},
                                       kernels.__dict__)
@@ -190,31 +174,30 @@ class Driver:
                     settings_.update({'kernel': kernel})
 
                 settings_.update({
-                    'noise': self.settings['surrogate'].get('noise', False),
-                    'global_optimizer': self.settings['surrogate'].get('global_optimizer', True)
+                    'noise': self.settings.surrogate.noise,
+                    'global_optimizer': self.settings.surrogate.global_optimizer
                 })
-            elif self.settings['surrogate']['method'] == 'mixture':
+            elif self.settings.surrogate.method == 'mixture':
                 self.pod = None
 
-                if 'pod' in self.settings:
-                    pod_args = {'tolerance': self.settings['pod'].get('tolerance', 0.99),
-                                'dim_max': self.settings['pod'].get('dim_max', 100)}
+                if self.settings.pod is not None:
+                    pod_args = {'tolerance': self.settings.pod.tolerance,
+                                'dim_max': self.settings.pod.dim_max}
                 else:
                     pod_args = None
 
                 settings_.update({
                     'pod': pod_args,
-                    'plabels': self.settings['snapshot']['plabels'],
-                    'corners': self.settings['space']['corners'],
-                    'fsizes': self.settings['snapshot'].get('fsizes')[0],
-                    'pca_percentage': self.settings['surrogate'].get('pca_percentage', 0.8),
-                    'clusterer': self.settings['surrogate'].get('clusterer',
-                                                                'cluster.KMeans(n_clusters=2)'),
-                    'classifier': self.settings['surrogate'].get('classifier', 'svm.SVC()')
+                    'plabels': self.settings.snapshot.plabels,
+                    'corners': self.settings.space.corners,
+                    'fsizes': self.settings.snapshot.fsizes[0],
+                    'pca_percentage': self.settings.surrogate.pca_percentage,
+                    'clusterer': self.settings.surrogate.clusterer,
+                    'classifier': self.settings.surrogate.classifier
                 })
 
             self.surrogate = SurrogateModel(**settings_)
-            if self.settings['surrogate']['method'] == 'pc':
+            if self.settings.surrogate.method == 'pc':
                 self.space.empty()
                 self.space += self.surrogate.predictor.sample
                 self.to_compute_points = self.space.values
@@ -270,13 +253,13 @@ class Driver:
 
         """
         self.logger.info("\n----- Resampling parameter space -----")
-        method = self.settings['space']['resampling']['method']
-        extremum = self.settings['space']['resampling'].get('extremum')
-        hybrid = self.settings['space']['resampling'].get('hybrid')
-        discrete = self.settings['space']['sampling'].get('discrete')
-        delta_space = self.settings['space']['resampling'].get('delta_space', 0.08)
-        q2_criteria = self.settings['space']['resampling'].get('q2_criteria')
-        pdf = self.settings.get('uq', {}).get('pdf')
+        method = self.settings.space.resampling.method
+        extremum = self.settings.space.resampling.extremum
+        hybrid = self.settings.space.resampling.hybrid
+        discrete = self.settings.space.sampling.discrete
+        delta_space = self.settings.space.resampling.delta_space
+        q2_criteria = self.settings.space.resampling.q2_criteria
+        pdf = self.settings.uq.pdf if self.settings.uq is not None else None
 
         while len(self.space) < self.space.max_points_nb:
             self.logger.info("-> New iteration")
@@ -388,20 +371,17 @@ class Driver:
             path = os.path.join(self.fname, self.fname_tree['predictions'])
             space_fname = os.path.join(path, 'sample-space.json')
             data_fname = os.path.join(path, 'sample-data.json')
-            try:
-                os.makedirs(path)
-            except OSError:
-                pass
+            os.makedirs(path, exist_ok=True)
             # better: surrogate could return a Sample
-            plabels = self.settings['snapshot']['plabels']
+            plabels = self.settings.snapshot.plabels
             if self.space.multifidelity:
                 plabels = plabels[1:]
 
             samples = Sample(space=points, data=results,
                              plabels=plabels,
-                             flabels=self.settings['snapshot']['flabels'],
-                             psizes=self.settings['snapshot'].get('psizes'),
-                             fsizes=self.settings['snapshot'].get('fsizes'))
+                             flabels=self.settings.snapshot.flabels,
+                             psizes=self.settings.snapshot.psizes,
+                             fsizes=self.settings.snapshot.fsizes)
             samples.write(space_fname, data_fname)
 
         return results, sigma
@@ -411,10 +391,10 @@ class Driver:
         args = {}
         args['fname'] = os.path.join(self.fname, self.fname_tree['uq'])
         args['space'] = self.space
-        args['indices'] = self.settings['uq']['type']
-        args['plabels'] = self.settings['snapshot']['plabels']
-        args['dists'] = self.settings['uq']['pdf']
-        args['nsample'] = self.settings['uq']['sample']
+        args['indices'] = self.settings.uq.type
+        args['plabels'] = self.settings.snapshot.plabels
+        args['dists'] = self.settings.uq.pdf
+        args['nsample'] = self.settings.uq.sample
 
         if self.space.multifidelity:
             args['plabels'] = args['plabels'][1:]
@@ -424,10 +404,14 @@ class Driver:
         else:
             args['data'] = self.data
 
-        args['test'] = self.settings['uq'].get('test')
-        args['xdata'] = self.settings.get('visualization', {}).get('xdata')
-        args['xlabel'] = self.settings.get('visualization', {}).get('xlabel')
-        args['flabel'] = self.settings.get('visualization', {}).get('flabel')
+        args['test'] = self.settings.uq.test
+
+        if self.settings.visualization is not None:
+        args['xdata'] = self.settings.visualization.xdata
+        args['xlabel'] = self.settings.visualization.xlabel
+        args['flabel'] = self.settings.flabel
+
+
 
         mesh = {}
         mesh['fname'] = self.settings.get('visualization', {}).get(
@@ -453,7 +437,7 @@ class Driver:
 
     def visualization(self):
         """Apply visualisation options."""
-        p_len = len(self.settings['space']['corners'][0])
+        p_len = len(self.settings.space.corners[0])
 
         # In case of POD, data need to be converted from modes to snapshots.
         if self.pod is not None:
@@ -480,12 +464,12 @@ class Driver:
                 args['xdata'] = np.linspace(0, 1, output_len)
 
             # Plot Doe if doe option is True
-            if ('doe' in self.settings['visualization']) and\
+            if ('doe' in self.settings['visualization']) and \
                     self.settings['visualization']['doe']:
                 args['doe'] = self.space
 
             # Display resampling if resampling option is true
-            if ('resampling' in self.settings['visualization']) and\
+            if ('resampling' in self.settings['visualization']) and \
                     self.settings['visualization']['resampling']:
                 args['resampling'] = self.settings['space']['resampling']['resamp_size']
             else:
@@ -524,7 +508,7 @@ class Driver:
         try:
             args['bounds'] = self.settings['visualization']['bounds']
             for i, _ in enumerate(args['bounds'][0]):
-                if (args['bounds'][0][i] < self.settings['space']['corners'][0][i])\
+                if (args['bounds'][0][i] < self.settings['space']['corners'][0][i]) \
                         or (args['bounds'][1][i] > self.settings['space']['corners'][1][i]):
                     args['bounds'] = self.settings['space']['corners']
                     self.logger.warning("Specified bounds for visualisation are "

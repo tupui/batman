@@ -4,6 +4,8 @@ import pytest
 import numpy as np
 from sklearn.metrics import r2_score
 import openturns as ot
+
+from batman.misc.schema import Settings
 from batman.functions import (Ishigami, Branin, G_Function,
                               db_Mascaret, Forrester)
 from batman.space import Space
@@ -31,7 +33,7 @@ def tmp(tmpdir_factory):
 
 @pytest.fixture(scope='session')
 def settings_ishigami():
-    return {
+    settings = {
         "space": {
             "corners": [
                 [-np.pi, -np.pi, -np.pi],
@@ -60,7 +62,7 @@ def settings_ishigami():
             "flabels": ["F"],
             "provider": {
                 "type": "function",
-                "module": "tests.plugins",
+                "module": "plugins",
                 "function": "f_ishigami"
             },
             "io": {
@@ -84,6 +86,7 @@ def settings_ishigami():
             "method": "sobol"
         }
     }
+    return Settings(**settings)
 
 
 @pytest.fixture(scope='module')
@@ -102,11 +105,11 @@ def ishigami_data(settings_ishigami):
     data['dists'] = [x1] * 3
     data['point'] = [2.20, 1.57, 3]
     data['target_point'] = data['func'](data['point'])
-    data['space'] = Space(settings_ishigami['space']['corners'],
-                          settings_ishigami['space']['sampling']['init_size'],
-                          settings_ishigami['space']['resampling']['resamp_size'],
-                          settings_ishigami['snapshot']['plabels'])
-    data['space'].sampling(150, settings_ishigami['space']['sampling']['method'])
+    data['space'] = Space(settings_ishigami.space.corners,
+                          settings_ishigami.space.sampling.init_size,
+                          settings_ishigami.space.resampling.resamp_size,
+                          settings_ishigami.snapshot.plabels)
+    data['space'].sampling(150, settings_ishigami.space.sampling.method)
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)
 

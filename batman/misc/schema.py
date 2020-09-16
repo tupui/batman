@@ -1,4 +1,4 @@
-from typing import List, Union, Sequence, Optional, Literal
+from typing import List, Union, Sequence, Optional, Literal, Tuple
 
 from pydantic import BaseModel, Field, PositiveInt, PositiveFloat
 
@@ -21,6 +21,7 @@ class Resampling(BaseModel):
     extremum: Literal['min', 'max'] = 'min'
     delta_space: PositiveFloat = 0.08
     q2_criteria: float = Field(0.9, gt=0, lt=1)
+    hybrid: List[Tuple[str, int]] = None
 
 
 class Pod(BaseModel):
@@ -62,9 +63,8 @@ class Job(BaseModel):
     type: Literal['job']
     command: str = 'bash script.sh'
     context_directory: str = 'data'
-    coupling_directory: str = 'batman-coupling'
     coupling: Coupling
-    hosts: Hosts
+    hosts: Optional[Hosts]
     clean: bool = False
     discover: Optional[str]
 
@@ -137,8 +137,8 @@ class Visualization(BaseModel):
     bounds: Array
     doe: bool = True
     resampling: bool = True
-    xdata: Array
-    axis_disc: List[int]
+    xdata: Optional[Array]
+    axis_disc: Optional[List[int]]
     flabel: str
     xlabel: str
     plabels: List[str]
