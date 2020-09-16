@@ -17,7 +17,7 @@ class Resampling(BaseModel):
     method: Literal['discrepancy', 'ego_discrepancy',
                     'sigma_discrepancy', 'sigma', 'loo_sigma', 'loo_sobol',
                     'extrema', 'hybrid', 'optimization'] = 'sigma'
-    resamp_size: PositiveInt = 2
+    resamp_size: PositiveInt = 0
     extremum: Literal['min', 'max'] = 'min'
     delta_space: PositiveFloat = 0.08
     q2_criteria: float = Field(0.9, gt=0, lt=1)
@@ -39,7 +39,7 @@ class Function(BaseModel):
     type: Literal['function']
     module: str
     function: str
-    discover: str
+    discover: Optional[str]
 
 
 class Coupling(BaseModel):
@@ -86,8 +86,8 @@ class Snapthot(BaseModel):
     max_workers: PositiveInt = 1
     plabels: List[str]
     flabels: List[str]
-    psizes: List[int]
-    fsizes: List[int]
+    psizes: Optional[List[int]]
+    fsizes: Optional[List[int]]
     provider: Union[Function, Job, File]
     io: Io
 
@@ -102,12 +102,13 @@ class SparceParam(BaseModel):
 class Surrogate(BaseModel):
     predictions: Array
     method: Literal['rbf', 'kriging', 'pc', 'evofusion', 'mixture'] = 'kriging'
+    multifidelity: bool = False
     cost_ratio: float = Field(2.0, gt=1)
     grand_cost: int = Field(30, ge=4)
     strategy: Literal['Quad', 'LS', 'SparseLS'] = 'Quad'
     degree: int = Field(10, ge=1)
-    sparse_param: SparceParam
-    kernel: str
+    sparse_param: Optional[SparceParam]
+    kernel: Optional[str]
     noise: Union[float, bool] = False
     global_optimizer: bool = True
     clusterer: str = 'cluster.KMeans(n_clusters=2)'
