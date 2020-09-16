@@ -23,11 +23,14 @@ It allows the creation of a surrogate model and making predictions.
 import os
 import copy
 import logging
+
 import dill as pickle
 import numpy as np
 from sklearn import preprocessing
 from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import r2_score
+from joblib import Parallel, delayed
+
 from .kriging import Kriging
 from .sk_interface import SklearnRegressor
 from .mixture import Mixture
@@ -246,16 +249,10 @@ class SurrogateModel:
 
             return pred
 
-        pool = NestedPool(n_cpu)
-        progress = ProgressBar(points_nb)
-        results = pool.imap(loo_quality, range(points_nb))
-
-        y_pred = np.empty_like(self.data)
-        for i in range(points_nb):
-            y_pred[i] = results.next()
-            progress()
-
-        pool.terminate()
+        results = Parallel(n_jobs=n_cpu)(delayed(loo_quality)(i)
+                                         for i in range(points_nb))
+        results = list(results)
+        y_pred = np.concatenate(results, axis=0)
 
         q2_loo = r2_score(self.data, y_pred)
         index = ((self.data - y_pred) ** 2).sum(axis=1).argmax()

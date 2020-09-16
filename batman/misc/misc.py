@@ -21,7 +21,9 @@ import jsonschema
 import numpy as np
 from pathos.multiprocessing import cpu_count
 from scipy.optimize import differential_evolution
-from .nested_pool import NestedPool
+from joblib import Parallel, delayed
+
+from .schema import Settings
 
 
 def clean_path(path):
@@ -270,12 +272,9 @@ def optimization(bounds, discrete=None):
                 end = int(np.ceil(bounds[discrete, 1]))
                 discrete_range = range(start, end) if end > start else [start]
 
-                pool = NestedPool(cpu_system())
-                results = pool.imap(combinatory_optimization, discrete_range)
-
-                # Gather results
+                results = Parallel(n_jobs=cpu_system())(delayed(combinatory_optimization)(i)
+                                                        for i in discrete_range)
                 results = list(results)
-                pool.terminate()
 
                 min_x, min_fun = zip(*results)
 

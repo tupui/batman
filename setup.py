@@ -59,7 +59,7 @@ install_requires = ['scipy>=1.5',
                     'openturns>=1.15',
                     'pandas>=1.0.5',
                     'paramiko>=2.7',
-                    'jsonschema',
+                    'joblib>=0.16.0'
                     'pathos>=0.2',
                     'matplotlib>=3.3',
                     'scikit-learn>=0.23']
