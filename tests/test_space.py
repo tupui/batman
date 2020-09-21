@@ -22,7 +22,7 @@ def test_dists_to_ot():
 
 
 def test_space(settings_ishigami, seed):
-    corners = settings_ishigami['space']['corners']
+    corners = settings_ishigami.space.corners
     space = Space(corners)
     assert space.max_points_nb == np.inf
 
@@ -49,8 +49,8 @@ def test_space(settings_ishigami, seed):
     s1 = space.sampling()
     assert len(s1) == 10
     space2 = Space(corners,
-                   sample=settings_ishigami['space']['sampling']['init_size'],
-                   nrefine=settings_ishigami['space']['resampling']['resamp_size'])
+                   sample=settings_ishigami.space.sampling.init_size,
+                   nrefine=settings_ishigami.space.resampling.resamp_size)
 
     s2 = space2.sampling(10, kind='lhsc')
     assert len(s2) == 10
@@ -88,14 +88,14 @@ def test_space(settings_ishigami, seed):
     assert space.max_points_nb == 2
 
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['space']['corners'][1] = [np.pi, -np.pi, np.pi]
+    test_settings.space.corners[1] = [np.pi, -np.pi, np.pi]
     with pytest.raises(ValueError):
-        Space(test_settings['space']['corners'])
+        Space(test_settings.space.corners)
 
 
 def test_space_evaluation(settings_ishigami):
     f_3d = Ishigami()
-    space = Space(settings_ishigami['space']['corners'])
+    space = Space(settings_ishigami.space.corners)
     space.sampling(2, 'halton')
     targets_space = f_3d(space)
     f_data_base = np.array([5.25, 4.2344145]).reshape(2, 1)
@@ -198,7 +198,7 @@ def test_refiner_basics(tmp, branin_data, settings_ishigami, seed):
 
     hypercube_optim = refiner.hypercube_optim(refiner.space.values[0])
     npt.assert_almost_equal(hypercube_optim,
-                            [[-0.61, 5.74], [1.0, 11.66]], decimal=2)
+                            [[-0.58, 5.74], [1.0, 11.67]], decimal=1)
 
     # Plotting
     # import os
@@ -241,7 +241,7 @@ def test_resampling(tmp, branin_data, settings_ishigami, seed):
     f_2d = branin_data.func
     space = branin_data.space
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['snapshot']['plabels'] = ['x1', 'x2']
+    test_settings.snapshot.plabels = ['x1', 'x2']
     space.empty()
     max_points_nb = 5
     space.sampling(max_points_nb, 'halton')

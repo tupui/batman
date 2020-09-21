@@ -1,7 +1,10 @@
 # coding: utf8
 import copy
-from batman.driver import Driver
+
 from mock import patch
+
+from batman.driver import Driver
+from batman.misc.schema import Function
 
 
 @patch("matplotlib.pyplot.show")
@@ -9,18 +12,18 @@ def test_optimization(mock_show, tmp, branin_data, settings_ishigami):
     test_settings = copy.deepcopy(settings_ishigami)
     init_size = len(branin_data.space)
     res_size = 2
-    test_settings['space']['sampling']['init_size'] = init_size
-    test_settings['space']['sampling']['discrete'] = 1
-    test_settings['space']['resampling']['method'] = 'optimization'
-    test_settings['space']['resampling']['resamp_size'] = res_size
-    test_settings['space']['resampling']['delta_space'] = 0.1
-    test_settings['space']['corners'] = branin_data.space.corners
-    test_settings['snapshot']['plabels'] = ['x1', 'x2']
-    test_settings['snapshot']['provider'] = {
+    test_settings.space.sampling.init_size = init_size
+    test_settings.space.sampling.discrete = 1
+    test_settings.space.resampling.method = 'optimization'
+    test_settings.space.resampling.resamp_size = res_size
+    test_settings.space.resampling.delta_space = 0.1
+    test_settings.space.corners = branin_data.space.corners
+    test_settings.snapshot.plabels = ['x1', 'x2']
+    test_settings.snapshot.provider = Function(**{
         "type": "function",
-        "module": "batman.tests.plugins",
+        "module": "tests.plugins",
         "function": "f_branin"
-    }
+    })
 
     driver = Driver(test_settings, tmp)
     driver.sampling()
