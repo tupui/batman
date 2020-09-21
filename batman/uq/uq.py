@@ -79,7 +79,7 @@ class UQ:
     def __init__(self, surrogate, dists=None, nsample=1000, method='sobol',
                  indices='aggregated', space=None, data=None, plabels=None,
                  xlabel=None, flabel=None, xdata=None, fname=None, test=None,
-                 mesh={}):
+                 mesh=None):
         """Init the UQ class.
 
         From the settings file, it gets:
@@ -483,13 +483,11 @@ class UQ:
             visualization.sensitivity_indices(full_indices, plabels=plabels,
                                               conf=conf, polar=True,
                                               xdata=self.xdata, fname=path)
-            if self.mesh_kwargs.get('fname'):
+            if self.mesh_kwargs is not None:
                 path = os.path.join(self.fname, '1st_order_Sobol_map.pdf')
-                visualization.mesh_2D(var=full_indices[2], flabels=plabels,
-                                      output_path=path, **self.mesh_kwargs)
+                visualization.mesh_2D(var=full_indices[2], flabels=plabels, output_path=path, **self.mesh_kwargs)
                 path = os.path.join(self.fname, 'Total_order_Sobol_map.pdf')
-                visualization.mesh_2D(var=full_indices[3], flabels=plabels,
-                                      output_path=path, **self.mesh_kwargs)
+                visualization.mesh_2D(var=full_indices[3], flabels=plabels, output_path=path, **self.mesh_kwargs)
 
         # Compute error of the POD with a known function
         if (self.type_indices in ['aggregated', 'block'])\

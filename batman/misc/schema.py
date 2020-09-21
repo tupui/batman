@@ -125,12 +125,12 @@ class UQ(BaseModel):
 
 
 class Mesh(BaseModel):
-    fname: str
-    format: str
-    xlabel: str
-    ylabel: str
-    flabels: List[str]
-    vmins: List[float]
+    fname: Optional[str]
+    format: str = 'csv'
+    xlabel: str = 'X axis'
+    ylabel: str = 'Y axis'
+    flabels: Optional[List[str]]
+    vmins: Optional[List[float]]
 
 
 class Visualization(BaseModel):
@@ -143,9 +143,9 @@ class Visualization(BaseModel):
     xlabel: str
     plabels: List[str]
     feat_order: List[int]
-    ticks_nbr: int = Field(..., ge=4, le=256)
-    range_cbar: List[float]
-    contours: List[float]
+    ticks_nbr: int = Field(10, ge=4, le=256)
+    range_cbar: Optional[List[float]]
+    contours: Optional[List[float]]
     kiviat_fill: bool = True
     mesh_2D: Mesh
 

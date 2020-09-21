@@ -291,24 +291,16 @@ class Driver:
     def write(self):
         """Write DOE, Surrogate [and POD] to disk."""
         path = os.path.join(self.fname, self.fname_tree['space'])
-        try:
-            os.makedirs(path)
-        except OSError:
-            pass
+        os.makedirs(path, exist_ok=True)
+
         self.space.write(path, 'space.dat')
         if self.surrogate is not None:
             path = os.path.join(self.fname, self.fname_tree['surrogate'])
-            try:
-                os.makedirs(path)
-            except OSError:
-                pass
+            os.makedirs(path, exist_ok=True)
             self.surrogate.write(path)
         if self.pod is not None:
             path = os.path.join(self.fname, self.fname_tree['pod'])
-            try:
-                os.makedirs(path)
-            except OSError:
-                pass
+            os.makedirs(path, exist_ok=True)
             self.pod.write(path)
         elif (self.pod is None) and (self.surrogate is None):
             path = os.path.join(self.fname, self.fname_tree['data'])
@@ -407,23 +399,14 @@ class Driver:
         args['test'] = self.settings.uq.test
 
         if self.settings.visualization is not None:
-        args['xdata'] = self.settings.visualization.xdata
-        args['xlabel'] = self.settings.visualization.xlabel
-        args['flabel'] = self.settings.flabel
+            args['xdata'] = self.settings.visualization.xdata
+            args['xlabel'] = self.settings.visualization.xlabel
+            args['flabel'] = self.settings.visualization.flabel
 
-
-
-        mesh = {}
-        mesh['fname'] = self.settings.get('visualization', {}).get(
-            '2D_mesh', {}).get('fname')
-        mesh['fformat'] = self.settings.get('visualization', {}).get(
-            '2D_mesh', {}).get('format', 'csv')
-        mesh['xlabel'] = self.settings.get('visualization', {}).get(
-            '2D_mesh', {}).get('xlabel', 'X axis')
-        mesh['ylabel'] = self.settings.get('visualization', {}).get(
-            '2D_mesh', {}).get('ylabel', 'Y axis')
-        mesh['vmins'] = self.settings.get('visualization', {}).get(
-            '2D_mesh', {}).get('vmins')
+        mesh = None
+        if (self.settings.visualization is not None) and \
+                (self.settings.visualization.mesh_2D is not None):
+            mesh = self.settings.visualization.mesh_2D.dict()
 
         analyse = UQ(self.surrogate, mesh=mesh, **args)
 
@@ -431,7 +414,7 @@ class Driver:
             self.logger.warning("No surrogate model, be sure to have a "
                                 "statistically significant sample to trust "
                                 "following results.")
-        if len(self.settings['space']['corners'][0]) > 1:
+        if len(self.settings.space.corners[0]) > 1:
             analyse.sobol()
         analyse.error_propagation()
 
@@ -456,65 +439,47 @@ class Driver:
         except OSError:
             pass
 
-        if 'visualization' in self.settings:
+        if self.settings.visualization is not None:
             # xdata for output with dim > 1
-            if ('xdata' in self.settings['visualization']) and (output_len > 1):
-                args['xdata'] = self.settings['visualization']['xdata']
+            if (self.settings.visualization.xdata is not None) and (output_len > 1):
+                args['xdata'] = self.settings.visualization.xdata
             elif output_len > 1:
                 args['xdata'] = np.linspace(0, 1, output_len)
 
             # Plot Doe if doe option is True
-            if ('doe' in self.settings['visualization']) and \
-                    self.settings['visualization']['doe']:
+            if self.settings.visualization.doe:
                 args['doe'] = self.space
 
             # Display resampling if resampling option is true
-            if ('resampling' in self.settings['visualization']) and \
-                    self.settings['visualization']['resampling']:
-                args['resampling'] = self.settings['space']['resampling']['resamp_size']
+            if self.settings.visualization.resampling:
+                args['resampling'] = self.settings.space.resampling.resamp_size
             else:
                 args['resampling'] = 0
 
-            args['ticks_nbr'] = self.settings.get(
-                'visualization', {}).get('ticks_nbr', 10)
-            args['contours'] = self.settings.get('visualization', {}).get('contours')
-            args['range_cbar'] = self.settings.get('visualization', {}).get('range_cbar')
-            args['axis_disc'] = self.settings.get('visualization', {}).get('axis_disc')
+            args['ticks_nbr'] = self.settings.visualization.ticks_nbr
+            args['contours'] = self.settings.visualization.contours
+            args['range_cbar'] = self.settings.visualization.range_cbar
+            args['axis_disc'] = self.settings.visualization.axis_disc
 
             # Create the 2D mesh graph
-            if '2D_mesh' in self.settings['visualization']:
-                name_mesh = self.settings.get('visualization', {}).get(
-                    '2D_mesh', {}).get('fname')
-                format_mesh = self.settings.get('visualization', {}).get(
-                    '2D_mesh', {}).get('format', 'csv')
-                xlabel = self.settings.get('visualization', {}).get(
-                    '2D_mesh', {}).get('xlabel', 'X axis')
-                ylabel = self.settings.get('visualization', {}).get(
-                    '2D_mesh', {}).get('ylabel', 'Y axis')
-                outlabel = self.settings.get('visualization', {}).get(
-                    '2D_mesh', {}).get('flabels')
-                vmins = self.settings.get('visualization', {}).get(
-                    '2D_mesh', {}).get('vmins')
-                if name_mesh:
-                    self.logger.info("Creating 2D statistic graph from mesh...")
-                    output_path = os.path.join(path, 'Mesh_graph.pdf')
-                    mesh_2D(fname=name_mesh, fformat=format_mesh,
-                            xlabel=xlabel, ylabel=ylabel, flabels=outlabel,
-                            vmins=vmins, output_path=output_path)
+            if self.settings.visualization.mesh_2D is not None:
+                self.logger.info("Creating 2D statistic graph from mesh...")
+                output_path = os.path.join(path, 'Mesh_graph.pdf')
+                mesh_2D(output_path=output_path, **self.settings.visualization.mesh_2D.dict())
 
         else:
             args['xdata'] = np.linspace(0, 1, output_len) if output_len > 1 else None
 
         try:
-            args['bounds'] = self.settings['visualization']['bounds']
+            args['bounds'] = self.settings.visualization.bounds
             for i, _ in enumerate(args['bounds'][0]):
-                if (args['bounds'][0][i] < self.settings['space']['corners'][0][i]) \
-                        or (args['bounds'][1][i] > self.settings['space']['corners'][1][i]):
-                    args['bounds'] = self.settings['space']['corners']
+                if (args['bounds'][0][i] < self.settings.space.corners[0][i]) \
+                        or (args['bounds'][1][i] > self.settings.space.corners[1][i]):
+                    args['bounds'] = self.settings.space.corners
                     self.logger.warning("Specified bounds for visualisation are "
                                         "wider than space corners. Default value used.")
         except KeyError:
-            args['bounds'] = self.settings['space']['corners']
+            args['bounds'] = self.settings.space.corners
 
         # Data based on surrogate model (function) or not
         if 'surrogate' in self.settings:
@@ -524,18 +489,18 @@ class Driver:
             args['data'] = data
 
         try:
-            args['plabels'] = self.settings['visualization']['plabels']
+            args['plabels'] = self.settings.visualization.plabels
         except KeyError:
-            args['plabels'] = self.settings['snapshot']['plabels']
+            args['plabels'] = self.settings.snapshot.plabels
         finally:
             if self.space.multifidelity:
                 args['plabels'] = args['plabels'][1:]
 
-        if len(self.settings['snapshot']['flabels']) < 2:
+        if len(self.settings.snapshot.flabels) < 2:
             try:
-                args['flabel'] = self.settings['visualization']['flabel']
+                args['flabel'] = self.settings.visualization.flabel
             except KeyError:
-                args['flabel'] = self.settings['snapshot']['flabels'][0]
+                args['flabel'] = self.settings.snapshot.flabels[0]
 
         if p_len < 5:
             # Creation of the response surface(s)
