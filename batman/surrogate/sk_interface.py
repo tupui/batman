@@ -22,8 +22,11 @@ Interpolation using regressors from Scikit-Learn.
 """
 import logging
 import warnings
+
 import numpy as np
-from ..misc import (NestedPool, cpu_system)
+from joblib import Parallel, delayed
+
+from ..misc import cpu_system
 from ..functions.utils import multi_eval
 
 
@@ -81,10 +84,9 @@ class SklearnRegressor:
 
         # Create a predictor per data, parallelize if several data
         if self.model_len > 1:
-            pool = NestedPool(self.n_cpu)
-            results = pool.imap(model_fitting, data.T)
+            results = Parallel(n_jobs=self.n_cpu)(delayed(model_fitting)(datum)
+                                                  for datum in range(data.T))
             self.regressor = list(results)
-            pool.terminate()
         else:
             self.regressor = [model_fitting(data)]
 

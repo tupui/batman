@@ -136,7 +136,7 @@ def test_DbGeneric():
     # From paths
     PATH = os.path.dirname(os.path.realpath(__file__))
     fnames = ['input_mascaret.npy', 'output_mascaret.npy']
-    fnames = [os.path.join(PATH, '../functions/data/', p) for p in fnames]
+    fnames = [os.path.join(PATH, '../batman/functions/data/', p) for p in fnames]
 
     f = DbGeneric(fnames=fnames)
 

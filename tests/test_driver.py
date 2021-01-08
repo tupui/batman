@@ -2,6 +2,8 @@
 import os
 import copy
 import pytest
+
+from batman.misc.schema import Job
 from batman.driver import Driver
 from tests.conftest import sklearn_q2
 
@@ -23,7 +25,7 @@ def test_driver_chain(driver_init, tmp, ishigami_data):
 
 def test_no_pod(ishigami_data, tmp, settings_ishigami):
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings.pop('pod')
+    test_settings.pod = None
     driver = Driver(test_settings, tmp)
     driver.sampling()
 
@@ -42,14 +44,14 @@ def test_provider_dict(tmp, settings_ishigami):
     path = os.path.dirname(os.path.realpath(__file__))
     os.chdir(path)
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['space']['sampling']['init_size'] = 4
-    test_settings['snapshot']['provider'] = {
+    test_settings.space.sampling.init_size = 4
+    test_settings.snapshot.provider = Job(**{
         "type": "job",
         "command": "bash script.sh",
         "context_directory": "data",
         "coupling": {"coupling_directory": "batman-coupling"},
         "clean": False,
-    }
+    })
     driver = Driver(test_settings, tmp)
     driver.sampling()
     driver.write()
@@ -60,7 +62,7 @@ def test_provider_dict(tmp, settings_ishigami):
 
 def test_resampling(tmp, settings_ishigami):
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['space']['sampling']['init_size'] = 4
+    test_settings.space.sampling.init_size = 4
     driver = Driver(test_settings, tmp)
     driver.sampling()
     driver.resampling()

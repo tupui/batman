@@ -27,9 +27,12 @@ Computers & Fluids. 2011. DOI:10.1016/j.compfluid.2010.09.002
 import logging
 import os
 import copy
+
 import numpy as np
+from joblib import Parallel, delayed
+
 from ..surrogate import SurrogateModel
-from ..misc import ProgressBar, NestedPool, cpu_system
+from ..misc import cpu_system
 
 
 class Pod:
@@ -406,15 +409,10 @@ class Pod:
         elif n_cpu > points_nb:
             n_cpu = points_nb
 
-        pool = NestedPool(n_cpu)
-        progress = ProgressBar(points_nb)
-        results = pool.imap(quality, range(points_nb))
-
-        for i in range(points_nb):
-            snapshot_value[i], error_l_two[i], error_matrix[i] = results.next()
-            progress()
-
-        pool.terminate()
+        results = Parallel(n_jobs=n_cpu)(delayed(quality)(i)
+                                         for i in range(points_nb))
+        for i, result in enumerate(results):
+            snapshot_value[i], error_l_two[i], error_matrix[i] = result
 
         mean = np.mean(snapshot_value, axis=0)
         for i in range(points_nb):

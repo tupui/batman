@@ -392,8 +392,7 @@ class Test2Dmesh:
         fname = os.path.join(datadir, 'data_Garonne.csv')
         path = os.path.join(tmp, 'garonne_2D.pdf')
         vmin = 2.5
-        mesh_2D(fname=fname, fformat='csv', xlabel='x label',
-                flabels=['Variable'], vmins=[vmin], output_path=path)
+        mesh_2D(fname=fname, flabels=['Variable'], format='csv', xlabel='x label', vmins=[vmin], output_path=path)
 
     def test_2D_mesh_add_var(self, tmp, mascaret_data):
         datadir = os.path.join(os.path.dirname(__file__), 'data')
@@ -401,8 +400,7 @@ class Test2Dmesh:
         var_sobol = [[0.1, 0.2], [0.3, 0.2], [0.88, 0.2], [0.9, 1.0], [0.1, 0.12]]
         path = os.path.join(tmp, 'data_2D.pdf')
         flabels = ['Ks', 'Q']
-        mesh_2D(fname=fname, fformat='csv', xlabel='x label', var=var_sobol,
-                flabels=flabels, output_path=path)
+        mesh_2D(fname=fname, var=var_sobol, flabels=flabels, format='csv', xlabel='x label', output_path=path)
 
         var_sobol = [[0.1, 0.2], [0.3, 0.2], [0.88, 0.2], [0.9, 1.0]]
         with pytest.raises(ValueError):

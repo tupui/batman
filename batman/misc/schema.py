@@ -1,4 +1,4 @@
-from typing import List, Union, Sequence, Optional, Literal
+from typing import List, Union, Sequence, Optional, Literal, Tuple
 
 from pydantic import BaseModel, Field, PositiveInt, PositiveFloat
 
@@ -17,10 +17,11 @@ class Resampling(BaseModel):
     method: Literal['discrepancy', 'ego_discrepancy',
                     'sigma_discrepancy', 'sigma', 'loo_sigma', 'loo_sobol',
                     'extrema', 'hybrid', 'optimization'] = 'sigma'
-    resamp_size: PositiveInt = 2
+    resamp_size: PositiveInt = 0
     extremum: Literal['min', 'max'] = 'min'
     delta_space: PositiveFloat = 0.08
     q2_criteria: float = Field(0.9, gt=0, lt=1)
+    hybrid: List[Tuple[str, int]] = None
 
 
 class Pod(BaseModel):
@@ -39,7 +40,7 @@ class Function(BaseModel):
     type: Literal['function']
     module: str
     function: str
-    discover: str
+    discover: Optional[str]
 
 
 class Coupling(BaseModel):
@@ -62,9 +63,8 @@ class Job(BaseModel):
     type: Literal['job']
     command: str = 'bash script.sh'
     context_directory: str = 'data'
-    coupling_directory: str = 'batman-coupling'
     coupling: Coupling
-    hosts: Hosts
+    hosts: Optional[Hosts]
     clean: bool = False
     discover: Optional[str]
 
@@ -86,8 +86,8 @@ class Snapthot(BaseModel):
     max_workers: PositiveInt = 1
     plabels: List[str]
     flabels: List[str]
-    psizes: List[int]
-    fsizes: List[int]
+    psizes: Optional[List[int]]
+    fsizes: Optional[List[int]]
     provider: Union[Function, Job, File]
     io: Io
 
@@ -102,12 +102,13 @@ class SparceParam(BaseModel):
 class Surrogate(BaseModel):
     predictions: Array
     method: Literal['rbf', 'kriging', 'pc', 'evofusion', 'mixture'] = 'kriging'
+    multifidelity: bool = False
     cost_ratio: float = Field(2.0, gt=1)
     grand_cost: int = Field(30, ge=4)
     strategy: Literal['Quad', 'LS', 'SparseLS'] = 'Quad'
     degree: int = Field(10, ge=1)
-    sparse_param: SparceParam
-    kernel: str
+    sparse_param: Optional[SparceParam]
+    kernel: Optional[str]
     noise: Union[float, bool] = False
     global_optimizer: bool = True
     clusterer: str = 'cluster.KMeans(n_clusters=2)'
@@ -124,27 +125,27 @@ class UQ(BaseModel):
 
 
 class Mesh(BaseModel):
-    fname: str
-    format: str
-    xlabel: str
-    ylabel: str
-    flabels: List[str]
-    vmins: List[float]
+    fname: Optional[str]
+    format: str = 'csv'
+    xlabel: str = 'X axis'
+    ylabel: str = 'Y axis'
+    flabels: Optional[List[str]]
+    vmins: Optional[List[float]]
 
 
 class Visualization(BaseModel):
     bounds: Array
     doe: bool = True
     resampling: bool = True
-    xdata: Array
-    axis_disc: List[int]
+    xdata: Optional[Array]
+    axis_disc: Optional[List[int]]
     flabel: str
     xlabel: str
     plabels: List[str]
     feat_order: List[int]
-    ticks_nbr: int = Field(..., ge=4, le=256)
-    range_cbar: List[float]
-    contours: List[float]
+    ticks_nbr: int = Field(10, ge=4, le=256)
+    range_cbar: Optional[List[float]]
+    contours: Optional[List[float]]
     kiviat_fill: bool = True
     mesh_2D: Mesh
 

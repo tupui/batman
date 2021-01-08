@@ -4,6 +4,8 @@ import pytest
 import numpy as np
 from sklearn.metrics import r2_score
 import openturns as ot
+
+from batman.misc.schema import Settings
 from batman.functions import (Ishigami, Branin, G_Function,
                               db_Mascaret, Forrester)
 from batman.space import Space
@@ -31,7 +33,7 @@ def tmp(tmpdir_factory):
 
 @pytest.fixture(scope='session')
 def settings_ishigami():
-    return {
+    settings = {
         "space": {
             "corners": [
                 [-np.pi, -np.pi, -np.pi],
@@ -60,7 +62,7 @@ def settings_ishigami():
             "flabels": ["F"],
             "provider": {
                 "type": "function",
-                "module": "tests.plugins",
+                "module": "plugins",
                 "function": "f_ishigami"
             },
             "io": {
@@ -84,6 +86,7 @@ def settings_ishigami():
             "method": "sobol"
         }
     }
+    return Settings(**settings)
 
 
 @pytest.fixture(scope='module')
@@ -102,11 +105,11 @@ def ishigami_data(settings_ishigami):
     data['dists'] = [x1] * 3
     data['point'] = [2.20, 1.57, 3]
     data['target_point'] = data['func'](data['point'])
-    data['space'] = Space(settings_ishigami['space']['corners'],
-                          settings_ishigami['space']['sampling']['init_size'],
-                          settings_ishigami['space']['resampling']['resamp_size'],
-                          settings_ishigami['snapshot']['plabels'])
-    data['space'].sampling(150, settings_ishigami['space']['sampling']['method'])
+    data['space'] = Space(settings_ishigami.space.corners,
+                          settings_ishigami.space.sampling.init_size,
+                          settings_ishigami.space.resampling.resamp_size,
+                          settings_ishigami.snapshot.plabels)
+    data['space'].sampling(150, settings_ishigami.space.sampling.method)
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)
 
@@ -119,8 +122,8 @@ def branin_data(settings_ishigami):
     data['point'] = [2., 2.]
     data['target_point'] = data['func'](data['point'])
     data['space'] = Space([[-7, 0], [10, 15]],
-                          settings_ishigami['space']['sampling']['init_size'],
-                          settings_ishigami['space']['resampling']['resamp_size'],
+                          settings_ishigami.space.sampling.init_size,
+                          settings_ishigami.space.resampling.resamp_size,
                           ['x1', 'x2'])
     data['space'].sampling(10, kind='halton', discrete=0)
     data['target_space'] = data['func'](data['space'])
@@ -135,8 +138,8 @@ def g_function_data(settings_ishigami):
     data['point'] = [0.5, 0.2, 0.7, 0.1]
     data['target_point'] = data['func'](data['point'])
     data['space'] = Space([[0, 0, 0, 0], [1, 1, 1, 1]],
-                          settings_ishigami['space']['sampling']['init_size'],
-                          settings_ishigami['space']['resampling']['resamp_size'],
+                          settings_ishigami.space.sampling.init_size,
+                          settings_ishigami.space.resampling.resamp_size,
                           ['x1', 'x2', 'x3', 'x4'])
     data['space'].sampling(10, kind='halton', discrete=2)
     data['target_space'] = data['func'](data['space'])
@@ -155,10 +158,10 @@ def mascaret_data(settings_ishigami):
     data['point'] = [31.54, 4237.025]
     data['target_point'] = data['func'](data['point'])[0]
     data['space'] = Space([[15.0, 2500.0], [60, 6000.0]],
-                          settings_ishigami['space']['sampling']['init_size'],
-                          settings_ishigami['space']['resampling']['resamp_size'],
+                          settings_ishigami.space.sampling.init_size,
+                          settings_ishigami.space.resampling.resamp_size,
                           ['Ks', 'Q'])
-    data['space'].sampling(50, settings_ishigami['space']['sampling']['method'])
+    data['space'].sampling(50, settings_ishigami.space.sampling.method)
     data['target_space'] = data['func'](data['space'])
     return Datatest(data)
 
@@ -173,7 +176,7 @@ def mufi_data(settings_ishigami):
     data['target_point'] = f_e(data['point'])
     data['space'] = Space([[0.0], [1.0]],
                           10,
-                          settings_ishigami['space']['resampling']['resamp_size'],
+                          settings_ishigami.space.resampling.resamp_size,
                           ['fidelity', 'x'], multifidelity=[5.1, 13.0])
     data['space'].sampling(10, 'halton')
 

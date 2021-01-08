@@ -1,4 +1,3 @@
-# coding: utf8
 """
 Kriging Class
 =============
@@ -25,11 +24,14 @@ Machine Learning Research. 2011. ArXiv ID: 1201.0490
 """
 import logging
 import warnings
+
 import numpy as np
 from scipy.optimize import differential_evolution
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import (WhiteKernel, Matern, ConstantKernel)
-from ..misc import (NestedPool, cpu_system)
+from joblib import delayed, Parallel
+
+from ..misc import cpu_system
 from ..functions.utils import multi_eval
 
 
@@ -39,7 +41,7 @@ class Kriging:
     logger = logging.getLogger(__name__)
 
     def __init__(self, sample, data, kernel=None, noise=False,
-                 global_optimizer=True):
+                 global_optimizer=False):
         r"""Create the predictor.
 
         Uses sample and data to construct a predictor using Gaussian Process.
@@ -137,10 +139,8 @@ class Kriging:
 
         # Create a predictor per data, parallelize if several data
         if self.model_len > 1:
-            pool = NestedPool(self.n_cpu)
-            results = pool.imap(model_fitting, data.T)
-            results = list(results)
-            pool.terminate()
+            results = Parallel(n_jobs=self.n_cpu)(delayed(model_fitting)(datum)
+                                                  for datum in data.T)
         else:
             results = [model_fitting(data)]
 
@@ -168,17 +168,15 @@ class Kriging:
         def fork_optimizer(i):
             """Optimize hyperparameters."""
             results = differential_evolution(func, bounds,
-                                             tol=0.001, popsize=15+i)
+                                             #tol=0.001, popsize=15+i
+                                             )
             theta_opt = results.x
             func_min = results.fun
             return theta_opt, func_min
 
-        pool = NestedPool(self.n_restart)
-        results = pool.imap(fork_optimizer, range(self.n_restart))
-
-        # Gather results
+        results = Parallel(n_jobs=self.n_restart)(delayed(fork_optimizer)(i)
+                                                  for i in range(self.n_restart))
         results = list(results)
-        pool.terminate()
 
         theta_opt, func_min = zip(*results)
 

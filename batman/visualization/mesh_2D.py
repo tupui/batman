@@ -15,8 +15,8 @@ import batman as bat
 from ..input_output import formater
 
 
-def mesh_2D(fname, var=None, flabels=None, fformat='csv', xlabel='X axis',
-            ylabel='Y axis', vmins=None, output_path=None):
+def mesh_2D(fname, var=None, flabels=None, format='csv', xlabel='X axis', ylabel='Y axis', vmins=None,
+            output_path=None):
     """Visualization of specific variable on a user provided 2D mesh.
 
     The provided mesh should contain two columns (x,y coordinates for each
@@ -29,7 +29,7 @@ def mesh_2D(fname, var=None, flabels=None, fformat='csv', xlabel='X axis',
     :param str fname: name of mesh file.
     :param array_like var: data to be plotted shape (n_coords, n_vars).
     :param list(str) flabels: names of the variables.
-    :param str fformat: format of the mesh file.
+    :param str format: format of the mesh file.
     :param str xlabel: name of the x-axis.
     :param str ylabel: name of the y-axis.
     :param lst(double) vmins: value of the minimal output for data filtering.
@@ -38,7 +38,7 @@ def mesh_2D(fname, var=None, flabels=None, fformat='csv', xlabel='X axis',
     :rtype: Matplotlib figure instances.
     """
     # Read the mesh file
-    io = formater(fformat)
+    io = formater(format)
     mesh = io.read(fname)
 
     if var is not None:

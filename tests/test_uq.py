@@ -11,12 +11,12 @@ def test_indices(tmp, ishigami_data, settings_ishigami):
                                ishigami_data.space.plabels)
     surrogate.fit(ishigami_data.space, ishigami_data.target_space)
 
-    analyse = UQ(surrogate, nsample=settings_ishigami['uq']['sample'],
-                 dists=settings_ishigami['uq']['pdf'],
-                 plabels=settings_ishigami['snapshot']['plabels'],
-                 method=settings_ishigami['uq']['method'],
-                 indices=settings_ishigami['uq']['type'],
-                 test=settings_ishigami['uq']['test'])
+    analyse = UQ(surrogate, nsample=settings_ishigami.uq.sample,
+                 dists=settings_ishigami.pdf,
+                 plabels=settings_ishigami.snapshot.plabels,
+                 method=settings_ishigami.method,
+                 indices=settings_ishigami.type,
+                 test=settings_ishigami.test)
 
     indices = analyse.sobol()
     errors = analyse.error_model(indices, 'Ishigami')
@@ -31,19 +31,19 @@ def test_indices(tmp, ishigami_data, settings_ishigami):
 
 def test_block(mascaret_data, settings_ishigami):
     test_settings = copy.deepcopy(settings_ishigami)
-    test_settings['uq']['type'] = 'block'
-    test_settings['uq'].pop('test')
-    test_settings['snapshot']['plabels'] = ['Ks', 'Q']
+    test_settings.type = 'block'
+    test_settings.uq.test = None
+    test_settings.snapshot.plabels = ['Ks', 'Q']
 
     surrogate = SurrogateModel('rbf', mascaret_data.space.corners,
                                mascaret_data.space.plabels)
     surrogate.fit(mascaret_data.space, mascaret_data.target_space)
 
-    analyse = UQ(surrogate, nsample=test_settings['uq']['sample'],
+    analyse = UQ(surrogate, nsample=test_settings.sample,
                  dists=['Uniform(15., 60.)', 'Normal(4035., 400.)'],
-                 plabels=test_settings['snapshot']['plabels'],
-                 method=test_settings['uq']['method'],
-                 indices=test_settings['uq']['type'])
+                 plabels=test_settings.snapshot.plabels,
+                 method=test_settings.method,
+                 indices=test_settings.type)
 
     indices = analyse.sobol()
     print(indices)
